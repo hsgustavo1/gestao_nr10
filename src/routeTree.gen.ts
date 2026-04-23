@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CadeadosIndexRouteImport } from './routes/cadeados.index'
+import { Route as CadeadosCodigoRouteImport } from './routes/cadeados.$codigo'
+import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -28,35 +31,81 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CadeadosIndexRoute = CadeadosIndexRouteImport.update({
+  id: '/cadeados/',
+  path: '/cadeados/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadeadosCodigoRoute = CadeadosCodigoRouteImport.update({
+  id: '/cadeados/$codigo',
+  path: '/cadeados/$codigo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
+  id: '/admin/usuarios',
+  path: '/admin/usuarios',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
+  '/cadeados/$codigo': typeof CadeadosCodigoRoute
+  '/cadeados/': typeof CadeadosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
+  '/cadeados/$codigo': typeof CadeadosCodigoRoute
+  '/cadeados': typeof CadeadosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
+  '/cadeados/$codigo': typeof CadeadosCodigoRoute
+  '/cadeados/': typeof CadeadosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/admin/usuarios'
+    | '/cadeados/$codigo'
+    | '/cadeados/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login'
-  id: '__root__' | '/' | '/dashboard' | '/login'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/admin/usuarios'
+    | '/cadeados/$codigo'
+    | '/cadeados'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/admin/usuarios'
+    | '/cadeados/$codigo'
+    | '/cadeados/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  AdminUsuariosRoute: typeof AdminUsuariosRoute
+  CadeadosCodigoRoute: typeof CadeadosCodigoRoute
+  CadeadosIndexRoute: typeof CadeadosIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +131,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cadeados/': {
+      id: '/cadeados/'
+      path: '/cadeados'
+      fullPath: '/cadeados/'
+      preLoaderRoute: typeof CadeadosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadeados/$codigo': {
+      id: '/cadeados/$codigo'
+      path: '/cadeados/$codigo'
+      fullPath: '/cadeados/$codigo'
+      preLoaderRoute: typeof CadeadosCodigoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/usuarios': {
+      id: '/admin/usuarios'
+      path: '/admin/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AdminUsuariosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,7 +159,19 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  AdminUsuariosRoute: AdminUsuariosRoute,
+  CadeadosCodigoRoute: CadeadosCodigoRoute,
+  CadeadosIndexRoute: CadeadosIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
