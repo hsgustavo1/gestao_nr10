@@ -3,6 +3,35 @@ import type { Database } from "@/integrations/supabase/types";
 
 export type Padlock = Database["public"]["Tables"]["padlocks"]["Row"];
 export type PadlockEvent = Database["public"]["Tables"]["padlock_events"]["Row"];
+export type PadlockColor = Database["public"]["Enums"]["padlock_color"];
+
+export const PADLOCK_COLORS: PadlockColor[] = ["azul", "amarelo", "latao", "vermelho"];
+
+export const colorLabel: Record<PadlockColor, string> = {
+  azul: "Azul",
+  amarelo: "Amarelo",
+  latao: "Latão",
+  vermelho: "Vermelho",
+};
+
+// Swatch para a bolinha visual da cor — usa cores reais do cadeado (não tokens semânticos)
+export const colorSwatch: Record<PadlockColor, string> = {
+  azul: "bg-[#1d4ed8] border-[#1e3a8a]",
+  amarelo: "bg-[#facc15] border-[#a16207]",
+  latao: "bg-[#b08d57] border-[#6b4f2a]",
+  vermelho: "bg-[#dc2626] border-[#7f1d1d]",
+};
+
+export const colorBadge: Record<PadlockColor, string> = {
+  azul: "bg-[#1d4ed8]/15 text-[#1d4ed8] dark:text-[#93c5fd] border-[#1d4ed8]/30",
+  amarelo: "bg-[#facc15]/20 text-[#854d0e] dark:text-[#fde68a] border-[#a16207]/40",
+  latao: "bg-[#b08d57]/20 text-[#6b4f2a] dark:text-[#d4b483] border-[#b08d57]/40",
+  vermelho: "bg-[#dc2626]/15 text-[#b91c1c] dark:text-[#fca5a5] border-[#dc2626]/30",
+};
+
+export function ownerRequiresAllFields(color: PadlockColor): boolean {
+  return color !== "vermelho";
+}
 
 export type DerivedStatus = "disponivel" | "aplicado" | "vencido";
 
