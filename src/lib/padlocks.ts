@@ -57,7 +57,7 @@ export const statusColor: Record<DerivedStatus, string> = {
 export async function logEvent(input: {
   padlock_id: string;
   padlock_code: string;
-  action: "created" | "updated" | "deleted" | "applied" | "released";
+  action: "created" | "updated" | "deleted" | "applied" | "released" | "transferred";
   actor_id: string | null;
   actor_name: string | null;
   previous_data?: unknown;
