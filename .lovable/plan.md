@@ -1,58 +1,34 @@
 
 
-# Sistema LOTO Atvos — Controle de Cadeados
+# Como criar o primeiro Admin
 
-App web responsivo para gestão de Lockout/Tagout, com dados persistentes na nuvem, três níveis de acesso e auditoria completa.
+## Por que está difícil agora
+A política de segurança da tabela `user_roles` exige que **só um Admin existente** possa inserir novos perfis. Como ainda não há nenhum Admin, ninguém tem permissão para inserir o primeiro registro pela interface — é o clássico problema do "ovo e galinha". Por isso a inserção manual está sendo bloqueada.
 
-## Identidade visual
-- Fundo principal **azul Atvos** `#0A2D48`
-- Acentos em **gradiente laranja→amarelo** (`#E35D12 → #F47920 → #FAC800`)
-- Tipografia system-ui, layout limpo no estilo do protótipo (lock + barra de acento)
-- Modo claro e escuro coerentes com a marca
+## O que cada campo significa (se você quiser inserir manualmente mesmo assim)
 
-## Perfis de acesso
+Na tabela `user_roles`, ao clicar em **"Insert row"**:
 
-| Perfil | Login | O que pode fazer |
-|---|---|---|
-| **Visualizador** | Sem login (público) | Ver dashboard e listagem de cadeados em modo somente-leitura |
-| **Supervisor** | E-mail + senha | Tudo que o Admin faz, **exceto editar ou excluir registros existentes** (pode criar e aplicar/remover cadeados) |
-| **Admin (Dono de RAC)** | E-mail + senha | Acesso total — cadastrar, editar, excluir cadeados, gerenciar usuários e atribuir perfis |
+| Campo | O que preencher |
+|---|---|
+| **id** | Deixe em branco — é gerado automaticamente (`gen_random_uuid()`) |
+| **user_id** | O UUID do usuário a promover. No seu caso: `31b7c29c-ff0e-4a0c-8ed8-677f7a0aab09` (sua conta `gustavo.henrique@atvos.com`) |
+| **role** | `admin` (literal, em minúsculas — é um enum com dois valores: `admin` ou `supervisor`) |
+| **created_at** | Deixe em branco — preenche automaticamente com `now()` |
 
-Roles armazenadas em tabela separada `user_roles` (segurança por RLS, sem escalonamento de privilégio). Primeiro Admin precisa ser promovido manualmente após o cadastro inicial.
+O `user_id` você encontra em **Cloud → Tables → profiles** (coluna `id` da linha do seu e-mail) ou em **Cloud → Users**.
 
-## Entidade central: Cadeado
-Cada cadeado físico tem registro único com:
-- **Código/etiqueta** única (identificador no campo)
-- **Status**: Disponível, Aplicado, Vencido
-- **Localização/equipamento** (campo livre — onde está aplicado)
-- **Responsável atual** (quem aplicou)
-- **Data/hora de aplicação** e **prazo previsto de liberação**
-- **Motivo** do bloqueio
-- **Observações**
+## Proposta de solução (recomendada)
 
-## Telas
+Em vez de você lutar com o painel, vou:
 
-1. **Home pública (`/`)** — visão institucional + dashboard resumido em modo leitura, com botão "Entrar" para Supervisor/Admin.
-2. **Dashboard (`/dashboard`)** — cards de KPIs (cadeados ativos, vencidos, disponíveis, total) + lista dos últimos eventos. Visível sem login.
-3. **Cadeados (`/cadeados`)** — tabela filtrável por status/código/responsável. Cada linha abre painel de detalhe.
-4. **Detalhe do cadeado (`/cadeados/$codigo`)** — ficha + **histórico/auditoria completa** (linha do tempo de cada aplicação, liberação, edição, com autor e timestamp).
-5. **Aplicar / Remover cadeado** — ações contextuais no detalhe (Supervisor e Admin), com formulário curto (motivo, prazo).
-6. **Cadastro de cadeados** — criar novo (Supervisor/Admin); editar/excluir (apenas Admin).
-7. **Usuários e permissões (`/admin/usuarios`)** — apenas Admin: lista de usuários e atribuição de perfil.
-8. **Login (`/login`)** e logout no header.
+1. **Promover sua conta a Admin agora**, via migração SQL one-shot (executada com privilégio de serviço, ignora RLS):
+   - Insere `user_id = 31b7c29c-ff0e-4a0c-8ed8-677f7a0aab09`, `role = 'admin'` em `user_roles`.
+2. A partir desse momento, você consegue entrar em `/admin/usuarios` no app e promover/rebaixar qualquer outro usuário pela interface, sem mexer mais no banco.
 
-## Regras-chave
-- **Auditoria imutável**: toda mudança de status, edição ou exclusão gera evento permanente em tabela de log com `user_id`, ação, dados anteriores/novos e timestamp — visível na tela de detalhe.
-- **Cadeado "vencido"**: calculado automaticamente quando o prazo previsto passou e o cadeado ainda está aplicado (destaque vermelho no dashboard).
-- **Visualizador** nunca vê botões de ação — apenas dados.
-- **Supervisor** vê botões de criar/aplicar/remover, mas não vê "Editar" nem "Excluir" em registros já existentes.
+## Próximos passos depois de aprovado
 
-## Backend (Lovable Cloud)
-- Tabelas: `padlocks`, `padlock_events` (auditoria), `user_roles`, `profiles`
-- RLS em todas as tabelas; leitura pública liberada em `padlocks` e `padlock_events` para o modo Visualizador
-- Função `has_role(user_id, role)` para checagens seguras nas policies
-- Auth por e-mail/senha (auto-confirm ligado para facilitar testes)
-
-## Fora do MVP (podem vir depois)
-Cadastro separado de equipamentos/TAGs, ordens de serviço, leitura de QR Code, exportação PDF/Excel, notificações de vencimento por e-mail.
+- Faça login no app com `gustavo.henrique@atvos.com`.
+- Acesse **Usuários e permissões** (link novo no header, visível só para Admin).
+- Para cada novo cadastro, atribua **Supervisor** ou **Admin** com um clique.
 
