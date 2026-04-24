@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Lock, ShieldCheck, ArrowRight } from "lucide-react";
+import { Lock, ArrowRight } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { deriveStatus, formatDateTime, statusColor, statusLabel, type Padlock, type PadlockEvent } from "@/lib/padlocks";
+import {
+  formatDateTime, PADLOCK_COLORS, colorLabel, colorSwatch,
+  type Padlock, type PadlockEvent,
+} from "@/lib/padlocks";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -20,16 +23,9 @@ function DashboardPage() {
     supabase.from("padlock_events").select("*").order("created_at", { ascending: false }).limit(10).then(({ data }) => setEvents(data ?? []));
   }, []);
 
-  const counts = padlocks.reduce(
-    (acc, p) => {
-      const s = deriveStatus(p);
-      acc[s] += 1;
-      return acc;
-    },
-    { disponivel: 0, aplicado: 0, vencido: 0 } as Record<string, number>,
-  );
-
-  const overdue = padlocks.filter((p) => deriveStatus(p) === "vencido");
+  const byColor = PADLOCK_COLORS.map((c) => ({
+    color: c, count: padlocks.filter((p) => p.color === c).length,
+  }));
 
   return (
     <PageShell>
@@ -43,38 +39,28 @@ function DashboardPage() {
         </Link>
       </div>
 
-      <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Total" value={padlocks.length} icon={<Lock className="h-5 w-5" />} />
-        <Kpi label="Aplicados" value={counts.aplicado} icon={<ShieldCheck className="h-5 w-5" />} tone="warning" />
-        <Kpi label="Vencidos" value={counts.vencido} icon={<AlertTriangle className="h-5 w-5" />} tone="danger" />
-        <Kpi label="Disponíveis" value={counts.disponivel} icon={<CheckCircle2 className="h-5 w-5" />} tone="success" />
-      </section>
-
-      {overdue.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-red-600 dark:text-red-400 mb-3 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" /> Cadeados vencidos
-          </h2>
-          <Card className="border-red-500/40">
-            <CardContent className="p-0 divide-y divide-border">
-              {overdue.map((p) => (
-                <Link
-                  key={p.id}
-                  to="/cadeados/$codigo"
-                  params={{ codigo: p.code }}
-                  className="flex items-center justify-between gap-4 p-4 hover:bg-secondary/50 transition"
-                >
-                  <div>
-                    <div className="font-mono text-sm font-bold">{p.code}</div>
-                    <div className="text-xs text-muted-foreground">{p.location || "Sem localização"} · prazo {formatDateTime(p.due_at)}</div>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{p.applied_by_name}</span>
-                </Link>
-              ))}
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Total</div>
+              <div className="grid h-9 w-9 place-items-center rounded-lg bg-secondary text-foreground"><Lock className="h-5 w-5" /></div>
+            </div>
+            <div className="mt-3 text-3xl font-bold tabular-nums">{padlocks.length}</div>
+          </CardContent>
+        </Card>
+        {byColor.map(({ color, count }) => (
+          <Card key={color}>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">{colorLabel[color]}</div>
+                <div className={`h-7 w-7 rounded-full border-2 ${colorSwatch[color]}`} />
+              </div>
+              <div className="mt-3 text-3xl font-bold tabular-nums">{count}</div>
             </CardContent>
           </Card>
-        </section>
-      )}
+        ))}
+      </section>
 
       <section className="mt-8">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Últimos eventos</h2>
@@ -105,53 +91,22 @@ function DashboardPage() {
           </CardContent>
         </Card>
       </section>
-
-      {/* legend */}
-      <div className="mt-4 flex gap-2 flex-wrap">
-        {(["disponivel", "aplicado", "vencido"] as const).map((s) => (
-          <span key={s} className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColor[s]}`}>
-            {statusLabel[s]}
-          </span>
-        ))}
-      </div>
     </PageShell>
   );
 }
 
 function eventDot(action: string) {
   switch (action) {
-    case "applied":
-      return "bg-amber-500";
-    case "released":
-      return "bg-emerald-500";
-    case "deleted":
-      return "bg-red-500";
-    case "created":
-      return "bg-sky-500";
-    default:
-      return "bg-muted-foreground";
+    case "transferred": return "bg-violet-500";
+    case "updated": return "bg-amber-500";
+    case "deleted": return "bg-red-500";
+    case "created": return "bg-sky-500";
+    default: return "bg-muted-foreground";
   }
 }
 function actionLabel(action: string) {
-  return ({ created: "criado", updated: "editado", deleted: "excluído", applied: "aplicado", released: "removido" } as Record<string, string>)[action] ?? action;
-}
-
-function Kpi({ label, value, icon, tone = "neutral" }: { label: string; value: number; icon: React.ReactNode; tone?: "neutral" | "warning" | "danger" | "success" }) {
-  const toneMap = {
-    neutral: "text-foreground",
-    warning: "text-amber-600 dark:text-amber-400",
-    danger: "text-red-600 dark:text-red-400",
-    success: "text-emerald-600 dark:text-emerald-400",
-  } as const;
-  return (
-    <Card>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className={`grid h-9 w-9 place-items-center rounded-lg bg-secondary ${toneMap[tone]}`}>{icon}</div>
-        </div>
-        <div className={`mt-3 text-3xl font-bold tabular-nums ${toneMap[tone]}`}>{value}</div>
-      </CardContent>
-    </Card>
-  );
+  return ({
+    created: "criado", updated: "editado", deleted: "excluído",
+    transferred: "dono transferido", applied: "aplicado", released: "removido",
+  } as Record<string, string>)[action] ?? action;
 }

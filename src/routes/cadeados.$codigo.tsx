@@ -2,34 +2,27 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, LockOpen, Pencil, Trash2, History } from "lucide-react";
+import { ArrowLeft, Lock, Pencil, Trash2, History, ArrowLeftRight } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { deriveStatus, formatDateTime, logEvent, statusColor, statusLabel, type Padlock, type PadlockEvent } from "@/lib/padlocks";
+import {
+  formatDateTime, logEvent, PADLOCK_COLORS,
+  colorBadge, colorLabel, colorSwatch,
+  type Padlock, type PadlockEvent, type PadlockColor,
+} from "@/lib/padlocks";
 
 export const Route = createFileRoute("/cadeados/$codigo")({
   component: PadlockDetail,
@@ -43,8 +36,7 @@ function PadlockDetail() {
   const [padlock, setPadlock] = useState<Padlock | null>(null);
   const [events, setEvents] = useState<PadlockEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openApply, setOpenApply] = useState(false);
-  const [openRelease, setOpenRelease] = useState(false);
+  const [openTransfer, setOpenTransfer] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
 
@@ -53,10 +45,8 @@ function PadlockDetail() {
     setPadlock(p);
     if (p) {
       const { data: ev } = await supabase
-        .from("padlock_events")
-        .select("*")
-        .eq("padlock_id", p.id)
-        .order("created_at", { ascending: false });
+        .from("padlock_events").select("*")
+        .eq("padlock_id", p.id).order("created_at", { ascending: false });
       setEvents(ev ?? []);
     }
     setLoading(false);
@@ -76,7 +66,7 @@ function PadlockDetail() {
     );
   }
 
-  const status = deriveStatus(padlock);
+  const isRed = padlock.color === "vermelho";
 
   return (
     <PageShell>
@@ -86,26 +76,21 @@ function PadlockDetail() {
 
       <div className="mt-3 flex items-start justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-gradient shadow-brand">
-            <Lock className="h-7 w-7 text-white" />
+          <div className={`grid h-14 w-14 place-items-center rounded-2xl border-2 shadow-brand ${colorSwatch[padlock.color]}`}>
+            <Lock className="h-7 w-7 text-white drop-shadow" />
           </div>
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Cadeado</div>
-            <h1 className="font-mono text-2xl font-bold">{padlock.code}</h1>
-            <span className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColor[status]}`}>
-              {statusLabel[status]}
+            <h1 className="font-mono text-2xl font-bold">{colorLabel[padlock.color]} #{padlock.number}</h1>
+            <span className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorBadge[padlock.color]}`}>
+              {colorLabel[padlock.color]}
             </span>
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {isStaff && status === "disponivel" && (
-            <Button onClick={() => setOpenApply(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              <Lock className="h-4 w-4" /> Aplicar
-            </Button>
-          )}
-          {isStaff && status !== "disponivel" && (
-            <Button onClick={() => setOpenRelease(true)} variant="outline">
-              <LockOpen className="h-4 w-4" /> Remover
+          {isStaff && !isRed && (
+            <Button onClick={() => setOpenTransfer(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
+              <ArrowLeftRight className="h-4 w-4" /> Transferir dono
             </Button>
           )}
           {isAdmin && (
@@ -119,21 +104,32 @@ function PadlockDetail() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Card><CardContent className="p-5 space-y-3">
-          <Field label="Localização / equipamento" value={padlock.location} />
-          <Field label="Responsável atual" value={padlock.applied_by_name} />
-          <Field label="Aplicado em" value={formatDateTime(padlock.applied_at)} />
-          <Field label="Prazo previsto" value={formatDateTime(padlock.due_at)} highlight={status === "vencido"} />
+          <Field label="Setor" value={padlock.owner_sector} />
+          {!isRed && (
+            <>
+              <Field label="Dono atual" value={padlock.owner_name} />
+              <Field label="Matrícula" value={padlock.owner_registration} mono />
+              <Field label="Função" value={padlock.owner_role} />
+              <Field label="Telefone" value={padlock.owner_phone} />
+            </>
+          )}
+          {isRed && (
+            <p className="text-xs text-muted-foreground">
+              Cadeados vermelhos não exigem dados pessoais — apenas número e setor.
+            </p>
+          )}
         </CardContent></Card>
         <Card><CardContent className="p-5 space-y-3">
-          <Field label="Motivo do bloqueio" value={padlock.reason} />
-          <Field label="Observações" value={padlock.notes} multiline />
+          <Field label="Cor" value={colorLabel[padlock.color]} />
+          <Field label="Número" value={String(padlock.number)} mono />
           <Field label="Criado em" value={formatDateTime(padlock.created_at)} />
+          <Field label="Última atualização" value={formatDateTime(padlock.updated_at)} />
         </CardContent></Card>
       </div>
 
       <section className="mt-8">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-          <History className="h-4 w-4" /> Histórico de auditoria
+          <History className="h-4 w-4" /> Histórico
         </h2>
         <Card><CardContent className="p-0">
           {events.length === 0 ? (
@@ -147,10 +143,10 @@ function PadlockDetail() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold capitalize">{actionLabel(e.action)}</span>
+                      <span className="text-sm font-semibold">{actionLabel(e.action)}</span>
                       {e.actor_name && <span className="text-xs text-muted-foreground">por {e.actor_name}</span>}
                     </div>
-                    {e.notes && <div className="text-xs text-muted-foreground mt-1">{e.notes}</div>}
+                    {e.notes && <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{e.notes}</div>}
                     <div className="text-xs text-muted-foreground mt-1">{formatDateTime(e.created_at)}</div>
                   </div>
                 </li>
@@ -160,25 +156,21 @@ function PadlockDetail() {
         </CardContent></Card>
       </section>
 
-      <ApplyDialog open={openApply} onOpenChange={setOpenApply} padlock={padlock} onDone={reload} />
-      <ReleaseDialog open={openRelease} onOpenChange={setOpenRelease} padlock={padlock} onDone={reload} />
-      <EditDialog open={openEdit} onOpenChange={setOpenEdit} padlock={padlock} onDone={reload} />
+      <TransferDialog open={openTransfer} onOpenChange={setOpenTransfer} padlock={padlock} onDone={reload} />
+      <EditDialog open={openEdit} onOpenChange={setOpenEdit} padlock={padlock} onDone={reload} onCodeChanged={(newCode) => navigate({ to: "/cadeados/$codigo", params: { codigo: newCode } })} />
       <AlertDialog open={openDelete} onOpenChange={setOpenDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir cadeado {padlock.code}?</AlertDialogTitle>
-            <AlertDialogDescription>O registro será removido. O histórico de auditoria também será apagado.</AlertDialogDescription>
+            <AlertDialogTitle>Excluir cadeado {colorLabel[padlock.color]} #{padlock.number}?</AlertDialogTitle>
+            <AlertDialogDescription>O registro será removido. O histórico permanecerá no log de auditoria.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
                 await logEvent({
-                  padlock_id: padlock.id,
-                  padlock_code: padlock.code,
-                  action: "deleted",
-                  actor_id: user?.id ?? null,
-                  actor_name: user?.email ?? null,
+                  padlock_id: padlock.id, padlock_code: padlock.code, action: "deleted",
+                  actor_id: user?.id ?? null, actor_name: user?.email ?? null,
                   previous_data: padlock,
                 });
                 const { error } = await supabase.from("padlocks").delete().eq("id", padlock.id);
@@ -197,128 +189,123 @@ function PadlockDetail() {
   );
 }
 
-function Field({ label, value, multiline, highlight }: { label: string; value: string | null | undefined; multiline?: boolean; highlight?: boolean }) {
+function Field({ label, value, mono }: { label: string; value: string | null | undefined; mono?: boolean }) {
   return (
     <div>
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-sm ${multiline ? "whitespace-pre-wrap" : ""} ${highlight ? "text-red-600 dark:text-red-400 font-semibold" : "text-foreground"}`}>
-        {value || "—"}
-      </div>
+      <div className={`mt-1 text-sm text-foreground ${mono ? "font-mono" : ""}`}>{value || "—"}</div>
     </div>
   );
 }
 
 function eventDot(action: string) {
   switch (action) {
-    case "applied": return "bg-amber-500";
-    case "released": return "bg-emerald-500";
+    case "transferred": return "bg-violet-500";
+    case "updated": return "bg-amber-500";
     case "deleted": return "bg-red-500";
     case "created": return "bg-sky-500";
     default: return "bg-muted-foreground";
   }
 }
 function actionLabel(action: string) {
-  return ({ created: "Criado", updated: "Editado", deleted: "Excluído", applied: "Aplicado", released: "Removido" } as Record<string, string>)[action] ?? action;
+  return ({
+    created: "Cadeado criado",
+    updated: "Cadeado editado",
+    deleted: "Cadeado excluído",
+    transferred: "Dono transferido",
+    applied: "Cadeado aplicado",
+    released: "Cadeado liberado",
+  } as Record<string, string>)[action] ?? action;
 }
 
-/* ============== Apply ============== */
-const applySchema = z.object({
-  reason: z.string().trim().min(1, "Informe o motivo").max(300),
-  location: z.string().trim().min(1, "Informe a localização").max(200),
-  due_at: z.string().min(1, "Informe o prazo"),
+/* ============== Transfer ============== */
+const transferSchema = z.object({
+  owner_name: z.string().trim().min(1, "Informe o nome do novo dono").max(120),
+  owner_registration: z.string().trim().min(1, "Informe a matrícula").max(40),
+  owner_role: z.string().trim().min(1, "Informe a função").max(80),
+  owner_sector: z.string().trim().min(1, "Informe o setor").max(100),
+  owner_phone: z.string().trim().min(1, "Informe o telefone").max(30),
+  notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
-function ApplyDialog({ open, onOpenChange, padlock, onDone }: { open: boolean; onOpenChange: (o: boolean) => void; padlock: Padlock; onDone: () => void }) {
+function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean; onOpenChange: (o: boolean) => void; padlock: Padlock; onDone: () => void }) {
   const { user } = useAuth();
-  const [reason, setReason] = useState("");
-  const [location, setLocation] = useState(padlock.location ?? "");
-  const [due, setDue] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const parsed = applySchema.safeParse({ reason, location, due_at: due });
-    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
-    setLoading(true);
-    const dueIso = new Date(parsed.data.due_at).toISOString();
-    const { data, error } = await supabase
-      .from("padlocks")
-      .update({
-        status: "aplicado",
-        reason: parsed.data.reason,
-        location: parsed.data.location,
-        due_at: dueIso,
-        applied_at: new Date().toISOString(),
-        applied_by: user?.id ?? null,
-        applied_by_name: user?.email ?? null,
-      })
-      .eq("id", padlock.id)
-      .select()
-      .single();
-    if (error || !data) { setLoading(false); return toast.error(error?.message ?? "Erro"); }
-    await logEvent({
-      padlock_id: padlock.id, padlock_code: padlock.code, action: "applied",
-      actor_id: user?.id ?? null, actor_name: user?.email ?? null,
-      previous_data: padlock, new_data: data, notes: parsed.data.reason,
-    });
-    toast.success("Cadeado aplicado");
-    setLoading(false); onOpenChange(false); onDone();
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Aplicar cadeado {padlock.code}</DialogTitle>
-          <DialogDescription>Registre motivo, localização e prazo previsto de liberação.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={submit} className="space-y-3">
-          <div className="space-y-1.5"><Label>Motivo</Label><Input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} required /></div>
-          <div className="space-y-1.5"><Label>Localização / equipamento</Label><Input value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} required /></div>
-          <div className="space-y-1.5"><Label>Prazo previsto</Label><Input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} required /></div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Aplicar"}</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/* ============== Release ============== */
-function ReleaseDialog({ open, onOpenChange, padlock, onDone }: { open: boolean; onOpenChange: (o: boolean) => void; padlock: Padlock; onDone: () => void }) {
-  const { user } = useAuth();
+  const [name, setName] = useState("");
+  const [reg, setReg] = useState("");
+  const [role, setRole] = useState("");
+  const [sector, setSector] = useState("");
+  const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const parsed = transferSchema.safeParse({
+      owner_name: name, owner_registration: reg, owner_role: role,
+      owner_sector: sector, owner_phone: phone, notes,
+    });
+    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     setLoading(true);
     const { data, error } = await supabase
       .from("padlocks")
       .update({
-        status: "disponivel", reason: null, applied_at: null, applied_by: null,
-        applied_by_name: null, due_at: null,
+        owner_name: parsed.data.owner_name,
+        owner_registration: parsed.data.owner_registration,
+        owner_role: parsed.data.owner_role,
+        owner_sector: parsed.data.owner_sector,
+        owner_phone: parsed.data.owner_phone,
       })
       .eq("id", padlock.id).select().single();
-    if (error || !data) { setLoading(false); return toast.error(error?.message ?? "Erro"); }
+    if (error || !data) {
+      setLoading(false);
+      return toast.error(translateError(error?.message ?? "Erro"));
+    }
     await logEvent({
-      padlock_id: padlock.id, padlock_code: padlock.code, action: "released",
+      padlock_id: padlock.id, padlock_code: padlock.code, action: "transferred",
       actor_id: user?.id ?? null, actor_name: user?.email ?? null,
-      previous_data: padlock, new_data: data, notes: notes || undefined,
+      previous_data: {
+        owner_name: padlock.owner_name, owner_registration: padlock.owner_registration,
+        owner_role: padlock.owner_role, owner_sector: padlock.owner_sector,
+        owner_phone: padlock.owner_phone,
+      },
+      new_data: {
+        owner_name: data.owner_name, owner_registration: data.owner_registration,
+        owner_role: data.owner_role, owner_sector: data.owner_sector,
+        owner_phone: data.owner_phone,
+      },
+      notes: parsed.data.notes
+        ? `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
+        : `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
     });
-    toast.success("Cadeado liberado");
+    toast.success("Dono transferido");
     setLoading(false); onOpenChange(false); onDone();
+    setName(""); setReg(""); setRole(""); setSector(""); setPhone(""); setNotes("");
   }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Remover cadeado {padlock.code}</DialogTitle><DialogDescription>O cadeado voltará ao status "Disponível".</DialogDescription></DialogHeader>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Transferir dono — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
+          <DialogDescription>
+            Dono atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
+            A mudança fica registrada no histórico.
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <div className="space-y-1.5"><Label>Observações (opcional)</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5"><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
+            <div className="space-y-1.5"><Label>Matrícula</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
+            <div className="space-y-1.5"><Label>Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
+          </div>
+          <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
+          <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading}>{loading ? "..." : "Remover"}</Button>
+            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Transferir"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -326,21 +313,51 @@ function ReleaseDialog({ open, onOpenChange, padlock, onDone }: { open: boolean;
   );
 }
 
-/* ============== Edit (admin only) ============== */
-function EditDialog({ open, onOpenChange, padlock, onDone }: { open: boolean; onOpenChange: (o: boolean) => void; padlock: Padlock; onDone: () => void }) {
+/* ============== Edit (admin) ============== */
+function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
+  open: boolean; onOpenChange: (o: boolean) => void; padlock: Padlock;
+  onDone: () => void; onCodeChanged: (newCode: string) => void;
+}) {
   const { user } = useAuth();
-  const [code, setCode] = useState(padlock.code);
-  const [location, setLocation] = useState(padlock.location ?? "");
-  const [notes, setNotes] = useState(padlock.notes ?? "");
+  const [color, setColor] = useState<PadlockColor>(padlock.color);
+  const [number, setNumber] = useState(String(padlock.number));
+  const [name, setName] = useState(padlock.owner_name ?? "");
+  const [reg, setReg] = useState(padlock.owner_registration ?? "");
+  const [role, setRole] = useState(padlock.owner_role ?? "");
+  const [sector, setSector] = useState(padlock.owner_sector ?? "");
+  const [phone, setPhone] = useState(padlock.owner_phone ?? "");
   const [loading, setLoading] = useState(false);
+
+  const isRed = color === "vermelho";
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const num = Number(number);
+    if (!Number.isInteger(num) || num < 0) return toast.error("Número inválido");
+    if (!sector.trim()) return toast.error("Setor é obrigatório");
+    if (!isRed) {
+      if (!name.trim() || !reg.trim() || !role.trim() || !phone.trim()) {
+        return toast.error("Preencha todos os dados do dono");
+      }
+    }
     setLoading(true);
+    const newCode = `${color}-${num}`;
     const { data, error } = await supabase
       .from("padlocks")
-      .update({ code: code.trim(), location: location || null, notes: notes || null })
+      .update({
+        code: newCode,
+        color, number: num,
+        owner_name: isRed ? null : name.trim() || null,
+        owner_registration: isRed ? null : reg.trim() || null,
+        owner_role: isRed ? null : role.trim() || null,
+        owner_sector: sector.trim(),
+        owner_phone: isRed ? null : phone.trim() || null,
+      })
       .eq("id", padlock.id).select().single();
-    if (error || !data) { setLoading(false); return toast.error(error?.message ?? "Erro"); }
+    if (error || !data) {
+      setLoading(false);
+      return toast.error(translateError(error?.message ?? "Erro"));
+    }
     await logEvent({
       padlock_id: padlock.id, padlock_code: data.code, action: "updated",
       actor_id: user?.id ?? null, actor_name: user?.email ?? null,
@@ -348,15 +365,46 @@ function EditDialog({ open, onOpenChange, padlock, onDone }: { open: boolean; on
     });
     toast.success("Cadeado atualizado");
     setLoading(false); onOpenChange(false); onDone();
+    if (data.code !== padlock.code) onCodeChanged(data.code);
   }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>Editar cadeado</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <div className="space-y-1.5"><Label>Código</Label><Input value={code} onChange={(e) => setCode(e.target.value)} maxLength={60} required /></div>
-          <div className="space-y-1.5"><Label>Localização</Label><Input value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} /></div>
-          <div className="space-y-1.5"><Label>Observações</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Cor</Label>
+              <Select value={color} onValueChange={(v) => setColor(v as PadlockColor)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PADLOCK_COLORS.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      <span className="inline-flex items-center gap-2">
+                        <span className={`h-3 w-3 rounded-full border ${colorSwatch[c]}`} />
+                        {colorLabel[c]}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5"><Label>Número</Label><Input type="number" min={0} value={number} onChange={(e) => setNumber(e.target.value)} required /></div>
+          </div>
+          <div className="space-y-1.5"><Label>Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
+          {!isRed && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
+                <div className="space-y-1.5"><Label>Matrícula</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
+                <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
+              </div>
+            </>
+          )}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Salvar"}</Button>
@@ -365,4 +413,14 @@ function EditDialog({ open, onOpenChange, padlock, onDone }: { open: boolean; on
       </DialogContent>
     </Dialog>
   );
+}
+
+function translateError(msg: string): string {
+  if (msg.includes("padlocks_owner_unique_blue_brass")) {
+    return "Esta matrícula já possui um cadeado dessa cor (azul/latão é 1 por pessoa).";
+  }
+  if (msg.includes("padlocks_color_number_key") || msg.includes("duplicate key")) {
+    return "Já existe um cadeado com essa cor e número.";
+  }
+  return msg;
 }
