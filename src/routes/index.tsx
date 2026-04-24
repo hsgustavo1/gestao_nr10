@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Lock, ShieldCheck, History, ArrowRight, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Lock, ShieldCheck, History, ArrowRight, AlertTriangle, Users } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { deriveStatus } from "@/lib/padlocks";
+import { PADLOCK_COLORS, colorLabel, colorSwatch, type PadlockColor } from "@/lib/padlocks";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -18,20 +18,20 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const [counts, setCounts] = useState({ total: 0, aplicado: 0, vencido: 0, disponivel: 0 });
+  const [counts, setCounts] = useState<{ total: number; byColor: Record<PadlockColor, number> }>({
+    total: 0,
+    byColor: { azul: 0, amarelo: 0, latao: 0, vermelho: 0 },
+  });
 
   useEffect(() => {
     supabase
       .from("padlocks")
-      .select("status,due_at")
+      .select("color")
       .then(({ data }) => {
         const list = data ?? [];
-        const c = { total: list.length, aplicado: 0, vencido: 0, disponivel: 0 };
-        list.forEach((p) => {
-          const s = deriveStatus(p);
-          c[s] += 1;
-        });
-        setCounts(c);
+        const byColor: Record<PadlockColor, number> = { azul: 0, amarelo: 0, latao: 0, vermelho: 0 };
+        list.forEach((p) => { byColor[p.color] += 1; });
+        setCounts({ total: list.length, byColor });
       });
   }, []);
 
@@ -70,19 +70,19 @@ function HomePage() {
       </section>
 
       {/* KPIs */}
-      <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Total" value={counts.total} icon={<Lock className="h-5 w-5" />} tone="neutral" />
-        <Kpi label="Aplicados" value={counts.aplicado} icon={<ShieldCheck className="h-5 w-5" />} tone="warning" />
-        <Kpi label="Vencidos" value={counts.vencido} icon={<AlertTriangle className="h-5 w-5" />} tone="danger" />
-        <Kpi label="Disponíveis" value={counts.disponivel} icon={<CheckCircle2 className="h-5 w-5" />} tone="success" />
+      <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <Kpi label="Total" value={counts.total} icon={<Lock className="h-5 w-5" />} />
+        {PADLOCK_COLORS.map((c) => (
+          <Kpi key={c} label={colorLabel[c]} value={counts.byColor[c]} swatch={c} />
+        ))}
       </section>
 
       {/* Features */}
       <section className="mt-10 grid gap-4 md:grid-cols-3">
         <Feature
           icon={<History className="h-5 w-5" />}
-          title="Auditoria completa"
-          desc="Cada aplicação, remoção e edição é registrada com autor e data — histórico imutável por cadeado."
+          title="Histórico de transferências"
+          desc="Cada troca de dono fica registrada com autor, data e observação — auditoria imutável por cadeado."
         />
         <Feature
           icon={<ShieldCheck className="h-5 w-5" />}
@@ -90,42 +90,28 @@ function HomePage() {
           desc="Visualizador (público), Supervisor (cria e aplica), Admin/Dono de RAC (controle total)."
         />
         <Feature
-          icon={<AlertTriangle className="h-5 w-5" />}
-          title="Vencimento automático"
-          desc="Cadeados aplicados além do prazo previsto ganham destaque vermelho no dashboard."
+          icon={<Users className="h-5 w-5" />}
+          title="Regras por cor"
+          desc="Azul e latão: 1 por matrícula. Amarelo: livre. Vermelho: só número e setor. Sem repetição na mesma cor."
         />
       </section>
     </PageShell>
   );
 }
 
-function Kpi({
-  label,
-  value,
-  icon,
-  tone,
-}: {
-  label: string;
-  value: number;
-  icon: React.ReactNode;
-  tone: "neutral" | "warning" | "danger" | "success";
-}) {
-  const toneMap = {
-    neutral: "text-foreground",
-    warning: "text-amber-600 dark:text-amber-400",
-    danger: "text-red-600 dark:text-red-400",
-    success: "text-emerald-600 dark:text-emerald-400",
-  };
+function Kpi({ label, value, icon, swatch }: { label: string; value: number; icon?: React.ReactNode; swatch?: PadlockColor }) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className={`grid h-9 w-9 place-items-center rounded-lg bg-secondary ${toneMap[tone]}`}>
-            {icon}
-          </div>
+          {swatch ? (
+            <div className={`h-7 w-7 rounded-full border-2 ${colorSwatch[swatch]}`} />
+          ) : (
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-secondary text-foreground">{icon}</div>
+          )}
         </div>
-        <div className={`mt-3 text-3xl font-bold tabular-nums ${toneMap[tone]}`}>{value}</div>
+        <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
       </CardContent>
     </Card>
   );
