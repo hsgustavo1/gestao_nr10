@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Lock, ShieldCheck, History, ArrowRight, AlertTriangle, Users } from "lucide-react";
+import { Lock, ShieldCheck, History, ArrowRight, Users } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
