@@ -1,0 +1,7 @@
+DROP POLICY IF EXISTS "profiles_select_all" ON public.profiles;
+
+CREATE POLICY "profiles_select_authenticated"
+  ON public.profiles
+  FOR SELECT
+  TO authenticated
+  USING (true);
