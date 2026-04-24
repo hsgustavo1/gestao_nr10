@@ -67,12 +67,19 @@ export type Database = {
           applied_by: string | null
           applied_by_name: string | null
           code: string
+          color: Database["public"]["Enums"]["padlock_color"]
           created_at: string
           created_by: string | null
           due_at: string | null
           id: string
           location: string | null
           notes: string | null
+          number: number
+          owner_name: string | null
+          owner_phone: string | null
+          owner_registration: string | null
+          owner_role: string | null
+          owner_sector: string | null
           reason: string | null
           status: Database["public"]["Enums"]["padlock_status"]
           updated_at: string
@@ -82,12 +89,19 @@ export type Database = {
           applied_by?: string | null
           applied_by_name?: string | null
           code: string
+          color: Database["public"]["Enums"]["padlock_color"]
           created_at?: string
           created_by?: string | null
           due_at?: string | null
           id?: string
           location?: string | null
           notes?: string | null
+          number: number
+          owner_name?: string | null
+          owner_phone?: string | null
+          owner_registration?: string | null
+          owner_role?: string | null
+          owner_sector?: string | null
           reason?: string | null
           status?: Database["public"]["Enums"]["padlock_status"]
           updated_at?: string
@@ -97,12 +111,19 @@ export type Database = {
           applied_by?: string | null
           applied_by_name?: string | null
           code?: string
+          color?: Database["public"]["Enums"]["padlock_color"]
           created_at?: string
           created_by?: string | null
           due_at?: string | null
           id?: string
           location?: string | null
           notes?: string | null
+          number?: number
+          owner_name?: string | null
+          owner_phone?: string | null
+          owner_registration?: string | null
+          owner_role?: string | null
+          owner_sector?: string | null
           reason?: string | null
           status?: Database["public"]["Enums"]["padlock_status"]
           updated_at?: string
@@ -170,6 +191,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "supervisor"
+      padlock_color: "azul" | "amarelo" | "latao" | "vermelho"
       padlock_status: "disponivel" | "aplicado"
     }
     CompositeTypes: {
@@ -299,6 +321,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "supervisor"],
+      padlock_color: ["azul", "amarelo", "latao", "vermelho"],
       padlock_status: ["disponivel", "aplicado"],
     },
   },
