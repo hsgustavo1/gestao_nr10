@@ -35,9 +35,13 @@ export const Route = createRootRoute({
       { name: "description", content: "Sistema de Lockout/Tagout (LOTO) da Atvos: controle de cadeados, auditoria e dashboard de bloqueios." },
       { name: "author", content: "Atvos" },
       { property: "og:title", content: "LOTO Atvos — Controle de Cadeados" },
-      { property: "og:description", content: "Gestão de cadeados LOTO com auditoria completa e três níveis de acesso." },
+      { property: "og:description", content: "Sistema de Lockout/Tagout (LOTO) da Atvos: controle de cadeados, auditoria e dashboard de bloqueios." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "LOTO Atvos — Controle de Cadeados" },
+      { name: "twitter:description", content: "Sistema de Lockout/Tagout (LOTO) da Atvos: controle de cadeados, auditoria e dashboard de bloqueios." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9b08b1f6-bcbe-441a-b433-8e81434ad420/id-preview-ab6999c6--d316b9a2-2e74-4d8b-b8c0-fc90d0efc33f.lovable.app-1776962901455.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9b08b1f6-bcbe-441a-b433-8e81434ad420/id-preview-ab6999c6--d316b9a2-2e74-4d8b-b8c0-fc90d0efc33f.lovable.app-1776962901455.png" },
     ],
     links: [
       {
