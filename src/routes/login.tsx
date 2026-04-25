@@ -2,13 +2,12 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Lock } from "lucide-react";
+import { Lock, Eye, ShieldCheck, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -22,8 +21,8 @@ const schema = z.object({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { refreshRoles } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const { refreshRoles, enterViewerMode } = useAuth();
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -31,13 +30,23 @@ function LoginPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    const parsed = schema.safeParse({ email, password });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
-      return;
-    }
     setLoading(true);
     try {
+      if (mode === "forgot") {
+        const emailParsed = z.string().trim().email("E-mail inválido").max(255).safeParse(email);
+        if (!emailParsed.success) throw new Error(emailParsed.error.issues[0].message);
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Enviamos um link de redefinição para o seu e-mail.");
+        setMode("signin");
+        return;
+      }
+
+      const parsed = schema.safeParse({ email, password });
+      if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -64,21 +73,76 @@ function LoginPage() {
     }
   }
 
+  function onViewer() {
+    enterViewerMode();
+    toast.success("Modo visualização ativado.");
+    navigate({ to: "/dashboard" });
+  }
+
   return (
-    <div className="min-h-screen grid place-items-center bg-brand-blue px-4 py-10">
-      <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center justify-center gap-3 mb-6">
-          <div className="grid h-12 w-12 place-items-center rounded-xl bg-brand-gradient shadow-brand">
-            <Lock className="h-6 w-6 text-white" />
-          </div>
-          <div className="text-white">
-            <div className="text-lg font-bold leading-none">LOTO Atvos</div>
-            <div className="text-xs uppercase tracking-wider opacity-70">Controle de Cadeados</div>
-          </div>
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
+      {/* Hero azul Atvos */}
+      <aside className="relative hidden lg:flex flex-col justify-between bg-brand-blue text-white p-12 overflow-hidden">
+        <div className="absolute inset-y-0 right-0 w-1.5 bg-brand-gradient" />
+        <Link to="/" className="flex items-baseline gap-0">
+          <span className="atvos-wordmark">atvos</span>
+          <span className="atvos-wordmark text-[#F47920]">.</span>
+          <span className="ml-3 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">
+            Sistema LOTO
+          </span>
         </Link>
-        <Card className="shadow-card-soft">
-          <CardContent className="p-6">
-            <div className="flex gap-2 mb-5 rounded-lg bg-secondary p-1">
+
+        <div className="relative z-10 max-w-md">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wider">
+            <ShieldCheck className="h-3.5 w-3.5" /> Lockout / Tagout
+          </span>
+          <h1 className="mt-4 text-4xl font-bold leading-tight">
+            Segurança operacional <span className="text-brand-gradient">sob controle.</span>
+          </h1>
+          <p className="mt-4 text-white/75 text-sm leading-relaxed">
+            Acesse o painel de cadeados, registre aplicações, transfira propriedade e mantenha
+            auditoria imutável de cada bloqueio em campo.
+          </p>
+
+          <ul className="mt-6 space-y-2.5 text-sm text-white/80">
+            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#F79220]" /> 1 cadeado azul/latão por matrícula</li>
+            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#FAC800]" /> Histórico de transferências auditável</li>
+            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#E35D12]" /> Etiquetas 12×7 cm prontas para impressão</li>
+          </ul>
+        </div>
+
+        <div className="text-[11px] uppercase tracking-wider text-white/45">
+          Manual de Sinalização Atvos · Segurança Operacional
+        </div>
+      </aside>
+
+      {/* Formulário */}
+      <main className="flex flex-col justify-center px-6 py-10 sm:px-12 lg:px-16">
+        <div className="mx-auto w-full max-w-md">
+          {/* Brand mobile */}
+          <Link to="/" className="lg:hidden flex items-baseline gap-0 mb-8">
+            <span className="atvos-wordmark text-[#0A2D48]">atvos</span>
+            <span className="atvos-wordmark text-[#F47920]">.</span>
+            <span className="ml-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Sistema LOTO
+            </span>
+          </Link>
+
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground">
+              {mode === "forgot" ? "Recuperar senha" : mode === "signup" ? "Criar conta" : "Entrar no sistema"}
+            </h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {mode === "forgot"
+                ? "Informe seu e-mail e enviaremos um link para redefinir a senha."
+                : mode === "signup"
+                ? "Após o cadastro, um Dono RAC precisa aprovar seu perfil."
+                : "Acesso para Apoio RAC e Dono RAC. Visualização é pública."}
+            </p>
+          </div>
+
+          {mode !== "forgot" && (
+            <div className="flex gap-1 mb-5 rounded-lg bg-secondary p-1">
               <button
                 type="button"
                 onClick={() => setMode("signin")}
@@ -94,34 +158,85 @@ function LoginPage() {
                 Criar conta
               </button>
             </div>
-            <form onSubmit={onSubmit} className="space-y-4">
-              {mode === "signup" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Nome de exibição</Label>
-                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
-                </div>
-              )}
+          )}
+
+          <form onSubmit={onSubmit} className="space-y-4">
+            {mode === "signup" && (
               <div className="space-y-1.5">
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Label htmlFor="name">Nome de exibição</Label>
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
               </div>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="email">E-mail</Label>
+              <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            {mode !== "forgot" && (
               <div className="space-y-1.5">
-                <Label htmlFor="password">Senha</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Senha</Label>
+                  {mode === "signin" && (
+                    <button
+                      type="button"
+                      onClick={() => setMode("forgot")}
+                      className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  )}
+                </div>
                 <Input id="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
-              <Button type="submit" disabled={loading} className="w-full bg-brand-gradient text-white shadow-brand hover:opacity-95">
-                {loading ? "Aguarde..." : mode === "signin" ? "Entrar" : "Criar conta"}
-              </Button>
-              <p className="text-xs text-center text-muted-foreground">
-                A visualização do dashboard é pública — login só para Apoio RAC e Dono RAC.
-              </p>
-            </form>
-          </CardContent>
-        </Card>
-        <div className="mt-4 text-center">
-          <Link to="/" className="text-xs text-white/70 hover:text-white">← Voltar à página inicial</Link>
+            )}
+            <Button type="submit" disabled={loading} className="w-full bg-brand-gradient text-white shadow-brand hover:opacity-95">
+              {loading
+                ? "Aguarde..."
+                : mode === "forgot"
+                ? "Enviar link de redefinição"
+                : mode === "signin"
+                ? "Entrar"
+                : "Criar conta"}
+              {!loading && <ArrowRight className="ml-1 h-4 w-4" />}
+            </Button>
+
+            {mode === "forgot" && (
+              <button
+                type="button"
+                onClick={() => setMode("signin")}
+                className="block w-full text-center text-xs text-muted-foreground hover:text-foreground"
+              >
+                ← Voltar para entrar
+              </button>
+            )}
+          </form>
+
+          {/* Divisor */}
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">ou</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Modo visualização */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onViewer}
+            className="w-full border-2"
+          >
+            <Eye className="h-4 w-4" /> Acesso somente visualização
+          </Button>
+          <p className="mt-2 text-[11px] text-center text-muted-foreground">
+            Sem login. Você pode consultar cadeados e o painel, mas não pode editar.
+          </p>
+
+          <div className="mt-8 text-center">
+            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+              <Lock className="h-3 w-3" /> Voltar à página inicial
+            </Link>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
