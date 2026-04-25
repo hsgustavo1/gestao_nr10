@@ -1,58 +1,81 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogIn, LogOut, Lock, ShieldCheck } from "lucide-react";
+import { LogIn, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
 
+/**
+ * Topbar Atvos — fundo azul-marinho fixo (#0A2D48), wordmark "atvos."
+ * com ponto laranja, nav horizontal com underline laranja no item ativo,
+ * pill do usuário (avatar com iniciais em gradiente laranja + nome + cargo).
+ * Régua decorativa de 3px renderizada logo abaixo (no PageShell).
+ */
 export function SiteHeader() {
   const { user, isAdmin, isStaff, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const cargo = isAdmin ? "Dono RAC" : isStaff ? "Apoio RAC" : "Visualização";
+  const displayName =
+    (user?.user_metadata?.display_name as string | undefined) ||
+    user?.email?.split("@")[0] ||
+    "";
+  const initials = getInitials(displayName);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 atvos-topbar shadow-[0_2px_0_rgba(0,0,0,0.05)]">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="relative grid h-10 w-10 place-items-center rounded-xl bg-brand-blue shadow-card-soft">
-            <Lock className="h-5 w-5 text-white" />
-            <span className="absolute -bottom-1 left-1 right-1 h-1 rounded-full bg-brand-gradient" />
-          </div>
-          <div className="leading-tight">
-            <div className="text-sm font-bold tracking-tight text-foreground">LOTO Atvos</div>
-            <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Controle de Cadeados
-            </div>
-          </div>
-        </Link>
+        {/* Wordmark + nav */}
+        <div className="flex items-center gap-8">
+          <Link to="/" className="flex items-baseline gap-0">
+            <span className="atvos-wordmark">atvos</span>
+            <span className="atvos-wordmark text-[#F47920]">.</span>
+            <span className="ml-3 hidden sm:inline-block text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">
+              Sistema LOTO
+            </span>
+          </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/cadeados">Cadeados</NavLink>
-          {isAdmin && <NavLink to="/admin/usuarios">Usuários</NavLink>}
-        </nav>
+          <nav className="hidden md:flex items-center gap-1">
+            <NavLink to="/dashboard">Painel</NavLink>
+            <NavLink to="/cadeados">Consulta</NavLink>
+            {isStaff && <NavLink to="/cadeados">Cadastro</NavLink>}
+            {isAdmin && <NavLink to="/admin/usuarios">Usuários</NavLink>}
+          </nav>
+        </div>
 
+        {/* Pill usuário ou botão Entrar */}
         <div className="flex items-center gap-2">
           {user ? (
-            <>
-              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium">
-                <ShieldCheck className="h-3.5 w-3.5 text-accent" />
-                {isAdmin ? "Dono RAC" : isStaff ? "Apoio RAC" : "Visualização"}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2.5 rounded-full bg-white/8 pr-3 pl-1 py-1 ring-1 ring-white/10">
+                <span
+                  aria-hidden
+                  className="atvos-avatar grid h-8 w-8 place-items-center rounded-full text-xs"
+                >
+                  {initials}
+                </span>
+                <div className="leading-tight">
+                  <div className="text-xs font-semibold text-white">{displayName}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-white/60">
+                    {cargo}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
                 onClick={async () => {
                   await signOut();
                   navigate({ to: "/" });
                 }}
+                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-white/85 hover:bg-white/10 hover:text-white transition-colors"
               >
-                <LogOut className="h-4 w-4" /> Sair
-              </Button>
-            </>
+                <LogOut className="h-3.5 w-3.5" /> Sair
+              </button>
+            </div>
           ) : (
-            <Button asChild size="sm" className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              <Link to="/login">
-                <LogIn className="h-4 w-4" /> Entrar
-              </Link>
-            </Button>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-br from-[#F79220] to-[#E35D12] px-4 py-1.5 text-xs font-semibold text-white shadow-brand hover:opacity-95 transition-opacity"
+            >
+              <LogIn className="h-3.5 w-3.5" /> Entrar
+            </Link>
           )}
         </div>
       </div>
@@ -64,10 +87,22 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
     <Link
       to={to}
-      activeProps={{ className: "bg-secondary text-foreground" }}
-      className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+      className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors"
+      activeProps={{
+        className:
+          "text-white after:content-[''] after:absolute after:left-3 after:right-3 after:-bottom-[18px] after:h-[3px] after:rounded-t-sm after:bg-gradient-to-r after:from-[#F79220] after:to-[#E35D12]",
+      }}
     >
       {children}
     </Link>
   );
+}
+
+function getInitials(name: string): string {
+  if (!name) return "??";
+  const clean = name.trim().replace(/\./g, " ").replace(/\s+/g, " ");
+  const parts = clean.split(" ").filter(Boolean);
+  if (parts.length === 0) return "??";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
