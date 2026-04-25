@@ -65,7 +65,7 @@ function AdminUsersPage() {
   return (
     <PageShell>
       <h1 className="text-2xl font-bold">Usuários e permissões</h1>
-      <p className="text-sm text-muted-foreground">Atribua perfil de Supervisor ou Admin para cada usuário cadastrado.</p>
+      <p className="text-sm text-muted-foreground">Atribua perfil de Apoio RAC ou Dono RAC (Admin) para cada usuário cadastrado.</p>
 
       <Card className="mt-6">
         <CardContent className="p-0">
@@ -91,14 +91,14 @@ function AdminUsersPage() {
                       {u.roles.length === 0 && <span className="text-xs text-muted-foreground">Sem perfil</span>}
                       {u.roles.map((r) => (
                         <span key={r} className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                          <ShieldCheck className="h-3 w-3" />{r === "admin" ? "Admin" : "Supervisor"}
+                          <ShieldCheck className="h-3 w-3" />{r === "admin" ? "Dono RAC" : "Apoio RAC"}
                         </span>
                       ))}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
-                      <RoleToggle role="supervisor" active={u.roles.includes("supervisor")} onChange={(v) => setRole(u.id, "supervisor", v)} />
+                      <RoleToggle role="apoio" active={u.roles.includes("apoio")} onChange={(v) => setRole(u.id, "apoio", v)} />
                       <RoleToggle role="admin" active={u.roles.includes("admin")} onChange={(v) => setRole(u.id, "admin", v)} />
                     </div>
                   </TableCell>
@@ -120,7 +120,7 @@ function RoleToggle({ role, active, onChange }: { role: AppRole; active: boolean
   return (
     <Button size="sm" variant={active ? "default" : "outline"} onClick={() => onChange(!active)} className={active ? "bg-brand-gradient text-white" : ""}>
       {active ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
-      {role === "admin" ? "Admin" : "Supervisor"}
+      {role === "admin" ? "Dono RAC" : "Apoio RAC"}
     </Button>
   );
 }

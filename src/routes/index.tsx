@@ -87,7 +87,7 @@ function HomePage() {
         <Feature
           icon={<ShieldCheck className="h-5 w-5" />}
           title="3 níveis de acesso"
-          desc="Visualizador (público), Supervisor (cria e aplica), Admin/Dono de RAC (controle total)."
+          desc="Visualização (público), Apoio RAC (cadastra e transfere), Dono RAC (controle total)."
         />
         <Feature
           icon={<Users className="h-5 w-5" />}

@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      configuracoes: {
+        Row: {
+          chave: string
+          updated_at: string
+          updated_by: string | null
+          valor: string | null
+        }
+        Insert: {
+          chave: string
+          updated_at?: string
+          updated_by?: string | null
+          valor?: string | null
+        }
+        Update: {
+          chave?: string
+          updated_at?: string
+          updated_by?: string | null
+          valor?: string | null
+        }
+        Relationships: []
+      }
       padlock_events: {
         Row: {
           action: string
@@ -66,6 +87,11 @@ export type Database = {
           applied_at: string | null
           applied_by: string | null
           applied_by_name: string | null
+          cancellation_detail: string | null
+          cancellation_reason: string | null
+          cancelled: boolean
+          cancelled_at: string | null
+          cancelled_by: string | null
           code: string
           color: Database["public"]["Enums"]["padlock_color"]
           created_at: string
@@ -88,6 +114,11 @@ export type Database = {
           applied_at?: string | null
           applied_by?: string | null
           applied_by_name?: string | null
+          cancellation_detail?: string | null
+          cancellation_reason?: string | null
+          cancelled?: boolean
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           code: string
           color: Database["public"]["Enums"]["padlock_color"]
           created_at?: string
@@ -110,6 +141,11 @@ export type Database = {
           applied_at?: string | null
           applied_by?: string | null
           applied_by_name?: string | null
+          cancellation_detail?: string | null
+          cancellation_reason?: string | null
+          cancelled?: boolean
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           code?: string
           color?: Database["public"]["Enums"]["padlock_color"]
           created_at?: string
@@ -190,7 +226,7 @@ export type Database = {
       is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "supervisor"
+      app_role: "admin" | "apoio"
       padlock_color: "azul" | "amarelo" | "latao" | "vermelho"
       padlock_status: "disponivel" | "aplicado"
     }
@@ -320,7 +356,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "supervisor"],
+      app_role: ["admin", "apoio"],
       padlock_color: ["azul", "amarelo", "latao", "vermelho"],
       padlock_status: ["disponivel", "aplicado"],
     },
