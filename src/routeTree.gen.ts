@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
@@ -16,6 +17,11 @@ import { Route as CadeadosIndexRouteImport } from './routes/cadeados.index'
 import { Route as CadeadosCodigoRouteImport } from './routes/cadeados.$codigo'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
   '/cadeados/': typeof CadeadosIndexRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
   '/cadeados': typeof CadeadosIndexRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
   '/cadeados/': typeof CadeadosIndexRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/reset-password'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
     | '/cadeados/'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/reset-password'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
     | '/cadeados'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/reset-password'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
     | '/cadeados/'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   CadeadosCodigoRoute: typeof CadeadosCodigoRoute
   CadeadosIndexRoute: typeof CadeadosIndexRoute
@@ -110,6 +123,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -159,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   CadeadosCodigoRoute: CadeadosCodigoRoute,
   CadeadosIndexRoute: CadeadosIndexRoute,

@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole = "admin" | "apoio";
 
+const VIEWER_KEY = "loto-viewer-mode";
+
 interface AuthState {
   user: User | null;
   session: Session | null;
@@ -12,6 +14,9 @@ interface AuthState {
   isAdmin: boolean;
   isApoio: boolean;
   isStaff: boolean;
+  isViewer: boolean;
+  enterViewerMode: () => void;
+  exitViewerMode: () => void;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
 }
@@ -23,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isViewer, setIsViewer] = useState<boolean>(false);
 
   const loadRoles = async (userId: string | undefined) => {
     if (!userId) {
@@ -34,6 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsViewer(sessionStorage.getItem(VIEWER_KEY) === "1");
+    }
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
@@ -56,6 +66,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isApoio = roles.includes("apoio");
   const isStaff = isAdmin || isApoio;
 
+  const enterViewerMode = () => {
+    if (typeof window !== "undefined") sessionStorage.setItem(VIEWER_KEY, "1");
+    setIsViewer(true);
+  };
+  const exitViewerMode = () => {
+    if (typeof window !== "undefined") sessionStorage.removeItem(VIEWER_KEY);
+    setIsViewer(false);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -66,8 +85,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         isApoio,
         isStaff,
+        isViewer,
+        enterViewerMode,
+        exitViewerMode,
         signOut: async () => {
           await supabase.auth.signOut();
+          exitViewerMode();
         },
         refreshRoles: () => loadRoles(user?.id),
       }}
