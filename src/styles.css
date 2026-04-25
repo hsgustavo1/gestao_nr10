@@ -157,7 +157,16 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  .font-mono,
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 }
 
@@ -182,3 +191,82 @@
 @utility border-brand {
   border-color: var(--atvos-orange-mid);
 }
+
+/* === Atvos brand utilities === */
+
+/* Topbar fixa azul-marinho Atvos (sempre dark, mesmo em tema claro) */
+@utility atvos-topbar {
+  background-color: #0A2D48;
+  color: #ffffff;
+}
+
+/* Régua decorativa: faixa horizontal 3px com gradiente laranja → amarelo.
+   Assinatura visual obrigatória do manual Atvos. */
+@utility atvos-rule {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    #E35D12 0%,
+    #F47920 35%,
+    #F79220 65%,
+    #FAC800 100%
+  );
+}
+
+/* Wordmark "atvos." — branco com ponto laranja, peso 800, tracking apertado */
+@utility atvos-wordmark {
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #ffffff;
+}
+
+/* Avatar com iniciais (gradiente laranja) */
+@utility atvos-avatar {
+  background: linear-gradient(135deg, #F79220, #E35D12);
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Underline laranja para item de nav ativo */
+@utility nav-active-underline {
+  position: relative;
+}
+@utility nav-active-underline::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: -0.25rem;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #F79220, #E35D12);
+}
+
+/* Badges de cor de cadeado — paleta exata do manual */
+.badge-azul {
+  background-color: #E2EEFA;
+  color: #0B4A8A;
+}
+.badge-azul-dot { background-color: #2174C9; }
+
+.badge-amarelo {
+  background-color: #FFF4D6;
+  color: #7A5500;
+}
+.badge-amarelo-dot { background-color: #E8B800; }
+
+.badge-vermelho {
+  background-color: #FFE3DF;
+  color: #8B1A0E;
+}
+.badge-vermelho-dot { background-color: #D42E1B; }
+
+.badge-latao {
+  background-color: #F0EDE3;
+  color: #5A5236;
+}
+.badge-latao-dot { background-color: #A89660; }
