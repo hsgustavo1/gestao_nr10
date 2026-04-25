@@ -235,7 +235,7 @@
 @utility nav-active-underline {
   position: relative;
 }
-@utility nav-active-underline::after {
+.nav-active-underline::after {
   content: "";
   position: absolute;
   left: 0.75rem;
