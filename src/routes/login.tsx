@@ -113,7 +113,7 @@ function LoginPage() {
                 {loading ? "Aguarde..." : mode === "signin" ? "Entrar" : "Criar conta"}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
-                A visualização do dashboard é pública — login só para Supervisor e Admin.
+                A visualização do dashboard é pública — login só para Apoio RAC e Dono RAC.
               </p>
             </form>
           </CardContent>

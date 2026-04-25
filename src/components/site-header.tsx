@@ -34,7 +34,7 @@ export function SiteHeader() {
             <>
               <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium">
                 <ShieldCheck className="h-3.5 w-3.5 text-accent" />
-                {isAdmin ? "Admin" : isStaff ? "Supervisor" : "Sem perfil"}
+                {isAdmin ? "Dono RAC" : isStaff ? "Apoio RAC" : "Visualização"}
               </span>
               <Button
                 variant="ghost"
