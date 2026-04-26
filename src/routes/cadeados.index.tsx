@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, FileDown } from "lucide-react";
+import * as XLSX from "xlsx";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -13,6 +15,8 @@ import {
   type Padlock, type PadlockColor,
 } from "@/lib/padlocks";
 import { NewPadlockDialog } from "@/components/new-padlock-dialog";
+
+type StatusFilter = "all" | "ativos" | "cancelados";
 
 export const Route = createFileRoute("/cadeados/")({
   component: PadlocksList,
@@ -24,6 +28,8 @@ function PadlocksList() {
   const [items, setItems] = useState<Padlock[]>([]);
   const [q, setQ] = useState("");
   const [colorFilter, setColorFilter] = useState<PadlockColor | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativos");
+  const [sectorFilter, setSectorFilter] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
 
   const reload = () => {
@@ -36,10 +42,22 @@ function PadlocksList() {
   };
   useEffect(reload, []);
 
+  const sectors = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of items) {
+      const v = (p.owner_sector ?? "").trim();
+      if (v) s.add(v);
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [items]);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return items.filter((p) => {
       if (colorFilter !== "all" && p.color !== colorFilter) return false;
+      if (statusFilter === "ativos" && p.cancelled) return false;
+      if (statusFilter === "cancelados" && !p.cancelled) return false;
+      if (sectorFilter !== "all" && (p.owner_sector ?? "") !== sectorFilter) return false;
       if (!term) return true;
       return (
         String(p.number).includes(term) ||
@@ -49,7 +67,27 @@ function PadlocksList() {
         (p.owner_sector ?? "").toLowerCase().includes(term)
       );
     });
-  }, [items, q, colorFilter]);
+  }, [items, q, colorFilter, statusFilter, sectorFilter]);
+
+  const exportExcel = () => {
+    const rows = filtered.map((p) => ({
+      "Nº": p.number,
+      "Cor": colorLabel[p.color],
+      "Status": p.cancelled ? "Cancelado" : "Ativo",
+      "Dono": p.owner_name ?? "",
+      "Matrícula": p.owner_registration ?? "",
+      "Função": p.owner_role ?? "",
+      "Setor": p.owner_sector ?? "",
+      "Telefone": p.owner_phone ?? "",
+      "Motivo cancelamento": p.cancellation_reason ?? "",
+      "Data registro": p.created_at ? new Date(p.created_at).toLocaleDateString("pt-BR") : "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Cadeados");
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `cadeados_${today}.xlsx`);
+  };
 
   return (
     <PageShell>
@@ -58,24 +96,46 @@ function PadlocksList() {
           <h1 className="text-2xl font-bold">Cadeados</h1>
           <p className="text-sm text-muted-foreground">{items.length} registrados · {filtered.length} exibidos</p>
         </div>
-        {isStaff && (
-          <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-            <Plus className="h-4 w-4" /> Novo cadeado
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportExcel} disabled={filtered.length === 0}>
+            <FileDown className="h-4 w-4" /> Exportar Excel
           </Button>
-        )}
+          {isStaff && (
+            <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
+              <Plus className="h-4 w-4" /> Novo cadeado
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="mt-5 flex gap-3 flex-wrap">
+      <div className="mt-5 flex gap-3 flex-wrap items-center">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por número, dono, matrícula ou setor" className="pl-9" />
         </div>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+          <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ativos">Ativos</SelectItem>
+            <SelectItem value="cancelados">Cancelados</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sectorFilter} onValueChange={setSectorFilter}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Setor" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os setores</SelectItem>
+            {sectors.map((s) => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex gap-1 rounded-lg bg-secondary p-1">
           <button
             onClick={() => setColorFilter("all")}
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${colorFilter === "all" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
           >
-            Todas as cores
+            Todas
           </button>
           {PADLOCK_COLORS.map((c) => (
             <button
@@ -97,6 +157,7 @@ function PadlocksList() {
               <TableRow>
                 <TableHead>Cor</TableHead>
                 <TableHead>Número</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Dono</TableHead>
                 <TableHead>Matrícula</TableHead>
                 <TableHead>Função</TableHead>
@@ -107,13 +168,13 @@ function PadlocksList() {
             <TableBody>
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
                     Nenhum cadeado encontrado.
                   </TableCell>
                 </TableRow>
               )}
               {filtered.map((p) => (
-                <TableRow key={p.id} className="cursor-pointer">
+                <TableRow key={p.id} className={`cursor-pointer ${p.cancelled ? "bg-[#FDECEA]/40 opacity-70" : ""}`}>
                   <TableCell>
                     <Link to="/cadeados/$codigo" params={{ codigo: p.code }} className="inline-flex items-center gap-2 hover:underline">
                       <span className={`h-3.5 w-3.5 rounded-full border ${colorSwatch[p.color]}`} />
@@ -126,6 +187,17 @@ function PadlocksList() {
                     <Link to="/cadeados/$codigo" params={{ codigo: p.code }} className="font-mono font-semibold tabular-nums hover:underline">
                       {p.number}
                     </Link>
+                  </TableCell>
+                  <TableCell>
+                    {p.cancelled ? (
+                      <span className="inline-flex items-center rounded-full border border-[#D42E1B]/40 bg-[#FFE3DF] px-2 py-0.5 text-xs font-medium text-[#8B1A0E]">
+                        Cancelado
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#0F7A47]">
+                        <span className="h-2 w-2 rounded-full bg-[#0F7A47]" /> Ativo
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">{p.owner_name || (p.color === "vermelho" ? <span className="text-muted-foreground">—</span> : "—")}</TableCell>
                   <TableCell className="text-sm font-mono">{p.owner_registration || "—"}</TableCell>
