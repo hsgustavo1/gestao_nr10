@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, Pencil, Trash2, History, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft, Lock, Pencil, Trash2, History, ArrowLeftRight, XCircle, AlertTriangle } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { CancelPadlockDialog } from "@/components/cancel-padlock-dialog";
+import { DeletePadlockDialog } from "@/components/delete-padlock-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -38,6 +36,7 @@ function PadlockDetail() {
   const [loading, setLoading] = useState(true);
   const [openTransfer, setOpenTransfer] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+  const [openCancel, setOpenCancel] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
 
   async function reload() {
@@ -67,6 +66,7 @@ function PadlockDetail() {
   }
 
   const isRed = padlock.color === "vermelho";
+  const isCancelled = padlock.cancelled;
 
   return (
     <PageShell>
@@ -88,19 +88,43 @@ function PadlockDetail() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {isStaff && !isRed && (
+          {isStaff && !isRed && !isCancelled && (
             <Button onClick={() => setOpenTransfer(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
               <ArrowLeftRight className="h-4 w-4" /> Transferir dono
             </Button>
           )}
+          {isAdmin && !isCancelled && (
+            <Button onClick={() => setOpenEdit(true)} variant="ghost"><Pencil className="h-4 w-4" /> Editar</Button>
+          )}
+          {isStaff && !isCancelled && (
+            <Button onClick={() => setOpenCancel(true)} variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10">
+              <XCircle className="h-4 w-4" /> Cancelar
+            </Button>
+          )}
           {isAdmin && (
-            <>
-              <Button onClick={() => setOpenEdit(true)} variant="ghost"><Pencil className="h-4 w-4" /> Editar</Button>
-              <Button onClick={() => setOpenDelete(true)} variant="ghost" className="text-red-600 hover:text-red-700"><Trash2 className="h-4 w-4" /> Excluir</Button>
-            </>
+            <Button onClick={() => setOpenDelete(true)} variant="ghost" className="text-destructive hover:text-destructive">
+              <Trash2 className="h-4 w-4" /> Excluir permanentemente
+            </Button>
           )}
         </div>
       </div>
+
+      {isCancelled && (
+        <div className="mt-5 flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="font-semibold text-destructive">Cadeado cancelado</div>
+            <div className="text-muted-foreground">
+              Motivo: <strong className="text-foreground">{padlock.cancellation_reason ?? "—"}</strong>
+              {padlock.cancellation_detail && <> — {padlock.cancellation_detail}</>}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Cancelado em {formatDateTime(padlock.cancelled_at)}.
+              O número está liberado para reuso em um novo cadastro.
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Card><CardContent className="p-5 space-y-3">
@@ -158,33 +182,8 @@ function PadlockDetail() {
 
       <TransferDialog open={openTransfer} onOpenChange={setOpenTransfer} padlock={padlock} onDone={reload} />
       <EditDialog open={openEdit} onOpenChange={setOpenEdit} padlock={padlock} onDone={reload} onCodeChanged={(newCode) => navigate({ to: "/cadeados/$codigo", params: { codigo: newCode } })} />
-      <AlertDialog open={openDelete} onOpenChange={setOpenDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir cadeado {colorLabel[padlock.color]} #{padlock.number}?</AlertDialogTitle>
-            <AlertDialogDescription>O registro será removido. O histórico permanecerá no log de auditoria.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                await logEvent({
-                  padlock_id: padlock.id, padlock_code: padlock.code, action: "deleted",
-                  actor_id: user?.id ?? null, actor_name: user?.email ?? null,
-                  previous_data: padlock,
-                });
-                const { error } = await supabase.from("padlocks").delete().eq("id", padlock.id);
-                if (error) return toast.error(error.message);
-                toast.success("Cadeado excluído");
-                navigate({ to: "/cadeados" });
-              }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CancelPadlockDialog open={openCancel} onOpenChange={setOpenCancel} padlock={padlock} onDone={reload} />
+      <DeletePadlockDialog open={openDelete} onOpenChange={setOpenDelete} padlock={padlock} onDeleted={() => navigate({ to: "/cadeados" })} />
     </PageShell>
   );
 }

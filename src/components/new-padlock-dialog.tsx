@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { ArrowLeftRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { logEvent, PADLOCK_COLORS, colorLabel, colorSwatch, type PadlockColor } from "@/lib/padlocks";
+import { logEvent, PADLOCK_COLORS, colorLabel, colorSwatch, type Padlock, type PadlockColor } from "@/lib/padlocks";
 
 const baseSchema = z.object({
   color: z.enum(["azul", "amarelo", "latao", "vermelho"]),
@@ -30,12 +31,14 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
   const [ownerSector, setOwnerSector] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [conflict, setConflict] = useState<{ kind: "number" | "registration"; existing: Padlock } | null>(null);
 
   const isRed = color === "vermelho";
 
   function reset() {
     setColor("azul"); setNumber(""); setOwnerName(""); setOwnerReg("");
     setOwnerRole(""); setOwnerSector(""); setOwnerPhone("");
+    setConflict(null);
   }
 
   async function submit(e: FormEvent) {
@@ -57,6 +60,35 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
     }
 
     setLoading(true);
+
+    // 1) Pré-check de conflitos para oferecer transferência ao invés de erro cru
+    //    (a) cor+numero ativo
+    const { data: byNumber } = await supabase
+      .from("padlocks").select("*")
+      .eq("color", parsed.data.color)
+      .eq("number", parsed.data.number)
+      .eq("cancelled", false)
+      .maybeSingle();
+    if (byNumber) {
+      setLoading(false);
+      setConflict({ kind: "number", existing: byNumber });
+      return;
+    }
+    //    (b) matrícula azul/latão ativo
+    if (!isRed && (parsed.data.color === "azul" || parsed.data.color === "latao") && parsed.data.owner_registration) {
+      const { data: byReg } = await supabase
+        .from("padlocks").select("*")
+        .eq("color", parsed.data.color)
+        .eq("owner_registration", parsed.data.owner_registration)
+        .eq("cancelled", false)
+        .maybeSingle();
+      if (byReg) {
+        setLoading(false);
+        setConflict({ kind: "registration", existing: byReg });
+        return;
+      }
+    }
+
     // code é gerado pelo trigger no banco; aqui passamos um placeholder consistente
     const code = `${parsed.data.color}-${parsed.data.number}`;
     const { data, error } = await supabase
@@ -90,6 +122,46 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
     onCreated();
   }
 
+  async function transferToCurrentForm() {
+    if (!conflict) return;
+    if (isRed) return; // sem dados de dono em vermelho
+    setLoading(true);
+    const previous = conflict.existing;
+    const newOwner = {
+      owner_name: ownerName.trim() || null,
+      owner_registration: ownerReg.trim() || null,
+      owner_role: ownerRole.trim() || null,
+      owner_sector: ownerSector.trim(),
+      owner_phone: ownerPhone.trim() || null,
+    };
+    const { data, error } = await supabase
+      .from("padlocks")
+      .update(newOwner)
+      .eq("id", previous.id)
+      .select()
+      .single();
+    if (error || !data) {
+      setLoading(false);
+      return toast.error(translateError(error?.message ?? "Erro ao transferir"));
+    }
+    await logEvent({
+      padlock_id: previous.id, padlock_code: previous.code, action: "transferred",
+      actor_id: user?.id ?? null, actor_name: user?.email ?? null,
+      previous_data: {
+        owner_name: previous.owner_name, owner_registration: previous.owner_registration,
+        owner_role: previous.owner_role, owner_sector: previous.owner_sector,
+        owner_phone: previous.owner_phone,
+      },
+      new_data: newOwner,
+      notes: `Transferência originada do fluxo "Novo cadeado" (conflito de ${conflict.kind === "number" ? "número" : "matrícula"}).`,
+    });
+    toast.success("Cadeado transferido para o novo dono");
+    reset();
+    setLoading(false);
+    onOpenChange(false);
+    onCreated();
+  }
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-lg">
@@ -97,6 +169,16 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
           <DialogTitle>Novo cadeado</DialogTitle>
           <DialogDescription>Cadastre cor, número e dados do dono. Cadeados vermelhos exigem apenas número e setor.</DialogDescription>
         </DialogHeader>
+
+        {conflict ? (
+          <ConflictPanel
+            conflict={conflict}
+            isRed={isRed}
+            loading={loading}
+            onBack={() => setConflict(null)}
+            onTransfer={transferToCurrentForm}
+          />
+        ) : (
         <form onSubmit={submit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -158,8 +240,66 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
             </Button>
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ConflictPanel({
+  conflict, isRed, loading, onBack, onTransfer,
+}: {
+  conflict: { kind: "number" | "registration"; existing: Padlock };
+  isRed: boolean;
+  loading: boolean;
+  onBack: () => void;
+  onTransfer: () => void;
+}) {
+  const p = conflict.existing;
+  const reason = conflict.kind === "number"
+    ? `Já existe um cadeado ativo ${colorLabel[p.color]} #${p.number}.`
+    : `A matrícula ${p.owner_registration} já possui um cadeado ${colorLabel[p.color]} ativo (#${p.number}).`;
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+        <div className="font-semibold text-amber-700 dark:text-amber-300 mb-1">Conflito detectado</div>
+        <p className="text-foreground">{reason}</p>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <Info label="Dono atual" value={p.owner_name ?? "—"} />
+          <Info label="Matrícula" value={p.owner_registration ?? "—"} mono />
+          <Info label="Setor" value={p.owner_sector ?? "—"} />
+          <Info label="Telefone" value={p.owner_phone ?? "—"} />
+        </div>
+      </div>
+      {isRed ? (
+        <p className="text-sm text-muted-foreground">
+          Cadeados vermelhos não suportam transferência (sem dono associado). Escolha outro número
+          ou cancele o cadeado existente antes de cadastrar um novo.
+        </p>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Você pode <strong>transferir o cadeado existente</strong> para o novo dono que digitou
+          acima — isso preserva o número e mantém a auditoria. Ou volte e ajuste os dados.
+        </p>
+      )}
+      <DialogFooter>
+        <Button type="button" variant="ghost" onClick={onBack}>Voltar e ajustar</Button>
+        {!isRed && (
+          <Button type="button" disabled={loading} onClick={onTransfer} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
+            <ArrowLeftRight className="h-4 w-4" /> {loading ? "Transferindo..." : "Transferir para novo dono"}
+          </Button>
+        )}
+      </DialogFooter>
+    </div>
+  );
+}
+
+function Info({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={`text-sm ${mono ? "font-mono" : ""}`}>{value}</div>
+    </div>
   );
 }
 
