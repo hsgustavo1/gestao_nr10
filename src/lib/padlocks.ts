@@ -23,10 +23,19 @@ export const colorSwatch: Record<PadlockColor, string> = {
 };
 
 export const colorBadge: Record<PadlockColor, string> = {
-  azul: "bg-[#1d4ed8]/15 text-[#1d4ed8] dark:text-[#93c5fd] border-[#1d4ed8]/30",
-  amarelo: "bg-[#facc15]/20 text-[#854d0e] dark:text-[#fde68a] border-[#a16207]/40",
-  latao: "bg-[#b08d57]/20 text-[#6b4f2a] dark:text-[#d4b483] border-[#b08d57]/40",
-  vermelho: "bg-[#dc2626]/15 text-[#b91c1c] dark:text-[#fca5a5] border-[#dc2626]/30",
+  // Cores extraídas do Manual de Sinalização Atvos
+  azul: "bg-[#E2EEFA] text-[#0B4A8A] border-[#2174C9]/40",
+  amarelo: "bg-[#FFF4D6] text-[#7A5500] border-[#E8B800]/50",
+  latao: "bg-[#F0EDE3] text-[#5A5236] border-[#A89660]/50",
+  vermelho: "bg-[#FFE3DF] text-[#8B1A0E] border-[#D42E1B]/40",
+};
+
+// Acento usado no topo dos cards do Painel
+export const colorAccent: Record<PadlockColor, string> = {
+  azul: "bg-[#2174C9]",
+  amarelo: "bg-[#E8B800]",
+  latao: "bg-[#A89660]",
+  vermelho: "bg-[#D42E1B]",
 };
 
 export function ownerRequiresAllFields(color: PadlockColor): boolean {
