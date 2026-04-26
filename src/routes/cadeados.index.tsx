@@ -20,7 +20,14 @@ type StatusFilter = "all" | "ativos" | "cancelados";
 
 export const Route = createFileRoute("/cadeados/")({
   component: PadlocksList,
-  head: () => ({ meta: [{ title: "Cadeados — LOTO Atvos" }] }),
+  head: () => ({
+    meta: [
+      { title: "Cadeados — LOTO Atvos" },
+      { name: "description", content: "Lista completa dos cadeados Atvos com filtros por cor, setor e status. Exporte para Excel." },
+      { property: "og:title", content: "Cadeados — LOTO Atvos" },
+      { property: "og:description", content: "Cadeados ativos e cancelados com filtros e exportação para Excel." },
+    ],
+  }),
 });
 
 function PadlocksList() {
