@@ -34,8 +34,7 @@ export function SiteHeader() {
 
           <nav className="hidden md:flex items-center gap-1">
             <NavLink to="/dashboard">Painel</NavLink>
-            <NavLink to="/cadeados">Consulta</NavLink>
-            {isStaff && <NavLink to="/cadeados">Cadastro</NavLink>}
+            <NavLink to="/cadeados">Cadeados</NavLink>
             {isAdmin && <NavLink to="/admin/usuarios">Usuários</NavLink>}
           </nav>
         </div>

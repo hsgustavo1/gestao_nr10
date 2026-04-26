@@ -14,7 +14,14 @@ import {
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
-  head: () => ({ meta: [{ title: "Dashboard — LOTO Atvos" }] }),
+  head: () => ({
+    meta: [
+      { title: "Painel — LOTO Atvos" },
+      { name: "description", content: "Painel de Lockout/Tagout: cadeados ativos, distribuição por setor e últimos eventos da operação Atvos." },
+      { property: "og:title", content: "Painel — LOTO Atvos" },
+      { property: "og:description", content: "Visão consolidada dos cadeados Atvos com ativos, cancelados e atividade recente." },
+    ],
+  }),
 });
 
 function DashboardPage() {
