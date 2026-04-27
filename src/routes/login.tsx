@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
-  head: () => ({ meta: [{ title: "Entrar — LOTO Atvos" }] }),
+  head: () => ({ meta: [{ title: "Entrar — Bloqueio de energias perigosas" }] }),
 });
 
 const schema = z.object({
@@ -84,29 +84,27 @@ function LoginPage() {
       {/* Hero azul Atvos */}
       <aside className="relative hidden lg:flex flex-col justify-between bg-brand-blue text-white p-12 overflow-hidden">
         <div className="absolute inset-y-0 right-0 w-1.5 bg-brand-gradient" />
-        <Link to="/" className="flex items-baseline gap-0">
-          <span className="atvos-wordmark">atvos</span>
-          <span className="atvos-wordmark text-[#F47920]">.</span>
-          <span className="ml-3 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">
-            Sistema LOTO
+        <Link to="/" className="flex items-center gap-0">
+          <span className="text-[14px] font-bold uppercase tracking-[0.05em] text-white">
+            RAC - Bloqueio de energias perigosas
           </span>
         </Link>
 
         <div className="relative z-10 max-w-md">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wider">
-            <ShieldCheck className="h-3.5 w-3.5" /> Lockout / Tagout
+            <ShieldCheck className="h-3.5 w-3.5" /> Bloqueio de energias perigosas
           </span>
           <h1 className="mt-4 text-4xl font-bold leading-tight">
             Segurança operacional <span className="text-brand-gradient">sob controle.</span>
           </h1>
           <p className="mt-4 text-white/75 text-sm leading-relaxed">
-            Acesse o painel de cadeados, registre aplicações, transfira propriedade e mantenha
+            Acesse o dashboard de dispositivos, registre novos itens, repasse a propriedade e mantenha
             auditoria imutável de cada bloqueio em campo.
           </p>
 
           <ul className="mt-6 space-y-2.5 text-sm text-white/80">
-            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#F79220]" /> 1 cadeado azul/latão por matrícula</li>
-            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#FAC800]" /> Histórico de transferências auditável</li>
+            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#F79220]" /> 1 dispositivo pessoal/equipamento por matrícula</li>
+            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#FAC800]" /> Linha do tempo auditável</li>
             <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#E35D12]" /> Etiquetas 12×7 cm prontas para impressão</li>
           </ul>
         </div>
@@ -120,11 +118,9 @@ function LoginPage() {
       <main className="flex flex-col justify-center px-6 py-10 sm:px-12 lg:px-16">
         <div className="mx-auto w-full max-w-md">
           {/* Brand mobile */}
-          <Link to="/" className="lg:hidden flex items-baseline gap-0 mb-8">
-            <span className="atvos-wordmark text-[#0A2D48]">atvos</span>
-            <span className="atvos-wordmark text-[#F47920]">.</span>
-            <span className="ml-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Sistema LOTO
+          <Link to="/" className="lg:hidden flex items-center gap-0 mb-8">
+             <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#0A2D48]">
+              RAC - Bloqueio de energias perigosas
             </span>
           </Link>
 
@@ -136,8 +132,8 @@ function LoginPage() {
               {mode === "forgot"
                 ? "Informe seu e-mail e enviaremos um link para redefinir a senha."
                 : mode === "signup"
-                ? "Após o cadastro, um Dono RAC precisa aprovar seu perfil."
-                : "Acesso para Apoio RAC e Dono RAC. Visualização é pública."}
+                ? "Após o cadastro, um Admin precisa aprovar seu perfil."
+                : "Acesso para Supervisor e Admin. A consulta é aberta."}
             </p>
           </div>
 
@@ -224,10 +220,10 @@ function LoginPage() {
             onClick={onViewer}
             className="w-full border-2"
           >
-            <Eye className="h-4 w-4" /> Acesso somente visualização
+            <Eye className="h-4 w-4" /> Acesso somente consulta
           </Button>
           <p className="mt-2 text-[11px] text-center text-muted-foreground">
-            Sem login. Você pode consultar cadeados e o painel, mas não pode editar.
+            Sem login. Você pode consultar dispositivos e o dashboard, mas não pode editar.
           </p>
 
           <div className="mt-8 text-center">
