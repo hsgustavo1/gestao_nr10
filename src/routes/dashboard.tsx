@@ -161,6 +161,7 @@ function DashboardPage() {
                       <div className="text-[11px] text-muted-foreground mt-0.5">
                         {formatDateTime(e.created_at)}
                         {e.actor_name && <> · {e.actor_name}</>}
+                        {ownerNameFor(e, padlocks) && <> · Dono: {ownerNameFor(e, padlocks)}</>}
                       </div>
                     </div>
                   </li>
@@ -205,4 +206,12 @@ function actionLabel(action: string) {
     created: "criado", updated: "editado", deleted: "excluído",
     transferred: "dono transferido", applied: "aplicado", released: "removido",
   } as Record<string, string>)[action] ?? action;
+}
+
+function ownerNameFor(e: PadlockEvent, padlocks: Padlock[]): string | null {
+  const fromNew = (e.new_data as { owner_name?: string } | null)?.owner_name;
+  const fromPrev = (e.previous_data as { owner_name?: string } | null)?.owner_name;
+  const fromPadlock = padlocks.find((p) => p.id === e.padlock_id)?.owner_name;
+  const name = fromNew ?? fromPadlock ?? fromPrev ?? null;
+  return name && name.trim().length > 0 ? name : null;
 }
