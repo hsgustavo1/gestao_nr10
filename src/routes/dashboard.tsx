@@ -103,7 +103,7 @@ function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Distribuição por Unidade
+                DISTRIBUIÇÃO POR SETOR
               </h2>
               <Link to="/cadeados" className="text-xs font-medium text-accent hover:underline inline-flex items-center gap-1">
                 Ver todos <ArrowRight className="h-3.5 w-3.5" />
