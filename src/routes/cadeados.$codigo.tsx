@@ -400,7 +400,7 @@ function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
-                <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
+                <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(formatPhoneBR(e.target.value))} inputMode="tel" placeholder="(XX) XXXXX-XXXX" maxLength={16} required /></div>
               </div>
             </>
           )}
