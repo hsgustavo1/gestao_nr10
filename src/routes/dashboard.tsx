@@ -161,6 +161,7 @@ function DashboardPage() {
                       <div className="text-[11px] text-muted-foreground mt-0.5">
                         {formatDateTime(e.created_at)}
                         {e.actor_name && <> · {e.actor_name}</>}
+                        {ownerNameFor(e, padlocks) && <> · Dono: {ownerNameFor(e, padlocks)}</>}
                       </div>
                     </div>
                   </li>
