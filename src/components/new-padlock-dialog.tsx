@@ -167,7 +167,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Novo Dispositivo</DialogTitle>
-          <DialogDescription>Cadastre cor, número e dados do responsável. Dispositivos de empréstimo exigem apenas número e unidade.</DialogDescription>
+          <DialogDescription>Cadastre cor, número e dados do dono. Dispositivos de empréstimo exigem apenas número e setor / empresa.</DialogDescription>
         </DialogHeader>
 
         {conflict ? (
@@ -204,7 +204,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="sector">Setor {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}</Label>
+            <Label htmlFor="sector">Setor / Empresa {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}</Label>
             <Input id="sector" value={ownerSector} onChange={(e) => setOwnerSector(e.target.value)} maxLength={100} required />
           </div>
 
@@ -212,11 +212,11 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="oname">Responsável</Label>
+                  <Label htmlFor="oname">Dono</Label>
                   <Input id="oname" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} maxLength={120} required />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="oreg">Matrícula / Empresa</Label>
+                  <Label htmlFor="oreg">Matrícula</Label>
                   <Input id="oreg" value={ownerReg} onChange={(e) => setOwnerReg(e.target.value)} maxLength={40} required />
                 </div>
               </div>
@@ -226,7 +226,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
                   <Input id="orole" value={ownerRole} onChange={(e) => setOwnerRole(e.target.value)} maxLength={80} required />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="ophone">Contato</Label>
+                  <Label htmlFor="ophone">Telefone</Label>
                   <Input id="ophone" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} maxLength={30} required />
                 </div>
               </div>
@@ -265,20 +265,20 @@ function ConflictPanel({
         <div className="font-semibold text-amber-700 dark:text-amber-300 mb-1">Conflito detectado</div>
         <p className="text-foreground">{reason}</p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-          <Info label="Responsável atual" value={p.owner_name ?? "—"} />
-          <Info label="Matrícula / Empresa" value={p.owner_registration ?? "—"} mono />
-          <Info label="Setor" value={p.owner_sector ?? "—"} />
-          <Info label="Contato" value={p.owner_phone ?? "—"} />
+          <Info label="Dono atual" value={p.owner_name ?? "—"} />
+          <Info label="Matrícula" value={p.owner_registration ?? "—"} mono />
+          <Info label="Setor / Empresa" value={p.owner_sector ?? "—"} />
+          <Info label="Telefone" value={p.owner_phone ?? "—"} />
         </div>
       </div>
       {isRed ? (
         <p className="text-sm text-muted-foreground">
-          Dispositivos de empréstimo não suportam repasse (sem responsável associado). Escolha outro número
+          Dispositivos de empréstimo não suportam repasse (sem dono associado). Escolha outro número
           ou realize a baixa do dispositivo existente antes de cadastrar um novo.
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Você pode <strong>repassar o dispositivo existente</strong> para o novo responsável que digitou
+          Você pode <strong>repassar o dispositivo existente</strong> para o novo dono que digitou
           acima — isso preserva o número e mantém a auditoria na linha do tempo. Ou volte e ajuste os dados.
         </p>
       )}

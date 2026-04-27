@@ -128,13 +128,13 @@ function PadlockDetail() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Card><CardContent className="p-5 space-y-3">
-          <Field label="Setor" value={padlock.owner_sector} />
+          <Field label="Setor / Empresa" value={padlock.owner_sector} />
           {!isRed && (
             <>
-              <Field label="Responsável" value={padlock.owner_name} />
-              <Field label="Matrícula / Empresa" value={padlock.owner_registration} mono />
+              <Field label="Dono" value={padlock.owner_name} />
+              <Field label="Matrícula" value={padlock.owner_registration} mono />
               <Field label="Função" value={padlock.owner_role} />
-              <Field label="Contato" value={padlock.owner_phone} />
+              <Field label="Telefone" value={padlock.owner_phone} />
             </>
           )}
           {isRed && (
@@ -287,20 +287,20 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
         <DialogHeader>
           <DialogTitle>Repassar dispositivo — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
           <DialogDescription>
-            Responsável atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
+            Dono atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
             A mudança fica registrada na linha do tempo.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Responsável</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
-            <div className="space-y-1.5"><Label>Matrícula / Empresa</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
+            <div className="space-y-1.5"><Label>Dono</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
+            <div className="space-y-1.5"><Label>Matrícula</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
-            <div className="space-y-1.5"><Label>Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
+            <div className="space-y-1.5"><Label>Setor / Empresa</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
           </div>
-          <div className="space-y-1.5"><Label>Contato</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
+          <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
           <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
