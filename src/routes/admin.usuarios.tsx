@@ -21,7 +21,7 @@ import { useAuth, type AppRole } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/admin/usuarios")({
   component: AdminUsersPage,
-  head: () => ({ meta: [{ title: "Usuários — LOTO Atvos" }] }),
+    head: () => ({ meta: [{ title: "Controle de acessos — Bloqueio de energias perigosas" }] }),
 });
 
 type Profile = { id: string; email: string | null; display_name: string | null };
@@ -56,7 +56,7 @@ function AdminUsersPage() {
         <div className="text-center py-16">
           <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
           <h1 className="mt-3 text-xl font-bold">Acesso restrito</h1>
-          <p className="text-sm text-muted-foreground mt-1">Apenas Admins (Donos de RAC) podem gerenciar usuários.</p>
+          <p className="text-sm text-muted-foreground mt-1">Apenas Admins podem gerenciar usuários e permissões.</p>
           <Button asChild variant="outline" className="mt-4"><Link to="/dashboard">Voltar</Link></Button>
         </div>
       </PageShell>
@@ -110,11 +110,11 @@ function AdminUsersPage() {
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Usuários e permissões</h1>
-          <p className="text-sm text-muted-foreground">Cadastre Apoios e Donos de RAC, gerencie permissões e envie redefinição de senha.</p>
+          <h1 className="text-2xl font-bold">Controle de acessos</h1>
+          <p className="text-sm text-muted-foreground">Cadastre Supervisores e Admins, gerencie permissões e envie redefinição de senha.</p>
         </div>
         <Button onClick={() => setOpenInvite(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-          <UserPlus className="h-4 w-4" /> Novo usuário
+          <UserPlus className="h-4 w-4" /> Novo Acesso
         </Button>
       </div>
 
@@ -145,7 +145,7 @@ function AdminUsersPage() {
                       {u.roles.length === 0 && <span className="text-xs text-muted-foreground">Sem perfil</span>}
                       {u.roles.map((r) => (
                         <span key={r} className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                          <ShieldCheck className="h-3 w-3" />{r === "admin" ? "Dono RAC" : "Apoio RAC"}
+                          <ShieldCheck className="h-3 w-3" />{r === "admin" ? "Admin" : "Supervisor"}
                         </span>
                       ))}
                     </div>
@@ -176,8 +176,8 @@ function AdminUsersPage() {
       </Card>
 
       <p className="text-xs text-muted-foreground mt-4">
-        Donos de RAC têm controle total. Apoios podem cadastrar, transferir e cancelar cadeados.
-        Você não pode rebaixar nem remover a si mesmo — peça a outro Dono de RAC.
+        Admins têm controle total. Supervisores podem cadastrar, repassar e realizar baixas de dispositivos.
+        Você não pode rebaixar nem remover a si mesmo — peça a outro Admin.
       </p>
 
       <InviteUserDialog open={openInvite} onOpenChange={setOpenInvite} onCreated={reload} />
@@ -216,7 +216,7 @@ function RoleToggle({ role, active, disabled, onChange }: { role: AppRole; activ
       className={active ? "bg-brand-gradient text-white" : ""}
     >
       {active ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
-      {role === "admin" ? "Dono RAC" : "Apoio RAC"}
+      {role === "admin" ? "Admin" : "Supervisor"}
     </Button>
   );
 }
@@ -255,7 +255,7 @@ function InviteUserDialog({ open, onOpenChange, onCreated }: { open: boolean; on
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Novo usuário</DialogTitle>
+          <DialogTitle>Novo Acesso</DialogTitle>
           <DialogDescription>
             Crie a conta diretamente — o usuário poderá entrar imediatamente com a senha definida e
             redefini-la depois pelo fluxo de "Esqueci minha senha".
@@ -280,15 +280,15 @@ function InviteUserDialog({ open, onOpenChange, onCreated }: { open: boolean; on
             <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="apoio">Apoio RAC</SelectItem>
-                <SelectItem value="admin">Dono RAC</SelectItem>
+                <SelectItem value="apoio">Supervisor</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              {loading ? "Criando..." : "Criar usuário"}
+              {loading ? "Criando..." : "Liberar Acesso"}
             </Button>
           </DialogFooter>
         </form>
