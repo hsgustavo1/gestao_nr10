@@ -86,31 +86,24 @@ function LoginPage() {
         <div className="absolute inset-y-0 right-0 w-1.5 bg-brand-gradient" />
         <Link to="/" className="flex items-center gap-0">
           <span className="text-[14px] font-bold uppercase tracking-[0.05em] text-white">
-            RAC - Bloqueio de energias perigosas
+            
           </span>
         </Link>
 
         <div className="relative z-10 max-w-md">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wider">
-            <ShieldCheck className="h-3.5 w-3.5" /> Bloqueio de energias perigosas
+            <ShieldCheck className="h-3.5 w-3.5" /> 
           </span>
           <h1 className="mt-4 text-4xl font-bold leading-tight">
-            Segurança operacional <span className="text-brand-gradient">sob controle.</span>
+            Bloqueio de energias perigosas <span className="text-brand-gradient">salva vidas.</span>
           </h1>
           <p className="mt-4 text-white/75 text-sm leading-relaxed">
-            Acesse o dashboard de dispositivos, registre novos itens, repasse a propriedade e mantenha
-            auditoria imutável de cada bloqueio em campo.
+            
           </p>
-
-          <ul className="mt-6 space-y-2.5 text-sm text-white/80">
-            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#F79220]" /> 1 dispositivo pessoal/equipamento por matrícula</li>
-            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#FAC800]" /> Linha do tempo auditável</li>
-            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#E35D12]" /> Etiquetas 12×7 cm prontas para impressão</li>
-          </ul>
         </div>
 
         <div className="text-[11px] uppercase tracking-wider text-white/45">
-          Manual de Sinalização Atvos · Segurança Operacional
+          
         </div>
       </aside>
 
@@ -120,7 +113,7 @@ function LoginPage() {
           {/* Brand mobile */}
           <Link to="/" className="lg:hidden flex items-center gap-0 mb-8">
              <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#0A2D48]">
-              RAC - Bloqueio de energias perigosas
+              
             </span>
           </Link>
 
