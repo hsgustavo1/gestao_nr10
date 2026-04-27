@@ -90,7 +90,7 @@ function PadlockDetail() {
         <div className="flex gap-2 flex-wrap">
           {isStaff && !isRed && !isCancelled && (
             <Button onClick={() => setOpenTransfer(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              <ArrowLeftRight className="h-4 w-4" /> Repassar dispositivo
+              <ArrowLeftRight className="h-4 w-4" /> Transferir cadeado
             </Button>
           )}
           {isAdmin && !isCancelled && (
@@ -98,12 +98,12 @@ function PadlockDetail() {
           )}
           {isStaff && !isCancelled && (
             <Button onClick={() => setOpenCancel(true)} variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10">
-              <XCircle className="h-4 w-4" /> Baixa de Etiqueta
+              <XCircle className="h-4 w-4" /> Cancelar cadeado
             </Button>
           )}
           {isAdmin && (
             <Button onClick={() => setOpenDelete(true)} variant="ghost" className="text-destructive hover:text-destructive">
-              <Trash2 className="h-4 w-4" /> Eliminar Definitivamente
+              <Trash2 className="h-4 w-4" /> Eliminar registro
             </Button>
           )}
         </div>
@@ -276,7 +276,7 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
         ? `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
         : `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
     });
-    toast.success("Dispositivo repassado");
+    toast.success("Cadeado transferido");
     setLoading(false); onOpenChange(false); onDone();
     setName(""); setReg(""); setRole(""); setSector(""); setPhone(""); setNotes("");
   }
@@ -285,7 +285,7 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Repassar dispositivo — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
+          <DialogTitle>Transferir cadeado — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
           <DialogDescription>
             Dono atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
             A mudança fica registrada na linha do tempo.
@@ -304,7 +304,7 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
           <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Repassar"}</Button>
+            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Transferir"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
