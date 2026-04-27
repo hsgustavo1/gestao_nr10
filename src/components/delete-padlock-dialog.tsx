@@ -34,7 +34,7 @@ export function DeletePadlockDialog({
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!isAdmin) return toast.error("Apenas administradores podem excluir permanentemente");
+    if (!isAdmin) return toast.error("Apenas administradores podem eliminar definitivamente");
     if (!user?.email) return toast.error("Sessão inválida");
     if (!password) return toast.error("Informe sua senha de administrador");
 
@@ -57,7 +57,7 @@ export function DeletePadlockDialog({
       actor_id: user.id,
       actor_name: user.email,
       previous_data: padlock,
-      notes: "Exclusão permanente confirmada com senha de administrador",
+      notes: "Eliminação definitiva confirmada com senha de administrador",
     });
 
     // 3) DELETE
@@ -66,7 +66,7 @@ export function DeletePadlockDialog({
       setLoading(false);
       return toast.error(error.message);
     }
-    toast.success("Cadeado excluído permanentemente");
+    toast.success("Dispositivo eliminado permanentemente");
     reset();
     onOpenChange(false);
     onDeleted();
@@ -78,14 +78,14 @@ export function DeletePadlockDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
             <ShieldAlert className="h-5 w-5" />
-            Excluir permanentemente
+            Eliminar Definitivamente
           </DialogTitle>
           <DialogDescription>
-            Esta ação é <strong>irreversível</strong>. O cadeado{" "}
+            Esta ação é <strong>irreversível</strong>. O dispositivo{" "}
             <strong>{colorLabel[padlock.color]} #{padlock.number}</strong>{" "}
-            será apagado do banco. O histórico de auditoria permanece preservado.
+            será apagado do banco. A linha do tempo de auditoria permanece preservada.
             <br />
-            Em geral, prefira <em>Cancelar</em> em vez de excluir.
+            Em geral, prefira realizar a <em>Baixa</em> em vez de eliminar.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
@@ -104,7 +104,7 @@ export function DeletePadlockDialog({
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Voltar</Button>
             <Button type="submit" disabled={loading} variant="destructive">
-              {loading ? "Excluindo..." : "Excluir permanentemente"}
+              {loading ? "Processando..." : "Eliminar Definitivamente"}
             </Button>
           </DialogFooter>
         </form>

@@ -12,10 +12,10 @@ import { useAuth } from "@/lib/auth-context";
 import { logEvent, colorLabel, type Padlock } from "@/lib/padlocks";
 
 const REASONS = [
-  "Perda do cadeado",
+  "Perda do dispositivo",
   "Quebra/danificado",
   "Desligamento do colaborador",
-  "Troca por novo cadeado",
+  "Troca por novo dispositivo",
   "Erro de cadastro",
   "Outro",
 ] as const;
@@ -58,7 +58,7 @@ export function CancelPadlockDialog({
       .single();
     if (error || !data) {
       setLoading(false);
-      return toast.error(error?.message ?? "Erro ao cancelar cadeado");
+      return toast.error(error?.message ?? "Erro ao realizar baixa");
     }
     await logEvent({
       padlock_id: padlock.id,
@@ -70,7 +70,7 @@ export function CancelPadlockDialog({
       new_data: data,
       notes: `Cancelado — motivo: ${reason}${detail.trim() ? ` — ${detail.trim()}` : ""}`,
     });
-    toast.success("Cadeado cancelado");
+    toast.success("Baixa realizada com sucesso");
     reset();
     onOpenChange(false);
     onDone();
@@ -80,15 +80,15 @@ export function CancelPadlockDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Cancelar {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
+          <DialogTitle>Baixa de Etiqueta — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
           <DialogDescription>
-            O cadeado fica marcado como <strong>cancelado</strong>, libera o número/matrícula
-            para reuso e permanece no histórico para auditoria.
+            O dispositivo fica marcado como <strong>baixado</strong>, libera o número/matrícula
+            para reuso e permanece na linha do tempo para auditoria.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1.5">
-            <Label>Motivo</Label>
+            <Label>Motivo da baixa</Label>
             <Select value={reason} onValueChange={setReason}>
               <SelectTrigger><SelectValue placeholder="Selecione um motivo" /></SelectTrigger>
               <SelectContent>
@@ -113,7 +113,7 @@ export function CancelPadlockDialog({
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Voltar</Button>
             <Button type="submit" disabled={loading} variant="destructive">
-              {loading ? "Cancelando..." : "Confirmar cancelamento"}
+              {loading ? "Processando..." : "Confirmar baixa"}
             </Button>
           </DialogFooter>
         </form>
