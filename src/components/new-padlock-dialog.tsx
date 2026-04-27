@@ -204,7 +204,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="sector">Unidade / Setor {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}</Label>
+            <Label htmlFor="sector">Setor {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}</Label>
             <Input id="sector" value={ownerSector} onChange={(e) => setOwnerSector(e.target.value)} maxLength={100} required />
           </div>
 
@@ -267,7 +267,7 @@ function ConflictPanel({
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
           <Info label="Responsável atual" value={p.owner_name ?? "—"} />
           <Info label="Matrícula / Empresa" value={p.owner_registration ?? "—"} mono />
-          <Info label="Unidade / Setor" value={p.owner_sector ?? "—"} />
+          <Info label="Setor" value={p.owner_sector ?? "—"} />
           <Info label="Contato" value={p.owner_phone ?? "—"} />
         </div>
       </div>
