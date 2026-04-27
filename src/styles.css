@@ -282,17 +282,23 @@
     margin: 0 !important;
     padding: 0 !important;
   }
-  /* Esconde toda a app */
-  body > #root {
-    display: none !important;
+  /* Esconde tudo */
+  body * {
+    visibility: hidden !important;
   }
-  /* Mostra apenas a etiqueta */
+  /* Mostra apenas a etiqueta e seus filhos */
+  .print-label-root,
+  .print-label-root * {
+    visibility: visible !important;
+  }
   .print-label-root {
     display: block !important;
     position: fixed;
-    inset: 0;
+    left: 0;
+    top: 0;
     width: 12cm;
     height: 7cm;
+    z-index: 999999;
   }
   .print-label-root .label-card {
     box-shadow: none !important;
