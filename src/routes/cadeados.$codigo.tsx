@@ -17,7 +17,7 @@ import { DeletePadlockDialog } from "@/components/delete-padlock-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
-  formatDateTime, logEvent, PADLOCK_COLORS,
+  formatDateTime, formatPhoneBR, logEvent, PADLOCK_COLORS,
   colorBadge, colorLabel, colorSwatch,
   type Padlock, type PadlockEvent, type PadlockColor,
 } from "@/lib/padlocks";
@@ -134,7 +134,7 @@ function PadlockDetail() {
               <Field label="Dono" value={padlock.owner_name} />
               <Field label="Matrícula" value={padlock.owner_registration} mono />
               <Field label="Função" value={padlock.owner_role} />
-              <Field label="Telefone" value={padlock.owner_phone} />
+              <Field label="Telefone" value={padlock.owner_phone ? formatPhoneBR(padlock.owner_phone) : null} />
             </>
           )}
           {isRed && (
@@ -300,7 +300,7 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
             <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
             <div className="space-y-1.5"><Label>Setor / Empresa</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
           </div>
-          <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
+          <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(formatPhoneBR(e.target.value))} inputMode="tel" placeholder="(XX) XXXXX-XXXX" maxLength={16} required /></div>
           <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
