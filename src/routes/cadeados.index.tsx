@@ -84,7 +84,7 @@ function PadlocksList() {
       "Dono": p.owner_name ?? "",
       "Matrícula": p.owner_registration ?? "",
       "Função": p.owner_role ?? "",
-      "Setor": p.owner_sector ?? "",
+      "Setor / Empresa": p.owner_sector ?? "",
       "Telefone": p.owner_phone ?? "",
       "Motivo cancelamento": p.cancellation_reason ?? "",
       "Data registro": p.created_at ? new Date(p.created_at).toLocaleDateString("pt-BR") : "",
