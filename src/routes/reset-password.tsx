@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPasswordPage,
-  head: () => ({ meta: [{ title: "Redefinir senha — LOTO Atvos" }] }),
+  head: () => ({ meta: [{ title: "Redefinir senha — Bloqueio de energias perigosas" }] }),
 });
 
 const schema = z
@@ -66,11 +66,9 @@ function ResetPasswordPage() {
   return (
     <div className="min-h-screen grid place-items-center bg-brand-blue px-4 py-10">
       <div className="w-full max-w-md">
-        <Link to="/" className="flex items-baseline justify-center gap-0 mb-6">
-          <span className="atvos-wordmark">atvos</span>
-          <span className="atvos-wordmark text-[#F47920]">.</span>
-          <span className="ml-3 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">
-            Sistema LOTO
+        <Link to="/" className="flex items-center justify-center gap-0 mb-6">
+          <span className="text-[14px] font-bold uppercase tracking-[0.05em] text-white">
+            RAC - Bloqueio de energias perigosas
           </span>
         </Link>
 

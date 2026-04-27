@@ -31,9 +31,9 @@ export function SiteHeader() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
-            <NavLink to="/dashboard">Monitoramento</NavLink>
-            <NavLink to="/cadeados">Dispositivos de Bloqueio</NavLink>
-            {isAdmin && <NavLink to="/admin/usuarios">Usuários e permissões</NavLink>}
+            <NavLink to="/dashboard">Dashboard</NavLink>
+            <NavLink to="/cadeados">Base de dados</NavLink>
+            {isAdmin && <NavLink to="/admin/usuarios">Controle de acessos</NavLink>}
           </nav>
         </div>
 

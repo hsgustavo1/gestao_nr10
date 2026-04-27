@@ -12,7 +12,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
       <div className="atvos-rule" aria-hidden />
       <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
       <footer className="mt-8 border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        Manual de Sinalização Atvos · Segurança Operacional · LOTO
+        Segurança Operacional · Bloqueio de energias perigosas
       </footer>
     </div>
   );

@@ -16,10 +16,10 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
   head: () => ({
     meta: [
-      { title: "Painel — LOTO Atvos" },
-      { name: "description", content: "Painel de Lockout/Tagout: cadeados ativos, distribuição por setor e últimos eventos da operação Atvos." },
-      { property: "og:title", content: "Painel — LOTO Atvos" },
-      { property: "og:description", content: "Visão consolidada dos cadeados Atvos com ativos, cancelados e atividade recente." },
+      { title: "Dashboard — Bloqueio de energias perigosas" },
+      { name: "description", content: "Monitoramento de bloqueio: dispositivos em uso, distribuição por unidade e linha do tempo." },
+      { property: "og:title", content: "Dashboard — Bloqueio de energias perigosas" },
+      { property: "og:description", content: "Visão consolidada dos dispositivos com em uso, baixados e atividade recente." },
     ],
   }),
 });
@@ -62,14 +62,14 @@ function DashboardPage() {
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Painel</h1>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            Visão geral dos cadeados de bloqueio LOTO.
+            Visão geral do bloqueio de energias perigosas.
           </p>
         </div>
         {isStaff && (
           <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-            <Plus className="h-4 w-4" /> Novo cadeado
+            <Plus className="h-4 w-4" /> Novo Dispositivo
           </Button>
         )}
       </div>
@@ -77,8 +77,8 @@ function DashboardPage() {
       {/* Stats principais */}
       <section className="mt-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="Total" value={padlocks.length} accent="bg-[#0D3A5C]" icon={<Lock className="h-5 w-5" />} />
-        <StatCard label="Ativos" value={ativos.length} accent="bg-[#0F7A47]" icon={<CheckCircle2 className="h-5 w-5" />} />
-        <StatCard label="Cancelados" value={cancelados.length} accent="bg-[#B8281A]" icon={<XCircle className="h-5 w-5" />} />
+        <StatCard label="Em uso" value={ativos.length} accent="bg-[#0F7A47]" icon={<CheckCircle2 className="h-5 w-5" />} />
+        <StatCard label="Baixados" value={cancelados.length} accent="bg-[#B8281A]" icon={<XCircle className="h-5 w-5" />} />
       </section>
 
       {/* Stats por cor */}
@@ -90,7 +90,7 @@ function DashboardPage() {
               <div className="text-xs uppercase tracking-wider text-muted-foreground">{colorLabel[color]}</div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-3xl font-bold tabular-nums">{count}</span>
-                <span className="text-xs text-muted-foreground">ativos</span>
+                <span className="text-xs text-muted-foreground">em uso</span>
               </div>
             </CardContent>
           </Card>
@@ -103,14 +103,14 @@ function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Distribuição por setor
+                Distribuição por Unidade
               </h2>
               <Link to="/cadeados" className="text-xs font-medium text-accent hover:underline inline-flex items-center gap-1">
                 Ver todos <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
             {sectors.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">Nenhum setor com cadeados ativos.</div>
+              <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma unidade com dispositivos em uso.</div>
             ) : (
               <ul className="space-y-3">
                 {sectors.map((s) => {
@@ -142,7 +142,7 @@ function DashboardPage() {
         <Card>
           <CardContent className="p-5">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Últimos eventos
+              Linha do tempo
             </h2>
             {events.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">Nenhum evento.</div>

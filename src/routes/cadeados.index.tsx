@@ -22,10 +22,10 @@ export const Route = createFileRoute("/cadeados/")({
   component: PadlocksList,
   head: () => ({
     meta: [
-      { title: "Cadeados — LOTO Atvos" },
-      { name: "description", content: "Lista completa dos cadeados Atvos com filtros por cor, setor e status. Exporte para Excel." },
-      { property: "og:title", content: "Cadeados — LOTO Atvos" },
-      { property: "og:description", content: "Cadeados ativos e cancelados com filtros e exportação para Excel." },
+      { title: "Base de dados — Bloqueio de energias perigosas" },
+      { name: "description", content: "Relação completa de dispositivos com filtros por cor, unidade e status. Exporte para Excel." },
+      { property: "og:title", content: "Base de dados — Bloqueio de energias perigosas" },
+      { property: "og:description", content: "Dispositivos em uso e baixados com filtros e exportação para Excel." },
     ],
   }),
 });
@@ -100,8 +100,8 @@ function PadlocksList() {
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Cadeados</h1>
-          <p className="text-sm text-muted-foreground">{items.length} registrados · {filtered.length} exibidos</p>
+          <h1 className="text-2xl font-bold">Base de dados</h1>
+          <p className="text-sm text-muted-foreground">{items.length} itens registrados · {filtered.length} exibidos</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={exportExcel} disabled={filtered.length === 0}>
@@ -109,7 +109,7 @@ function PadlocksList() {
           </Button>
           {isStaff && (
             <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              <Plus className="h-4 w-4" /> Novo cadeado
+              <Plus className="h-4 w-4" /> Novo Dispositivo
             </Button>
           )}
         </div>
@@ -118,7 +118,7 @@ function PadlocksList() {
       <div className="mt-5 flex gap-3 flex-wrap items-center">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por número, dono, matrícula ou setor" className="pl-9" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por número, responsável, matrícula ou unidade" className="pl-9" />
         </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
@@ -129,9 +129,9 @@ function PadlocksList() {
           </SelectContent>
         </Select>
         <Select value={sectorFilter} onValueChange={setSectorFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Setor" /></SelectTrigger>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Unidade / Setor" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os setores</SelectItem>
+            <SelectItem value="all">Todas as unidades</SelectItem>
             {sectors.map((s) => (
               <SelectItem key={s} value={s}>{s}</SelectItem>
             ))}
@@ -163,20 +163,20 @@ function PadlocksList() {
             <TableHeader>
               <TableRow>
                 <TableHead>Cor</TableHead>
-                <TableHead>Número</TableHead>
+                <TableHead>Nº</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Dono</TableHead>
-                <TableHead>Matrícula</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Matrícula / Empresa</TableHead>
                 <TableHead>Função</TableHead>
-                <TableHead>Setor</TableHead>
-                <TableHead>Telefone</TableHead>
+                <TableHead>Unidade / Setor</TableHead>
+                <TableHead>Contato</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
-                    Nenhum cadeado encontrado.
+                    Nenhum dispositivo encontrado.
                   </TableCell>
                 </TableRow>
               )}
@@ -198,11 +198,11 @@ function PadlocksList() {
                   <TableCell>
                     {p.cancelled ? (
                       <span className="inline-flex items-center rounded-full border border-[#D42E1B]/40 bg-[#FFE3DF] px-2 py-0.5 text-xs font-medium text-[#8B1A0E]">
-                        Cancelado
+                        Baixado
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#0F7A47]">
-                        <span className="h-2 w-2 rounded-full bg-[#0F7A47]" /> Ativo
+                        <span className="h-2 w-2 rounded-full bg-[#0F7A47]" /> Em uso
                       </span>
                     )}
                   </TableCell>

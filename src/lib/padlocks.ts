@@ -8,10 +8,10 @@ export type PadlockColor = Database["public"]["Enums"]["padlock_color"];
 export const PADLOCK_COLORS: PadlockColor[] = ["azul", "amarelo", "latao", "vermelho"];
 
 export const colorLabel: Record<PadlockColor, string> = {
-  azul: "Azul",
-  amarelo: "Amarelo",
-  latao: "Latão",
-  vermelho: "Vermelho",
+  azul: "Pessoal",
+  amarelo: "Equipamento",
+  latao: "Equipamento",
+  vermelho: "Empréstimo",
 };
 
 // Swatch para a bolinha visual da cor — usa cores reais do cadeado (não tokens semânticos)
@@ -53,7 +53,7 @@ export function deriveStatus(p: Pick<Padlock, "status" | "due_at">): DerivedStat
 
 export const statusLabel: Record<DerivedStatus, string> = {
   disponivel: "Disponível",
-  aplicado: "Aplicado",
+  aplicado: "Em uso",
   vencido: "Vencido",
 };
 

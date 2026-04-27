@@ -24,7 +24,7 @@ import {
 
 export const Route = createFileRoute("/cadeados/$codigo")({
   component: PadlockDetail,
-  head: ({ params }) => ({ meta: [{ title: `Cadeado ${params.codigo} — LOTO Atvos` }] }),
+  head: ({ params }) => ({ meta: [{ title: `Dispositivo ${params.codigo} — Bloqueio de energias perigosas` }] }),
 });
 
 function PadlockDetail() {
@@ -57,7 +57,7 @@ function PadlockDetail() {
     return (
       <PageShell>
         <div className="text-center py-16">
-          <h1 className="text-xl font-bold">Cadeado não encontrado</h1>
+          <h1 className="text-xl font-bold">Dispositivo não encontrado</h1>
           <p className="text-sm text-muted-foreground mt-2">Código: {codigo}</p>
           <Button asChild variant="outline" className="mt-4"><Link to="/cadeados"><ArrowLeft className="h-4 w-4" /> Voltar à lista</Link></Button>
         </div>
@@ -80,7 +80,7 @@ function PadlockDetail() {
             <Lock className="h-7 w-7 text-white drop-shadow" />
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Cadeado</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Dispositivo de Bloqueio</div>
             <h1 className="font-mono text-2xl font-bold">{colorLabel[padlock.color]} #{padlock.number}</h1>
             <span className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorBadge[padlock.color]}`}>
               {colorLabel[padlock.color]}
@@ -90,7 +90,7 @@ function PadlockDetail() {
         <div className="flex gap-2 flex-wrap">
           {isStaff && !isRed && !isCancelled && (
             <Button onClick={() => setOpenTransfer(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              <ArrowLeftRight className="h-4 w-4" /> Transferir dono
+              <ArrowLeftRight className="h-4 w-4" /> Repassar dispositivo
             </Button>
           )}
           {isAdmin && !isCancelled && (
@@ -98,12 +98,12 @@ function PadlockDetail() {
           )}
           {isStaff && !isCancelled && (
             <Button onClick={() => setOpenCancel(true)} variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10">
-              <XCircle className="h-4 w-4" /> Cancelar
+              <XCircle className="h-4 w-4" /> Baixa de Etiqueta
             </Button>
           )}
           {isAdmin && (
             <Button onClick={() => setOpenDelete(true)} variant="ghost" className="text-destructive hover:text-destructive">
-              <Trash2 className="h-4 w-4" /> Excluir permanentemente
+              <Trash2 className="h-4 w-4" /> Eliminar Definitivamente
             </Button>
           )}
         </div>
@@ -113,7 +113,7 @@ function PadlockDetail() {
         <div className="mt-5 flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <div className="font-semibold text-destructive">Cadeado cancelado</div>
+            <div className="font-semibold text-destructive">Dispositivo baixado</div>
             <div className="text-muted-foreground">
               Motivo: <strong className="text-foreground">{padlock.cancellation_reason ?? "—"}</strong>
               {padlock.cancellation_detail && <> — {padlock.cancellation_detail}</>}
@@ -128,13 +128,13 @@ function PadlockDetail() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Card><CardContent className="p-5 space-y-3">
-          <Field label="Setor" value={padlock.owner_sector} />
+          <Field label="Unidade / Setor" value={padlock.owner_sector} />
           {!isRed && (
             <>
-              <Field label="Dono atual" value={padlock.owner_name} />
-              <Field label="Matrícula" value={padlock.owner_registration} mono />
+              <Field label="Responsável" value={padlock.owner_name} />
+              <Field label="Matrícula / Empresa" value={padlock.owner_registration} mono />
               <Field label="Função" value={padlock.owner_role} />
-              <Field label="Telefone" value={padlock.owner_phone} />
+              <Field label="Contato" value={padlock.owner_phone} />
             </>
           )}
           {isRed && (
@@ -145,15 +145,15 @@ function PadlockDetail() {
         </CardContent></Card>
         <Card><CardContent className="p-5 space-y-3">
           <Field label="Cor" value={colorLabel[padlock.color]} />
-          <Field label="Número" value={String(padlock.number)} mono />
-          <Field label="Criado em" value={formatDateTime(padlock.created_at)} />
+          <Field label="Nº" value={String(padlock.number)} mono />
+          <Field label="Cadastrado em" value={formatDateTime(padlock.created_at)} />
           <Field label="Última atualização" value={formatDateTime(padlock.updated_at)} />
         </CardContent></Card>
       </div>
 
       <section className="mt-8">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-          <History className="h-4 w-4" /> Histórico
+          <History className="h-4 w-4" /> Linha do tempo
         </h2>
         <Card><CardContent className="p-0">
           {events.length === 0 ? (
@@ -208,12 +208,12 @@ function eventDot(action: string) {
 }
 function actionLabel(action: string) {
   return ({
-    created: "Cadeado criado",
-    updated: "Cadeado editado",
-    deleted: "Cadeado excluído",
-    transferred: "Dono transferido",
-    applied: "Cadeado aplicado",
-    released: "Cadeado liberado",
+    created: "Cadastrado",
+    updated: "Editado",
+    deleted: "Eliminado definitivamente",
+    transferred: "Repassado",
+    applied: "Em uso",
+    released: "Removido",
   } as Record<string, string>)[action] ?? action;
 }
 
@@ -276,7 +276,7 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
         ? `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
         : `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
     });
-    toast.success("Dono transferido");
+    toast.success("Dispositivo repassado");
     setLoading(false); onOpenChange(false); onDone();
     setName(""); setReg(""); setRole(""); setSector(""); setPhone(""); setNotes("");
   }
@@ -285,26 +285,26 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Transferir dono — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
+          <DialogTitle>Repassar dispositivo — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
           <DialogDescription>
-            Dono atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
-            A mudança fica registrada no histórico.
+            Responsável atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
+            A mudança fica registrada na linha do tempo.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
-            <div className="space-y-1.5"><Label>Matrícula</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
+            <div className="space-y-1.5"><Label>Responsável</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
+            <div className="space-y-1.5"><Label>Matrícula / Empresa</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
-            <div className="space-y-1.5"><Label>Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
+            <div className="space-y-1.5"><Label>Unidade / Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
           </div>
-          <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
+          <div className="space-y-1.5"><Label>Contato</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
           <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Transferir"}</Button>
+            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Repassar"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
