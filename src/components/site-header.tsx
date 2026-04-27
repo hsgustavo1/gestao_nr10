@@ -12,7 +12,7 @@ export function SiteHeader() {
   const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode } = useAuth();
   const navigate = useNavigate();
 
-  const cargo = isAdmin ? "Dono RAC" : isStaff ? "Apoio RAC" : "Visualização";
+  const cargo = isAdmin ? "Admin" : isStaff ? "Supervisor" : "Consulta";
   const displayName =
     (user?.user_metadata?.display_name as string | undefined) ||
     user?.email?.split("@")[0] ||
@@ -24,18 +24,16 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         {/* Wordmark + nav */}
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-baseline gap-0">
-            <span className="atvos-wordmark">atvos</span>
-            <span className="atvos-wordmark text-[#F47920]">.</span>
-            <span className="ml-3 hidden sm:inline-block text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">
-              Sistema LOTO
+          <Link to="/" className="flex items-center gap-0">
+            <span className="text-[14px] font-bold uppercase tracking-[0.05em] text-white">
+              RAC - Bloqueio de energias perigosas&nbsp;&nbsp;
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
-            <NavLink to="/dashboard">Painel</NavLink>
-            <NavLink to="/cadeados">Cadeados</NavLink>
-            {isAdmin && <NavLink to="/admin/usuarios">Usuários</NavLink>}
+          <nav className="hidden lg:flex items-center gap-1">
+            <NavLink to="/dashboard">Monitoramento</NavLink>
+            <NavLink to="/cadeados">Dispositivos de Bloqueio</NavLink>
+            {isAdmin && <NavLink to="/admin/usuarios">Usuários e permissões</NavLink>}
           </nav>
         </div>
 
@@ -71,7 +69,7 @@ export function SiteHeader() {
           ) : isViewer ? (
             <div className="flex items-center gap-2">
               <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white/10 ring-1 ring-white/15 px-3 py-1 text-[11px] font-medium text-white/85">
-                <Eye className="h-3 w-3" /> Visualização
+                <Eye className="h-3 w-3" /> Consulta
               </span>
               <Link
                 to="/login"
