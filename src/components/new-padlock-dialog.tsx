@@ -115,7 +115,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
       actor_id: user?.id ?? null, actor_name: user?.email ?? null,
       new_data: data,
     });
-    toast.success("Cadeado cadastrado");
+    toast.success("Dispositivo cadastrado");
     reset();
     setLoading(false);
     onOpenChange(false);
@@ -155,7 +155,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
       new_data: newOwner,
       notes: `Transferência originada do fluxo "Novo cadeado" (conflito de ${conflict.kind === "number" ? "número" : "matrícula"}).`,
     });
-    toast.success("Cadeado transferido para o novo dono");
+    toast.success("Dispositivo repassado");
     reset();
     setLoading(false);
     onOpenChange(false);
@@ -166,8 +166,8 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Novo cadeado</DialogTitle>
-          <DialogDescription>Cadastre cor, número e dados do dono. Cadeados vermelhos exigem apenas número e setor.</DialogDescription>
+          <DialogTitle>Novo Dispositivo</DialogTitle>
+          <DialogDescription>Cadastre cor, número e dados do responsável. Dispositivos de empréstimo exigem apenas número e unidade.</DialogDescription>
         </DialogHeader>
 
         {conflict ? (
@@ -198,13 +198,13 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="num">Número</Label>
+              <Label htmlFor="num">Nº</Label>
               <Input id="num" type="number" min={0} value={number} onChange={(e) => setNumber(e.target.value)} required />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="sector">Setor {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}</Label>
+            <Label htmlFor="sector">Unidade / Setor {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}</Label>
             <Input id="sector" value={ownerSector} onChange={(e) => setOwnerSector(e.target.value)} maxLength={100} required />
           </div>
 
@@ -212,11 +212,11 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="oname">Nome do dono</Label>
+                  <Label htmlFor="oname">Responsável</Label>
                   <Input id="oname" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} maxLength={120} required />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="oreg">Matrícula</Label>
+                  <Label htmlFor="oreg">Matrícula / Empresa</Label>
                   <Input id="oreg" value={ownerReg} onChange={(e) => setOwnerReg(e.target.value)} maxLength={40} required />
                 </div>
               </div>
@@ -226,7 +226,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
                   <Input id="orole" value={ownerRole} onChange={(e) => setOwnerRole(e.target.value)} maxLength={80} required />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="ophone">Telefone</Label>
+                  <Label htmlFor="ophone">Contato</Label>
                   <Input id="ophone" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} maxLength={30} required />
                 </div>
               </div>
@@ -236,7 +236,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              {loading ? "Salvando..." : "Cadastrar"}
+              {loading ? "Salvando..." : "Cadastrar Novo Dispositivo"}
             </Button>
           </DialogFooter>
         </form>
@@ -265,10 +265,10 @@ function ConflictPanel({
         <div className="font-semibold text-amber-700 dark:text-amber-300 mb-1">Conflito detectado</div>
         <p className="text-foreground">{reason}</p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-          <Info label="Dono atual" value={p.owner_name ?? "—"} />
-          <Info label="Matrícula" value={p.owner_registration ?? "—"} mono />
-          <Info label="Setor" value={p.owner_sector ?? "—"} />
-          <Info label="Telefone" value={p.owner_phone ?? "—"} />
+          <Info label="Responsável atual" value={p.owner_name ?? "—"} />
+          <Info label="Matrícula / Empresa" value={p.owner_registration ?? "—"} mono />
+          <Info label="Unidade / Setor" value={p.owner_sector ?? "—"} />
+          <Info label="Contato" value={p.owner_phone ?? "—"} />
         </div>
       </div>
       {isRed ? (
@@ -286,7 +286,7 @@ function ConflictPanel({
         <Button type="button" variant="ghost" onClick={onBack}>Voltar e ajustar</Button>
         {!isRed && (
           <Button type="button" disabled={loading} onClick={onTransfer} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-            <ArrowLeftRight className="h-4 w-4" /> {loading ? "Transferindo..." : "Transferir para novo dono"}
+            <ArrowLeftRight className="h-4 w-4" /> {loading ? "Transferindo..." : "Repassar dispositivo"}
           </Button>
         )}
       </DialogFooter>
