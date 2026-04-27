@@ -24,7 +24,7 @@ import {
 
 export const Route = createFileRoute("/cadeados/$codigo")({
   component: PadlockDetail,
-  head: ({ params }) => ({ meta: [{ title: `Cadeado ${params.codigo} — LOTO Atvos` }] }),
+  head: ({ params }) => ({ meta: [{ title: `Dispositivo ${params.codigo} — Bloqueio de energias perigosas` }] }),
 });
 
 function PadlockDetail() {
@@ -57,7 +57,7 @@ function PadlockDetail() {
     return (
       <PageShell>
         <div className="text-center py-16">
-          <h1 className="text-xl font-bold">Cadeado não encontrado</h1>
+          <h1 className="text-xl font-bold">Dispositivo não encontrado</h1>
           <p className="text-sm text-muted-foreground mt-2">Código: {codigo}</p>
           <Button asChild variant="outline" className="mt-4"><Link to="/cadeados"><ArrowLeft className="h-4 w-4" /> Voltar à lista</Link></Button>
         </div>
@@ -80,7 +80,7 @@ function PadlockDetail() {
             <Lock className="h-7 w-7 text-white drop-shadow" />
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Cadeado</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Dispositivo de Bloqueio</div>
             <h1 className="font-mono text-2xl font-bold">{colorLabel[padlock.color]} #{padlock.number}</h1>
             <span className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorBadge[padlock.color]}`}>
               {colorLabel[padlock.color]}
@@ -90,7 +90,7 @@ function PadlockDetail() {
         <div className="flex gap-2 flex-wrap">
           {isStaff && !isRed && !isCancelled && (
             <Button onClick={() => setOpenTransfer(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              <ArrowLeftRight className="h-4 w-4" /> Transferir dono
+              <ArrowLeftRight className="h-4 w-4" /> Repassar dispositivo
             </Button>
           )}
           {isAdmin && !isCancelled && (
@@ -98,12 +98,12 @@ function PadlockDetail() {
           )}
           {isStaff && !isCancelled && (
             <Button onClick={() => setOpenCancel(true)} variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10">
-              <XCircle className="h-4 w-4" /> Cancelar
+              <XCircle className="h-4 w-4" /> Baixa de Etiqueta
             </Button>
           )}
           {isAdmin && (
             <Button onClick={() => setOpenDelete(true)} variant="ghost" className="text-destructive hover:text-destructive">
-              <Trash2 className="h-4 w-4" /> Excluir permanentemente
+              <Trash2 className="h-4 w-4" /> Eliminar Definitivamente
             </Button>
           )}
         </div>
@@ -113,7 +113,7 @@ function PadlockDetail() {
         <div className="mt-5 flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <div className="font-semibold text-destructive">Cadeado cancelado</div>
+            <div className="font-semibold text-destructive">Dispositivo baixado</div>
             <div className="text-muted-foreground">
               Motivo: <strong className="text-foreground">{padlock.cancellation_reason ?? "—"}</strong>
               {padlock.cancellation_detail && <> — {padlock.cancellation_detail}</>}
@@ -128,13 +128,13 @@ function PadlockDetail() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Card><CardContent className="p-5 space-y-3">
-          <Field label="Setor" value={padlock.owner_sector} />
+          <Field label="Unidade / Setor" value={padlock.owner_sector} />
           {!isRed && (
             <>
-              <Field label="Dono atual" value={padlock.owner_name} />
-              <Field label="Matrícula" value={padlock.owner_registration} mono />
+              <Field label="Responsável" value={padlock.owner_name} />
+              <Field label="Matrícula / Empresa" value={padlock.owner_registration} mono />
               <Field label="Função" value={padlock.owner_role} />
-              <Field label="Telefone" value={padlock.owner_phone} />
+              <Field label="Contato" value={padlock.owner_phone} />
             </>
           )}
           {isRed && (
@@ -145,15 +145,15 @@ function PadlockDetail() {
         </CardContent></Card>
         <Card><CardContent className="p-5 space-y-3">
           <Field label="Cor" value={colorLabel[padlock.color]} />
-          <Field label="Número" value={String(padlock.number)} mono />
-          <Field label="Criado em" value={formatDateTime(padlock.created_at)} />
+          <Field label="Nº" value={String(padlock.number)} mono />
+          <Field label="Cadastrado em" value={formatDateTime(padlock.created_at)} />
           <Field label="Última atualização" value={formatDateTime(padlock.updated_at)} />
         </CardContent></Card>
       </div>
 
       <section className="mt-8">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-          <History className="h-4 w-4" /> Histórico
+          <History className="h-4 w-4" /> Linha do tempo
         </h2>
         <Card><CardContent className="p-0">
           {events.length === 0 ? (
