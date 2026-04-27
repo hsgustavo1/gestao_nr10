@@ -118,7 +118,7 @@ function PadlocksList() {
       <div className="mt-5 flex gap-3 flex-wrap items-center">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por número, responsável, matrícula ou unidade" className="pl-9" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por número, dono, matrícula ou setor / empresa" className="pl-9" />
         </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
@@ -129,7 +129,7 @@ function PadlocksList() {
           </SelectContent>
         </Select>
         <Select value={sectorFilter} onValueChange={setSectorFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Setor" /></SelectTrigger>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Setor / Empresa" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os setores</SelectItem>
             {sectors.map((s) => (
@@ -165,11 +165,11 @@ function PadlocksList() {
                 <TableHead>Cor</TableHead>
                 <TableHead>Nº</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead>Matrícula / Empresa</TableHead>
+                <TableHead>Dono</TableHead>
+                <TableHead>Matrícula</TableHead>
                 <TableHead>Função</TableHead>
-                <TableHead>Setor</TableHead>
-                <TableHead>Contato</TableHead>
+                <TableHead>Setor / Empresa</TableHead>
+                <TableHead>Telefone</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
