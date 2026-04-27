@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { logEvent, PADLOCK_COLORS, colorLabel, colorSwatch, type Padlock, type PadlockColor } from "@/lib/padlocks";
+import { logEvent, PADLOCK_COLORS, colorLabel, colorSwatch, formatPhoneBR, type Padlock, type PadlockColor } from "@/lib/padlocks";
 
 const baseSchema = z.object({
   color: z.enum(["azul", "amarelo", "latao", "vermelho"]),
@@ -227,7 +227,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ophone">Telefone</Label>
-                  <Input id="ophone" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} maxLength={30} required />
+                  <Input id="ophone" value={ownerPhone} onChange={(e) => setOwnerPhone(formatPhoneBR(e.target.value))} inputMode="tel" placeholder="(XX) XXXXX-XXXX" maxLength={16} required />
                 </div>
               </div>
             </>
@@ -268,7 +268,7 @@ function ConflictPanel({
           <Info label="Dono atual" value={p.owner_name ?? "—"} />
           <Info label="Matrícula" value={p.owner_registration ?? "—"} mono />
           <Info label="Setor / Empresa" value={p.owner_sector ?? "—"} />
-          <Info label="Telefone" value={p.owner_phone ?? "—"} />
+          <Info label="Telefone" value={p.owner_phone ? formatPhoneBR(p.owner_phone) : "—"} />
         </div>
       </div>
       {isRed ? (
