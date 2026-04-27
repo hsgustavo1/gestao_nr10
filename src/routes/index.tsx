@@ -11,8 +11,8 @@ export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: "LOTO Atvos — Controle de Cadeados" },
-      { name: "description", content: "Plataforma de Lockout/Tagout da Atvos. Veja status de cadeados, histórico e bloqueios ativos em tempo real." },
+      { title: "RAC - Bloqueio de energias perigosas" },
+      { name: "description", content: "Bloqueio de energias perigosas: controle de dispositivos, auditoria e monitoramento de bloqueios." },
     ],
   }),
 });
@@ -43,21 +43,21 @@ function HomePage() {
         <div className="grid gap-8 p-8 md:p-12 md:grid-cols-[1.5fr_1fr] items-center">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wider">
-              <ShieldCheck className="h-3.5 w-3.5" /> Lockout / Tagout
+              <ShieldCheck className="h-3.5 w-3.5" /> Bloqueio de energias perigosas
             </span>
             <h1 className="mt-4 text-4xl md:text-5xl font-bold leading-tight">
-              Controle de cadeados <span className="text-brand-gradient">LOTO Atvos</span>
+              Controle de dispositivos <span className="text-brand-gradient">RAC</span>
             </h1>
             <p className="mt-4 max-w-xl text-white/80 text-base">
-              Registro único por cadeado, auditoria imutável de cada aplicação e remoção, e visibilidade em
-              tempo real para todo o time. Visualização aberta — operação com login.
+              Registro único por dispositivo, auditoria imutável de cada alteração e baixa, e visibilidade em
+              tempo real para todo o time. Consulta aberta — operação com login.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild size="lg" className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
                 <Link to="/dashboard">Ver dashboard <ArrowRight className="h-4 w-4" /></Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white">
-                <Link to="/cadeados">Lista de cadeados</Link>
+                <Link to="/cadeados">Base de dados</Link>
               </Button>
             </div>
           </div>
@@ -81,18 +81,18 @@ function HomePage() {
       <section className="mt-10 grid gap-4 md:grid-cols-3">
         <Feature
           icon={<History className="h-5 w-5" />}
-          title="Histórico de transferências"
-          desc="Cada troca de dono fica registrada com autor, data e observação — auditoria imutável por cadeado."
+          title="Linha do tempo"
+          desc="Cada repasse de dispositivo fica registrado com autor, data e observação — auditoria imutável por item."
         />
         <Feature
           icon={<ShieldCheck className="h-5 w-5" />}
           title="3 níveis de acesso"
-          desc="Visualização (público), Apoio RAC (cadastra e transfere), Dono RAC (controle total)."
+          desc="Consulta (público), Supervisor (cadastra e repassa), Admin (controle total)."
         />
         <Feature
           icon={<Users className="h-5 w-5" />}
           title="Regras por cor"
-          desc="Azul e latão: 1 por matrícula. Amarelo: livre. Vermelho: só número e setor. Sem repetição na mesma cor."
+          desc="Pessoal e Equipamento: 1 por matrícula. Equipamento livre. Empréstimo: só número e unidade. Sem repetição na mesma cor."
         />
       </section>
     </PageShell>
