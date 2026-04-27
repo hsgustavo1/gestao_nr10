@@ -8,10 +8,10 @@ export type PadlockColor = Database["public"]["Enums"]["padlock_color"];
 export const PADLOCK_COLORS: PadlockColor[] = ["azul", "amarelo", "latao", "vermelho"];
 
 export const colorLabel: Record<PadlockColor, string> = {
-  azul: "Pessoal",
-  amarelo: "Equipamento",
-  latao: "Equipamento",
-  vermelho: "Empréstimo",
+  azul: "AZUL - PESSOAL",
+  amarelo: "AMARELO - DONO DE ÁREA",
+  latao: "LATÃO - PARCEIROS",
+  vermelho: "VERMELHO - EQUIPAMENTOS",
 };
 
 // Swatch para a bolinha visual da cor — usa cores reais do cadeado (não tokens semânticos)
