@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
-  PADLOCK_COLORS, colorBadge, colorLabel, colorSwatch,
+  PADLOCK_COLORS, colorBadge, colorLabel, colorSwatch, formatPhoneBR,
   type Padlock, type PadlockColor,
 } from "@/lib/padlocks";
 import { NewPadlockDialog } from "@/components/new-padlock-dialog";
@@ -85,7 +85,7 @@ function PadlocksList() {
       "Matrícula": p.owner_registration ?? "",
       "Função": p.owner_role ?? "",
       "Setor / Empresa": p.owner_sector ?? "",
-      "Telefone": p.owner_phone ?? "",
+      "Telefone": p.owner_phone ? formatPhoneBR(p.owner_phone) : "",
       "Motivo cancelamento": p.cancellation_reason ?? "",
       "Data registro": p.created_at ? new Date(p.created_at).toLocaleDateString("pt-BR") : "",
     }));
@@ -210,7 +210,7 @@ function PadlocksList() {
                   <TableCell className="text-sm font-mono">{p.owner_registration || "—"}</TableCell>
                   <TableCell className="text-sm">{p.owner_role || "—"}</TableCell>
                   <TableCell className="text-sm">{p.owner_sector || "—"}</TableCell>
-                  <TableCell className="text-sm">{p.owner_phone || "—"}</TableCell>
+                  <TableCell className="text-sm">{p.owner_phone ? formatPhoneBR(p.owner_phone) : "—"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
