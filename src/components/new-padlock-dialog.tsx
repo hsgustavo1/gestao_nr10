@@ -153,7 +153,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
         owner_phone: previous.owner_phone,
       },
       new_data: newOwner,
-      notes: `Transferência originada do fluxo "Novo cadeado" (conflito de ${conflict.kind === "number" ? "número" : "matrícula"}).`,
+      notes: `Transferência originada do fluxo "Novo dispositivo" (conflito de ${conflict.kind === "number" ? "número" : "matrícula"}).`,
     });
     toast.success("Dispositivo repassado");
     reset();
@@ -257,8 +257,8 @@ function ConflictPanel({
 }) {
   const p = conflict.existing;
   const reason = conflict.kind === "number"
-    ? `Já existe um cadeado ativo ${colorLabel[p.color]} #${p.number}.`
-    : `A matrícula ${p.owner_registration} já possui um cadeado ${colorLabel[p.color]} ativo (#${p.number}).`;
+    ? `Já existe um dispositivo em uso ${colorLabel[p.color]} #${p.number}.`
+    : `A matrícula ${p.owner_registration} já possui um dispositivo ${colorLabel[p.color]} em uso (#${p.number}).`;
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
@@ -273,13 +273,13 @@ function ConflictPanel({
       </div>
       {isRed ? (
         <p className="text-sm text-muted-foreground">
-          Cadeados vermelhos não suportam transferência (sem dono associado). Escolha outro número
-          ou cancele o cadeado existente antes de cadastrar um novo.
+          Dispositivos de empréstimo não suportam repasse (sem responsável associado). Escolha outro número
+          ou realize a baixa do dispositivo existente antes de cadastrar um novo.
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Você pode <strong>transferir o cadeado existente</strong> para o novo dono que digitou
-          acima — isso preserva o número e mantém a auditoria. Ou volte e ajuste os dados.
+          Você pode <strong>repassar o dispositivo existente</strong> para o novo responsável que digitou
+          acima — isso preserva o número e mantém a auditoria na linha do tempo. Ou volte e ajuste os dados.
         </p>
       )}
       <DialogFooter>
@@ -306,9 +306,9 @@ function Info({ label, value, mono }: { label: string; value: string; mono?: boo
 function translateError(msg: string): string {
   if (msg.includes("padlocks_color_number_key") || msg.includes("duplicate key")) {
     if (msg.includes("padlocks_owner_unique_blue_brass")) {
-      return "Esta matrícula já possui um cadeado dessa cor (azul/latão é 1 por pessoa).";
+      return "Esta matrícula já possui um dispositivo dessa cor (Pessoal/Equipamento é 1 por pessoa).";
     }
-    return "Já existe um cadeado com essa cor e número.";
+    return "Já existe um dispositivo com essa cor e número.";
   }
   return msg;
 }
