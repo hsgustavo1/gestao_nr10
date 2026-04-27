@@ -207,3 +207,11 @@ function actionLabel(action: string) {
     transferred: "dono transferido", applied: "aplicado", released: "removido",
   } as Record<string, string>)[action] ?? action;
 }
+
+function ownerNameFor(e: PadlockEvent, padlocks: Padlock[]): string | null {
+  const fromNew = (e.new_data as { owner_name?: string } | null)?.owner_name;
+  const fromPrev = (e.previous_data as { owner_name?: string } | null)?.owner_name;
+  const fromPadlock = padlocks.find((p) => p.id === e.padlock_id)?.owner_name;
+  const name = fromNew ?? fromPadlock ?? fromPrev ?? null;
+  return name && name.trim().length > 0 ? name : null;
+}
