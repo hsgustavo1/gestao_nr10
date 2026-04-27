@@ -129,9 +129,9 @@ function PadlocksList() {
           </SelectContent>
         </Select>
         <Select value={sectorFilter} onValueChange={setSectorFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Unidade / Setor" /></SelectTrigger>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Setor" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas as unidades</SelectItem>
+            <SelectItem value="all">Todos os setores</SelectItem>
             {sectors.map((s) => (
               <SelectItem key={s} value={s}>{s}</SelectItem>
             ))}
@@ -168,7 +168,7 @@ function PadlocksList() {
                 <TableHead>Responsável</TableHead>
                 <TableHead>Matrícula / Empresa</TableHead>
                 <TableHead>Função</TableHead>
-                <TableHead>Unidade / Setor</TableHead>
+                <TableHead>Setor</TableHead>
                 <TableHead>Contato</TableHead>
               </TableRow>
             </TableHeader>

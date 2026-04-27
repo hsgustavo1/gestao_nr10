@@ -128,7 +128,7 @@ function PadlockDetail() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Card><CardContent className="p-5 space-y-3">
-          <Field label="Unidade / Setor" value={padlock.owner_sector} />
+          <Field label="Setor" value={padlock.owner_sector} />
           {!isRed && (
             <>
               <Field label="Responsável" value={padlock.owner_name} />
@@ -298,7 +298,7 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
-            <div className="space-y-1.5"><Label>Unidade / Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
+            <div className="space-y-1.5"><Label>Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
           </div>
           <div className="space-y-1.5"><Label>Contato</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
           <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
