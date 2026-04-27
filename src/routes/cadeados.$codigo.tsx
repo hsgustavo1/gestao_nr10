@@ -208,12 +208,12 @@ function eventDot(action: string) {
 }
 function actionLabel(action: string) {
   return ({
-    created: "Cadeado criado",
-    updated: "Cadeado editado",
-    deleted: "Cadeado excluído",
-    transferred: "Dono transferido",
-    applied: "Cadeado aplicado",
-    released: "Cadeado liberado",
+    created: "Cadastrado",
+    updated: "Editado",
+    deleted: "Eliminado definitivamente",
+    transferred: "Repassado",
+    applied: "Em uso",
+    released: "Removido",
   } as Record<string, string>)[action] ?? action;
 }
 
@@ -276,7 +276,7 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
         ? `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
         : `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
     });
-    toast.success("Dono transferido");
+    toast.success("Dispositivo repassado");
     setLoading(false); onOpenChange(false); onDone();
     setName(""); setReg(""); setRole(""); setSector(""); setPhone(""); setNotes("");
   }
@@ -285,26 +285,26 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Transferir dono — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
+          <DialogTitle>Repassar dispositivo — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
           <DialogDescription>
-            Dono atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
-            A mudança fica registrada no histórico.
+            Responsável atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
+            A mudança fica registrada na linha do tempo.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
-            <div className="space-y-1.5"><Label>Matrícula</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
+            <div className="space-y-1.5"><Label>Responsável</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
+            <div className="space-y-1.5"><Label>Matrícula / Empresa</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
-            <div className="space-y-1.5"><Label>Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
+            <div className="space-y-1.5"><Label>Unidade / Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
           </div>
-          <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
+          <div className="space-y-1.5"><Label>Contato</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} required /></div>
           <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Transferir"}</Button>
+            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Repassar"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
