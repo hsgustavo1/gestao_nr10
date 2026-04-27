@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole = "admin" | "apoio";
 
-const VIEWER_KEY = "loto-viewer-mode";
+const VIEWER_KEY = "rac-viewer-mode";
 
 interface AuthState {
   user: User | null;
