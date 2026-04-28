@@ -284,6 +284,8 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
         ? `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
         : `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
     });
+    // Limpa foto arquivada — novo dono precisa enviar nova foto na próxima impressão
+    await supabase.storage.from("padlock-photos").remove([`${padlock.id}.jpg`]);
     toast.success("Cadeado transferido");
     setLoading(false); onOpenChange(false); onDone();
     setName(""); setReg(""); setRole(""); setSector(""); setPhone(""); setNotes("");
