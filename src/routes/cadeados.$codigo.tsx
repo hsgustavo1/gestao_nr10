@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, Pencil, Trash2, History, ArrowLeftRight, XCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Lock, Pencil, Trash2, History, ArrowLeftRight, XCircle, AlertTriangle, Printer } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { CancelPadlockDialog } from "@/components/cancel-padlock-dialog";
 import { DeletePadlockDialog } from "@/components/delete-padlock-dialog";
+import { PrintLabelDialog } from "@/components/print-label-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -38,6 +39,7 @@ function PadlockDetail() {
   const [openEdit, setOpenEdit] = useState(false);
   const [openCancel, setOpenCancel] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+  const [openPrint, setOpenPrint] = useState(false);
 
   async function reload() {
     const { data: p } = await supabase.from("padlocks").select("*").eq("code", codigo).maybeSingle();
@@ -91,6 +93,11 @@ function PadlockDetail() {
           {isStaff && !isRed && !isCancelled && (
             <Button onClick={() => setOpenTransfer(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
               <ArrowLeftRight className="h-4 w-4" /> Transferir cadeado
+            </Button>
+          )}
+          {!isCancelled && (
+            <Button onClick={() => setOpenPrint(true)} variant="outline">
+              <Printer className="h-4 w-4" /> Imprimir etiqueta
             </Button>
           )}
           {isAdmin && !isCancelled && (
@@ -184,6 +191,7 @@ function PadlockDetail() {
       <EditDialog open={openEdit} onOpenChange={setOpenEdit} padlock={padlock} onDone={reload} onCodeChanged={(newCode) => navigate({ to: "/cadeados/$codigo", params: { codigo: newCode } })} />
       <CancelPadlockDialog open={openCancel} onOpenChange={setOpenCancel} padlock={padlock} onDone={reload} />
       <DeletePadlockDialog open={openDelete} onOpenChange={setOpenDelete} padlock={padlock} onDeleted={() => navigate({ to: "/cadeados" })} />
+      <PrintLabelDialog open={openPrint} onOpenChange={setOpenPrint} padlock={padlock} />
     </PageShell>
   );
 }
