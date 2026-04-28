@@ -271,39 +271,3 @@
 }
 .badge-latao-dot { background-color: #A89660; }
 
-/* ===== Impressão de etiqueta de cadeado ===== */
-@media print {
-  @page {
-    size: 12cm 7cm;
-    margin: 0;
-  }
-  html, body {
-    background: white !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  /* Esconde tudo */
-  body * {
-    visibility: hidden !important;
-  }
-  /* Mostra apenas a etiqueta e seus filhos */
-  .print-label-root,
-  .print-label-root * {
-    visibility: visible !important;
-  }
-  .print-label-root {
-    display: block !important;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 12cm;
-    height: 7cm;
-    z-index: 999999;
-  }
-  .print-label-root .label-card {
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    width: 12cm !important;
-    height: 7cm !important;
-  }
-}
