@@ -219,7 +219,7 @@ function actionLabel(action: string) {
     created: "Cadastrado",
     updated: "Editado",
     deleted: "Eliminado definitivamente",
-    transferred: "Repassado",
+    transferred: "Transferido",
     applied: "Em uso",
     released: "Removido",
   } as Record<string, string>)[action] ?? action;
