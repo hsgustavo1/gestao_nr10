@@ -155,7 +155,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
       new_data: newOwner,
       notes: `Transferência originada do fluxo "Novo dispositivo" (conflito de ${conflict.kind === "number" ? "número" : "matrícula"}).`,
     });
-    toast.success("Dispositivo repassado");
+    toast.success("Cadeado transferido");
     reset();
     setLoading(false);
     onOpenChange(false);
@@ -278,7 +278,7 @@ function ConflictPanel({
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Você pode <strong>repassar o dispositivo existente</strong> para o novo dono que digitou
+          Você pode <strong>transferir o cadeado existente</strong> para o novo dono que digitou
           acima — isso preserva o número e mantém a auditoria na linha do tempo. Ou volte e ajuste os dados.
         </p>
       )}
@@ -286,7 +286,7 @@ function ConflictPanel({
         <Button type="button" variant="ghost" onClick={onBack}>Voltar e ajustar</Button>
         {!isRed && (
           <Button type="button" disabled={loading} onClick={onTransfer} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-            <ArrowLeftRight className="h-4 w-4" /> {loading ? "Transferindo..." : "Repassar dispositivo"}
+            <ArrowLeftRight className="h-4 w-4" /> {loading ? "Transferindo..." : "Transferir cadeado"}
           </Button>
         )}
       </DialogFooter>
