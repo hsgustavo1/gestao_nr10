@@ -8,7 +8,7 @@ export type PadlockColor = Database["public"]["Enums"]["padlock_color"];
 export const PADLOCK_COLORS: PadlockColor[] = ["azul", "amarelo", "latao", "vermelho"];
 
 export const colorLabel: Record<PadlockColor, string> = {
-  azul: "AZUL - PESSOAL",
+  azul: "AZUL - EXECUTANTE",
   amarelo: "AMARELO - DONO DE ÁREA",
   latao: "LATÃO - PARCEIROS",
   vermelho: "VERMELHO - EQUIPAMENTOS",
