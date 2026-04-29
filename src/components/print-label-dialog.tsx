@@ -39,20 +39,33 @@ export function PrintLabelDialog({
       setLoadingFoto(true);
       setEtiquetaGerada(false);
       setFotoSrc(null);
-      const { data } = await supabase.storage
+      // Verifica se o objeto realmente existe no bucket (list ignora cache do CDN)
+      const { data: list } = await supabase.storage
         .from(BUCKET)
-        .download(photoPath(padlock.id));
+        .list("", { search: photoPath(padlock.id), limit: 1 });
+      const exists = !!list?.some((o) => o.name === photoPath(padlock.id));
       if (cancelled) return;
-      if (data) {
+      if (!exists) {
+        setLoadingFoto(false);
+        return;
+      }
+      // Busca a imagem pela URL pública com cache-buster para evitar foto antiga
+      const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(photoPath(padlock.id));
+      try {
+        const resp = await fetch(`${pub.publicUrl}?t=${Date.now()}`, { cache: "no-store" });
+        if (!resp.ok) throw new Error("not found");
+        const blob = await resp.blob();
         const reader = new FileReader();
         reader.onload = () => {
           if (cancelled) return;
           setFotoSrc(reader.result as string);
           setEtiquetaGerada(true);
+          setLoadingFoto(false);
         };
-        reader.readAsDataURL(data);
+        reader.readAsDataURL(blob);
+      } catch {
+        if (!cancelled) setLoadingFoto(false);
       }
-      setLoadingFoto(false);
     })();
     return () => { cancelled = true; };
   }, [open, padlock.id]);
