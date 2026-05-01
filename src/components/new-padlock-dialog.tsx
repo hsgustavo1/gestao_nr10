@@ -205,7 +205,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
 
           <div className="space-y-1.5">
             <Label htmlFor="sector">Setor / Empresa {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}</Label>
-            <Input id="sector" value={ownerSector} onChange={(e) => setOwnerSector(e.target.value)} maxLength={100} required />
+            <Input id="sector" value={ownerSector} onChange={(e) => setOwnerSector(e.target.value.toUpperCase())} maxLength={100} required />
           </div>
 
           {!isRed && (
@@ -213,17 +213,17 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="oname">Dono</Label>
-                  <Input id="oname" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} maxLength={120} required />
+                  <Input id="oname" value={ownerName} onChange={(e) => setOwnerName(e.target.value.toUpperCase())} maxLength={120} required />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="oreg">Matrícula</Label>
-                  <Input id="oreg" value={ownerReg} onChange={(e) => setOwnerReg(e.target.value)} maxLength={40} required />
+                  <Input id="oreg" value={ownerReg} onChange={(e) => setOwnerReg(e.target.value.toUpperCase())} maxLength={40} required />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="orole">Função</Label>
-                  <Input id="orole" value={ownerRole} onChange={(e) => setOwnerRole(e.target.value)} maxLength={80} required />
+                  <Input id="orole" value={ownerRole} onChange={(e) => setOwnerRole(e.target.value.toUpperCase())} maxLength={80} required />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ophone">Telefone</Label>
