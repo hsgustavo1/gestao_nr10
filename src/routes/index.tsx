@@ -82,7 +82,7 @@ function HomePage() {
         <Feature
           icon={<History className="h-5 w-5" />}
           title="Linha do tempo"
-          desc="Cada repasse de dispositivo fica registrado com autor, data e observação — auditoria imutável por item."
+          desc="Cada registro, transferência ou baixa de dispositivo fica registrado com responsável, data e observações — auditoria imutável por item."
         />
         <Feature
           icon={<ShieldCheck className="h-5 w-5" />}
