@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { logEvent, PADLOCK_COLORS, colorLabel, colorSwatch, formatPhoneBR, type Padlock, type PadlockColor } from "@/lib/padlocks";
+import { SectorSelect } from "@/components/sector-select";
 
 const baseSchema = z.object({
   color: z.enum(["azul", "amarelo", "latao", "vermelho"]),
@@ -34,6 +35,8 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
   const [conflict, setConflict] = useState<{ kind: "number" | "registration"; existing: Padlock } | null>(null);
 
   const isRed = color === "vermelho";
+  const isBrass = color === "latao";
+  const useSectorSelect = !isBrass; // azul, amarelo, vermelho usam menu suspenso
 
   function reset() {
     setColor("azul"); setNumber(""); setOwnerName(""); setOwnerReg("");
@@ -205,7 +208,18 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
 
           <div className="space-y-1.5">
             <Label htmlFor="sector">Setor / Empresa {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}</Label>
-            <Input id="sector" value={ownerSector} onChange={(e) => setOwnerSector(e.target.value.toUpperCase())} maxLength={100} required />
+            {useSectorSelect ? (
+              <SectorSelect value={ownerSector} onChange={setOwnerSector} required />
+            ) : (
+              <Input
+                id="sector"
+                value={ownerSector}
+                onChange={(e) => setOwnerSector(e.target.value.toUpperCase())}
+                maxLength={100}
+                required
+                placeholder="Setor ou empresa parceira"
+              />
+            )}
           </div>
 
           {!isRed && (
