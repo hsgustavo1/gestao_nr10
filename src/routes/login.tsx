@@ -216,7 +216,7 @@ function LoginPage() {
             <Eye className="h-4 w-4" /> Acesso somente consulta
           </Button>
           <p className="mt-2 text-[11px] text-center text-muted-foreground">
-            Sem login. Você pode consultar dispositivos e o dashboard, mas não pode editar.
+            Sem login, você pode consultar dispositivos e o dashboard, além de imprimir etiquetas, mas não pode cadastrar novos dispositivos.
           </p>
 
           <div className="mt-8 text-center">
