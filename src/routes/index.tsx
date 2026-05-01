@@ -48,9 +48,9 @@ function HomePage() {
             <h1 className="mt-4 text-4xl md:text-5xl font-bold leading-tight">
               Controle de dispositivos <span className="text-brand-gradient">RAC</span>
             </h1>
-            <p className="mt-4 max-w-xl text-white/80 text-base">
-              Registro único por dispositivo, auditoria imutável de cada alteração e baixa, e visibilidade em
-              tempo real para todo o time. Consulta aberta — operação com login.
+            <p className="mt-4 max-w-xl text-white/80 text-base whitespace-pre-line">
+              Registro único por dispositivo, auditoria imutável de cada transferência e baixa, além visibilidade em tempo real para todo o time.
+              {"\n"}Consulta aberta / Operação com login restrito ao Dono de RAC e Apoios.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild size="lg" className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
