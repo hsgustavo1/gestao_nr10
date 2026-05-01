@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Lock, ShieldCheck, History, ArrowRight, Users } from "lucide-react";
+import { Lock, ShieldCheck, History, ArrowRight, Fingerprint } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -90,9 +90,9 @@ function HomePage() {
           desc="Consulta e impressão de etiquetas (público), Apoios (cadastra e transfere), Dono de RAC (controle total)."
         />
         <Feature
-          icon={<Users className="h-5 w-5" />}
-          title="Regras por cor"
-          desc="Pessoal e Equipamento: 1 por matrícula. Equipamento livre. Empréstimo: só número e unidade. Sem repetição na mesma cor."
+          icon={<Fingerprint className="h-5 w-5" />}
+          title="Rastreabilidade e confiabilidade"
+          desc="Cada dispositivo possui identificação única e histórico completo de movimentações, garantindo controle confiável e rastreável de ponta a ponta."
         />
       </section>
     </PageShell>
