@@ -13,7 +13,8 @@ const corsHeaders = {
 type Action =
   | { type: "create"; email: string; password: string; display_name?: string; role: "admin" | "apoio" }
   | { type: "delete"; user_id: string }
-  | { type: "reset_password"; email: string };
+  | { type: "reset_password"; email: string }
+  | { type: "update"; user_id: string; email?: string; display_name?: string; password?: string };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -110,6 +111,30 @@ Deno.serve(async (req) => {
         email: action.email,
       });
       if (linkErr) return json({ error: linkErr.message }, 400);
+      return json({ ok: true });
+    }
+
+    if (action.type === "update") {
+      if (!action.user_id) return json({ error: "user_id é obrigatório" }, 400);
+      const updates: { email?: string; password?: string; user_metadata?: Record<string, unknown> } = {};
+      const newEmail = action.email?.trim().toLowerCase();
+      const newName = action.display_name?.trim();
+      if (newEmail) updates.email = newEmail;
+      if (action.password) {
+        if (action.password.length < 8) return json({ error: "Senha deve ter pelo menos 8 caracteres" }, 400);
+        updates.password = action.password;
+      }
+      if (newName !== undefined) updates.user_metadata = { display_name: newName };
+      if (Object.keys(updates).length > 0) {
+        const { error: upErr } = await admin.auth.admin.updateUserById(action.user_id, updates);
+        if (upErr) return json({ error: upErr.message }, 400);
+      }
+      const profilePatch: Record<string, unknown> = {};
+      if (newEmail) profilePatch.email = newEmail;
+      if (newName !== undefined) profilePatch.display_name = newName;
+      if (Object.keys(profilePatch).length > 0) {
+        await admin.from("profiles").update(profilePatch).eq("id", action.user_id);
+      }
       return json({ ok: true });
     }
 

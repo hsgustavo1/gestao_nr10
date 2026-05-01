@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { ShieldCheck, ShieldOff, ShieldAlert, UserPlus, Trash2, KeyRound } from "lucide-react";
+import { ShieldCheck, ShieldOff, ShieldAlert, UserPlus, Trash2, KeyRound, Pencil } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ function AdminUsersPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [openInvite, setOpenInvite] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Row | null>(null);
+  const [editing, setEditing] = useState<Row | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   async function reload() {
@@ -111,7 +112,7 @@ function AdminUsersPage() {
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">Controle de acessos</h1>
-          <p className="text-sm text-muted-foreground">Cadastre Supervisores e Admins, gerencie permissões e envie redefinição de senha.</p>
+          <p className="text-sm text-muted-foreground">Cadastre Apoios e Donos de RAC, gerencie permissões, edite dados e envie redefinição de senha.</p>
         </div>
         <Button onClick={() => setOpenInvite(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
           <UserPlus className="h-4 w-4" /> Novo Acesso
@@ -145,7 +146,7 @@ function AdminUsersPage() {
                       {u.roles.length === 0 && <span className="text-xs text-muted-foreground">Sem perfil</span>}
                       {u.roles.map((r) => (
                         <span key={r} className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                          <ShieldCheck className="h-3 w-3" />{r === "admin" ? "Admin" : "Supervisor"}
+                          <ShieldCheck className="h-3 w-3" />{r === "admin" ? "Dono de RAC (Admin)" : "Apoio"}
                         </span>
                       ))}
                     </div>
@@ -154,6 +155,9 @@ function AdminUsersPage() {
                     <div className="flex gap-1 justify-end">
                       <RoleToggle role="apoio" active={u.roles.includes("apoio")} disabled={busy !== null} onChange={(v) => setRole(u.id, "apoio", v)} />
                       <RoleToggle role="admin" active={u.roles.includes("admin")} disabled={busy !== null || u.id === user?.id} onChange={(v) => setRole(u.id, "admin", v)} />
+                      <Button size="sm" variant="ghost" disabled={busy === u.id} onClick={() => setEditing(u)} title="Editar usuário">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                       <Button size="sm" variant="ghost" disabled={busy === u.id} onClick={() => sendReset(u)} title="Enviar redefinição de senha">
                         <KeyRound className="h-3.5 w-3.5" />
                       </Button>
@@ -176,11 +180,12 @@ function AdminUsersPage() {
       </Card>
 
       <p className="text-xs text-muted-foreground mt-4">
-        Admins têm controle total. Supervisores podem cadastrar, repassar e realizar baixas de dispositivos.
-        Você não pode rebaixar nem remover a si mesmo — peça a outro Admin.
+        Donos de RAC (Admin) têm controle total. Apoios podem cadastrar, transferir e realizar baixas de dispositivos.
+        Você não pode rebaixar nem remover a si mesmo — peça a outro Dono de RAC.
       </p>
 
       <InviteUserDialog open={openInvite} onOpenChange={setOpenInvite} onCreated={reload} />
+      <EditUserDialog row={editing} onOpenChange={(o) => !o && setEditing(null)} onSaved={() => { setEditing(null); reload(); }} />
 
       <AlertDialog open={pendingDelete !== null} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>
@@ -216,7 +221,7 @@ function RoleToggle({ role, active, disabled, onChange }: { role: AppRole; activ
       className={active ? "bg-brand-gradient text-white" : ""}
     >
       {active ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
-      {role === "admin" ? "Admin" : "Supervisor"}
+      {role === "admin" ? "Dono de RAC" : "Apoio"}
     </Button>
   );
 }
@@ -245,7 +250,7 @@ function InviteUserDialog({ open, onOpenChange, onCreated }: { open: boolean; on
       const msg = (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao cadastrar";
       return toast.error(msg);
     }
-    toast.success(`Usuário ${email} cadastrado como ${role === "admin" ? "Dono RAC" : "Apoio RAC"}`);
+    toast.success(`Usuário ${email} cadastrado como ${role === "admin" ? "Dono de RAC (Admin)" : "Apoio"}`);
     reset();
     onOpenChange(false);
     onCreated();
@@ -280,8 +285,8 @@ function InviteUserDialog({ open, onOpenChange, onCreated }: { open: boolean; on
             <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="apoio">Supervisor</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="apoio">Apoio</SelectItem>
+                <SelectItem value="admin">Dono de RAC (Admin)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -289,6 +294,78 @@ function InviteUserDialog({ open, onOpenChange, onCreated }: { open: boolean; on
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
               {loading ? "Criando..." : "Liberar Acesso"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditUserDialog({ row, onOpenChange, onSaved }: { row: Row | null; onOpenChange: (o: boolean) => void; onSaved: () => void }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (row) {
+      setName(row.display_name ?? "");
+      setEmail(row.email ?? "");
+      setPassword("");
+    }
+  }, [row]);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!row) return;
+    if (email && !email.includes("@")) return toast.error("E-mail inválido");
+    if (password && password.length < 8) return toast.error("Senha deve ter ao menos 8 caracteres");
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: {
+        type: "update",
+        user_id: row.id,
+        display_name: name,
+        email: email || undefined,
+        password: password || undefined,
+      },
+    });
+    setLoading(false);
+    if (error || (data && (data as { error?: string }).error)) {
+      const msg = (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao salvar";
+      return toast.error(msg);
+    }
+    toast.success("Usuário atualizado");
+    onSaved();
+  }
+
+  return (
+    <Dialog open={row !== null} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Editar usuário</DialogTitle>
+          <DialogDescription>
+            Atualize nome, e-mail ou defina uma nova senha. Deixe a senha em branco para mantê-la.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="ename">Nome</Label>
+            <Input id="ename" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="eemail">E-mail</Label>
+            <Input id="eemail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="epass">Nova senha (opcional)</Label>
+            <Input id="epass" type="text" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} placeholder="Mínimo 8 caracteres" />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
+              {loading ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </form>

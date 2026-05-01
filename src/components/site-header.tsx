@@ -12,7 +12,7 @@ export function SiteHeader() {
   const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode } = useAuth();
   const navigate = useNavigate();
 
-  const cargo = isAdmin ? "Admin" : isStaff ? "Supervisor" : "Consulta";
+  const cargo = isAdmin ? "Dono de RAC (Admin)" : isStaff ? "Apoio" : "Consulta";
   const displayName =
     (user?.user_metadata?.display_name as string | undefined) ||
     user?.email?.split("@")[0] ||
