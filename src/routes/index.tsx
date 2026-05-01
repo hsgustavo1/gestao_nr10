@@ -45,8 +45,8 @@ function HomePage() {
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wider">
               <ShieldCheck className="h-3.5 w-3.5" /> Bloqueio de energias perigosas
             </span>
-            <h1 className="mt-4 text-4xl md:text-5xl font-bold leading-tight">
-              Controle de dispositivos <span className="text-brand-gradient">RAC</span>
+            <h1 className="mt-4 text-3xl md:text-4xl font-bold leading-tight">
+              Controle de dispositivos <span className="text-brand-gradient">Requisitos para Atividades Críticas</span>
             </h1>
             <p className="mt-4 max-w-xl text-white/80 text-base whitespace-pre-line">
               Registro único por dispositivo, auditoria imutável de cada transferência e baixa, além visibilidade em tempo real para todo o time.
@@ -87,7 +87,7 @@ function HomePage() {
         <Feature
           icon={<ShieldCheck className="h-5 w-5" />}
           title="3 níveis de acesso"
-          desc="Consulta (público), Supervisor (cadastra e repassa), Admin (controle total)."
+          desc="Consulta e impressão de etiquetas (público), Apoios (cadastra e transfere), Dono de RAC (controle total)."
         />
         <Feature
           icon={<Users className="h-5 w-5" />}
