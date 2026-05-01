@@ -126,7 +126,7 @@ function LoginPage() {
                 ? "Informe seu e-mail e enviaremos um link para redefinir a senha."
                 : mode === "signup"
                 ? "Após o cadastro, um Admin precisa aprovar seu perfil."
-                : "Acesso para Supervisor e Admin. A consulta é aberta."}
+                : "Acesso para Dono de RAC e Apoios. A consulta é aberta para todos os Integrantes."}
             </p>
           </div>
 
