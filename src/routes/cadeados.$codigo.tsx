@@ -139,9 +139,9 @@ function PadlockDetail() {
           {!isRed && (
             <>
               <Field label="Dono" value={padlock.owner_name} />
-              <Field label="Matrícula" value={padlock.owner_registration} mono />
-              <Field label="Função" value={padlock.owner_role} />
-              <Field label="Telefone" value={padlock.owner_phone ? formatPhoneBR(padlock.owner_phone) : null} />
+              {user && <Field label="Matrícula" value={padlock.owner_registration} mono />}
+              {user && <Field label="Função" value={padlock.owner_role} />}
+              {user && <Field label="Telefone" value={padlock.owner_phone ? formatPhoneBR(padlock.owner_phone) : null} />}
             </>
           )}
           {isRed && (
