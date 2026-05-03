@@ -31,7 +31,8 @@ export const Route = createFileRoute("/cadeados/")({
 });
 
 function PadlocksList() {
-  const { isStaff } = useAuth();
+  const { isStaff, user } = useAuth();
+  const canSeeSensitive = !!user;
   const [items, setItems] = useState<Padlock[]>([]);
   const [q, setQ] = useState("");
   const [colorFilter, setColorFilter] = useState<PadlockColor | "all">("all");
@@ -77,18 +78,23 @@ function PadlocksList() {
   }, [items, q, colorFilter, statusFilter, sectorFilter]);
 
   const exportExcel = () => {
-    const rows = filtered.map((p) => ({
-      "Nº": p.number,
-      "Cor": colorLabel[p.color],
-      "Status": p.cancelled ? "Cancelado" : "Ativo",
-      "Dono": p.owner_name ?? "",
-      "Matrícula": p.owner_registration ?? "",
-      "Função": p.owner_role ?? "",
-      "Setor / Empresa": p.owner_sector ?? "",
-      "Telefone": p.owner_phone ? formatPhoneBR(p.owner_phone) : "",
-      "Motivo cancelamento": p.cancellation_reason ?? "",
-      "Data registro": p.created_at ? new Date(p.created_at).toLocaleDateString("pt-BR") : "",
-    }));
+    const rows = filtered.map((p) => {
+      const base: Record<string, string | number> = {
+        "Nº": p.number,
+        "Cor": colorLabel[p.color],
+        "Status": p.cancelled ? "Cancelado" : "Ativo",
+        "Dono": p.owner_name ?? "",
+        "Setor / Empresa": p.owner_sector ?? "",
+      };
+      if (canSeeSensitive) {
+        base["Matrícula"] = p.owner_registration ?? "";
+        base["Função"] = p.owner_role ?? "";
+        base["Telefone"] = p.owner_phone ? formatPhoneBR(p.owner_phone) : "";
+      }
+      base["Motivo cancelamento"] = p.cancellation_reason ?? "";
+      base["Data registro"] = p.created_at ? new Date(p.created_at).toLocaleDateString("pt-BR") : "";
+      return base;
+    });
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Cadeados");
@@ -166,16 +172,16 @@ function PadlocksList() {
                 <TableHead>Nº</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Dono</TableHead>
-                <TableHead>Matrícula</TableHead>
-                <TableHead>Função</TableHead>
                 <TableHead>Setor / Empresa</TableHead>
-                <TableHead>Telefone</TableHead>
+                {canSeeSensitive && <TableHead>Matrícula</TableHead>}
+                {canSeeSensitive && <TableHead>Função</TableHead>}
+                {canSeeSensitive && <TableHead>Telefone</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={canSeeSensitive ? 8 : 5} className="text-center text-muted-foreground py-10">
                     Nenhum dispositivo encontrado.
                   </TableCell>
                 </TableRow>
@@ -207,10 +213,10 @@ function PadlocksList() {
                     )}
                   </TableCell>
                   <TableCell className="text-sm">{p.owner_name || (p.color === "vermelho" ? <span className="text-muted-foreground">—</span> : "—")}</TableCell>
-                  <TableCell className="text-sm font-mono">{p.owner_registration || "—"}</TableCell>
-                  <TableCell className="text-sm">{p.owner_role || "—"}</TableCell>
                   <TableCell className="text-sm">{p.owner_sector || "—"}</TableCell>
-                  <TableCell className="text-sm">{p.owner_phone ? formatPhoneBR(p.owner_phone) : "—"}</TableCell>
+                  {canSeeSensitive && <TableCell className="text-sm font-mono">{p.owner_registration || "—"}</TableCell>}
+                  {canSeeSensitive && <TableCell className="text-sm">{p.owner_role || "—"}</TableCell>}
+                  {canSeeSensitive && <TableCell className="text-sm">{p.owner_phone ? formatPhoneBR(p.owner_phone) : "—"}</TableCell>}
                 </TableRow>
               ))}
             </TableBody>
