@@ -409,7 +409,14 @@ function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
             </div>
             <div className="space-y-1.5"><Label>Número</Label><Input type="number" min={0} value={number} onChange={(e) => setNumber(e.target.value)} required /></div>
           </div>
-          <div className="space-y-1.5"><Label>Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
+          <div className="space-y-1.5">
+            <Label>Setor</Label>
+            {color === "latao" ? (
+              <Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required />
+            ) : (
+              <SectorSelect value={sector} onChange={setSector} required />
+            )}
+          </div>
           {!isRed && (
             <>
               <div className="grid grid-cols-2 gap-3">
