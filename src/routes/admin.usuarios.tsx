@@ -96,8 +96,10 @@ function AdminUsersPage() {
   async function sendReset(row: Row) {
     if (!row.email) return toast.error("Usuário sem e-mail");
     setBusy(row.id);
+    const redirect_to =
+      typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined;
     const { data, error } = await supabase.functions.invoke("admin-users", {
-      body: { type: "reset_password", email: row.email },
+      body: { type: "reset_password", email: row.email, redirect_to },
     });
     setBusy(null);
     if (error || (data && (data as { error?: string }).error)) {
