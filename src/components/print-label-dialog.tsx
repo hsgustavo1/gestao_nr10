@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { colorLabel, type Padlock } from "@/lib/padlocks";
 import { EtiquetaLOTO, type EtiquetaCor } from "@/components/etiqueta-loto";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
 
 const BUCKET = "padlock-photos";
 const photoPath = (padlockId: string) => `${padlockId}.jpg`;
@@ -24,7 +23,6 @@ export function PrintLabelDialog({
   onOpenChange: (o: boolean) => void;
   padlock: Padlock;
 }) {
-  const { isStaff } = useAuth();
   const [fotoSrc, setFotoSrc] = useState<string | null>(null);
   const [etiquetaGerada, setEtiquetaGerada] = useState(false);
   const [loadingFoto, setLoadingFoto] = useState(false);
@@ -174,11 +172,11 @@ export function PrintLabelDialog({
               accept="image/*"
               onChange={onFileChange}
               className="hidden"
-              disabled={!isStaff || uploading}
+              disabled={uploading}
             />
             <label
               htmlFor="foto-input"
-              className={`flex items-center gap-3 rounded-md border-2 border-dashed border-muted-foreground/40 p-3 transition-colors ${isStaff ? "cursor-pointer hover:border-muted-foreground/70" : "cursor-not-allowed opacity-70"}`}
+              className="flex items-center gap-3 rounded-md border-2 border-dashed border-muted-foreground/40 p-3 transition-colors cursor-pointer hover:border-muted-foreground/70"
             >
               {loadingFoto ? (
                 <div className="flex h-[80px] w-[140px] items-center justify-center rounded bg-muted/50 text-xs text-muted-foreground">
@@ -199,12 +197,10 @@ export function PrintLabelDialog({
                 {temFotoArquivada ? (
                   <>
                     Foto arquivada para este cadeado.
-                    {isStaff && <> Clique para <strong>substituir</strong> a foto. <RefreshCw className="inline h-3 w-3 ml-1" /></>}
+                    <> Clique para <strong>substituir</strong> a foto. <RefreshCw className="inline h-3 w-3 ml-1" /></>
                   </>
-                ) : isStaff ? (
-                  <>Clique para enviar uma foto. JPG/PNG até 5MB. {uploading && "(enviando...)"}</>
                 ) : (
-                  <>Sem foto arquivada. Solicite à equipe para fazer o upload.</>
+                  <>Clique para enviar uma foto. JPG/PNG até 5MB. {uploading && "(enviando...)"}</>
                 )}
               </span>
             </label>
