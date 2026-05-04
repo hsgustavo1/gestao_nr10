@@ -52,7 +52,7 @@ function LoginPage() {
         if (error) throw error;
         await refreshRoles();
         toast.success("Bem-vindo!");
-        navigate({ to: "/dashboard" });
+        navigate({ to: "/cadeados" });
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -76,7 +76,7 @@ function LoginPage() {
   function onViewer() {
     enterViewerMode();
     toast.success("Modo visualização ativado.");
-    navigate({ to: "/dashboard" });
+    navigate({ to: "/cadeados" });
   }
 
   return (

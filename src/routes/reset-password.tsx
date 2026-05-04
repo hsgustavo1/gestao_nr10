@@ -55,7 +55,7 @@ function ResetPasswordPage() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast.success("Senha redefinida. Você já está autenticado.");
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/cadeados" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro inesperado");
     } finally {
