@@ -15,6 +15,7 @@ import {
 import { CancelPadlockDialog } from "@/components/cancel-padlock-dialog";
 import { DeletePadlockDialog } from "@/components/delete-padlock-dialog";
 import { PrintLabelDialog } from "@/components/print-label-dialog";
+import { SectorSelect } from "@/components/sector-select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -308,7 +309,14 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
-            <div className="space-y-1.5"><Label>Setor / Empresa</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
+            <div className="space-y-1.5">
+              <Label>Setor / Empresa</Label>
+              {padlock.color === "latao" ? (
+                <Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required />
+              ) : (
+                <SectorSelect value={sector} onChange={setSector} required />
+              )}
+            </div>
           </div>
           <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(formatPhoneBR(e.target.value))} inputMode="tel" placeholder="(XX) XXXXX-XXXX" maxLength={16} required /></div>
           <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
@@ -401,7 +409,14 @@ function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
             </div>
             <div className="space-y-1.5"><Label>Número</Label><Input type="number" min={0} value={number} onChange={(e) => setNumber(e.target.value)} required /></div>
           </div>
-          <div className="space-y-1.5"><Label>Setor</Label><Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required /></div>
+          <div className="space-y-1.5">
+            <Label>Setor</Label>
+            {color === "latao" ? (
+              <Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required />
+            ) : (
+              <SectorSelect value={sector} onChange={setSector} required />
+            )}
+          </div>
           {!isRed && (
             <>
               <div className="grid grid-cols-2 gap-3">
