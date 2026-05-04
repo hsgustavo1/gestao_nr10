@@ -15,6 +15,7 @@ import {
 import { CancelPadlockDialog } from "@/components/cancel-padlock-dialog";
 import { DeletePadlockDialog } from "@/components/delete-padlock-dialog";
 import { PrintLabelDialog } from "@/components/print-label-dialog";
+import { SectorSelect } from "@/components/sector-select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
