@@ -13,7 +13,7 @@ const corsHeaders = {
 type Action =
   | { type: "create"; email: string; password: string; display_name?: string; role: "admin" | "apoio" }
   | { type: "delete"; user_id: string }
-  | { type: "reset_password"; email: string }
+  | { type: "reset_password"; email: string; redirect_to?: string }
   | { type: "update"; user_id: string; email?: string; display_name?: string; password?: string };
 
 function json(body: unknown, status = 200) {
@@ -106,11 +106,15 @@ Deno.serve(async (req) => {
 
     if (action.type === "reset_password") {
       if (!action.email) return json({ error: "email é obrigatório" }, 400);
-      const { error: linkErr } = await admin.auth.admin.generateLink({
-        type: "recovery",
-        email: action.email,
+      // Usa o cliente público para DISPARAR o e-mail (generateLink só gera link, não envia)
+      const publicClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: { persistSession: false },
       });
-      if (linkErr) return json({ error: linkErr.message }, 400);
+      const { error: resetErr } = await publicClient.auth.resetPasswordForEmail(
+        action.email,
+        action.redirect_to ? { redirectTo: action.redirect_to } : undefined,
+      );
+      if (resetErr) return json({ error: resetErr.message }, 400);
       return json({ ok: true });
     }
 
