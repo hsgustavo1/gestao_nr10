@@ -82,6 +82,90 @@ export type Database = {
           },
         ]
       }
+      padlock_report_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          padlock_code: string
+          padlock_id: string
+          report_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          padlock_code: string
+          padlock_id: string
+          report_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          padlock_code?: string
+          padlock_id?: string
+          report_id?: string
+        }
+        Relationships: []
+      }
+      padlock_reports: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          padlock_code: string
+          padlock_id: string
+          reporter_contact: string | null
+          reporter_name: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          padlock_code: string
+          padlock_id: string
+          reporter_contact?: string | null
+          reporter_name?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          padlock_code?: string
+          padlock_id?: string
+          reporter_contact?: string | null
+          reporter_name?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       padlocks: {
         Row: {
           applied_at: string | null
