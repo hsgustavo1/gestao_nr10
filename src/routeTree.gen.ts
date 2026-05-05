@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CadeadosIndexRouteImport } from './routes/cadeados.index'
 import { Route as CadeadosCodigoRouteImport } from './routes/cadeados.$codigo'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminCargaRouteImport } from './routes/admin.carga'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -53,6 +54,11 @@ const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   path: '/admin/usuarios',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCargaRoute = AdminCargaRouteImport.update({
   id: '/admin/carga',
   path: '/admin/carga',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/carga': typeof AdminCargaRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
   '/cadeados/': typeof CadeadosIndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/carga': typeof AdminCargaRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
   '/cadeados': typeof CadeadosIndexRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/carga': typeof AdminCargaRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
   '/cadeados/': typeof CadeadosIndexRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/admin/carga'
+    | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
     | '/cadeados/'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/admin/carga'
+    | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
     | '/cadeados'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/admin/carga'
+    | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
     | '/cadeados/'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminCargaRoute: typeof AdminCargaRoute
+  AdminReportsRoute: typeof AdminReportsRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   CadeadosCodigoRoute: typeof CadeadosCodigoRoute
   CadeadosIndexRoute: typeof CadeadosIndexRoute
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsuariosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/carga': {
       id: '/admin/carga'
       path: '/admin/carga'
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AdminCargaRoute: AdminCargaRoute,
+  AdminReportsRoute: AdminReportsRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   CadeadosCodigoRoute: CadeadosCodigoRoute,
   CadeadosIndexRoute: CadeadosIndexRoute,
