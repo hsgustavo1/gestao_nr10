@@ -106,15 +106,15 @@ function PadlocksList() {
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Base de dados</h1>
-          <p className="text-sm text-muted-foreground">{items.length} itens registrados · {filtered.length} exibidos</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Base de dados</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">{items.length} itens registrados · {filtered.length} exibidos</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={exportExcel} disabled={filtered.length === 0}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={exportExcel} disabled={filtered.length === 0} className="flex-1 sm:flex-none">
             <FileDown className="h-4 w-4" /> Exportar Excel
           </Button>
           {isStaff && (
-            <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
+            <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95 flex-1 sm:flex-none">
               <Plus className="h-4 w-4" /> Novo Dispositivo
             </Button>
           )}
@@ -122,12 +122,13 @@ function PadlocksList() {
       </div>
 
       <div className="mt-5 flex gap-3 flex-wrap items-center">
-        <div className="relative flex-1 min-w-[220px]">
+        <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por número, dono, matrícula ou setor / empresa" className="pl-9" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por número, dono, matrícula ou setor" className="pl-9" />
         </div>
+        <div className="flex gap-2 w-full sm:w-auto">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="flex-1 sm:w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="ativos">Ativos</SelectItem>
             <SelectItem value="cancelados">Cancelados</SelectItem>
@@ -135,7 +136,7 @@ function PadlocksList() {
           </SelectContent>
         </Select>
         <Select value={sectorFilter} onValueChange={setSectorFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Setor / Empresa" /></SelectTrigger>
+          <SelectTrigger className="flex-1 sm:w-[180px]"><SelectValue placeholder="Setor / Empresa" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os setores</SelectItem>
             {sectors.map((s) => (
@@ -143,10 +144,11 @@ function PadlocksList() {
             ))}
           </SelectContent>
         </Select>
-        <div className="flex gap-1 rounded-lg bg-secondary p-1">
+        </div>
+        <div className="flex gap-1 rounded-lg bg-secondary p-1 w-full sm:w-auto overflow-x-auto">
           <button
             onClick={() => setColorFilter("all")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${colorFilter === "all" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition shrink-0 ${colorFilter === "all" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
           >
             Todas
           </button>
@@ -154,7 +156,7 @@ function PadlocksList() {
             <button
               key={c}
               onClick={() => setColorFilter(c)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition ${colorFilter === c ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition shrink-0 ${colorFilter === c ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
             >
               <span className={`h-2.5 w-2.5 rounded-full border ${colorSwatch[c]}`} />
               {colorLabel[c]}
@@ -163,7 +165,8 @@ function PadlocksList() {
         </div>
       </div>
 
-      <Card className="mt-4">
+      {/* Tabela (desktop) */}
+      <Card className="mt-4 hidden md:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -223,6 +226,53 @@ function PadlocksList() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Lista de cards (mobile) */}
+      <div className="mt-4 grid gap-2 md:hidden">
+        {filtered.length === 0 && (
+          <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
+            Nenhum dispositivo encontrado.
+          </div>
+        )}
+        {filtered.map((p) => (
+          <Link
+            key={p.id}
+            to="/cadeados/$codigo"
+            params={{ codigo: p.code }}
+            className={`block rounded-lg border bg-card p-3 active:bg-accent/50 transition ${p.cancelled ? "bg-[#FDECEA]/40 opacity-80" : ""}`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`h-3.5 w-3.5 rounded-full border shrink-0 ${colorSwatch[p.color]}`} />
+                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${colorBadge[p.color]}`}>
+                  {colorLabel[p.color]}
+                </span>
+                <span className="font-mono font-semibold tabular-nums text-sm">#{p.number}</span>
+              </div>
+              {p.cancelled ? (
+                <span className="inline-flex items-center rounded-full border border-[#D42E1B]/40 bg-[#FFE3DF] px-2 py-0.5 text-[10px] font-medium text-[#8B1A0E] shrink-0">
+                  Baixado
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#0F7A47] shrink-0">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#0F7A47]" /> Em uso
+                </span>
+              )}
+            </div>
+            <div className="mt-2 text-sm">
+              <div className="font-medium truncate">{p.owner_name || "—"}</div>
+              <div className="text-xs text-muted-foreground truncate">{p.owner_sector || "—"}</div>
+            </div>
+            {canSeeSensitive && (p.owner_registration || p.owner_role || p.owner_phone) && (
+              <div className="mt-1.5 text-[11px] text-muted-foreground space-x-2">
+                {p.owner_registration && <span className="font-mono">{p.owner_registration}</span>}
+                {p.owner_role && <span>· {p.owner_role}</span>}
+                {p.owner_phone && <span>· {formatPhoneBR(p.owner_phone)}</span>}
+              </div>
+            )}
+          </Link>
+        ))}
+      </div>
 
       <NewPadlockDialog open={openNew} onOpenChange={setOpenNew} onCreated={reload} />
     </PageShell>

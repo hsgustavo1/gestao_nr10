@@ -1,6 +1,14 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogIn, LogOut, Eye } from "lucide-react";
+import { LogIn, LogOut, Eye, Menu } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 /**
  * Topbar Atvos — fundo azul-marinho fixo (#0A2D48), wordmark "atvos."
@@ -11,6 +19,7 @@ import { useAuth } from "@/lib/auth-context";
 export function SiteHeader() {
   const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const cargo = isAdmin ? "Dono de RAC (Admin)" : isStaff ? "Apoio" : "Consulta";
   const displayName =
@@ -21,12 +30,50 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 atvos-topbar shadow-[0_2px_0_rgba(0,0,0,0.05)]">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-3 sm:px-4 gap-2">
         {/* Wordmark + nav */}
-        <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-0">
-            <span className="text-[14px] font-bold uppercase tracking-[0.05em] text-white">
-              RAC - Bloqueio de energias perigosas&nbsp;&nbsp;
+        <div className="flex items-center gap-2 sm:gap-8 min-w-0">
+          {/* Hambúrguer (mobile/tablet) */}
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                aria-label="Abrir menu"
+                className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-md text-white/85 hover:bg-white/10"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0 bg-[#0A2D48] text-white border-r-0">
+              <SheetHeader className="px-4 py-4 border-b border-white/10">
+                <SheetTitle className="text-white text-sm uppercase tracking-wider">
+                  RAC — Bloqueio
+                </SheetTitle>
+              </SheetHeader>
+              {user && (
+                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
+                  <span aria-hidden className="atvos-avatar grid h-9 w-9 place-items-center rounded-full text-xs">
+                    {initials}
+                  </span>
+                  <div className="leading-tight min-w-0">
+                    <div className="text-sm font-semibold truncate">{displayName}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-white/60">{cargo}</div>
+                  </div>
+                </div>
+              )}
+              <nav className="flex flex-col p-2">
+                <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
+                <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>Base de dados</MobileNavLink>
+                {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>Carga</MobileNavLink>}
+                {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>Controle de acessos</MobileNavLink>}
+              </nav>
+            </SheetContent>
+          </Sheet>
+
+          <Link to="/" className="flex items-center gap-0 min-w-0">
+            <span className="text-[12px] sm:text-[14px] font-bold uppercase tracking-[0.05em] text-white truncate">
+              <span className="hidden sm:inline">RAC - Bloqueio de energias perigosas&nbsp;&nbsp;</span>
+              <span className="sm:hidden">RAC — Bloqueio</span>
             </span>
           </Link>
 
@@ -39,7 +86,7 @@ export function SiteHeader() {
         </div>
 
         {/* Pill usuário ou botão Entrar */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {user ? (
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex items-center gap-2.5 rounded-full bg-white/8 pr-3 pl-1 py-1 ring-1 ring-white/10">
@@ -103,6 +150,19 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
         className:
           "text-white after:content-[''] after:absolute after:left-3 after:right-3 after:-bottom-[18px] after:h-[3px] after:rounded-t-sm after:bg-gradient-to-r after:from-[#F79220] after:to-[#E35D12]",
       }}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function MobileNavLink({ to, children, onNav }: { to: string; children: React.ReactNode; onNav: () => void }) {
+  return (
+    <Link
+      to={to}
+      onClick={onNav}
+      className="rounded-md px-3 py-2.5 text-sm font-medium text-white/85 hover:bg-white/10"
+      activeProps={{ className: "bg-white/10 text-white" }}
     >
       {children}
     </Link>
