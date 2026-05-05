@@ -78,21 +78,21 @@ function PadlockDetail() {
       </Link>
 
       <div className="mt-3 flex items-start justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <div className={`grid h-14 w-14 place-items-center rounded-2xl border-2 shadow-brand ${colorSwatch[padlock.color]}`}>
-            <Lock className="h-7 w-7 text-white drop-shadow" />
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className={`grid h-12 w-12 sm:h-14 sm:w-14 shrink-0 place-items-center rounded-2xl border-2 shadow-brand ${colorSwatch[padlock.color]}`}>
+            <Lock className="h-6 w-6 sm:h-7 sm:w-7 text-white drop-shadow" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Dispositivo de Bloqueio</div>
-            <h1 className="font-mono text-2xl font-bold">{colorLabel[padlock.color]} #{padlock.number}</h1>
+            <h1 className="font-mono text-lg sm:text-2xl font-bold truncate">{colorLabel[padlock.color]} #{padlock.number}</h1>
             <span className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorBadge[padlock.color]}`}>
               {colorLabel[padlock.color]}
             </span>
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex gap-2 sm:flex-wrap w-full sm:w-auto">
           {isStaff && !isRed && !isCancelled && (
-            <Button onClick={() => setOpenTransfer(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
+            <Button onClick={() => setOpenTransfer(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95 col-span-2">
               <ArrowLeftRight className="h-4 w-4" /> Transferir cadeado
             </Button>
           )}

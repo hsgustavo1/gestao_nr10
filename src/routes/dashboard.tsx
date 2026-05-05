@@ -62,27 +62,27 @@ function DashboardPage() {
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Visão geral do bloqueio de energias perigosas.
           </p>
         </div>
         {isStaff && (
-          <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
+          <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95 w-full sm:w-auto">
             <Plus className="h-4 w-4" /> Novo Dispositivo
           </Button>
         )}
       </div>
 
       {/* Stats principais */}
-      <section className="mt-6 grid gap-4 sm:grid-cols-3">
+      <section className="mt-6 grid gap-3 grid-cols-3">
         <StatCard label="Total" value={padlocks.length} accent="bg-[#0D3A5C]" icon={<Lock className="h-5 w-5" />} />
         <StatCard label="Em uso" value={ativos.length} accent="bg-[#0F7A47]" icon={<CheckCircle2 className="h-5 w-5" />} />
         <StatCard label="Baixados" value={cancelados.length} accent="bg-[#B8281A]" icon={<XCircle className="h-5 w-5" />} />
       </section>
 
       {/* Stats por cor */}
-      <section className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mt-4 grid gap-3 grid-cols-2 lg:grid-cols-4">
         {byColor.map(({ color, count }) => (
           <Card key={color} className="overflow-hidden">
             <div className={`h-1 ${colorAccent[color]}`} />
