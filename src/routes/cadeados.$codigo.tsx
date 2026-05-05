@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, Pencil, Trash2, History, ArrowLeftRight, XCircle, AlertTriangle, Printer } from "lucide-react";
+import { ArrowLeft, Lock, Pencil, Trash2, History, ArrowLeftRight, XCircle, AlertTriangle, Printer, AlertCircle } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { CancelPadlockDialog } from "@/components/cancel-padlock-dialog";
 import { DeletePadlockDialog } from "@/components/delete-padlock-dialog";
 import { PrintLabelDialog } from "@/components/print-label-dialog";
 import { SectorSelect } from "@/components/sector-select";
+import { ReportInconsistencyDialog } from "@/components/report-inconsistency-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -41,6 +42,7 @@ function PadlockDetail() {
   const [openCancel, setOpenCancel] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [openPrint, setOpenPrint] = useState(false);
+  const [openReport, setOpenReport] = useState(false);
 
   async function reload() {
     const { data: p } = await supabase.from("padlocks").select("*").eq("code", codigo).maybeSingle();
@@ -101,6 +103,9 @@ function PadlockDetail() {
               <Printer className="h-4 w-4" /> Imprimir etiqueta
             </Button>
           )}
+          <Button onClick={() => setOpenReport(true)} variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10">
+            <AlertCircle className="h-4 w-4" /> Reportar inconsistência
+          </Button>
           {isAdmin && !isCancelled && (
             <Button onClick={() => setOpenEdit(true)} variant="ghost"><Pencil className="h-4 w-4" /> Editar</Button>
           )}
@@ -193,6 +198,7 @@ function PadlockDetail() {
       <CancelPadlockDialog open={openCancel} onOpenChange={setOpenCancel} padlock={padlock} onDone={reload} />
       <DeletePadlockDialog open={openDelete} onOpenChange={setOpenDelete} padlock={padlock} onDeleted={() => navigate({ to: "/cadeados" })} />
       <PrintLabelDialog open={openPrint} onOpenChange={setOpenPrint} padlock={padlock} />
+      <ReportInconsistencyDialog open={openReport} onOpenChange={setOpenReport} padlock={padlock} />
     </PageShell>
   );
 }
