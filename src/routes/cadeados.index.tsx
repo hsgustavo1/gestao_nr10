@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, FileDown } from "lucide-react";
+import { Plus, Search, FileDown, AlertCircle } from "lucide-react";
 import * as XLSX from "xlsx";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
   type Padlock, type PadlockColor,
 } from "@/lib/padlocks";
 import { NewPadlockDialog } from "@/components/new-padlock-dialog";
+import { ReportInconsistencyDialog } from "@/components/report-inconsistency-dialog";
 
 type StatusFilter = "all" | "ativos" | "cancelados";
 
@@ -39,6 +40,7 @@ function PadlocksList() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativos");
   const [sectorFilter, setSectorFilter] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
+  const [openReport, setOpenReport] = useState(false);
 
   const reload = () => {
     supabase
@@ -112,6 +114,9 @@ function PadlocksList() {
         <div className="flex gap-2 w-full sm:w-auto">
           <Button variant="outline" onClick={exportExcel} disabled={filtered.length === 0} className="flex-1 sm:flex-none">
             <FileDown className="h-4 w-4" /> Exportar Excel
+          </Button>
+          <Button variant="outline" onClick={() => setOpenReport(true)} className="flex-1 sm:flex-none">
+            <AlertCircle className="h-4 w-4" /> Reportar inconsistência
           </Button>
           {isStaff && (
             <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95 flex-1 sm:flex-none">
@@ -275,6 +280,7 @@ function PadlocksList() {
       </div>
 
       <NewPadlockDialog open={openNew} onOpenChange={setOpenNew} onCreated={reload} />
+      <ReportInconsistencyDialog open={openReport} onOpenChange={setOpenReport} padlocks={items} />
     </PageShell>
   );
 }
