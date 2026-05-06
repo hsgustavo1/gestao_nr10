@@ -11,7 +11,27 @@ import { EtiquetaLOTO, type EtiquetaCor } from "@/components/etiqueta-loto";
 import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET = "padlock-photos";
-const photoPath = (padlockId: string) => `${padlockId}.jpg`;
+
+/**
+ * Caminho da foto: por integrante (matrícula + nome normalizado).
+ * Assim a mesma foto é compartilhada entre todos os cadeados do mesmo dono.
+ * Para cadeados sem dono (ex.: vermelho), usa o id do cadeado como fallback.
+ */
+function memberSlug(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+function photoPathFor(padlock: Padlock): string {
+  const name = padlock.owner_name ? memberSlug(padlock.owner_name) : "";
+  const reg = padlock.owner_registration ? memberSlug(padlock.owner_registration) : "";
+  if (name && reg) return `members/${reg}_${name}.jpg`;
+  return `${padlock.id}.jpg`;
+}
 
 /**
  * Geração e impressão da Etiqueta LOTO 12x7 cm (frente + verso lado a lado).
@@ -37,18 +57,21 @@ export function PrintLabelDialog({
       setLoadingFoto(true);
       setEtiquetaGerada(false);
       setFotoSrc(null);
+      const path = photoPathFor(padlock);
+      const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+      const filename = path.includes("/") ? path.substring(path.lastIndexOf("/") + 1) : path;
       // Verifica se o objeto realmente existe no bucket (list ignora cache do CDN)
       const { data: list } = await supabase.storage
         .from(BUCKET)
-        .list("", { search: photoPath(padlock.id), limit: 1 });
-      const exists = !!list?.some((o) => o.name === photoPath(padlock.id));
+        .list(folder, { search: filename, limit: 1 });
+      const exists = !!list?.some((o) => o.name === filename);
       if (cancelled) return;
       if (!exists) {
         setLoadingFoto(false);
         return;
       }
       // Busca a imagem pela URL pública com cache-buster para evitar foto antiga
-      const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(photoPath(padlock.id));
+      const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
       try {
         const resp = await fetch(`${pub.publicUrl}?t=${Date.now()}`, { cache: "no-store" });
         if (!resp.ok) throw new Error("not found");
@@ -66,7 +89,7 @@ export function PrintLabelDialog({
       }
     })();
     return () => { cancelled = true; };
-  }, [open, padlock.id]);
+  }, [open, padlock.id, padlock.owner_name, padlock.owner_registration]);
 
   const cadeado = {
     numero: padlock.number,
@@ -93,9 +116,10 @@ export function PrintLabelDialog({
     if (!file.type.startsWith("image/")) return toast.error("Selecione um arquivo de imagem");
     if (file.size > 5 * 1024 * 1024) return toast.error("Imagem muito grande (máx. 5MB)");
     setUploading(true);
+    const path = photoPathFor(padlock);
     const { error } = await supabase.storage
       .from(BUCKET)
-      .upload(photoPath(padlock.id), file, {
+      .upload(path, file, {
         upsert: true,
         contentType: file.type,
         cacheControl: "3600",
@@ -110,7 +134,7 @@ export function PrintLabelDialog({
       setFotoSrc(reader.result as string);
       setEtiquetaGerada(true);
       setUploading(false);
-      toast.success("Foto arquivada para este cadeado");
+      toast.success("Foto arquivada para este integrante");
     };
     reader.readAsDataURL(file);
   }
