@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
 import {
@@ -10,15 +10,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import type { Padlock } from "@/lib/padlocks";
+import { colorLabel, type Padlock } from "@/lib/padlocks";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  padlock: Padlock;
+  padlock?: Padlock;
+  padlocks?: Padlock[];
 }
 
-export function ReportInconsistencyDialog({ open, onOpenChange, padlock }: Props) {
+export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlocks }: Props) {
   const { user } = useAuth();
   const defaultName =
     (user?.user_metadata?.display_name as string | undefined) ||
@@ -28,8 +29,35 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock }: Props
   const [contact, setContact] = useState(user?.email ?? "");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedCode, setSelectedCode] = useState("");
+  const [search, setSearch] = useState("");
+
+  const selectionMode = !padlock && Array.isArray(padlocks);
+  const sortedPadlocks = useMemo(() => {
+    if (!padlocks) return [];
+    return [...padlocks].sort((a, b) =>
+      a.color === b.color ? a.number - b.number : a.color.localeCompare(b.color),
+    );
+  }, [padlocks]);
+  const filteredPadlocks = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return sortedPadlocks;
+    return sortedPadlocks.filter(
+      (p) =>
+        p.code.toLowerCase().includes(term) ||
+        String(p.number).includes(term) ||
+        (p.owner_name ?? "").toLowerCase().includes(term) ||
+        (p.owner_sector ?? "").toLowerCase().includes(term),
+    );
+  }, [sortedPadlocks, search]);
+  const targetPadlock =
+    padlock ?? sortedPadlocks.find((p) => p.code === selectedCode) ?? null;
 
   const submit = async () => {
+    if (!targetPadlock) {
+      toast.error("Selecione um dispositivo.");
+      return;
+    }
     const msg = message.trim();
     if (msg.length < 5) {
       toast.error("Descreva a inconsistência com pelo menos 5 caracteres.");
@@ -43,8 +71,8 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock }: Props
     const { data: report, error } = await supabase
       .from("padlock_reports")
       .insert({
-        padlock_id: padlock.id,
-        padlock_code: padlock.code,
+        padlock_id: targetPadlock.id,
+        padlock_code: targetPadlock.code,
         reporter_name: name.trim() || null,
         reporter_contact: contact.trim() || null,
         message: msg,
@@ -58,8 +86,8 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock }: Props
     }
     await supabase.from("padlock_report_events").insert({
       report_id: report.id,
-      padlock_id: padlock.id,
-      padlock_code: padlock.code,
+      padlock_id: targetPadlock.id,
+      padlock_code: targetPadlock.code,
       action: "criado",
       actor_id: user?.id ?? null,
       actor_name: name.trim() || (user?.email ?? "Anônimo"),
@@ -68,6 +96,8 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock }: Props
     setLoading(false);
     toast.success("Report enviado. Obrigado!");
     setMessage("");
+    setSelectedCode("");
+    setSearch("");
     onOpenChange(false);
   };
 
@@ -80,10 +110,46 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock }: Props
             Reportar inconsistência
           </DialogTitle>
           <DialogDescription>
-            Dispositivo <strong>{padlock.code}</strong>. O Dono de RAC receberá seu report e dará tratativa.
+            {targetPadlock ? (
+              <>Dispositivo <strong>{targetPadlock.code}</strong>. </>
+            ) : (
+              <>Selecione o dispositivo com inconsistência. </>
+            )}
+            O Dono de RAC receberá seu report e dará tratativa.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
+          {selectionMode && (
+            <div>
+              <Label htmlFor="rep-padlock">Dispositivo *</Label>
+              <Input
+                id="rep-padlock-search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por número, dono ou setor"
+                className="mb-2"
+              />
+              <select
+                id="rep-padlock"
+                value={selectedCode}
+                onChange={(e) => setSelectedCode(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                size={Math.min(6, Math.max(3, filteredPadlocks.length))}
+              >
+                {filteredPadlocks.length === 0 && (
+                  <option value="" disabled>Nenhum dispositivo encontrado</option>
+                )}
+                {filteredPadlocks.map((p) => (
+                  <option key={p.id} value={p.code}>
+                    #{p.number} · {colorLabel[p.color]}
+                    {p.owner_name ? ` · ${p.owner_name}` : ""}
+                    {p.owner_sector ? ` · ${p.owner_sector}` : ""}
+                    {p.cancelled ? " (baixado)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <Label htmlFor="rep-name">Seu nome (opcional)</Label>
             <Input id="rep-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
