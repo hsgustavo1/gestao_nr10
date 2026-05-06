@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { PADLOCK_COLORS, colorLabel, type PadlockColor } from "@/lib/padlocks";
+import { PADLOCK_COLORS, colorLabel, logEvent, type PadlockColor } from "@/lib/padlocks";
 
 export const Route = createFileRoute("/admin/carga")({
   component: AdminCargaPage,
@@ -150,7 +150,7 @@ function parseSheet(rows: Record<string, unknown>[]): ParsedRow[] {
 }
 
 function AdminCargaPage() {
-  const { isAdmin, loading } = useAuth();
+  const { isAdmin, loading, user } = useAuth();
   const [parsed, setParsed] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState<string>("");
   const [importing, setImporting] = useState(false);
@@ -242,12 +242,28 @@ function AdminCargaPage() {
       const { data, error } = await supabase
         .from("padlocks")
         .upsert(payload, { onConflict: "code", ignoreDuplicates: false })
-        .select("id");
+        .select("id, code");
 
       if (error) {
         errors.push(error.message);
       } else {
         inserted += data?.length ?? 0;
+        // Registra no histórico que o cadeado foi criado/atualizado via carga
+        const actorName = user?.email ?? "Admin";
+        const actorId = user?.id ?? null;
+        const fileLabel = fileName || "arquivo externo";
+        await Promise.all(
+          (data ?? []).map((row) =>
+            logEvent({
+              padlock_id: row.id,
+              padlock_code: row.code,
+              action: "created",
+              actor_id: actorId,
+              actor_name: actorName,
+              notes: `Criado por carga de base de dados (arquivo: ${fileLabel})`,
+            }),
+          ),
+        );
       }
     }
 
