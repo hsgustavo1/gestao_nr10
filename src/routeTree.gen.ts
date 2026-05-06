@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ViolacoesRouteImport } from './routes/violacoes'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -19,6 +20,11 @@ import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminCargaRouteImport } from './routes/admin.carga'
 
+const ViolacoesRoute = ViolacoesRouteImport.update({
+  id: '/violacoes',
+  path: '/violacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/violacoes': typeof ViolacoesRoute
   '/admin/carga': typeof AdminCargaRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/violacoes': typeof ViolacoesRoute
   '/admin/carga': typeof AdminCargaRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/violacoes': typeof ViolacoesRoute
   '/admin/carga': typeof AdminCargaRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/violacoes'
     | '/admin/carga'
     | '/admin/reports'
     | '/admin/usuarios'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/violacoes'
     | '/admin/carga'
     | '/admin/reports'
     | '/admin/usuarios'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/violacoes'
     | '/admin/carga'
     | '/admin/reports'
     | '/admin/usuarios'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ViolacoesRoute: typeof ViolacoesRoute
   AdminCargaRoute: typeof AdminCargaRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
@@ -149,6 +162,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/violacoes': {
+      id: '/violacoes'
+      path: '/violacoes'
+      fullPath: '/violacoes'
+      preLoaderRoute: typeof ViolacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -220,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ViolacoesRoute: ViolacoesRoute,
   AdminCargaRoute: AdminCargaRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,

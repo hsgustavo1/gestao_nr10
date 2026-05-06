@@ -166,6 +166,42 @@ export type Database = {
         }
         Relationships: []
       }
+      padlock_violations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          document_path: string
+          id: string
+          reason: string
+          requester: string
+          sector: string
+          violation_date: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          document_path: string
+          id?: string
+          reason: string
+          requester: string
+          sector: string
+          violation_date: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          document_path?: string
+          id?: string
+          reason?: string
+          requester?: string
+          sector?: string
+          violation_date?: string
+        }
+        Relationships: []
+      }
       padlocks: {
         Row: {
           applied_at: string | null
