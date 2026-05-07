@@ -88,24 +88,26 @@ function DashboardPage() {
 
       {/* Stats principais */}
       <section className="mt-6 grid gap-3 grid-cols-3">
-        <StatCard label="Total" value={padlocks.length} accent="bg-[#0D3A5C]" icon={<Lock className="h-5 w-5" />} />
-        <StatCard label="Em uso" value={ativos.length} accent="bg-[#0F7A47]" icon={<CheckCircle2 className="h-5 w-5" />} />
-        <StatCard label="Baixados" value={cancelados.length} accent="bg-[#B8281A]" icon={<XCircle className="h-5 w-5" />} />
+        <StatCard label="Total" value={padlocks.length} accent="bg-[#0D3A5C]" icon={<Lock className="h-5 w-5" />} to="/cadeados" search={{ status: "all" }} />
+        <StatCard label="Em uso" value={ativos.length} accent="bg-[#0F7A47]" icon={<CheckCircle2 className="h-5 w-5" />} to="/cadeados" search={{ status: "ativos" }} />
+        <StatCard label="Baixados" value={cancelados.length} accent="bg-[#B8281A]" icon={<XCircle className="h-5 w-5" />} to="/cadeados" search={{ status: "cancelados" }} />
       </section>
 
       {/* Stats por cor */}
       <section className="mt-4 grid gap-3 grid-cols-2 lg:grid-cols-4">
         {byColor.map(({ color, count }) => (
-          <Card key={color} className="overflow-hidden">
-            <div className={`h-1 ${colorAccent[color]}`} />
-            <CardContent className="p-5">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">{colorLabel[color]}</div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-3xl font-bold tabular-nums">{count}</span>
-                <span className="text-xs text-muted-foreground">em uso</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Link key={color} to="/cadeados" search={{ color, status: "ativos" }} className="block">
+            <Card className="overflow-hidden hover:shadow-md transition cursor-pointer">
+              <div className={`h-1 ${colorAccent[color]}`} />
+              <CardContent className="p-5">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">{colorLabel[color]}</div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-3xl font-bold tabular-nums">{count}</span>
+                  <span className="text-xs text-muted-foreground">em uso</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </section>
 
@@ -221,9 +223,9 @@ function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, accent, icon }: { label: string; value: number; accent: string; icon: React.ReactNode }) {
-  return (
-    <Card className="overflow-hidden">
+function StatCard({ label, value, accent, icon, to, search }: { label: string; value: number; accent: string; icon: React.ReactNode; to?: string; search?: Record<string, string> }) {
+  const card = (
+    <Card className={`overflow-hidden ${to ? "hover:shadow-md transition cursor-pointer" : ""}`}>
       <div className={`h-1 ${accent}`} />
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
@@ -234,6 +236,10 @@ function StatCard({ label, value, accent, icon }: { label: string; value: number
       </CardContent>
     </Card>
   );
+  if (to) {
+    return <Link to={to} search={search} className="block">{card}</Link>;
+  }
+  return card;
 }
 
 function eventDot(action: string) {
