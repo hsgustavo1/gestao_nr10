@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Lock, ArrowRight, CheckCircle2, XCircle, Plus } from "lucide-react";
+import { Lock, ArrowRight, CheckCircle2, XCircle, Plus, ShieldAlert } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ function DashboardPage() {
   const { isStaff } = useAuth();
   const [padlocks, setPadlocks] = useState<Padlock[]>([]);
   const [events, setEvents] = useState<PadlockEvent[]>([]);
+  const [violations, setViolations] = useState<{ reason: string }[]>([]);
   const [openNew, setOpenNew] = useState(false);
 
   const reload = () => {
@@ -35,11 +36,22 @@ function DashboardPage() {
       .then(({ data }) => setPadlocks(data ?? []));
     supabase.from("padlock_events").select("*").order("created_at", { ascending: false }).limit(8)
       .then(({ data }) => setEvents(data ?? []));
+    supabase.from("padlock_violations").select("reason")
+      .then(({ data }) => setViolations((data as { reason: string }[]) ?? []));
   };
   useEffect(reload, []);
 
   const ativos = padlocks.filter((p) => !p.cancelled);
   const cancelados = padlocks.filter((p) => p.cancelled);
+
+  const violationsByReason = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const v of violations) {
+      const k = (v.reason ?? "").toUpperCase().trim() || "OUTRO";
+      map.set(k, (map.get(k) ?? 0) + 1);
+    }
+    return Array.from(map.entries()).map(([reason, count]) => ({ reason, count }));
+  }, [violations]);
 
   const byColor = PADLOCK_COLORS.map((c) => ({
     color: c, count: ativos.filter((p) => p.color === c).length,
@@ -95,6 +107,38 @@ function DashboardPage() {
             </CardContent>
           </Card>
         ))}
+      </section>
+
+      {/* Violações de dispositivos */}
+      <section className="mt-8">
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-destructive" />
+                Violações de dispositivos
+              </h2>
+              <Link to="/violacoes" className="text-xs font-medium text-accent hover:underline inline-flex items-center gap-1">
+                Ver todas <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+              <div className="rounded-lg border bg-secondary/30 p-4">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Total de violações</div>
+                <div className="mt-2 text-3xl font-bold tabular-nums">{violations.length}</div>
+              </div>
+              {["EXTRAVIO DA CHAVE", "INTEGRANTE AUSENTE"].map((reason) => {
+                const count = violationsByReason.find((v) => v.reason === reason)?.count ?? 0;
+                return (
+                  <div key={reason} className="rounded-lg border bg-secondary/30 p-4">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">{reason}</div>
+                    <div className="mt-2 text-3xl font-bold tabular-nums">{count}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       {/* Distribuição por setor */}
