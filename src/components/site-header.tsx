@@ -64,7 +64,7 @@ export function SiteHeader() {
               <nav className="flex flex-col p-2">
                 <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
                 <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>Base de dados</MobileNavLink>
-                <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>Violações</MobileNavLink>
+                 <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>Violações de dispositivos</MobileNavLink>
                 {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>Reports</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>Carga</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>Controle de acessos</MobileNavLink>}
@@ -82,7 +82,7 @@ export function SiteHeader() {
           <nav className="hidden lg:flex items-center gap-1">
             <NavLink to="/dashboard">Dashboard</NavLink>
             <NavLink to="/cadeados">Base de dados</NavLink>
-            <NavLink to="/violacoes">Violações</NavLink>
+             <NavLink to="/violacoes">Violações de dispositivos</NavLink>
             {isAdmin && <NavLink to="/admin/reports">Reports</NavLink>}
             {isAdmin && <NavLink to="/admin/carga">Carga</NavLink>}
             {isAdmin && <NavLink to="/admin/usuarios">Controle de acessos</NavLink>}

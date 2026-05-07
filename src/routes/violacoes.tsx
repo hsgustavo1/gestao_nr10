@@ -33,7 +33,7 @@ export const Route = createFileRoute("/violacoes")({
   component: ViolacoesPage,
   head: () => ({
     meta: [
-      { title: "Registros de violação de cadeados — RAC" },
+       { title: "Registros de violação de dispositivos — RAC" },
       { name: "description", content: "Histórico de violações de cadeado em campo, com termo anexo e responsável pelo registro." },
     ],
   }),
@@ -94,10 +94,10 @@ function ViolacoesPage() {
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5 text-destructive" />
-            Registros de violação de cadeados
-          </h1>
+           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 leading-tight">
+             <ShieldAlert className="h-5 w-5 shrink-0 text-destructive" />
+             Registros de violação de dispositivos
+           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             {items.length} {items.length === 1 ? "registro" : "registros"} · Termo de violação anexo em PDF
           </p>
