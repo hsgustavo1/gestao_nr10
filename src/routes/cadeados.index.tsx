@@ -21,6 +21,10 @@ type StatusFilter = "all" | "ativos" | "cancelados";
 
 export const Route = createFileRoute("/cadeados/")({
   component: PadlocksList,
+  validateSearch: (search: Record<string, unknown>) => ({
+    color: (search.color as PadlockColor | "all" | undefined) ?? undefined,
+    status: (search.status as StatusFilter | undefined) ?? undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Base de dados — Bloqueio de energias perigosas" },
@@ -33,11 +37,12 @@ export const Route = createFileRoute("/cadeados/")({
 
 function PadlocksList() {
   const { isStaff, user } = useAuth();
+  const sp = Route.useSearch();
   const canSeeSensitive = !!user;
   const [items, setItems] = useState<Padlock[]>([]);
   const [q, setQ] = useState("");
-  const [colorFilter, setColorFilter] = useState<PadlockColor | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativos");
+  const [colorFilter, setColorFilter] = useState<PadlockColor | "all">(sp.color ?? "all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(sp.status ?? "ativos");
   const [sectorFilter, setSectorFilter] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
   const [openReport, setOpenReport] = useState(false);
