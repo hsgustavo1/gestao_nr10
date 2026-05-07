@@ -65,7 +65,7 @@ export function SiteHeader() {
                 <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
                 <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>Base de dados</MobileNavLink>
                  <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>Violações de dispositivos</MobileNavLink>
-                {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>Reports</MobileNavLink>}
+                 {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>Inconsistências</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>Carga</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>Controle de acessos</MobileNavLink>}
               </nav>
@@ -83,7 +83,7 @@ export function SiteHeader() {
             <NavLink to="/dashboard">Dashboard</NavLink>
             <NavLink to="/cadeados">Base de dados</NavLink>
              <NavLink to="/violacoes">Violações de dispositivos</NavLink>
-            {isAdmin && <NavLink to="/admin/reports">Reports</NavLink>}
+             {isAdmin && <NavLink to="/admin/reports">Inconsistências</NavLink>}
             {isAdmin && <NavLink to="/admin/carga">Carga</NavLink>}
             {isAdmin && <NavLink to="/admin/usuarios">Controle de acessos</NavLink>}
           </nav>
