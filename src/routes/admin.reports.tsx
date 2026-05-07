@@ -41,7 +41,7 @@ type ReportEvent = {
 
 export const Route = createFileRoute("/admin/reports")({
   component: AdminReportsPage,
-  head: () => ({ meta: [{ title: "Reports de inconsistência — Bloqueio de energias perigosas" }] }),
+   head: () => ({ meta: [{ title: "Inconsistências — Bloqueio de energias perigosas" }] }),
 });
 
 function AdminReportsPage() {
@@ -151,10 +151,10 @@ function AdminReportsPage() {
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-destructive" />
-            Reports de inconsistência
-          </h1>
+           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 leading-tight">
+             <AlertCircle className="h-5 w-5 shrink-0 text-destructive" />
+             Inconsistências
+           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             {counts.aguardando} aguardando · {counts.solucionado} solucionados · {counts.recusado} recusados
           </p>
