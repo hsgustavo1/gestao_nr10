@@ -132,9 +132,9 @@ function ViolacoesPage() {
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
-                      <ShieldAlert className="h-3 w-3" /> Violação
-                    </span>
+                     <span className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive whitespace-nowrap">
+                       <ShieldAlert className="h-3 w-3" /> Violação de dispositivo
+                     </span>
                     <span className="text-sm font-semibold">
                       {formatDate(v.violation_date)}
                     </span>
@@ -261,10 +261,10 @@ function NewViolationDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5 text-destructive" />
-            Novo registro de violação
-          </DialogTitle>
+           <DialogTitle className="flex items-center gap-2 leading-tight">
+             <ShieldAlert className="h-5 w-5 shrink-0 text-destructive" />
+             Novo registro de violação de dispositivos
+           </DialogTitle>
           <DialogDescription>
             Todos os campos são obrigatórios. O Termo de violação deve ser anexado em PDF.
           </DialogDescription>
