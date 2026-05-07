@@ -111,16 +111,22 @@ function PadlocksList() {
           <h1 className="text-xl sm:text-2xl font-bold">Base de dados</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">{items.length} itens registrados · {filtered.length} exibidos</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="outline" onClick={exportExcel} disabled={filtered.length === 0} className="flex-1 sm:flex-none">
-            <FileDown className="h-4 w-4" /> Exportar Excel
+        <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="sm" onClick={exportExcel} disabled={filtered.length === 0} className="sm:size-default w-full sm:w-auto">
+            <FileDown className="h-4 w-4" />
+            <span className="sm:inline">Exportar</span>
+            <span className="hidden sm:inline">&nbsp;Excel</span>
           </Button>
-          <Button variant="outline" onClick={() => setOpenReport(true)} className="flex-1 sm:flex-none">
-            <AlertCircle className="h-4 w-4" /> Reportar inconsistência
+          <Button variant="outline" size="sm" onClick={() => setOpenReport(true)} className="sm:size-default w-full sm:w-auto">
+            <AlertCircle className="h-4 w-4" />
+            <span className="sm:hidden">Reportar</span>
+            <span className="hidden sm:inline">Reportar inconsistência</span>
           </Button>
           {isStaff && (
-            <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95 flex-1 sm:flex-none">
-              <Plus className="h-4 w-4" /> Novo Dispositivo
+            <Button size="sm" onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95 col-span-2 sm:size-default w-full sm:w-auto">
+              <Plus className="h-4 w-4" />
+              <span className="sm:hidden">Novo dispositivo</span>
+              <span className="hidden sm:inline">Novo Dispositivo</span>
             </Button>
           )}
         </div>
