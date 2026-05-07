@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { ShieldAlert, FileText, Plus, Search, Download } from "lucide-react";
+import { ShieldAlert, FileText, Plus, Search, Download, Pencil } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -40,11 +39,12 @@ export const Route = createFileRoute("/violacoes")({
 });
 
 function ViolacoesPage() {
-  const { isStaff, user } = useAuth();
+  const { isStaff, isAdmin, user } = useAuth();
   const [items, setItems] = useState<Violation[]>([]);
   const [sectors, setSectors] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Violation | null>(null);
 
   async function reload() {
     const { data } = await supabase
@@ -149,6 +149,11 @@ function ViolacoesPage() {
                     <Download className="h-4 w-4" /> Termo (PDF)
                   </a>
                 </Button>
+                {isAdmin && (
+                  <Button size="sm" variant="outline" onClick={() => setEditing(v)}>
+                    <Pencil className="h-4 w-4" /> Editar
+                  </Button>
+                )}
               </div>
               <div className="rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap">
                 {v.reason}
@@ -162,7 +167,7 @@ function ViolacoesPage() {
       </div>
 
       {isStaff && (
-        <NewViolationDialog
+        <ViolationDialog
           open={open}
           onOpenChange={setOpen}
           sectors={sectors}
@@ -173,6 +178,21 @@ function ViolacoesPage() {
             "Usuário"
           }
           onSaved={() => { setOpen(false); void reload(); }}
+        />
+      )}
+      {isAdmin && editing && (
+        <ViolationDialog
+          open={!!editing}
+          onOpenChange={(o) => { if (!o) setEditing(null); }}
+          sectors={sectors}
+          actorId={user?.id ?? null}
+          actorName={
+            (user?.user_metadata?.display_name as string | undefined) ||
+            user?.email?.split("@")[0] ||
+            "Usuário"
+          }
+          existing={editing}
+          onSaved={() => { setEditing(null); void reload(); }}
         />
       )}
     </PageShell>
@@ -186,25 +206,30 @@ function formatDate(d: string): string {
   return `${day}/${m}/${y}`;
 }
 
-function NewViolationDialog({
-  open, onOpenChange, sectors, actorId, actorName, onSaved,
+const REASON_OPTIONS = ["EXTRAVIO DA CHAVE", "INTEGRANTE AUSENTE"] as const;
+
+function ViolationDialog({
+  open, onOpenChange, sectors, actorId, actorName, existing, onSaved,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   sectors: string[];
   actorId: string | null;
   actorName: string;
+  existing?: Violation;
   onSaved: () => void;
 }) {
-  const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [reason, setReason] = useState("");
-  const [requester, setRequester] = useState("");
-  const [sector, setSector] = useState<string>("");
+  const isEdit = !!existing;
+  const [date, setDate] = useState<string>(existing?.violation_date ?? new Date().toISOString().slice(0, 10));
+  const [reason, setReason] = useState<string>(existing?.reason ?? "");
+  const [requester, setRequester] = useState<string>((existing?.requester ?? "").toUpperCase());
+  const [sector, setSector] = useState<string>(existing?.sector ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function reset() {
+    if (isEdit) return;
     setDate(new Date().toISOString().slice(0, 10));
     setReason("");
     setRequester("");
@@ -216,38 +241,69 @@ function NewViolationDialog({
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!date) return toast.error("Informe a data da violação.");
-    if (reason.trim().length < 5) return toast.error("Descreva o motivo (mín. 5 caracteres).");
+    if (!reason) return toast.error("Selecione o motivo da violação.");
     if (!requester.trim()) return toast.error("Informe o solicitante.");
     if (!sector) return toast.error("Selecione o setor.");
-    if (!file) return toast.error("Anexe o Termo de violação em PDF.");
-    if (file.type !== "application/pdf") return toast.error("O anexo deve ser um arquivo PDF.");
-    if (file.size > 10 * 1024 * 1024) return toast.error("PDF excede 10 MB.");
+    if (!isEdit && !file) return toast.error("Anexe o Termo de violação em PDF.");
+    if (file && file.type !== "application/pdf") return toast.error("O anexo deve ser um arquivo PDF.");
+    if (file && file.size > 10 * 1024 * 1024) return toast.error("PDF excede 10 MB.");
 
     setBusy(true);
-    const id = crypto.randomUUID();
-    const path = `${id}.pdf`;
-    const { error: upErr } = await supabase.storage
-      .from("violation-docs")
-      .upload(path, file, { contentType: "application/pdf", upsert: false });
-    if (upErr) {
+
+    let documentPath = existing?.document_path ?? "";
+    let oldPathToRemove: string | null = null;
+
+    if (file) {
+      const id = isEdit ? (existing!.id) : crypto.randomUUID();
+      const path = `${id}-${Date.now()}.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from("violation-docs")
+        .upload(path, file, { contentType: "application/pdf", upsert: false });
+      if (upErr) {
+        setBusy(false);
+        toast.error("Falha ao enviar PDF: " + upErr.message);
+        return;
+      }
+      if (isEdit && existing?.document_path) oldPathToRemove = existing.document_path;
+      documentPath = path;
+    }
+
+    const payload = {
+      violation_date: date,
+      reason: reason.toUpperCase(),
+      requester: requester.trim().toUpperCase(),
+      sector: sector.toUpperCase(),
+      document_path: documentPath,
+    };
+
+    if (isEdit) {
+      const { error } = await supabase
+        .from("padlock_violations")
+        .update(payload)
+        .eq("id", existing!.id);
+      if (error) {
+        setBusy(false);
+        if (file && documentPath) await supabase.storage.from("violation-docs").remove([documentPath]);
+        toast.error("Falha ao atualizar registro: " + error.message);
+        return;
+      }
+      if (oldPathToRemove) await supabase.storage.from("violation-docs").remove([oldPathToRemove]);
       setBusy(false);
-      toast.error("Falha ao enviar PDF: " + upErr.message);
+      toast.success("Registro atualizado.");
+      onSaved();
       return;
     }
+
+    const id = crypto.randomUUID();
     const { error } = await supabase.from("padlock_violations").insert({
       id,
-      violation_date: date,
-      reason: reason.trim(),
-      requester: requester.trim(),
-      sector,
-      document_path: path,
+      ...payload,
       created_by: actorId,
       created_by_name: actorName,
     });
     if (error) {
       setBusy(false);
-      // tenta limpar o PDF órfão
-      await supabase.storage.from("violation-docs").remove([path]);
+      await supabase.storage.from("violation-docs").remove([documentPath]);
       toast.error("Falha ao salvar registro: " + error.message);
       return;
     }
@@ -263,10 +319,10 @@ function NewViolationDialog({
         <DialogHeader>
            <DialogTitle className="flex items-center gap-2 leading-tight">
              <ShieldAlert className="h-5 w-5 shrink-0 text-destructive" />
-             Novo registro de violação de dispositivos
+            {isEdit ? "Editar registro de violação" : "Novo registro de violação de dispositivos"}
            </DialogTitle>
           <DialogDescription>
-            Todos os campos são obrigatórios. O Termo de violação deve ser anexado em PDF.
+            Todos os campos são obrigatórios. {isEdit ? "Anexar um novo PDF substitui o anterior." : "O Termo de violação deve ser anexado em PDF."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
@@ -291,7 +347,7 @@ function NewViolationDialog({
                     <div className="px-3 py-2 text-xs text-muted-foreground">Nenhum setor cadastrado.</div>
                   )}
                   {sectors.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>{s.toUpperCase()}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -302,39 +358,41 @@ function NewViolationDialog({
             <Input
               id="vd-requester"
               value={requester}
-              onChange={(e) => setRequester(e.target.value)}
+              onChange={(e) => setRequester(e.target.value.toUpperCase())}
               maxLength={150}
-              placeholder="Nome de quem solicitou a violação"
+              placeholder="NOME DE QUEM SOLICITOU A VIOLAÇÃO"
+              className="uppercase"
               required
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="vd-reason">Motivo da violação</Label>
-            <Textarea
-              id="vd-reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={4}
-              maxLength={2000}
-              placeholder="Descreva o motivo da violação..."
-              required
-            />
-            <div className="text-[11px] text-muted-foreground">{reason.length}/2000</div>
+            <Select value={reason || undefined} onValueChange={setReason} required>
+              <SelectTrigger id="vd-reason"><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+              <SelectContent>
+                {REASON_OPTIONS.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="vd-file">Termo de violação (PDF)</Label>
+            <Label htmlFor="vd-file">Termo de violação (PDF){isEdit && " — opcional (substitui o atual)"}</Label>
             <Input
               id="vd-file"
               ref={fileRef}
               type="file"
               accept="application/pdf"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              required
+              required={!isEdit}
             />
             {file && (
               <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
                 <FileText className="h-3 w-3" /> {file.name} ({(file.size / 1024).toFixed(0)} KB)
               </div>
+            )}
+            {isEdit && !file && existing?.document_path && (
+              <div className="text-[11px] text-muted-foreground">PDF atual será mantido.</div>
             )}
           </div>
           <DialogFooter>
@@ -342,7 +400,7 @@ function NewViolationDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={busy} className="bg-brand-gradient text-white shadow-brand">
-              {busy ? "Salvando..." : "Salvar registro"}
+              {busy ? "Salvando..." : (isEdit ? "Salvar alterações" : "Salvar registro")}
             </Button>
           </DialogFooter>
         </form>
