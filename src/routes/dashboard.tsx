@@ -253,7 +253,7 @@ function eventDot(action: string) {
 }
 function actionLabel(action: string) {
   return ({
-    created: "criado", updated: "editado", deleted: "excluído",
+     created: "criado", updated: "editado", deleted: "cancelado",
     transferred: "dono transferido", applied: "aplicado", released: "removido",
   } as Record<string, string>)[action] ?? action;
 }
