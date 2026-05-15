@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { ArrowLeft, Lock, Pencil, Trash2, History, ArrowLeftRight, XCircle, AlertTriangle, Printer, AlertCircle } from "lucide-react";
@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -19,6 +20,7 @@ import { SectorSelect } from "@/components/sector-select";
 import { ReportInconsistencyDialog } from "@/components/report-inconsistency-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { usePadlockDetail, useQueryClient } from "@/lib/queries";
 import {
   formatDateTime, formatPhoneBR, logEvent, PADLOCK_COLORS,
   colorBadge, colorLabel, colorSwatch,
@@ -34,9 +36,12 @@ function PadlockDetail() {
   const { codigo } = Route.useParams();
   const navigate = useNavigate();
   const { user, isStaff, isAdmin } = useAuth();
-  const [padlock, setPadlock] = useState<Padlock | null>(null);
-  const [events, setEvents] = useState<PadlockEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data, isLoading } = usePadlockDetail(codigo);
+
+  const padlock = data?.padlock ?? null;
+  const events = data?.events ?? [];
+
   const [openTransfer, setOpenTransfer] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openCancel, setOpenCancel] = useState(false);
@@ -44,20 +49,32 @@ function PadlockDetail() {
   const [openPrint, setOpenPrint] = useState(false);
   const [openReport, setOpenReport] = useState(false);
 
-  async function reload() {
-    const { data: p } = await supabase.from("padlocks").select("*").eq("code", codigo).maybeSingle();
-    setPadlock(p);
-    if (p) {
-      const { data: ev } = await supabase
-        .from("padlock_events").select("*")
-        .eq("padlock_id", p.id).order("created_at", { ascending: false });
-      setEvents(ev ?? []);
-    }
-    setLoading(false);
-  }
-  useEffect(() => { void reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [codigo]);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["padlock", codigo] });
 
-  if (loading) return <PageShell><div className="text-sm text-muted-foreground">Carregando...</div></PageShell>;
+  if (isLoading) {
+    return (
+      <PageShell>
+        <Skeleton className="h-4 w-20 mb-4" />
+        <div className="flex items-start gap-4 mt-3">
+          <Skeleton className="h-14 w-14 rounded-2xl shrink-0" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-7 w-64" />
+            <Skeleton className="h-5 w-40" />
+          </div>
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <Card><CardContent className="p-5 space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
+          </CardContent></Card>
+          <Card><CardContent className="p-5 space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
+          </CardContent></Card>
+        </div>
+      </PageShell>
+    );
+  }
+
   if (!padlock) {
     return (
       <PageShell>
@@ -193,9 +210,9 @@ function PadlockDetail() {
         </CardContent></Card>
       </section>
 
-      <TransferDialog open={openTransfer} onOpenChange={setOpenTransfer} padlock={padlock} onDone={reload} />
-      <EditDialog open={openEdit} onOpenChange={setOpenEdit} padlock={padlock} onDone={reload} onCodeChanged={(newCode) => navigate({ to: "/cadeados/$codigo", params: { codigo: newCode } })} />
-      <CancelPadlockDialog open={openCancel} onOpenChange={setOpenCancel} padlock={padlock} onDone={reload} />
+      <TransferDialog open={openTransfer} onOpenChange={setOpenTransfer} padlock={padlock} onDone={invalidate} />
+      <EditDialog open={openEdit} onOpenChange={setOpenEdit} padlock={padlock} onDone={invalidate} onCodeChanged={(newCode) => navigate({ to: "/cadeados/$codigo", params: { codigo: newCode } })} />
+      <CancelPadlockDialog open={openCancel} onOpenChange={setOpenCancel} padlock={padlock} onDone={invalidate} />
       <DeletePadlockDialog open={openDelete} onOpenChange={setOpenDelete} padlock={padlock} onDeleted={() => navigate({ to: "/cadeados" })} />
       <PrintLabelDialog open={openPrint} onOpenChange={setOpenPrint} padlock={padlock} />
       <ReportInconsistencyDialog open={openReport} onOpenChange={setOpenReport} padlock={padlock} />
@@ -291,7 +308,6 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
         ? `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
         : `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
     });
-    // Limpa foto arquivada — novo dono precisa enviar nova foto na próxima impressão
     await supabase.storage.from("padlock-photos").remove([`${padlock.id}.jpg`]);
     toast.success("Cadeado transferido");
     setLoading(false); onOpenChange(false); onDone();
@@ -300,7 +316,7 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Transferir cadeado — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
           <DialogDescription>
@@ -326,7 +342,7 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
           </div>
           <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(formatPhoneBR(e.target.value))} inputMode="tel" placeholder="(XX) XXXXX-XXXX" maxLength={16} required /></div>
           <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Transferir"}</Button>
           </DialogFooter>
@@ -393,7 +409,7 @@ function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-lg">
         <DialogHeader><DialogTitle>Editar cadeado</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
@@ -435,7 +451,7 @@ function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
               </div>
             </>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Salvar"}</Button>
           </DialogFooter>

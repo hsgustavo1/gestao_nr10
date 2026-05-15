@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { ShieldAlert, FileText, Plus, Search, Download, Pencil } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
@@ -7,32 +7,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useViolations, useQueryClient, type Violation } from "@/lib/queries";
 import { formatDateTime } from "@/lib/padlocks";
-
-type Violation = {
-  id: string;
-  violation_date: string;
-  reason: string;
-  requester: string;
-  sector: string;
-  document_path: string;
-  created_by_name: string | null;
-  created_at: string;
-};
 
 export const Route = createFileRoute("/violacoes")({
   component: ViolacoesPage,
   head: () => ({
     meta: [
-       { title: "Registros de violação de dispositivos — RAC" },
+      { title: "Registros de violação de dispositivos — RAC" },
       { name: "description", content: "Histórico de violações de cadeado em campo, com termo anexo e responsável pelo registro." },
     ],
   }),
@@ -40,39 +32,32 @@ export const Route = createFileRoute("/violacoes")({
 
 function ViolacoesPage() {
   const { isStaff, isAdmin, user } = useAuth();
-  const [items, setItems] = useState<Violation[]>([]);
-  const [sectors, setSectors] = useState<string[]>([]);
+  const queryClient = useQueryClient();
+  const { data: items = [], isLoading } = useViolations();
+  const { data: sectors = [] } = useQuery({
+    queryKey: ["configuracoes_sectors"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("configuracoes")
+        .select("valor")
+        .eq("chave", "sectors")
+        .maybeSingle();
+      if (data?.valor) {
+        try {
+          const arr = JSON.parse(data.valor) as string[];
+          return arr.sort((a, b) => a.localeCompare(b, "pt-BR"));
+        } catch { return []; }
+      }
+      return [];
+    },
+    staleTime: 300_000,
+  });
+
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Violation | null>(null);
 
-  async function reload() {
-    const { data } = await supabase
-      .from("padlock_violations")
-      .select("*")
-      .order("violation_date", { ascending: false })
-      .order("created_at", { ascending: false });
-    setItems((data ?? []) as Violation[]);
-  }
-
-  async function loadSectors() {
-    const { data } = await supabase
-      .from("configuracoes")
-      .select("valor")
-      .eq("chave", "sectors")
-      .maybeSingle();
-    if (data?.valor) {
-      try {
-        const arr = JSON.parse(data.valor) as string[];
-        setSectors(arr.sort((a, b) => a.localeCompare(b, "pt-BR")));
-      } catch { /* noop */ }
-    }
-  }
-
-  useEffect(() => {
-    void reload();
-    void loadSectors();
-  }, []);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["padlock_violations_full"] });
 
   const filtered = useMemo(() => {
     const t = search.trim().toLowerCase();
@@ -94,26 +79,26 @@ function ViolacoesPage() {
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 leading-tight">
-             <ShieldAlert className="h-5 w-5 shrink-0 text-destructive" />
-             Registros de violação de dispositivos
-           </h1>
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 leading-tight">
+            <ShieldAlert className="h-5 w-5 shrink-0 text-destructive" />
+            Registros de violação de dispositivos
+          </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {items.length} {items.length === 1 ? "registro" : "registros"} · Termo de violação anexo em PDF
+            {isLoading ? "Carregando..." : `${items.length} ${items.length === 1 ? "registro" : "registros"} · Termo de violação anexo em PDF`}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Buscar por motivo, solicitante, setor..."
-              className="pl-8 w-64"
+              className="pl-8 w-full sm:w-64"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           {isStaff && (
-            <Button onClick={() => setOpen(true)} className="bg-brand-gradient text-white shadow-brand">
+            <Button onClick={() => setOpen(true)} className="bg-brand-gradient text-white shadow-brand w-full sm:w-auto">
               <Plus className="h-4 w-4" /> Novo registro
             </Button>
           )}
@@ -121,20 +106,30 @@ function ViolacoesPage() {
       </div>
 
       <div className="mt-5 grid gap-3">
-        {filtered.length === 0 && (
+        {isLoading && (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}><CardContent className="p-5 space-y-3">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-16 rounded-md" />
+              <Skeleton className="h-3 w-56" />
+            </CardContent></Card>
+          ))
+        )}
+        {!isLoading && filtered.length === 0 && (
           <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">
             Nenhum registro de violação encontrado.
           </CardContent></Card>
         )}
-        {filtered.map((v) => (
+        {!isLoading && filtered.map((v) => (
           <Card key={v.id}>
             <CardContent className="p-4 sm:p-5 space-y-3">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                     <span className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive whitespace-nowrap">
-                       <ShieldAlert className="h-3 w-3" /> Violação de dispositivo
-                     </span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive whitespace-nowrap">
+                      <ShieldAlert className="h-3 w-3" /> Violação de dispositivo
+                    </span>
                     <span className="text-sm font-semibold">
                       {formatDate(v.violation_date)}
                     </span>
@@ -144,16 +139,18 @@ function ViolacoesPage() {
                     Solicitante: <strong className="text-foreground">{v.requester}</strong>
                   </div>
                 </div>
-                <Button asChild size="sm" variant="outline">
-                  <a href={publicUrl(v.document_path)} target="_blank" rel="noreferrer">
-                    <Download className="h-4 w-4" /> Termo (PDF)
-                  </a>
-                </Button>
-                {isAdmin && (
-                  <Button size="sm" variant="outline" onClick={() => setEditing(v)}>
-                    <Pencil className="h-4 w-4" /> Editar
+                <div className="flex gap-2 flex-wrap">
+                  <Button asChild size="sm" variant="outline">
+                    <a href={publicUrl(v.document_path)} target="_blank" rel="noreferrer">
+                      <Download className="h-4 w-4" /> Termo (PDF)
+                    </a>
                   </Button>
-                )}
+                  {isAdmin && (
+                    <Button size="sm" variant="outline" onClick={() => setEditing(v)}>
+                      <Pencil className="h-4 w-4" /> Editar
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap">
                 {v.reason}
@@ -177,7 +174,7 @@ function ViolacoesPage() {
             user?.email?.split("@")[0] ||
             "Usuário"
           }
-          onSaved={() => { setOpen(false); void reload(); }}
+          onSaved={() => { setOpen(false); invalidate(); }}
         />
       )}
       {isAdmin && editing && (
@@ -192,7 +189,7 @@ function ViolacoesPage() {
             "Usuário"
           }
           existing={editing}
-          onSaved={() => { setEditing(null); void reload(); }}
+          onSaved={() => { setEditing(null); invalidate(); }}
         />
       )}
     </PageShell>
@@ -200,7 +197,6 @@ function ViolacoesPage() {
 }
 
 function formatDate(d: string): string {
-  // d is YYYY-MM-DD
   const [y, m, day] = d.split("-");
   if (!y || !m || !day) return d;
   return `${day}/${m}/${y}`;
@@ -315,12 +311,12 @@ function ViolationDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-lg">
         <DialogHeader>
-           <DialogTitle className="flex items-center gap-2 leading-tight">
-             <ShieldAlert className="h-5 w-5 shrink-0 text-destructive" />
+          <DialogTitle className="flex items-center gap-2 leading-tight">
+            <ShieldAlert className="h-5 w-5 shrink-0 text-destructive" />
             {isEdit ? "Editar registro de violação" : "Novo registro de violação de dispositivos"}
-           </DialogTitle>
+          </DialogTitle>
           <DialogDescription>
             Todos os campos são obrigatórios. {isEdit ? "Anexar um novo PDF substitui o anterior." : "O Termo de violação deve ser anexado em PDF."}
           </DialogDescription>
@@ -395,7 +391,7 @@ function ViolationDialog({
               <div className="text-[11px] text-muted-foreground">PDF atual será mantido.</div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
               Cancelar
             </Button>

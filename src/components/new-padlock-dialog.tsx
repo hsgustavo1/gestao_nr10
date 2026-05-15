@@ -167,7 +167,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Novo Dispositivo</DialogTitle>
           <DialogDescription>Cadastre cor, número e dados do dono. Dispositivos de empréstimo exigem apenas número e setor / empresa.</DialogDescription>
@@ -247,7 +247,7 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
             </>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
               {loading ? "Salvando..." : "Cadastrar Novo Dispositivo"}
@@ -304,6 +304,7 @@ function ConflictPanel({
           </Button>
         )}
       </DialogFooter>
+
     </div>
   );
 }

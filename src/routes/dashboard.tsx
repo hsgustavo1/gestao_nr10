@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Lock, ArrowRight, CheckCircle2, XCircle, Plus, ShieldAlert } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { NewPadlockDialog } from "@/components/new-padlock-dialog";
+import { useDashboardData, useQueryClient } from "@/lib/queries";
 import {
   formatDateTime, PADLOCK_COLORS, colorLabel, colorAccent,
   type Padlock, type PadlockEvent,
@@ -26,20 +27,9 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardPage() {
   const { isStaff } = useAuth();
-  const [padlocks, setPadlocks] = useState<Padlock[]>([]);
-  const [events, setEvents] = useState<PadlockEvent[]>([]);
-  const [violations, setViolations] = useState<{ reason: string }[]>([]);
+  const queryClient = useQueryClient();
+  const { padlocks, events, violations, isLoading } = useDashboardData();
   const [openNew, setOpenNew] = useState(false);
-
-  const reload = () => {
-    supabase.from("padlocks").select("*").order("updated_at", { ascending: false })
-      .then(({ data }) => setPadlocks(data ?? []));
-    supabase.from("padlock_events").select("*").order("created_at", { ascending: false }).limit(8)
-      .then(({ data }) => setEvents(data ?? []));
-    supabase.from("padlock_violations").select("reason")
-      .then(({ data }) => setViolations((data as { reason: string }[]) ?? []));
-  };
-  useEffect(reload, []);
 
   const ativos = padlocks.filter((p) => !p.cancelled);
   const cancelados = padlocks.filter((p) => p.cancelled);
@@ -57,7 +47,6 @@ function DashboardPage() {
     color: c, count: ativos.filter((p) => p.color === c).length,
   }));
 
-  // Distribuição por setor (somente cadeados ativos)
   const sectors = useMemo(() => {
     const map = new Map<string, number>();
     for (const p of ativos) {
@@ -87,28 +76,42 @@ function DashboardPage() {
       </div>
 
       {/* Stats principais */}
-      <section className="mt-6 grid gap-3 grid-cols-3">
-        <StatCard label="Total" value={padlocks.length} accent="bg-[#0D3A5C]" icon={<Lock className="h-5 w-5" />} to="/cadeados" search={{ status: "all" }} />
-        <StatCard label="Em uso" value={ativos.length} accent="bg-[#0F7A47]" icon={<CheckCircle2 className="h-5 w-5" />} to="/cadeados" search={{ status: "ativos" }} />
-        <StatCard label="Baixados" value={cancelados.length} accent="bg-[#B8281A]" icon={<XCircle className="h-5 w-5" />} to="/cadeados" search={{ status: "cancelados" }} />
+      <section className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3">
+        {isLoading ? (
+          <>
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-24 rounded-xl col-span-2 sm:col-span-1" />
+          </>
+        ) : (
+          <>
+            <StatCard label="Total" value={padlocks.length} accent="bg-[#0D3A5C]" icon={<Lock className="h-5 w-5" />} to="/cadeados" search={{ status: "all" }} />
+            <StatCard label="Em uso" value={ativos.length} accent="bg-[#0F7A47]" icon={<CheckCircle2 className="h-5 w-5" />} to="/cadeados" search={{ status: "ativos" }} />
+            <StatCard label="Baixados" value={cancelados.length} accent="bg-[#B8281A]" icon={<XCircle className="h-5 w-5" />} to="/cadeados" search={{ status: "cancelados" }} />
+          </>
+        )}
       </section>
 
       {/* Stats por cor */}
       <section className="mt-4 grid gap-3 grid-cols-2 lg:grid-cols-4">
-        {byColor.map(({ color, count }) => (
-          <Link key={color} to="/cadeados" search={{ color, status: "ativos" }} className="block">
-            <Card className="overflow-hidden hover:shadow-md transition cursor-pointer">
-              <div className={`h-1 ${colorAccent[color]}`} />
-              <CardContent className="p-5">
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">{colorLabel[color]}</div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold tabular-nums">{count}</span>
-                  <span className="text-xs text-muted-foreground">em uso</span>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+        ) : (
+          byColor.map(({ color, count }) => (
+            <Link key={color} to="/cadeados" search={{ color, status: "ativos" }} className="block">
+              <Card className="overflow-hidden hover:shadow-md transition cursor-pointer">
+                <div className={`h-1 ${colorAccent[color]}`} />
+                <CardContent className="p-5">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">{colorLabel[color]}</div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold tabular-nums">{count}</span>
+                    <span className="text-xs text-muted-foreground">em uso</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))
+        )}
       </section>
 
       {/* Violações de dispositivos */}
@@ -124,26 +127,34 @@ function DashboardPage() {
                 Ver todas <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-              <div className="rounded-lg border bg-secondary/30 p-4">
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Total de violações</div>
-                <div className="mt-2 text-3xl font-bold tabular-nums">{violations.length}</div>
+            {isLoading ? (
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
               </div>
-              {["EXTRAVIO DA CHAVE", "INTEGRANTE AUSENTE"].map((reason) => {
-                const count = violationsByReason.find((v) => v.reason === reason)?.count ?? 0;
-                return (
-                  <div key={reason} className="rounded-lg border bg-secondary/30 p-4">
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground">{reason}</div>
-                    <div className="mt-2 text-3xl font-bold tabular-nums">{count}</div>
-                  </div>
-                );
-              })}
-            </div>
+            ) : (
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                <div className="rounded-lg border bg-secondary/30 p-4">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Total de violações</div>
+                  <div className="mt-2 text-3xl font-bold tabular-nums">{violations.length}</div>
+                </div>
+                {["EXTRAVIO DA CHAVE", "INTEGRANTE AUSENTE"].map((reason) => {
+                  const count = violationsByReason.find((v) => v.reason === reason)?.count ?? 0;
+                  return (
+                    <div key={reason} className="rounded-lg border bg-secondary/30 p-4">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">{reason}</div>
+                      <div className="mt-2 text-3xl font-bold tabular-nums">{count}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </section>
 
-      {/* Distribuição por setor */}
+      {/* Distribuição por setor + Linha do tempo */}
       <section className="mt-8 grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardContent className="p-5">
@@ -155,7 +166,11 @@ function DashboardPage() {
                 Ver todos <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            {sectors.length === 0 ? (
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
+              </div>
+            ) : sectors.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma unidade com dispositivos em uso.</div>
             ) : (
               <ul className="space-y-3">
@@ -170,10 +185,7 @@ function DashboardPage() {
                       <div className="h-2 rounded-full bg-secondary overflow-hidden">
                         <div
                           className="h-full rounded-full"
-                          style={{
-                            width: `${pct}%`,
-                            background: "linear-gradient(90deg, #F79220, #E35D12)",
-                          }}
+                          style={{ width: `${pct}%`, background: "linear-gradient(90deg, #F79220, #E35D12)" }}
                         />
                       </div>
                     </li>
@@ -190,7 +202,11 @@ function DashboardPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
               Linha do tempo
             </h2>
-            {events.length === 0 ? (
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded" />)}
+              </div>
+            ) : events.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">Nenhum evento.</div>
             ) : (
               <ul className="divide-y divide-border -mx-2">
@@ -218,7 +234,11 @@ function DashboardPage() {
         </Card>
       </section>
 
-      <NewPadlockDialog open={openNew} onOpenChange={setOpenNew} onCreated={reload} />
+      <NewPadlockDialog
+        open={openNew}
+        onOpenChange={setOpenNew}
+        onCreated={() => queryClient.invalidateQueries({ queryKey: ["padlocks"] })}
+      />
     </PageShell>
   );
 }
@@ -253,7 +273,7 @@ function eventDot(action: string) {
 }
 function actionLabel(action: string) {
   return ({
-     created: "criado", updated: "editado", deleted: "cancelado",
+    created: "criado", updated: "editado", deleted: "cancelado",
     transferred: "dono transferido", applied: "aplicado", released: "removido",
   } as Record<string, string>)[action] ?? action;
 }

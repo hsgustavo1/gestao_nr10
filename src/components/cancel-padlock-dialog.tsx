@@ -78,7 +78,7 @@ export function CancelPadlockDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Baixa de Etiqueta — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
           <DialogDescription>
@@ -110,7 +110,7 @@ export function CancelPadlockDialog({
               placeholder="Descreva brevemente o ocorrido..."
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Voltar</Button>
             <Button type="submit" disabled={loading} variant="destructive">
               {loading ? "Processando..." : "Confirmar baixa"}
