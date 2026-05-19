@@ -6,23 +6,20 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { colorLabel, type Padlock } from "@/lib/padlocks";
 import { EtiquetaLOTO, type EtiquetaCor } from "@/components/etiqueta-loto";
 import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET = "padlock-photos";
 
-/**
- * Caminho da foto: por integrante (matrícula + nome normalizado).
- * Assim a mesma foto é compartilhada entre todos os cadeados do mesmo dono.
- * Para cadeados sem dono (ex.: vermelho), usa o id do cadeado como fallback.
- */
 function memberSlug(value: string) {
   return value
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
@@ -33,9 +30,6 @@ function photoPathFor(padlock: Padlock): string {
   return `${padlock.id}.jpg`;
 }
 
-/**
- * Geração e impressão da Etiqueta LOTO 12x7 cm (frente + verso lado a lado).
- */
 export function PrintLabelDialog({
   open, onOpenChange, padlock,
 }: {
@@ -47,9 +41,12 @@ export function PrintLabelDialog({
   const [etiquetaGerada, setEtiquetaGerada] = useState(false);
   const [loadingFoto, setLoadingFoto] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [siblings, setSiblings] = useState<Padlock[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [loadingSiblings, setLoadingSiblings] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Ao abrir, tenta carregar foto já arquivada para este cadeado
+  // Carrega foto arquivada
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -60,17 +57,12 @@ export function PrintLabelDialog({
       const path = photoPathFor(padlock);
       const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
       const filename = path.includes("/") ? path.substring(path.lastIndexOf("/") + 1) : path;
-      // Verifica se o objeto realmente existe no bucket (list ignora cache do CDN)
       const { data: list } = await supabase.storage
         .from(BUCKET)
         .list(folder, { search: filename, limit: 1 });
       const exists = !!list?.some((o) => o.name === filename);
       if (cancelled) return;
-      if (!exists) {
-        setLoadingFoto(false);
-        return;
-      }
-      // Busca a imagem pela URL pública com cache-buster para evitar foto antiga
+      if (!exists) { setLoadingFoto(false); return; }
       const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
       try {
         const resp = await fetch(`${pub.publicUrl}?t=${Date.now()}`, { cache: "no-store" });
@@ -84,12 +76,36 @@ export function PrintLabelDialog({
           setLoadingFoto(false);
         };
         reader.readAsDataURL(blob);
-      } catch {
-        if (!cancelled) setLoadingFoto(false);
-      }
+      } catch { if (!cancelled) setLoadingFoto(false); }
     })();
     return () => { cancelled = true; };
   }, [open, padlock.id, padlock.owner_name, padlock.owner_registration]);
+
+  // Busca todos os cadeados do mesmo Integrante
+  useEffect(() => {
+    if (!open) return;
+    if (!padlock.owner_registration) {
+      setSiblings([padlock]);
+      setSelected(new Set([padlock.id]));
+      return;
+    }
+    setLoadingSiblings(true);
+    supabase
+      .from("padlocks")
+      .select("*")
+      .eq("owner_registration", padlock.owner_registration)
+      .eq("cancelled", false)
+      .neq("color", "vermelho")
+      .order("color")
+      .order("number")
+      .then(({ data }) => {
+        const list = (data ?? []) as Padlock[];
+        const final = list.length ? list : [padlock];
+        setSiblings(final);
+        setSelected(new Set(final.map((p) => p.id)));
+        setLoadingSiblings(false);
+      });
+  }, [open, padlock.owner_registration, padlock.id]);
 
   const cadeado = {
     numero: padlock.number,
@@ -107,6 +123,8 @@ export function PrintLabelDialog({
   function reset() {
     setFotoSrc(null);
     setEtiquetaGerada(false);
+    setSiblings([]);
+    setSelected(new Set());
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -119,11 +137,7 @@ export function PrintLabelDialog({
     const path = photoPathFor(padlock);
     const { error } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file, {
-        upsert: true,
-        contentType: file.type,
-        cacheControl: "3600",
-      });
+      .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
     if (error) {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -139,35 +153,59 @@ export function PrintLabelDialog({
     reader.readAsDataURL(file);
   }
 
+  function toggleAll(selectAll: boolean) {
+    setSelected(selectAll ? new Set(siblings.map((p) => p.id)) : new Set());
+  }
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
   function imprimirEtiqueta() {
-    if (!etiquetaGerada) {
-      toast.error("Gere a etiqueta primeiro.");
-      return;
-    }
-    const etiquetaHTML = renderToStaticMarkup(
-      <EtiquetaLOTO cadeado={cadeado} fotoSrc={fotoSrc} scale={1} />
-    );
+    if (!etiquetaGerada) return toast.error("Gere a etiqueta primeiro.");
+    const toPrint = siblings.filter((p) => selected.has(p.id));
+    if (toPrint.length === 0) return toast.error("Selecione ao menos um cadeado.");
+
+    const labelsHTML = toPrint.map((p) => {
+      const cd = {
+        numero: p.number,
+        cor: p.color as EtiquetaCor,
+        setor: p.owner_sector ?? "",
+        donoAtual: {
+          nome: p.owner_name ?? undefined,
+          matricula: p.owner_registration ?? undefined,
+          telefone: p.owner_phone ?? undefined,
+          funcao: p.owner_role ?? undefined,
+          setor: p.owner_sector ?? undefined,
+        },
+      };
+      return `<div class="label">${renderToStaticMarkup(
+        <EtiquetaLOTO cadeado={cd} fotoSrc={fotoSrc} scale={1} />
+      )}</div>`;
+    }).join("\n");
+
     const win = window.open("", "_blank");
-    if (!win) {
-      toast.error("Não foi possível abrir a janela de impressão. Verifique bloqueador de pop-ups.");
-      return;
-    }
+    if (!win) return toast.error("Não foi possível abrir a janela de impressão. Verifique bloqueador de pop-ups.");
     win.document.write(`<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Etiqueta — Cadeado nº ${padlock.number}</title>
+  <title>Etiquetas LOTO</title>
   <style>
-    @page { size: 12cm 7cm; margin: 0; }
+    @page { size: A4 landscape; margin: 5mm; }
     html, body { margin: 0; padding: 0; background: #fff; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { display: grid; grid-template-columns: repeat(2, 12cm); gap: 5mm; align-content: start; }
+    .label { break-inside: avoid; page-break-inside: avoid; }
   </style>
 </head>
 <body>
-  ${etiquetaHTML}
-  <script>
-    window.onload = function() { window.print(); };
-  </script>
+  ${labelsHTML}
+  <script>window.onload = function() { window.print(); };</script>
 </body>
 </html>`);
     win.document.close();
@@ -175,6 +213,7 @@ export function PrintLabelDialog({
 
   const donoNome = padlock.owner_name?.trim() || "(sem dono)";
   const temFotoArquivada = !!fotoSrc;
+  const showSiblings = siblings.length > 1;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
@@ -245,23 +284,58 @@ export function PrintLabelDialog({
               type="button"
               variant="outline"
               onClick={imprimirEtiqueta}
-              disabled={!etiquetaGerada}
-              title="Configure a impressora para tamanho personalizado 12cm × 7cm e sem margens."
+              disabled={!etiquetaGerada || selected.size === 0}
+              title="Impressão em A4 paisagem. Múltiplas etiquetas por folha quando selecionado mais de uma."
             >
-              <Printer className="h-4 w-4" /> Imprimir
+              <Printer className="h-4 w-4" />
+              {selected.size <= 1 ? "Imprimir" : `Imprimir ${selected.size} etiquetas`}
             </Button>
           </div>
         </div>
 
+        {/* Seleção de cadeados — apenas quando há mais de 1 */}
+        {showSiblings && (
+          <div className="rounded-lg border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Cadeados a imprimir
+              </Label>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {loadingSiblings ? "Carregando..." : `${selected.size} selecionado${selected.size !== 1 ? "s" : ""}`}
+                </span>
+                <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => toggleAll(true)}>
+                  Todos
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => toggleAll(false)}>
+                  Nenhum
+                </Button>
+              </div>
+            </div>
+            <div className="divide-y">
+              {siblings.map((p) => (
+                <label
+                  key={p.id}
+                  className="flex items-center gap-2.5 py-1.5 cursor-pointer hover:bg-muted/30 rounded px-1"
+                >
+                  <Checkbox
+                    checked={selected.has(p.id)}
+                    onCheckedChange={() => toggleOne(p.id)}
+                  />
+                  <span className="text-sm flex-1">
+                    {colorLabel[p.color]} #{p.number}
+                    {p.id === padlock.id && (
+                      <span className="ml-1.5 text-xs text-muted-foreground">(este cadeado)</span>
+                    )}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
         {etiquetaGerada && (
-          <div
-            style={{
-              background: "#CBD2D8",
-              padding: 20,
-              borderRadius: 8,
-              overflow: "auto",
-            }}
-          >
+          <div style={{ background: "#CBD2D8", padding: 20, borderRadius: 8, overflow: "auto" }}>
             <div style={{ display: "flex", gap: 0, justifyContent: "center" }}>
               <EtiquetaLOTO cadeado={cadeado} fotoSrc={fotoSrc} scale={1.8} />
             </div>

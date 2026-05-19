@@ -259,6 +259,8 @@ const transferSchema = z.object({
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
+type ExtraLock = { id: string; code: string; color: PadlockColor; number: number; owner_name: string | null; owner_registration: string | null };
+
 function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean; onOpenChange: (o: boolean) => void; padlock: Padlock; onDone: () => void }) {
   const { user } = useAuth();
   const [name, setName] = useState("");
@@ -268,6 +270,32 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [extras, setExtras] = useState<ExtraLock[]>([]);
+  const [addColor, setAddColor] = useState<PadlockColor>("amarelo");
+  const [addNumber, setAddNumber] = useState("");
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState("");
+
+  const totalCount = 1 + extras.length;
+
+  async function addExtra() {
+    const num = parseInt(addNumber, 10);
+    if (!addNumber || isNaN(num) || num < 1) return setAddError("Informe um número válido.");
+    if (addColor === padlock.color && num === padlock.number) return setAddError("Cadeado já incluído.");
+    if (extras.some(e => e.color === addColor && e.number === num)) return setAddError("Já adicionado.");
+    setAddLoading(true); setAddError("");
+    const { data, error } = await supabase
+      .from("padlocks")
+      .select("id, code, color, number, owner_name, owner_registration, cancelled")
+      .eq("color", addColor)
+      .eq("number", num)
+      .single();
+    setAddLoading(false);
+    if (error || !data) return setAddError("Cadeado não encontrado.");
+    if (data.cancelled) return setAddError("Cadeado cancelado.");
+    setExtras(prev => [...prev, { id: data.id, code: data.code, color: data.color as PadlockColor, number: data.number, owner_name: data.owner_name, owner_registration: data.owner_registration }]);
+    setAddNumber("");
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -277,48 +305,57 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     setLoading(true);
-    const { data, error } = await supabase
-      .from("padlocks")
-      .update({
-        owner_name: parsed.data.owner_name,
-        owner_registration: parsed.data.owner_registration,
-        owner_role: parsed.data.owner_role,
-        owner_sector: parsed.data.owner_sector,
-        owner_phone: parsed.data.owner_phone,
-      })
-      .eq("id", padlock.id).select().single();
-    if (error || !data) {
-      setLoading(false);
-      return toast.error(translateError(error?.message ?? "Erro"));
+
+    const ownerFields = {
+      owner_name: parsed.data.owner_name,
+      owner_registration: parsed.data.owner_registration,
+      owner_role: parsed.data.owner_role,
+      owner_sector: parsed.data.owner_sector,
+      owner_phone: parsed.data.owner_phone,
+    };
+
+    const allLocks = [
+      { id: padlock.id, code: padlock.code, owner_name: padlock.owner_name, owner_registration: padlock.owner_registration, owner_role: padlock.owner_role, owner_sector: padlock.owner_sector, owner_phone: padlock.owner_phone },
+      ...extras.map(e => ({ id: e.id, code: e.code, owner_name: e.owner_name, owner_registration: e.owner_registration, owner_role: null, owner_sector: null, owner_phone: null })),
+    ];
+
+    const results = await Promise.allSettled(allLocks.map(async (p) => {
+      const { data, error } = await supabase.from("padlocks")
+        .update(ownerFields).eq("id", p.id).select().single();
+      if (error || !data) throw new Error(translateError(error?.message ?? "Erro"));
+      await logEvent({
+        padlock_id: p.id, padlock_code: p.code, action: "transferred",
+        actor_id: user?.id ?? null, actor_name: user?.email ?? null,
+        previous_data: { owner_name: p.owner_name, owner_registration: p.owner_registration, owner_role: p.owner_role, owner_sector: p.owner_sector, owner_phone: p.owner_phone },
+        new_data: { owner_name: data.owner_name, owner_registration: data.owner_registration, owner_role: data.owner_role, owner_sector: data.owner_sector, owner_phone: data.owner_phone },
+        notes: parsed.data.notes
+          ? `De ${p.owner_name ?? "—"} (${p.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
+          : `De ${p.owner_name ?? "—"} (${p.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
+      });
+      await supabase.storage.from("padlock-photos").remove([`${p.id}.jpg`]);
+    }));
+
+    const failed = results.filter(r => r.status === "rejected");
+    const succeeded = results.length - failed.length;
+    setLoading(false);
+    if (failed.length > 0 && succeeded === 0) {
+      return toast.error("Erro ao transferir os cadeados.");
     }
-    await logEvent({
-      padlock_id: padlock.id, padlock_code: padlock.code, action: "transferred",
-      actor_id: user?.id ?? null, actor_name: user?.email ?? null,
-      previous_data: {
-        owner_name: padlock.owner_name, owner_registration: padlock.owner_registration,
-        owner_role: padlock.owner_role, owner_sector: padlock.owner_sector,
-        owner_phone: padlock.owner_phone,
-      },
-      new_data: {
-        owner_name: data.owner_name, owner_registration: data.owner_registration,
-        owner_role: data.owner_role, owner_sector: data.owner_sector,
-        owner_phone: data.owner_phone,
-      },
-      notes: parsed.data.notes
-        ? `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
-        : `De ${padlock.owner_name ?? "—"} (${padlock.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
-    });
-    await supabase.storage.from("padlock-photos").remove([`${padlock.id}.jpg`]);
-    toast.success("Cadeado transferido");
-    setLoading(false); onOpenChange(false); onDone();
+    if (failed.length > 0) {
+      toast.warning(`${succeeded} transferido(s), ${failed.length} com erro.`);
+    } else {
+      toast.success(totalCount === 1 ? "Cadeado transferido" : `${totalCount} cadeados transferidos`);
+    }
+    onOpenChange(false); onDone();
     setName(""); setReg(""); setRole(""); setSector(""); setPhone(""); setNotes("");
+    setExtras([]); setAddNumber(""); setAddError("");
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Transferir cadeado — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
+          <DialogTitle>Transferir {totalCount > 1 ? `${totalCount} cadeados` : `cadeado — ${colorLabel[padlock.color]} #${padlock.number}`}</DialogTitle>
           <DialogDescription>
             Dono atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
             A mudança fica registrada na linha do tempo.
@@ -342,9 +379,62 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
           </div>
           <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(formatPhoneBR(e.target.value))} inputMode="tel" placeholder="(XX) XXXXX-XXXX" maxLength={16} required /></div>
           <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
+
+          {/* Cadeados a transferir */}
+          <div className="space-y-2 rounded-lg border p-3">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Cadeados a transferir</Label>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">
+                {colorLabel[padlock.color]} #{padlock.number}
+                <span className="text-muted-foreground">(este)</span>
+              </span>
+              {extras.map(e => (
+                <span key={e.id} className="inline-flex items-center gap-1 rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">
+                  {colorLabel[e.color]} #{e.number}
+                  <button type="button" onClick={() => setExtras(prev => prev.filter(x => x.id !== e.id))} className="ml-0.5 rounded-full text-muted-foreground hover:text-foreground">
+                    <XCircle className="h-3.5 w-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2 items-end">
+              <div className="space-y-1 w-28">
+                <Label className="text-xs">Cor</Label>
+                <Select value={addColor} onValueChange={(v) => { setAddColor(v as PadlockColor); setAddError(""); }}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(PADLOCK_COLORS.filter(c => c !== "vermelho") as PadlockColor[]).map(c => (
+                      <SelectItem key={c} value={c} className="text-xs">{colorLabel[c]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 flex-1">
+                <Label className="text-xs">Número</Label>
+                <Input
+                  className="h-8 text-xs"
+                  type="number"
+                  min={1}
+                  value={addNumber}
+                  onChange={(e) => { setAddNumber(e.target.value); setAddError(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addExtra(); } }}
+                  placeholder="ex.: 5"
+                />
+              </div>
+              <Button type="button" variant="outline" size="sm" className="h-8 shrink-0" onClick={addExtra} disabled={addLoading}>
+                {addLoading ? "..." : "Adicionar"}
+              </Button>
+            </div>
+            {addError && <p className="text-xs text-destructive">{addError}</p>}
+          </div>
+
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Transferir"}</Button>
+            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
+              {loading ? "..." : totalCount === 1 ? "Transferir" : `Transferir ${totalCount} cadeados`}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
