@@ -335,9 +335,9 @@ export function PrintLabelDialog({
         )}
 
         {etiquetaGerada && (
-          <div style={{ background: "#CBD2D8", padding: 20, borderRadius: 8, overflow: "auto" }}>
-            <div style={{ display: "flex", gap: 0, justifyContent: "center" }}>
-              <EtiquetaLOTO cadeado={cadeado} fotoSrc={fotoSrc} scale={1.8} />
+          <div style={{ background: "#CBD2D8", padding: 16, borderRadius: 8, overflow: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <EtiquetaLOTO cadeado={cadeado} fotoSrc={fotoSrc} scale={1.25} />
             </div>
           </div>
         )}
