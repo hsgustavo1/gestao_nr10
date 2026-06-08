@@ -77,8 +77,9 @@ export function SiteHeader() {
                 {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>RAC — Controle de acessos</MobileNavLink>}
                 <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>NR-10</MobileNavLink>
                 <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>RTI</MobileNavLink>
-                <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>Termografias</MobileNavLink>
-                <MobileNavLink to="/cercon" onNav={() => setMenuOpen(false)}>Cercon</MobileNavLink>
+                <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>Inspeções — Termografias</MobileNavLink>
+                <MobileNavLink to="/cercon" onNav={() => setMenuOpen(false)}>Inspeções — Cercon</MobileNavLink>
+                <MobileNavLink to="/spda" onNav={() => setMenuOpen(false)}>Inspeções — SPDA</MobileNavLink>
                 <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>Qualificações — Dashboard</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Qualificações — Colaboradores</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Qualificações — NR-10</MobileNavLink>
@@ -100,8 +101,7 @@ export function SiteHeader() {
             <RACDropdown />
             <NavLink to="/nr10">NR-10</NavLink>
             <NavLink to="/rti">RTI</NavLink>
-            <NavLink to="/termografias">Termografias</NavLink>
-            <NavLink to="/cercon">Cercon</NavLink>
+            <InspecoesDropdown />
             <QualDropdown />
           </nav>
         </div>
@@ -187,6 +187,32 @@ function MobileNavLink({ to, children, onNav }: { to: string; children: React.Re
     >
       {children}
     </Link>
+  );
+}
+
+function InspecoesDropdown() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors inline-flex items-center gap-1"
+        >
+          Inspeções <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[200px]">
+        <DropdownMenuItem asChild>
+          <Link to="/termografias" className="cursor-pointer">Termografias</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/cercon" className="cursor-pointer">Cercon</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/spda" className="cursor-pointer">SPDA</Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
