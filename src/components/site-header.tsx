@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogIn, LogOut, Eye, Menu } from "lucide-react";
+import { LogIn, LogOut, Eye, Menu, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -9,6 +9,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
  * Topbar Atvos — fundo azul-marinho fixo (#0A2D48), wordmark "atvos."
@@ -65,6 +71,11 @@ export function SiteHeader() {
                 <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
                 <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>Base de dados</MobileNavLink>
                  <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>Violações de dispositivos</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Qualificações — Colaboradores</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Qualificações — NR-10</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>Qualificações — ITs</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/autorizacoes" onNav={() => setMenuOpen(false)}>Qualificações — Autorizações</MobileNavLink>
+                {isAdmin && <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>Importar Qualificações</MobileNavLink>}
                  {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>Inconsistências</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>Carga</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>Controle de acessos</MobileNavLink>}
@@ -83,8 +94,10 @@ export function SiteHeader() {
             <NavLink to="/dashboard">Dashboard</NavLink>
             <NavLink to="/cadeados">Base de dados</NavLink>
              <NavLink to="/violacoes">Violações de dispositivos</NavLink>
+            <QualDropdown />
              {isAdmin && <NavLink to="/admin/reports">Inconsistências</NavLink>}
             {isAdmin && <NavLink to="/admin/carga">Carga</NavLink>}
+            {isAdmin && <NavLink to="/admin/qualificacoes/carga">Importar Qual.</NavLink>}
             {isAdmin && <NavLink to="/admin/usuarios">Controle de acessos</NavLink>}
           </nav>
         </div>
@@ -170,6 +183,35 @@ function MobileNavLink({ to, children, onNav }: { to: string; children: React.Re
     >
       {children}
     </Link>
+  );
+}
+
+function QualDropdown() {
+  const items = [
+    { to: "/qualificacoes/colaboradores", label: "Colaboradores" },
+    { to: "/qualificacoes/nr10", label: "NR-10" },
+    { to: "/qualificacoes/instrucoes", label: "Instruções de trabalho" },
+    { to: "/qualificacoes/autorizacoes", label: "Autorizações" },
+  ] as const;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors inline-flex items-center gap-1"
+        >
+          Qualificações <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[200px]">
+        {items.map((item) => (
+          <DropdownMenuItem key={item.to} asChild>
+            <Link to={item.to} className="cursor-pointer">{item.label}</Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
