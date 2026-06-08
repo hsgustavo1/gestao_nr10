@@ -1,0 +1,414 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useRef } from "react";
+import * as XLSX from "xlsx";
+import { Upload, FileSpreadsheet, CheckCircle2 } from "lucide-react";
+import { PageShell } from "@/components/page-shell";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { batchImportQualificacoes } from "@/lib/qualificacoes-queries";
+import { excelSerialToISO } from "@/lib/qualificacoes";
+
+export const Route = createFileRoute("/admin/qualificacoes/carga")({
+  component: QualificacoesCargaPage,
+  head: () => ({ meta: [{ title: "Importar Planilha — Qualificações" }] }),
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function parseExcelDate(val: unknown): string | null {
+  if (val == null || val === "") return null;
+  if (typeof val === "number") return excelSerialToISO(val);
+  if (typeof val === "string" && val.trim()) {
+    const iso = val.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+    const parts = iso.split("/");
+    if (parts.length === 3)
+      return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+  }
+  return null;
+}
+
+function strOrNull(val: unknown): string | null {
+  if (val == null) return null;
+  const s = String(val).trim();
+  return s ? s : null;
+}
+
+// ── Parsed result type ────────────────────────────────────────────────────────
+
+type ParsedData = {
+  employees: Parameters<typeof batchImportQualificacoes>[0]["employees"];
+  nr10Trainings: Parameters<typeof batchImportQualificacoes>[0]["nr10Trainings"];
+  authorizations: Parameters<typeof batchImportQualificacoes>[0]["authorizations"];
+  instructions: Parameters<typeof batchImportQualificacoes>[0]["instructions"];
+  itTrainings: Parameters<typeof batchImportQualificacoes>[0]["itTrainings"];
+};
+
+// ── Parser ────────────────────────────────────────────────────────────────────
+
+function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
+  const employees: ParsedData["employees"] = [];
+  const nr10Trainings: ParsedData["nr10Trainings"] = [];
+  const authorizations: ParsedData["authorizations"] = [];
+  const itTrainings: ParsedData["itTrainings"] = [];
+  const instructionMap = new Map<string, true>();
+
+  // ── Sheet "Escolaridade" ──────────────────────────────────────────────────
+  const escSheet = wb.Sheets["Escolaridade"];
+  if (escSheet) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(escSheet, {
+      header: 1,
+      defval: null,
+    });
+
+    // header row index 5, data starts at index 6
+    for (let i = 6; i < rows.length; i++) {
+      const row = rows[i] as unknown[];
+
+      const name = strOrNull(row[2]);
+      const matricula = strOrNull(row[3]);
+      if (!name || !matricula) continue;
+
+      const setor = strOrNull(row[4]);
+      const classificacao = strOrNull(row[5]);
+      const funcao = strOrNull(row[6]);
+      const escolaridade = strOrNull(row[7]);
+      const diploma = strOrNull(row[8]);
+      const diploma_conclusao = parseExcelDate(row[9]);
+      const crea_cft = strOrNull(row[36]);
+
+      employees.push({
+        name,
+        matricula,
+        setor,
+        classificacao,
+        funcao,
+        escolaridade,
+        diploma,
+        diploma_conclusao,
+        crea_cft,
+        active: true,
+      });
+
+      // NR-10 Básico — formação (col 10) and reciclagem (col 13)
+      const nr10BasicoFormDate = parseExcelDate(row[10]);
+      if (nr10BasicoFormDate) {
+        nr10Trainings.push({
+          matricula,
+          training_type: "nr10_basico",
+          category: "formacao",
+          training_date: nr10BasicoFormDate,
+          art: strOrNull(row[11]),
+          responsavel_tecnico: strOrNull(row[12]),
+          valid: String(row[16] ?? "").trim().toLowerCase() === "sim",
+        });
+      }
+
+      const nr10BasicoRecDate = parseExcelDate(row[13]);
+      if (nr10BasicoRecDate) {
+        nr10Trainings.push({
+          matricula,
+          training_type: "nr10_basico",
+          category: "reciclagem",
+          training_date: nr10BasicoRecDate,
+          art: strOrNull(row[14]),
+          responsavel_tecnico: strOrNull(row[15]),
+          valid: String(row[16] ?? "").trim().toLowerCase() === "sim",
+        });
+      }
+
+      // NR-10 Áreas Classificadas — formação (col 17) and reciclagem (col 20)
+      const acFormDate = parseExcelDate(row[17]);
+      if (acFormDate) {
+        nr10Trainings.push({
+          matricula,
+          training_type: "nr10_areas_classificadas",
+          category: "formacao",
+          training_date: acFormDate,
+          art: strOrNull(row[18]),
+          responsavel_tecnico: strOrNull(row[19]),
+          valid: String(row[23] ?? "").trim().toLowerCase() === "sim",
+        });
+      }
+
+      const acRecDate = parseExcelDate(row[20]);
+      if (acRecDate) {
+        nr10Trainings.push({
+          matricula,
+          training_type: "nr10_areas_classificadas",
+          category: "reciclagem",
+          training_date: acRecDate,
+          art: strOrNull(row[21]),
+          responsavel_tecnico: strOrNull(row[22]),
+          valid: String(row[23] ?? "").trim().toLowerCase() === "sim",
+        });
+      }
+
+      // SEP — formação (col 24) and reciclagem (col 27)
+      const sepFormDate = parseExcelDate(row[24]);
+      if (sepFormDate) {
+        nr10Trainings.push({
+          matricula,
+          training_type: "sep",
+          category: "formacao",
+          training_date: sepFormDate,
+          art: strOrNull(row[25]),
+          responsavel_tecnico: strOrNull(row[26]),
+          valid: String(row[30] ?? "").trim().toLowerCase() === "sim",
+        });
+      }
+
+      const sepRecDate = parseExcelDate(row[27]);
+      if (sepRecDate) {
+        nr10Trainings.push({
+          matricula,
+          training_type: "sep",
+          category: "reciclagem",
+          training_date: sepRecDate,
+          art: strOrNull(row[28]),
+          responsavel_tecnico: strOrNull(row[29]),
+          valid: String(row[30] ?? "").trim().toLowerCase() === "sim",
+        });
+      }
+
+      // Work Authorization — only if level is A0–A4
+      const authLevel = strOrNull(row[32]);
+      const validLevels = ["A0", "A1", "A2", "A3", "A4"];
+      if (authLevel && validLevels.includes(authLevel)) {
+        authorizations.push({
+          matricula,
+          level: authLevel as "A0" | "A1" | "A2" | "A3" | "A4",
+          funcao: strOrNull(row[33]),
+          abrangencia: strOrNull(row[34]),
+          authorization_date: parseExcelDate(row[31]),
+          valid: String(row[35] ?? "").trim().toLowerCase() === "sim",
+        });
+      }
+    }
+  }
+
+  // ── Sheet "IT" ─────────────────────────────────────────────────────────────
+  const itSheet = wb.Sheets["IT"];
+  if (itSheet) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(itSheet, {
+      header: 1,
+      defval: null,
+    });
+
+    // Read IT codes from header row (index 5) starting at col 5, every 2 cols
+    const headerRow = (rows[5] ?? []) as unknown[];
+    const itCodes: string[] = [];
+    let colIdx = 5;
+    while (colIdx < headerRow.length) {
+      const code = strOrNull(headerRow[colIdx]);
+      if (!code) break;
+      itCodes.push(code);
+      if (!instructionMap.has(code)) {
+        instructionMap.set(code, true);
+      }
+      colIdx += 2;
+    }
+
+    // Data rows start at index 6
+    for (let i = 6; i < rows.length; i++) {
+      const row = rows[i] as unknown[];
+      const matricula = strOrNull(row[3]);
+      if (!matricula) continue;
+
+      for (let j = 0; j < itCodes.length; j++) {
+        const statusRaw = strOrNull(row[5 + j * 2]);
+        if (!statusRaw) continue;
+
+        const upper = statusRaw.toUpperCase();
+        const status =
+          upper === "OK" ? "ok" : upper === "VENCIDO" ? "vencido" : "pendente";
+
+        const conclusao_date = parseExcelDate(row[5 + j * 2 + 1]);
+
+        itTrainings.push({
+          matricula,
+          instructionCode: itCodes[j],
+          status,
+          conclusao_date,
+        });
+      }
+    }
+  }
+
+  // Build instructions array from discovered IT codes
+  const instructions: ParsedData["instructions"] = Array.from(
+    instructionMap.keys()
+  ).map((code) => ({
+    code,
+    title: null,
+    validity_months: 24,
+  }));
+
+  return { employees, nr10Trainings, authorizations, instructions, itTrainings };
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+function QualificacoesCargaPage() {
+  const [parsed, setParsed] = useState<ParsedData | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [done, setDone] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  async function handleFile(file: File) {
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const result = parseWorkbook(wb);
+      setParsed(result);
+      setDone(false);
+      if (result.employees.length === 0) {
+        toast.warning("Nenhum colaborador encontrado na planilha.");
+      } else {
+        toast.success(
+          `${result.employees.length} colaborador(es) lido(s) com sucesso.`
+        );
+      }
+    } catch (err) {
+      toast.error(`Falha ao ler planilha: ${(err as Error).message}`);
+    }
+  }
+
+  async function handleImport() {
+    if (!parsed) return;
+    setImporting(true);
+    try {
+      await batchImportQualificacoes(parsed);
+      setDone(true);
+      toast.success("Importação concluída com sucesso!");
+    } catch (err) {
+      toast.error(`Erro na importação: ${(err as Error).message}`);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  return (
+    <PageShell>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Importar Planilha — Qualificações</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Carregue o arquivo{" "}
+            <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">
+              Qualificacao Treinamentos 240730.xlsx
+            </code>{" "}
+            para importar colaboradores, treinamentos NR-10, autorizações de trabalho e conclusões de IT.
+          </p>
+        </div>
+
+        {/* Drop zone */}
+        <Card
+          className="border-2 border-dashed border-border hover:border-primary/50 transition-colors cursor-pointer"
+          onClick={() => inputRef.current?.click()}
+        >
+          <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
+            <FileSpreadsheet className="h-10 w-10" />
+            <p className="text-sm font-medium">
+              Clique para selecionar o arquivo Excel
+            </p>
+            <p className="text-xs">.xlsx ou .xls</p>
+          </CardContent>
+        </Card>
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleFile(f);
+          }}
+        />
+
+        {/* Preview */}
+        {parsed && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="secondary">
+                {parsed.employees.length} colaboradores
+              </Badge>
+              <Badge variant="secondary">
+                {parsed.nr10Trainings.length} registros NR-10
+              </Badge>
+              <Badge variant="secondary">
+                {parsed.authorizations.length} autorizações
+              </Badge>
+              <Badge variant="secondary">
+                {parsed.instructions.length} ITs
+              </Badge>
+              <Badge variant="secondary">
+                {parsed.itTrainings.length} conclusões de IT
+              </Badge>
+            </div>
+
+            {/* Preview table — first 10 employees */}
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-auto max-h-48">
+                  <table className="w-full text-xs">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium">Nome</th>
+                        <th className="text-left px-3 py-2 font-medium">Matrícula</th>
+                        <th className="text-left px-3 py-2 font-medium">Setor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {parsed.employees.slice(0, 10).map((emp) => (
+                        <tr key={emp.matricula} className="hover:bg-muted/40">
+                          <td className="px-3 py-1.5">{emp.name}</td>
+                          <td className="px-3 py-1.5 font-mono">{emp.matricula}</td>
+                          <td className="px-3 py-1.5 text-muted-foreground">
+                            {emp.setor ?? "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {parsed.employees.length > 10 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">
+                      … e mais {parsed.employees.length - 10} colaboradores
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Success */}
+        {done && (
+          <Card className="border-emerald-500/40 bg-emerald-500/5">
+            <CardContent className="flex items-center gap-3 py-4 text-sm text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="h-5 w-5 shrink-0" />
+              <span>
+                Importação concluída! Todos os dados foram salvos com sucesso.
+              </span>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Import button */}
+        <div className="flex justify-end">
+          <Button
+            onClick={handleImport}
+            disabled={!parsed || importing || done}
+            className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+          >
+            <Upload className="h-4 w-4" />
+            {importing ? "Importando…" : "Confirmar Importação"}
+          </Button>
+        </div>
+      </div>
+    </PageShell>
+  );
+}
