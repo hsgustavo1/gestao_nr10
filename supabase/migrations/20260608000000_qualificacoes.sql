@@ -65,7 +65,7 @@ ALTER TABLE public.work_instructions ENABLE ROW LEVEL SECURITY;
 CREATE TABLE public.it_trainings (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   employee_id    uuid NOT NULL REFERENCES public.employees(id) ON DELETE CASCADE,
-  instruction_id uuid NOT NULL REFERENCES public.work_instructions(id) ON DELETE CASCADE,
+  instruction_id uuid NOT NULL REFERENCES public.work_instructions(id) ON DELETE RESTRICT,
   status         text NOT NULL CHECK (status IN ('ok','pendente','vencido')) DEFAULT 'pendente',
   conclusao_date date,
   created_at     timestamptz NOT NULL DEFAULT now(),
@@ -74,6 +74,7 @@ CREATE TABLE public.it_trainings (
 );
 ALTER TABLE public.it_trainings ENABLE ROW LEVEL SECURITY;
 CREATE INDEX idx_it_employee ON public.it_trainings(employee_id);
+CREATE INDEX idx_it_instruction ON public.it_trainings(instruction_id);
 
 -- ============ updated_at triggers ============
 -- NOTE: touch_updated_at() function already exists from first migration — do NOT recreate it.
