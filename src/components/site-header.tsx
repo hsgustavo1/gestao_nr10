@@ -69,12 +69,13 @@ export function SiteHeader() {
                 </div>
               )}
               <nav className="flex flex-col p-2">
-                <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
+                <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>RAC — Dashboard</MobileNavLink>
                 <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>RAC — Base de dados</MobileNavLink>
                 <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>RAC — Violações</MobileNavLink>
                 {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>RAC — Inconsistências</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>RAC — Carga</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>RAC — Controle de acessos</MobileNavLink>}
+                <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>Qualificações — Dashboard</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Qualificações — Colaboradores</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Qualificações — NR-10</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>Qualificações — ITs</MobileNavLink>
@@ -92,7 +93,6 @@ export function SiteHeader() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
-            <NavLink to="/dashboard">Dashboard</NavLink>
             <RACDropdown />
             <QualDropdown />
           </nav>
@@ -197,6 +197,10 @@ function RACDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[220px]">
         <DropdownMenuItem asChild>
+          <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
           <Link to="/cadeados" className="cursor-pointer">Base de dados</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -242,6 +246,10 @@ function QualDropdown() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[200px]">
+        <DropdownMenuItem asChild>
+          <Link to="/qualificacoes" className="cursor-pointer">Dashboard</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {items.map((item) => (
           <DropdownMenuItem key={item.to} asChild>
             <Link to={item.to} className="cursor-pointer">{item.label}</Link>
