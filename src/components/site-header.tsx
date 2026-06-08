@@ -54,7 +54,7 @@ export function SiteHeader() {
             <SheetContent side="left" className="w-72 p-0 bg-[#0A2D48] text-white border-r-0">
               <SheetHeader className="px-4 py-4 border-b border-white/10">
                 <SheetTitle className="text-white text-sm uppercase tracking-wider">
-                  RAC — Bloqueio
+                  Gestão NR-10
                 </SheetTitle>
               </SheetHeader>
               {user && (
@@ -75,6 +75,10 @@ export function SiteHeader() {
                 {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>RAC — Inconsistências</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>RAC — Carga</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>RAC — Controle de acessos</MobileNavLink>}
+                <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>NR-10</MobileNavLink>
+                <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>RTI</MobileNavLink>
+                <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>Termografias</MobileNavLink>
+                <MobileNavLink to="/cercon" onNav={() => setMenuOpen(false)}>Cercon</MobileNavLink>
                 <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>Qualificações — Dashboard</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Qualificações — Colaboradores</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Qualificações — NR-10</MobileNavLink>
@@ -87,13 +91,17 @@ export function SiteHeader() {
 
           <Link to="/" className="flex items-center gap-0 min-w-0">
             <span className="text-[12px] sm:text-[14px] font-bold uppercase tracking-[0.05em] text-white truncate">
-              <span className="hidden sm:inline">RAC - Bloqueio de energias perigosas&nbsp;&nbsp;</span>
-              <span className="sm:hidden">RAC — Bloqueio</span>
+              <span className="hidden sm:inline">Gestão NR-10&nbsp;&nbsp;</span>
+              <span className="sm:hidden">Gestão NR-10</span>
             </span>
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
             <RACDropdown />
+            <NavLink to="/nr10">NR-10</NavLink>
+            <NavLink to="/rti">RTI</NavLink>
+            <NavLink to="/termografias">Termografias</NavLink>
+            <NavLink to="/cercon">Cercon</NavLink>
             <QualDropdown />
           </nav>
         </div>
