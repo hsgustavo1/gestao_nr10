@@ -13,6 +13,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -69,16 +70,16 @@ export function SiteHeader() {
               )}
               <nav className="flex flex-col p-2">
                 <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
-                <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>Base de dados</MobileNavLink>
-                 <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>Violações de dispositivos</MobileNavLink>
+                <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>RAC — Base de dados</MobileNavLink>
+                <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>RAC — Violações</MobileNavLink>
+                {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>RAC — Inconsistências</MobileNavLink>}
+                {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>RAC — Carga</MobileNavLink>}
+                {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>RAC — Controle de acessos</MobileNavLink>}
                 <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Qualificações — Colaboradores</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Qualificações — NR-10</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>Qualificações — ITs</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/autorizacoes" onNav={() => setMenuOpen(false)}>Qualificações — Autorizações</MobileNavLink>
-                {isAdmin && <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>Importar Qualificações</MobileNavLink>}
-                 {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>Inconsistências</MobileNavLink>}
-                {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>Carga</MobileNavLink>}
-                {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>Controle de acessos</MobileNavLink>}
+                {isAdmin && <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>Qualificações — Importar xlsx</MobileNavLink>}
               </nav>
             </SheetContent>
           </Sheet>
@@ -92,13 +93,8 @@ export function SiteHeader() {
 
           <nav className="hidden lg:flex items-center gap-1">
             <NavLink to="/dashboard">Dashboard</NavLink>
-            <NavLink to="/cadeados">Base de dados</NavLink>
-             <NavLink to="/violacoes">Violações de dispositivos</NavLink>
+            <RACDropdown />
             <QualDropdown />
-             {isAdmin && <NavLink to="/admin/reports">Inconsistências</NavLink>}
-            {isAdmin && <NavLink to="/admin/carga">Carga</NavLink>}
-            {isAdmin && <NavLink to="/admin/qualificacoes/carga">Importar Qual.</NavLink>}
-            {isAdmin && <NavLink to="/admin/usuarios">Controle de acessos</NavLink>}
           </nav>
         </div>
 
@@ -186,7 +182,48 @@ function MobileNavLink({ to, children, onNav }: { to: string; children: React.Re
   );
 }
 
+function RACDropdown() {
+  const { isAdmin } = useAuth();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors inline-flex items-center gap-1"
+        >
+          RAC — Bloqueio <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[220px]">
+        <DropdownMenuItem asChild>
+          <Link to="/cadeados" className="cursor-pointer">Base de dados</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/violacoes" className="cursor-pointer">Violações de dispositivos</Link>
+        </DropdownMenuItem>
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/admin/reports" className="cursor-pointer">Inconsistências</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/carga" className="cursor-pointer">Carga</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/usuarios" className="cursor-pointer">Controle de acessos</Link>
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function QualDropdown() {
+  const { isAdmin } = useAuth();
+
   const items = [
     { to: "/qualificacoes/colaboradores", label: "Colaboradores" },
     { to: "/qualificacoes/nr10", label: "NR-10" },
@@ -210,6 +247,14 @@ function QualDropdown() {
             <Link to={item.to} className="cursor-pointer">{item.label}</Link>
           </DropdownMenuItem>
         ))}
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/admin/qualificacoes/carga" className="cursor-pointer">Importar xlsx</Link>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
