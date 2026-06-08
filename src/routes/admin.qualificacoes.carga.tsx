@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import * as XLSX from "xlsx";
-import { Upload, FileSpreadsheet, CheckCircle2 } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, Download } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +19,10 @@ export const Route = createFileRoute("/admin/qualificacoes/carga")({
 
 function parseExcelDate(val: unknown): string | null {
   if (val == null || val === "") return null;
-  if (typeof val === "number") return excelSerialToISO(val);
+  if (typeof val === "number") {
+    if (val < 1 || !isFinite(val)) return null;
+    try { return excelSerialToISO(val); } catch { return null; }
+  }
   if (typeof val === "string" && val.trim()) {
     const iso = val.trim();
     if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
@@ -67,17 +70,17 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
     for (let i = 6; i < rows.length; i++) {
       const row = rows[i] as unknown[];
 
-      const name = strOrNull(row[2]);
-      const matricula = strOrNull(row[3]);
+      const name = strOrNull(row[1]);
+      const matricula = strOrNull(row[2]);
       if (!name || !matricula) continue;
 
-      const setor = strOrNull(row[4]);
-      const classificacao = strOrNull(row[5]);
-      const funcao = strOrNull(row[6]);
-      const escolaridade = strOrNull(row[7]);
-      const diploma = strOrNull(row[8]);
-      const diploma_conclusao = parseExcelDate(row[9]);
-      const crea_cft = strOrNull(row[36]);
+      const setor = strOrNull(row[3]);
+      const classificacao = strOrNull(row[4]);
+      const funcao = strOrNull(row[5]);
+      const escolaridade = strOrNull(row[6]);
+      const diploma = strOrNull(row[7]);
+      const diploma_conclusao = parseExcelDate(row[8]);
+      const crea_cft = strOrNull(row[35]);
 
       employees.push({
         name,
@@ -92,98 +95,98 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
         active: true,
       });
 
-      // NR-10 Básico — formação (col 10) and reciclagem (col 13)
-      const nr10BasicoFormDate = parseExcelDate(row[10]);
+      // NR-10 Básico — formação (col 9) and reciclagem (col 12)
+      const nr10BasicoFormDate = parseExcelDate(row[9]);
       if (nr10BasicoFormDate) {
         nr10Trainings.push({
           matricula,
           training_type: "nr10_basico",
           category: "formacao",
           training_date: nr10BasicoFormDate,
-          art: strOrNull(row[11]),
-          responsavel_tecnico: strOrNull(row[12]),
-          valid: String(row[16] ?? "").trim().toLowerCase() === "sim",
+          art: strOrNull(row[10]),
+          responsavel_tecnico: strOrNull(row[11]),
+          valid: String(row[15] ?? "").trim().toLowerCase() === "sim",
         });
       }
 
-      const nr10BasicoRecDate = parseExcelDate(row[13]);
+      const nr10BasicoRecDate = parseExcelDate(row[12]);
       if (nr10BasicoRecDate) {
         nr10Trainings.push({
           matricula,
           training_type: "nr10_basico",
           category: "reciclagem",
           training_date: nr10BasicoRecDate,
-          art: strOrNull(row[14]),
-          responsavel_tecnico: strOrNull(row[15]),
-          valid: String(row[16] ?? "").trim().toLowerCase() === "sim",
+          art: strOrNull(row[13]),
+          responsavel_tecnico: strOrNull(row[14]),
+          valid: String(row[15] ?? "").trim().toLowerCase() === "sim",
         });
       }
 
-      // NR-10 Áreas Classificadas — formação (col 17) and reciclagem (col 20)
-      const acFormDate = parseExcelDate(row[17]);
+      // NR-10 Áreas Classificadas — formação (col 16) and reciclagem (col 19)
+      const acFormDate = parseExcelDate(row[16]);
       if (acFormDate) {
         nr10Trainings.push({
           matricula,
           training_type: "nr10_areas_classificadas",
           category: "formacao",
           training_date: acFormDate,
-          art: strOrNull(row[18]),
-          responsavel_tecnico: strOrNull(row[19]),
-          valid: String(row[23] ?? "").trim().toLowerCase() === "sim",
+          art: strOrNull(row[17]),
+          responsavel_tecnico: strOrNull(row[18]),
+          valid: String(row[22] ?? "").trim().toLowerCase() === "sim",
         });
       }
 
-      const acRecDate = parseExcelDate(row[20]);
+      const acRecDate = parseExcelDate(row[19]);
       if (acRecDate) {
         nr10Trainings.push({
           matricula,
           training_type: "nr10_areas_classificadas",
           category: "reciclagem",
           training_date: acRecDate,
-          art: strOrNull(row[21]),
-          responsavel_tecnico: strOrNull(row[22]),
-          valid: String(row[23] ?? "").trim().toLowerCase() === "sim",
+          art: strOrNull(row[20]),
+          responsavel_tecnico: strOrNull(row[21]),
+          valid: String(row[22] ?? "").trim().toLowerCase() === "sim",
         });
       }
 
-      // SEP — formação (col 24) and reciclagem (col 27)
-      const sepFormDate = parseExcelDate(row[24]);
+      // SEP — formação (col 23) and reciclagem (col 26)
+      const sepFormDate = parseExcelDate(row[23]);
       if (sepFormDate) {
         nr10Trainings.push({
           matricula,
           training_type: "sep",
           category: "formacao",
           training_date: sepFormDate,
-          art: strOrNull(row[25]),
-          responsavel_tecnico: strOrNull(row[26]),
-          valid: String(row[30] ?? "").trim().toLowerCase() === "sim",
+          art: strOrNull(row[24]),
+          responsavel_tecnico: strOrNull(row[25]),
+          valid: String(row[29] ?? "").trim().toLowerCase() === "sim",
         });
       }
 
-      const sepRecDate = parseExcelDate(row[27]);
+      const sepRecDate = parseExcelDate(row[26]);
       if (sepRecDate) {
         nr10Trainings.push({
           matricula,
           training_type: "sep",
           category: "reciclagem",
           training_date: sepRecDate,
-          art: strOrNull(row[28]),
-          responsavel_tecnico: strOrNull(row[29]),
-          valid: String(row[30] ?? "").trim().toLowerCase() === "sim",
+          art: strOrNull(row[27]),
+          responsavel_tecnico: strOrNull(row[28]),
+          valid: String(row[29] ?? "").trim().toLowerCase() === "sim",
         });
       }
 
       // Work Authorization — only if level is A0–A4
-      const authLevel = strOrNull(row[32]);
+      const authLevel = strOrNull(row[31]);
       const validLevels = ["A0", "A1", "A2", "A3", "A4"];
       if (authLevel && validLevels.includes(authLevel)) {
         authorizations.push({
           matricula,
           level: authLevel as "A0" | "A1" | "A2" | "A3" | "A4",
-          funcao: strOrNull(row[33]),
-          abrangencia: strOrNull(row[34]),
-          authorization_date: parseExcelDate(row[31]),
-          valid: String(row[35] ?? "").trim().toLowerCase() === "sim",
+          funcao: strOrNull(row[32]),
+          abrangencia: strOrNull(row[33]),
+          authorization_date: parseExcelDate(row[30]),
+          valid: String(row[34] ?? "").trim().toLowerCase() === "sim",
         });
       }
     }
@@ -197,10 +200,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
       defval: null,
     });
 
-    // Read IT codes from header row (index 5) starting at col 5, every 2 cols
+    // Read IT codes from header row (index 5) starting at col 4, every 2 cols
     const headerRow = (rows[5] ?? []) as unknown[];
     const itCodes: string[] = [];
-    let colIdx = 5;
+    let colIdx = 4;
     while (colIdx < headerRow.length) {
       const code = strOrNull(headerRow[colIdx]);
       if (!code) break;
@@ -214,18 +217,18 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
     // Data rows start at index 6
     for (let i = 6; i < rows.length; i++) {
       const row = rows[i] as unknown[];
-      const matricula = strOrNull(row[3]);
+      const matricula = strOrNull(row[2]);
       if (!matricula) continue;
 
       for (let j = 0; j < itCodes.length; j++) {
-        const statusRaw = strOrNull(row[5 + j * 2]);
+        const statusRaw = strOrNull(row[4 + j * 2]);
         if (!statusRaw) continue;
 
         const upper = statusRaw.toUpperCase();
         const status =
           upper === "OK" ? "ok" : upper === "VENCIDO" ? "vencido" : "pendente";
 
-        const conclusao_date = parseExcelDate(row[5 + j * 2 + 1]);
+        const conclusao_date = parseExcelDate(row[4 + j * 2 + 1]);
 
         itTrainings.push({
           matricula,
@@ -247,6 +250,74 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
   }));
 
   return { employees, nr10Trainings, authorizations, instructions, itTrainings };
+}
+
+// ── Template download ─────────────────────────────────────────────────────────
+
+function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+
+  // Sheet "Escolaridade" — header at row index 5 (row 6 in Excel)
+  const escHeaders = [
+    "",
+    "Nome",
+    "Matrícula",
+    "Setor",
+    "Classificação",
+    "Função",
+    "Escolaridade",
+    "Diploma",
+    "Conclusão Diploma",
+    "NR-10B Form.Data",
+    "NR-10B Form.ART",
+    "NR-10B Form.Resp",
+    "NR-10B Recic.Data",
+    "NR-10B Recic.ART",
+    "NR-10B Recic.Resp",
+    "NR-10B Válido",
+    "NR-10AC Form.Data",
+    "NR-10AC Form.ART",
+    "NR-10AC Form.Resp",
+    "NR-10AC Recic.Data",
+    "NR-10AC Recic.ART",
+    "NR-10AC Recic.Resp",
+    "NR-10AC Válido",
+    "SEP Form.Data",
+    "SEP Form.ART",
+    "SEP Form.Resp",
+    "SEP Recic.Data",
+    "SEP Recic.ART",
+    "SEP Recic.Resp",
+    "SEP Válido",
+    "Aut.Data",
+    "Aut.Nível",
+    "Aut.Função",
+    "Aut.Abrangência",
+    "Aut.Válido",
+    "CREA/CFT",
+  ];
+  // Pad 5 empty rows before the header row
+  const escData: unknown[][] = [[], [], [], [], [], escHeaders];
+  const escSheet = XLSX.utils.aoa_to_sheet(escData);
+  XLSX.utils.book_append_sheet(wb, escSheet, "Escolaridade");
+
+  // Sheet "IT" — header at row index 5, data starts at col D (index 3)
+  const itHeaders = [
+    "",
+    "",
+    "",
+    "Matrícula",
+    "Setor",
+    "IT001.Status",
+    "IT001.Conclusão",
+    "IT002.Status",
+    "IT002.Conclusão",
+  ];
+  const itData: unknown[][] = [[], [], [], [], [], itHeaders];
+  const itSheet = XLSX.utils.aoa_to_sheet(itData);
+  XLSX.utils.book_append_sheet(wb, itSheet, "IT");
+
+  XLSX.writeFile(wb, "modelo_qualificacoes.xlsx");
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -304,19 +375,32 @@ function QualificacoesCargaPage() {
           </p>
         </div>
 
-        {/* Drop zone */}
-        <Card
-          className="border-2 border-dashed border-border hover:border-primary/50 transition-colors cursor-pointer"
-          onClick={() => inputRef.current?.click()}
-        >
-          <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
-            <FileSpreadsheet className="h-10 w-10" />
-            <p className="text-sm font-medium">
-              Clique para selecionar o arquivo Excel
-            </p>
-            <p className="text-xs">.xlsx ou .xls</p>
-          </CardContent>
-        </Card>
+        {/* Drop zone + template button row */}
+        <div className="flex flex-col gap-3">
+          <Card
+            className="border-2 border-dashed border-border hover:border-primary/50 transition-colors cursor-pointer"
+            onClick={() => inputRef.current?.click()}
+          >
+            <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
+              <FileSpreadsheet className="h-10 w-10" />
+              <p className="text-sm font-medium">
+                Clique para selecionar o arquivo Excel
+              </p>
+              <p className="text-xs">.xlsx ou .xls</p>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadTemplate}
+            >
+              <Download className="h-4 w-4" />
+              Baixar Modelo
+            </Button>
+          </div>
+        </div>
 
         <input
           ref={inputRef}
