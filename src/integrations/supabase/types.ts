@@ -35,6 +35,146 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          active: boolean
+          classificacao: string | null
+          created_at: string
+          crea_cft: string | null
+          diploma: string | null
+          diploma_conclusao: string | null
+          escolaridade: string | null
+          funcao: string | null
+          id: string
+          matricula: string
+          name: string
+          setor: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          classificacao?: string | null
+          created_at?: string
+          crea_cft?: string | null
+          diploma?: string | null
+          diploma_conclusao?: string | null
+          escolaridade?: string | null
+          funcao?: string | null
+          id?: string
+          matricula: string
+          name: string
+          setor?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          classificacao?: string | null
+          created_at?: string
+          crea_cft?: string | null
+          diploma?: string | null
+          diploma_conclusao?: string | null
+          escolaridade?: string | null
+          funcao?: string | null
+          id?: string
+          matricula?: string
+          name?: string
+          setor?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      it_trainings: {
+        Row: {
+          conclusao_date: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          instruction_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          conclusao_date?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          instruction_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          conclusao_date?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          instruction_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "it_trainings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "it_trainings_instruction_id_fkey"
+            columns: ["instruction_id"]
+            isOneToOne: false
+            referencedRelation: "work_instructions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nr10_trainings: {
+        Row: {
+          art: string | null
+          category: string
+          created_at: string
+          employee_id: string
+          id: string
+          responsavel_tecnico: string | null
+          training_date: string | null
+          training_type: string
+          updated_at: string
+          valid: boolean
+        }
+        Insert: {
+          art?: string | null
+          category: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          responsavel_tecnico?: string | null
+          training_date?: string | null
+          training_type: string
+          updated_at?: string
+          valid?: boolean
+        }
+        Update: {
+          art?: string | null
+          category?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          responsavel_tecnico?: string | null
+          training_date?: string | null
+          training_type?: string
+          updated_at?: string
+          valid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nr10_trainings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       padlock_events: {
         Row: {
           action: string
@@ -328,6 +468,77 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      work_authorizations: {
+        Row: {
+          abrangencia: string | null
+          authorization_date: string | null
+          created_at: string
+          employee_id: string
+          funcao: string | null
+          id: string
+          level: string
+          updated_at: string
+          valid: boolean
+        }
+        Insert: {
+          abrangencia?: string | null
+          authorization_date?: string | null
+          created_at?: string
+          employee_id: string
+          funcao?: string | null
+          id?: string
+          level: string
+          updated_at?: string
+          valid?: boolean
+        }
+        Update: {
+          abrangencia?: string | null
+          authorization_date?: string | null
+          created_at?: string
+          employee_id?: string
+          funcao?: string | null
+          id?: string
+          level?: string
+          updated_at?: string
+          valid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_authorizations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_instructions: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          title: string | null
+          updated_at: string
+          validity_months: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          validity_months?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          validity_months?: number
         }
         Relationships: []
       }
