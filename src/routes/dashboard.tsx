@@ -234,6 +234,16 @@ function DashboardPage() {
         </Card>
       </section>
 
+      {/* Qualificações snapshot */}
+      <section className="mt-6">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Qualificações NR-10
+        </h2>
+        <Link to="/qualificacoes" className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline">
+          Ver painel completo <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </section>
+
       <NewPadlockDialog
         open={openNew}
         onOpenChange={setOpenNew}
