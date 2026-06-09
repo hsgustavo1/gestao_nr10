@@ -74,6 +74,7 @@ export function SiteHeader() {
                 <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>RAC — Violações</MobileNavLink>
                 {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>RAC — Inconsistências</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>RAC — Carga</MobileNavLink>}
+                {isAdmin && <MobileNavLink to="/admin/certificados/importar" onNav={() => setMenuOpen(false)}>RAC — Importar Certificados</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>RAC — Controle de acessos</MobileNavLink>}
                 <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>NR-10</MobileNavLink>
                 <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>RTI</MobileNavLink>
@@ -249,6 +250,9 @@ function RACDropdown() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/admin/carga" className="cursor-pointer">Carga</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/certificados/importar" className="cursor-pointer">Importar Certificados</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/admin/usuarios" className="cursor-pointer">Controle de acessos</Link>
