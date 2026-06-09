@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Employee, NR10Training, WorkAuthorization, WorkInstruction, ITTraining } from "./qualificacoes";
+import type { Employee, NR10Training, WorkAuthorization, WorkInstruction, ITTraining, TrainingCertificate } from "./qualificacoes";
 
 // ── Query Keys ───────────────────────────────────────────────────────────────
 export const qualKeys = {
@@ -253,4 +253,68 @@ export async function batchImportQualificacoes(payload: {
   }
 
   return matriculaToId;
+}
+
+// ── Training Certificates ────────────────────────────────────────────────────
+
+export function useCertificates(employeeId?: string, trainingId?: string) {
+  return useQuery({
+    queryKey: ["training_certificates", employeeId, trainingId],
+    queryFn: async () => {
+      let q = supabase.from("training_certificates").select("*").order("uploaded_at", { ascending: false });
+      if (employeeId) q = q.eq("employee_id", employeeId);
+      if (trainingId) q = q.eq("nr10_training_id", trainingId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as TrainingCertificate[];
+    },
+    enabled: !!(employeeId || trainingId),
+  });
+}
+
+export function useInsertCertificate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Omit<TrainingCertificate, "id" | "uploaded_at" | "created_at">) => {
+      const { data, error } = await supabase
+        .from("training_certificates")
+        .insert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["training_certificates", vars.employee_id] });
+    },
+  });
+}
+
+export function useDeleteCertificate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, employeeId }: { id: string; employeeId: string }) => {
+      const { error } = await supabase.from("training_certificates").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["training_certificates", vars.employeeId] });
+    },
+  });
+}
+
+export async function uploadCertificateFile(
+  employeeId: string,
+  file: File,
+  suffix?: string
+): Promise<string> {
+  const ext = file.name.split(".").pop() ?? "pdf";
+  const path = `${employeeId}/${Date.now()}${suffix ? `_${suffix}` : ""}.${ext}`;
+  const { error } = await supabase.storage.from("certificates").upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from("certificates").getPublicUrl(path);
+  return data.publicUrl;
 }

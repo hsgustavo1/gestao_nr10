@@ -450,6 +450,28 @@ export type Database = {
         }
         Relationships: []
       }
+      training_certificates: {
+        Row: {
+          id: string; employee_id: string; nr10_training_id: string | null;
+          training_type: string | null; category: string | null;
+          file_url: string; file_name: string | null; issue_date: string | null;
+          source_file: string | null; pages_in_source: string | null;
+          uploaded_at: string; created_at: string;
+        };
+        Insert: {
+          id?: string; employee_id: string; nr10_training_id?: string | null;
+          training_type?: string | null; category?: string | null;
+          file_url: string; file_name?: string | null; issue_date?: string | null;
+          source_file?: string | null; pages_in_source?: string | null;
+          uploaded_at?: string; created_at?: string;
+        };
+        Update: Partial<{
+          nr10_training_id: string | null; training_type: string | null;
+          category: string | null; file_url: string; file_name: string | null;
+          issue_date: string | null; source_file: string | null; pages_in_source: string | null;
+        }>;
+        Relationships: [];
+      }
       user_roles: {
         Row: {
           created_at: string

@@ -119,3 +119,18 @@ export function trainingExpiryStatus(trainingDate: string | null): "ok" | "expir
   if (daysLeft <= 90) return "expiring";
   return "ok";
 }
+
+export type TrainingCertificate = {
+  id: string;
+  employee_id: string;
+  nr10_training_id: string | null;
+  training_type: TrainingType | null;
+  category: "formacao" | "reciclagem" | null;
+  file_url: string;
+  file_name: string | null;
+  issue_date: string | null;
+  source_file: string | null;
+  pages_in_source: string | null;
+  uploaded_at: string;
+  created_at: string;
+};
