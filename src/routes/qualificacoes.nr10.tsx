@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/qualificacoes/nr10")({
   component: NR10Page,
-  head: () => ({ meta: [{ title: "Treinamentos NR-10 — Qualificações" }] }),
+  head: () => ({ meta: [{ title: "Capacitações NR-10 — Pessoas" }] }),
 });
 
 const COLUMNS: { type: TrainingType; category: "formacao" | "reciclagem"; label: string }[] = [
@@ -31,6 +31,45 @@ type DialogState = {
   training?: NR10Training;
 };
 
+function StatusCell({ training, onClick, isRevalidatedByReciclagem }: {
+  training?: NR10Training;
+  onClick: () => void;
+  isRevalidatedByReciclagem?: boolean;
+}) {
+  const { isStaff } = useAuth();
+  const tdClass = cn("py-2 px-3 text-center", isStaff && "cursor-pointer hover:bg-muted/40");
+
+  if (!training || !training.training_date) {
+    return (
+      <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+        <MinusCircle className="h-4 w-4 mx-auto text-muted-foreground/40" />
+      </td>
+    );
+  }
+
+  // If this formação is revalidated by a valid reciclagem, always show OK
+  if (isRevalidatedByReciclagem) {
+    return (
+      <td onClick={isStaff ? onClick : undefined} className={tdClass} title={training.training_date ?? ""}>
+        <CheckCircle2 className="h-4 w-4 mx-auto text-emerald-500" />
+      </td>
+    );
+  }
+
+  const expiry = trainingExpiryStatus(training.training_date);
+  return (
+    <td onClick={isStaff ? onClick : undefined} className={tdClass} title={training.training_date ?? ""}>
+      {expiry === "ok" ? (
+        <CheckCircle2 className="h-4 w-4 mx-auto text-emerald-500" />
+      ) : expiry === "expiring" ? (
+        <CheckCircle2 className="h-4 w-4 mx-auto text-amber-500" />
+      ) : (
+        <XCircle className="h-4 w-4 mx-auto text-destructive" />
+      )}
+    </td>
+  );
+}
+
 function NR10Page() {
   const { isStaff } = useAuth();
   const { data: employees = [], isLoading: empLoading } = useEmployees();
@@ -46,7 +85,7 @@ function NR10Page() {
   return (
     <PageShell>
       <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">Treinamentos NR-10</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">Capacitações NR-10</h1>
         <p className="text-xs sm:text-sm text-muted-foreground">
           {isStaff ? "Clique em uma célula para registrar ou editar o treinamento." : "Visão geral dos treinamentos NR-10."}
         </p>
@@ -83,35 +122,30 @@ function NR10Page() {
                     <td className="py-3 px-3 font-medium">{emp.name}</td>
                     <td className="py-2 px-2 text-muted-foreground">{emp.matricula}</td>
                     {COLUMNS.map((col) => {
-                      const key = `${emp.id}:${col.type}:${col.category}`;
-                      const training = trainingMap.get(key);
-                      const expiry = trainingExpiryStatus(training?.training_date ?? null);
+                      const training = trainingMap.get(`${emp.id}:${col.type}:${col.category}`);
+
+                      let isRevalidatedByReciclagem = false;
+                      if (col.category === "formacao") {
+                        const reciclagem = trainingMap.get(`${emp.id}:${col.type}:reciclagem`);
+                        if (reciclagem?.training_date) {
+                          const recStatus = trainingExpiryStatus(reciclagem.training_date);
+                          isRevalidatedByReciclagem = recStatus === "ok" || recStatus === "expiring";
+                        }
+                      }
+
                       return (
-                        <td
+                        <StatusCell
                           key={`${col.type}:${col.category}`}
-                          className={cn(
-                            "py-2 px-3 text-center",
-                            isStaff && "cursor-pointer hover:bg-muted/40"
-                          )}
-                          title={training?.training_date ?? "Sem registro"}
-                          onClick={isStaff ? () => setDialog({
+                          training={training}
+                          isRevalidatedByReciclagem={isRevalidatedByReciclagem}
+                          onClick={() => setDialog({
                             employeeId: emp.id,
                             employeeName: emp.name,
                             type: col.type,
                             category: col.category,
                             training,
-                          }) : undefined}
-                        >
-                          {expiry === "none" ? (
-                            <MinusCircle className="h-4 w-4 mx-auto text-muted-foreground/40" />
-                          ) : expiry === "ok" ? (
-                            <CheckCircle2 className="h-4 w-4 mx-auto text-emerald-500" />
-                          ) : expiry === "expiring" ? (
-                            <CheckCircle2 className="h-4 w-4 mx-auto text-amber-500" />
-                          ) : (
-                            <XCircle className="h-4 w-4 mx-auto text-destructive" />
-                          )}
-                        </td>
+                          })}
+                        />
                       );
                     })}
                   </tr>
