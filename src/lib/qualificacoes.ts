@@ -69,6 +69,7 @@ export type WorkAuthorization = {
   abrangencia: string | null;
   authorization_date: string | null;
   valid: boolean;
+  is_current: boolean;
   created_at: string;
   updated_at: string;
 };

@@ -88,13 +88,19 @@ export function useUpsertNR10Training() {
 }
 
 // ── Work Authorizations ───────────────────────────────────────────────────────
+// NOTE: is_current is a new column added by migration 20260608300000_authorization_archive.sql.
+// Supabase generated types will include it once the migration is applied and types are regenerated.
+// Until then, we cast through unknown to satisfy the type checker.
+
 export function useWorkAuthorizations() {
   return useQuery({
     queryKey: qualKeys.authorizations,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const q = supabase
         .from("work_authorizations")
         .select("*, employees(name, matricula, setor)");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (q as any).eq("is_current", true);
       if (error) throw error;
       return data;
     },
@@ -104,16 +110,44 @@ export function useWorkAuthorizations() {
 export function useUpsertAuthorization() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Omit<WorkAuthorization, "id" | "created_at" | "updated_at"> & { id?: string }) => {
-      const { data, error } = await supabase
-        .from("work_authorizations")
-        .upsert(payload, { onConflict: "employee_id" })
+    mutationFn: async (payload: Omit<WorkAuthorization, "id" | "created_at" | "updated_at" | "is_current"> & { id?: string }) => {
+      const wa = supabase.from("work_authorizations");
+
+      // Archive the current authorization for this employee
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (wa.update({ is_current: false } as any) as any)
+        .eq("employee_id", payload.employee_id)
+        .eq("is_current", true);
+
+      // Insert new authorization as current
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (wa.insert({ ...payload, is_current: true } as any) as any)
         .select()
         .single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: qualKeys.authorizations }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qualKeys.authorizations });
+      qc.invalidateQueries({ queryKey: ["authorization_history"] });
+    },
+  });
+}
+
+export function useAuthorizationHistory(employeeId: string) {
+  return useQuery({
+    queryKey: ["authorization_history", employeeId],
+    queryFn: async () => {
+      const q = supabase
+        .from("work_authorizations")
+        .select("*")
+        .eq("employee_id", employeeId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (q as any).eq("is_current", false).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as WorkAuthorization[];
+    },
+    enabled: !!employeeId,
   });
 }
 
@@ -217,15 +251,21 @@ export async function batchImportQualificacoes(payload: {
     }
   }
 
-  // Step 4: upsert work_authorizations (attach employee_id via matricula)
+  // Step 4: archive + insert work_authorizations (attach employee_id via matricula)
   if (payload.authorizations.length > 0) {
     const rows = payload.authorizations
       .filter((a) => matriculaToId[a.matricula])
       .map(({ matricula: _m, ...rest }) => ({ ...rest, employee_id: matriculaToId[_m] }));
     if (rows.length > 0) {
-      const { error } = await supabase
-        .from("work_authorizations")
-        .upsert(rows, { onConflict: "employee_id" });
+      const employeeIds = rows.map((r) => r.employee_id);
+      // Archive current authorizations for affected employees
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("work_authorizations").update({ is_current: false } as any) as any)
+        .in("employee_id", employeeIds)
+        .eq("is_current", true);
+      // Insert new authorizations as current
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("work_authorizations").insert(rows.map((r) => ({ ...r, is_current: true })) as any) as any);
       if (error) throw error;
     }
   }
