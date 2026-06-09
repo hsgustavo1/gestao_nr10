@@ -9,7 +9,8 @@ import { useAuth } from "@/lib/auth-context";
 import { useEmployees, useDeleteEmployee } from "@/lib/qualificacoes-queries";
 import { EmployeeDialog } from "@/components/employee-dialog";
 import type { Employee } from "@/lib/qualificacoes";
-import { formatDatePtBR } from "@/lib/qualificacoes";
+import { formatDatePtBR, employeeStatusVariant, EMPLOYEE_STATUS_LABELS } from "@/lib/qualificacoes";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/qualificacoes/colaboradores")({
@@ -19,10 +20,16 @@ export const Route = createFileRoute("/qualificacoes/colaboradores")({
 
 function ColaboradoresPage() {
   const { isStaff } = useAuth();
-  const { data: employees = [], isLoading } = useEmployees();
+  const [statusFilter, setStatusFilter] = useState<"ativo" | "afastado" | "desligado" | "all">("ativo");
+  const [setorFilter, setSetorFilter] = useState<string>("todos");
+  const { data: employees = [], isLoading } = useEmployees(statusFilter);
   const deleteEmp = useDeleteEmployee();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Employee | undefined>();
+
+  const filteredEmployees = setorFilter === "todos"
+    ? employees
+    : employees.filter((emp) => emp.setor === setorFilter);
 
   function handleEdit(emp: Employee) {
     setEditing(emp);
@@ -58,7 +65,34 @@ function ColaboradoresPage() {
         )}
       </div>
 
-      <div className="mt-6 overflow-x-auto">
+      <div className="flex items-center gap-2 mt-4 mb-2">
+        <span className="text-xs text-muted-foreground font-medium">Situação:</span>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+          <SelectTrigger className="w-36 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ativo">Ativos</SelectItem>
+            <SelectItem value="afastado">Afastados</SelectItem>
+            <SelectItem value="desligado">Desligados</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground font-medium ml-3">Equipe:</span>
+        <Select value={setorFilter} onValueChange={setSetorFilter}>
+          <SelectTrigger className="w-28 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas</SelectItem>
+            {["ELE", "GER", "INS", "MEC", "ADM", "OPE", "OUT"].map((s) => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="mt-2 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-muted-foreground text-left">
@@ -67,6 +101,7 @@ function ColaboradoresPage() {
               <th className="py-2 pr-4 font-medium">Setor</th>
               <th className="py-2 pr-4 font-medium">Classificação</th>
               <th className="py-2 pr-4 font-medium">Função</th>
+              <th className="py-2 pr-4 font-medium">Situação</th>
               <th className="py-2 pr-4 font-medium">Escolaridade</th>
               <th className="py-2 pr-4 font-medium">Diploma</th>
               <th className="py-2 pr-4 font-medium">Conclusão</th>
@@ -77,12 +112,12 @@ function ColaboradoresPage() {
             {isLoading
               ? Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b">
-                    {Array.from({ length: 8 }).map((_, j) => (
+                    {Array.from({ length: 9 }).map((_, j) => (
                       <td key={j} className="py-3 pr-4"><Skeleton className="h-4 w-24" /></td>
                     ))}
                   </tr>
                 ))
-              : employees.map((emp) => (
+              : filteredEmployees.map((emp) => (
                   <tr key={emp.id} className="border-b hover:bg-muted/30 transition-colors">
                     <td className="py-3 pr-4 font-medium">{emp.name}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{emp.matricula}</td>
@@ -91,6 +126,11 @@ function ColaboradoresPage() {
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground">{emp.classificacao ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground truncate max-w-[200px]">{emp.funcao ?? "—"}</td>
+                    <td className="py-3 pr-4">
+                      <Badge variant={employeeStatusVariant(emp.status ?? "ativo")}>
+                        {EMPLOYEE_STATUS_LABELS[emp.status ?? "ativo"]}
+                      </Badge>
+                    </td>
                     <td className="py-3 pr-4 text-muted-foreground">{emp.escolaridade ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{emp.diploma ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{formatDatePtBR(emp.diploma_conclusao)}</td>
@@ -120,7 +160,7 @@ function ColaboradoresPage() {
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEdit(emp)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(emp)}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" title="Desligar colaborador" onClick={() => handleDelete(emp)}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
@@ -131,7 +171,7 @@ function ColaboradoresPage() {
             }
           </tbody>
         </table>
-        {!isLoading && employees.length === 0 && (
+        {!isLoading && filteredEmployees.length === 0 && (
           <p className="py-12 text-center text-muted-foreground text-sm">
             Nenhum colaborador cadastrado.{" "}
             {isStaff && "Use o botão acima para adicionar ou importe a planilha."}

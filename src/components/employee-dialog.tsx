@@ -20,6 +20,7 @@ const schema = z.object({
   diploma: z.string().optional(),
   diploma_conclusao: z.string().optional(),
   crea_cft: z.string().optional(),
+  status: z.enum(["ativo", "afastado", "desligado"]).default("ativo"),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -44,6 +45,7 @@ export function EmployeeDialog({ open, onOpenChange, employee }: Props) {
       diploma: employee?.diploma ?? "",
       diploma_conclusao: employee?.diploma_conclusao ?? "",
       crea_cft: employee?.crea_cft ?? "",
+      status: employee?.status ?? "ativo",
     },
   });
 
@@ -110,6 +112,19 @@ export function EmployeeDialog({ open, onOpenChange, employee }: Props) {
                 <FormItem className="col-span-2">
                   <FormLabel>Função</FormLabel>
                   <FormControl><Input {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="status" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Situação</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="ativo">Ativo</SelectItem>
+                      <SelectItem value="afastado">Afastado</SelectItem>
+                      <SelectItem value="desligado">Desligado</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormItem>
               )} />
               <FormField control={form.control} name="crea_cft" render={({ field }) => (

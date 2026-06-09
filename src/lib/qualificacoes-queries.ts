@@ -13,15 +13,15 @@ export const qualKeys = {
 };
 
 // ── Employees ────────────────────────────────────────────────────────────────
-export function useEmployees() {
+export function useEmployees(statusFilter: "ativo" | "afastado" | "desligado" | "all" = "ativo") {
   return useQuery({
-    queryKey: qualKeys.employees,
+    queryKey: [...qualKeys.employees, statusFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("employees")
-        .select("*")
-        .eq("active", true)
-        .order("name");
+      let q = supabase.from("employees").select("*");
+      if (statusFilter !== "all") {
+        q = q.eq("status", statusFilter);
+      }
+      const { data, error } = await q.order("name");
       if (error) throw error;
       return data as Employee[];
     },
@@ -48,7 +48,10 @@ export function useDeleteEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("employees").update({ active: false }).eq("id", id);
+      const { error } = await supabase
+        .from("employees")
+        .update({ active: false, status: "desligado" })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: qualKeys.employees }),

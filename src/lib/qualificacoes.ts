@@ -44,9 +44,22 @@ export type Employee = {
   diploma_conclusao: string | null;
   crea_cft: string | null;
   active: boolean;
+  status: "ativo" | "afastado" | "desligado";
   created_at: string;
   updated_at: string;
 };
+
+export const EMPLOYEE_STATUS_LABELS: Record<string, string> = {
+  ativo: "Ativo",
+  afastado: "Afastado",
+  desligado: "Desligado",
+};
+
+export function employeeStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+  if (status === "ativo") return "default";
+  if (status === "afastado") return "secondary";
+  return "destructive"; // desligado
+}
 
 export type NR10Training = {
   id: string;
