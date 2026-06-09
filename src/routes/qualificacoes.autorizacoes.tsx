@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { z } from "zod";
 import { Pencil, Printer, History, ChevronUp } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { useEmployees, useWorkAuthorizations, useAuthorizationHistory } from "@/lib/qualificacoes-queries";
@@ -13,7 +15,15 @@ import { AuthorizationPrintDialog } from "@/components/authorization-print-dialo
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import type { WorkAuthorization } from "@/lib/qualificacoes";
 
+const autorizacoesSearchSchema = z.object({
+  setor: z.string().optional().default("todos"),
+  level: z.string().optional().default("all"),
+  valida: z.string().optional().default("all"),
+  semAuth: z.string().optional().default("all"),
+});
+
 export const Route = createFileRoute("/qualificacoes/autorizacoes")({
+  validateSearch: autorizacoesSearchSchema,
   component: AutorizacoesPage,
   head: () => ({ meta: [{ title: "Autorizações de Trabalho — Qualificações" }] }),
 });
@@ -48,22 +58,30 @@ function AutorizacoesPage() {
   const { data: employees = [], isLoading: empLoading } = useEmployees();
   const { data: authorizations = [], isLoading: authLoading } = useWorkAuthorizations();
 
+  const search = Route.useSearch();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [selectedEmployeeName, setSelectedEmployeeName] = useState<string>("");
   const [editingAuth, setEditingAuth] = useState<WorkAuthorization | undefined>();
-  const [setorFilter, setSetorFilter] = useState<string>("todos");
+  const [nameSearch, setNameSearch] = useState("");
+  const [setorFilter, setSetorFilter] = useState<string>(search.setor ?? "todos");
+  const [levelFilter, setLevelFilter] = useState<string>(search.level ?? "all");
+  const [validFilter, setValidFilter] = useState<string>(search.valida ?? "all");
   const [printDialog, setPrintDialog] = useState<{ auth: WorkAuthorization; employee: { name: string; matricula: string; setor: string | null; funcao: string | null } } | null>(null);
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
 
   const isLoading = empLoading || authLoading;
 
   // Build a map from employee_id to authorization record
-  const authByEmployee = new Map<string, WorkAuthorization>();
-  for (const auth of authorizations) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    authByEmployee.set(auth.employee_id, auth as unknown as WorkAuthorization);
-  }
+  const authByEmployee = useMemo(() => {
+    const map = new Map<string, WorkAuthorization>();
+    for (const auth of authorizations) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      map.set(auth.employee_id, auth as unknown as WorkAuthorization);
+    }
+    return map;
+  }, [authorizations]);
 
   function handleEdit(employeeId: string, employeeName: string) {
     setSelectedEmployeeId(employeeId);
@@ -72,9 +90,18 @@ function AutorizacoesPage() {
     setDialogOpen(true);
   }
 
-  const filteredEmployees = setorFilter === "todos"
-    ? employees
-    : employees.filter(emp => emp.setor === setorFilter);
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(emp => {
+      if (nameSearch && !emp.name.toLowerCase().includes(nameSearch.toLowerCase())) return false;
+      if (setorFilter !== "todos" && emp.setor !== setorFilter) return false;
+      const auth = authByEmployee.get(emp.id);
+      if (levelFilter !== "all" && auth?.level !== levelFilter) return false;
+      if (validFilter === "sim" && !auth?.valid) return false;
+      if (validFilter === "nao" && auth?.valid !== false) return false;
+      if (validFilter === "sem_auth" && auth) return false;
+      return true;
+    });
+  }, [employees, nameSearch, setorFilter, levelFilter, validFilter, authByEmployee]);
 
   const colSpan = isStaff ? 7 : 6;
 
@@ -90,20 +117,53 @@ function AutorizacoesPage() {
       </div>
 
       <div className="mt-6">
-        {/* Setor filter */}
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs text-muted-foreground font-medium">Equipe:</span>
+        {/* Stats summary */}
+        <div className="flex gap-4 text-xs text-muted-foreground mb-3">
+          <span>Total: <strong className="text-foreground">{employees.length}</strong></span>
+          <span>Com autorização: <strong className="text-foreground">{authorizations.length}</strong></span>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <span>Válidas: <strong className="text-emerald-600">{authorizations.filter((a: any) => a.valid).length}</strong></span>
+          <span>Sem autorização: <strong className="text-destructive">{employees.length - authorizations.length}</strong></span>
+        </div>
+
+        {/* Filter bar */}
+        <div className="flex flex-wrap gap-2 mb-4 items-center">
+          <Input
+            placeholder="Buscar por nome..."
+            value={nameSearch}
+            onChange={e => setNameSearch(e.target.value)}
+            className="h-8 text-xs w-48"
+          />
           <Select value={setorFilter} onValueChange={setSetorFilter}>
-            <SelectTrigger className="w-32 h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-28"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="todos">Todas equipes</SelectItem>
               {["ELE", "GER", "INS", "MEC", "ADM", "OPE", "OUT"].map(s => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <Select value={levelFilter} onValueChange={setLevelFilter}>
+            <SelectTrigger className="h-8 text-xs w-28"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os níveis</SelectItem>
+              {["A0", "A1", "A2", "A3", "A4"].map(l => (
+                <SelectItem key={l} value={l}>Nível {l}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={validFilter} onValueChange={setValidFilter}>
+            <SelectTrigger className="h-8 text-xs w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="sim">Válidas</SelectItem>
+              <SelectItem value="nao">Inválidas</SelectItem>
+              <SelectItem value="sem_auth">Sem autorização</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-xs text-muted-foreground ml-auto">
+            {filteredEmployees.length} integrante{filteredEmployees.length !== 1 ? "s" : ""}
+          </span>
         </div>
 
         <div className="overflow-x-auto">
