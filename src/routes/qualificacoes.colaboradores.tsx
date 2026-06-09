@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Paperclip, FileText } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +9,12 @@ import { useAuth } from "@/lib/auth-context";
 import { useEmployees, useDeleteEmployee } from "@/lib/qualificacoes-queries";
 import { EmployeeDialog } from "@/components/employee-dialog";
 import type { Employee } from "@/lib/qualificacoes";
+import { formatDatePtBR } from "@/lib/qualificacoes";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/qualificacoes/colaboradores")({
   component: ColaboradoresPage,
-  head: () => ({ meta: [{ title: "Colaboradores — Qualificações NR-10" }] }),
+  head: () => ({ meta: [{ title: "Qualificação — Pessoas" }] }),
 });
 
 function ColaboradoresPage() {
@@ -42,9 +43,9 @@ function ColaboradoresPage() {
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Colaboradores</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Qualificação</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Cadastro de integrantes da área NR-10.
+            Formação e qualificação dos integrantes NR-10.
           </p>
         </div>
         {isStaff && (
@@ -66,6 +67,9 @@ function ColaboradoresPage() {
               <th className="py-2 pr-4 font-medium">Setor</th>
               <th className="py-2 pr-4 font-medium">Classificação</th>
               <th className="py-2 pr-4 font-medium">Função</th>
+              <th className="py-2 pr-4 font-medium">Escolaridade</th>
+              <th className="py-2 pr-4 font-medium">Diploma</th>
+              <th className="py-2 pr-4 font-medium">Conclusão</th>
               {isStaff && <th className="py-2 font-medium">Ações</th>}
             </tr>
           </thead>
@@ -73,7 +77,7 @@ function ColaboradoresPage() {
             {isLoading
               ? Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b">
-                    {Array.from({ length: 5 }).map((_, j) => (
+                    {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="py-3 pr-4"><Skeleton className="h-4 w-24" /></td>
                     ))}
                   </tr>
@@ -87,9 +91,32 @@ function ColaboradoresPage() {
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground">{emp.classificacao ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground truncate max-w-[200px]">{emp.funcao ?? "—"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{emp.escolaridade ?? "—"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{emp.diploma ?? "—"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{formatDatePtBR(emp.diploma_conclusao)}</td>
                     {isStaff && (
                       <td className="py-3">
                         <div className="flex gap-1">
+                          {/* Attach diploma */}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            title="Anexar diploma"
+                            onClick={() => toast.info("Anexo de documentos em breve")}
+                          >
+                            <Paperclip className="h-3.5 w-3.5" />
+                          </Button>
+                          {/* Attach histórico escolar */}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            title="Anexar histórico escolar"
+                            onClick={() => toast.info("Anexo de documentos em breve")}
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEdit(emp)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
