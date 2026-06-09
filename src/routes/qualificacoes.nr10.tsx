@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { CheckCircle2, XCircle, MinusCircle } from "lucide-react";
+import { CheckCircle2, XCircle, MinusCircle, Upload } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useEmployees, useNR10Trainings } from "@/lib/qualificacoes-queries";
@@ -71,7 +72,7 @@ function StatusCell({ training, onClick, isRevalidatedByReciclagem }: {
 }
 
 function NR10Page() {
-  const { isStaff } = useAuth();
+  const { isStaff, isAdmin } = useAuth();
   const { data: employees = [], isLoading: empLoading } = useEmployees();
   const { data: trainings = [], isLoading: trLoading } = useNR10Trainings();
   const isLoading = empLoading || trLoading;
@@ -84,11 +85,21 @@ function NR10Page() {
 
   return (
     <PageShell>
-      <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">Capacitações NR-10</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          {isStaff ? "Clique em uma célula para registrar ou editar o treinamento." : "Visão geral dos treinamentos NR-10."}
-        </p>
+      <div className="flex items-end justify-between flex-wrap gap-3 mb-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold">Capacitações NR-10</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {isStaff ? "Clique em uma célula para registrar ou editar o treinamento." : "Visão geral dos treinamentos NR-10."}
+          </p>
+        </div>
+        {isAdmin && (
+          <Button asChild className="bg-brand-gradient text-white shadow-brand hover:opacity-95 gap-1.5">
+            <Link to="/admin/certificados/importar">
+              <Upload className="h-4 w-4" />
+              Importar certificados em lote
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="overflow-x-auto">
