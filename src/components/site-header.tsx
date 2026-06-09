@@ -80,12 +80,13 @@ export function SiteHeader() {
                 <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>Inspeções — Termografias</MobileNavLink>
                 <MobileNavLink to="/cercon" onNav={() => setMenuOpen(false)}>Inspeções — Cercon</MobileNavLink>
                 <MobileNavLink to="/spda" onNav={() => setMenuOpen(false)}>Inspeções — SPDA</MobileNavLink>
-                <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>Qualificações — Dashboard</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Qualificações — Colaboradores</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Qualificações — NR-10</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>Qualificações — ITs</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/autorizacoes" onNav={() => setMenuOpen(false)}>Qualificações — Autorizações</MobileNavLink>
-                {isAdmin && <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>Qualificações — Importar xlsx</MobileNavLink>}
+                <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>Pessoas — Dashboard</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Pessoas — Qualificação</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Pessoas — Capacitações NR-10</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>Pessoas — ITs</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/autorizacoes" onNav={() => setMenuOpen(false)}>Pessoas — Autorizações</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/plh" onNav={() => setMenuOpen(false)}>Pessoas — PLH</MobileNavLink>
+                {isAdmin && <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>Pessoas — Importar xlsx</MobileNavLink>}
               </nav>
             </SheetContent>
           </Sheet>
@@ -263,10 +264,11 @@ function QualDropdown() {
   const { isAdmin } = useAuth();
 
   const items = [
-    { to: "/qualificacoes/colaboradores", label: "Colaboradores" },
-    { to: "/qualificacoes/nr10", label: "NR-10" },
+    { to: "/qualificacoes/colaboradores", label: "Qualificação" },
+    { to: "/qualificacoes/nr10", label: "Capacitações NR-10" },
     { to: "/qualificacoes/instrucoes", label: "Instruções de trabalho" },
     { to: "/qualificacoes/autorizacoes", label: "Autorizações" },
+    { to: "/qualificacoes/plh", label: "PLH" },
   ] as const;
 
   return (
@@ -276,7 +278,7 @@ function QualDropdown() {
           type="button"
           className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors inline-flex items-center gap-1"
         >
-          Qualificações <ChevronDown className="h-3.5 w-3.5" />
+          Pessoas <ChevronDown className="h-3.5 w-3.5" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[200px]">
