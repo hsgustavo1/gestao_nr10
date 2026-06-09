@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useEmployees, useNR10Trainings } from "@/lib/qualificacoes-queries";
 import { NR10TrainingDialog } from "@/components/nr10-training-dialog";
-import { trainingExpiryStatus, type TrainingType, type NR10Training } from "@/lib/qualificacoes";
+import { trainingExpiryStatus, formatDatePtBR, type TrainingType, type NR10Training } from "@/lib/qualificacoes";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/qualificacoes/nr10")({
@@ -50,7 +50,7 @@ function StatusCell({ training, onClick, isRevalidatedByReciclagem }: {
   // If this formação is revalidated by a valid reciclagem, always show OK
   if (isRevalidatedByReciclagem) {
     return (
-      <td onClick={isStaff ? onClick : undefined} className={tdClass} title={training.training_date ?? ""}>
+      <td onClick={isStaff ? onClick : undefined} className={tdClass} title={formatDatePtBR(training.training_date)}>
         <CheckCircle2 className="h-4 w-4 mx-auto text-emerald-500" />
       </td>
     );
@@ -58,7 +58,7 @@ function StatusCell({ training, onClick, isRevalidatedByReciclagem }: {
 
   const expiry = trainingExpiryStatus(training.training_date);
   return (
-    <td onClick={isStaff ? onClick : undefined} className={tdClass} title={training.training_date ?? ""}>
+    <td onClick={isStaff ? onClick : undefined} className={tdClass} title={formatDatePtBR(training.training_date)}>
       {expiry === "ok" ? (
         <CheckCircle2 className="h-4 w-4 mx-auto text-emerald-500" />
       ) : expiry === "expiring" ? (

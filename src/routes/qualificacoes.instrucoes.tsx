@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useEmployees, useWorkInstructions, useITTrainings } from "@/lib/qualificacoes-queries";
 import { InstructionDialog } from "@/components/instruction-dialog";
 import { ITTrainingDialog } from "@/components/it-training-dialog";
+import { formatDatePtBR } from "@/lib/qualificacoes";
 import type { WorkInstruction } from "@/lib/qualificacoes";
 import { cn } from "@/lib/utils";
 
@@ -120,7 +121,7 @@ function InstrucoesPage() {
                             "py-2 px-3 text-center",
                             isStaff && "cursor-pointer hover:bg-muted/40"
                           )}
-                          title={record?.conclusao_date ?? "Sem registro"}
+                          title={record?.conclusao_date ? formatDatePtBR(record.conclusao_date) : "Sem registro"}
                           onClick={isStaff ? () => setItDialog({
                             open: true,
                             employeeId: emp.id,
