@@ -1,0 +1,669 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { toast } from "sonner";
+import {
+  ArrowLeft, Camera, CheckCheck, ChevronLeft, ChevronRight, Download, FileText,
+  History, ImagePlus, MessageSquarePlus, Save, Trash2,
+} from "lucide-react";
+import { PageShell } from "@/components/page-shell";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/lib/auth-context";
+import { formatDatePtBR } from "@/lib/qualificacoes";
+import {
+  clampPrioridade, formatBRL, ncPrazoVencido,
+  RTI_NC_STATUSES, RTI_NC_STATUS_BADGE, RTI_NC_STATUS_LABELS,
+  RTI_PRIORIDADES, RTI_PRIORIDADE_BADGE, RTI_PRIORIDADE_LABELS,
+  RTI_TIPO_EXECUCAO_LABELS,
+  type RtiEvidenciaTipo, type RtiNc, type RtiNcEvidencia, type RtiNcStatus, type RtiTipoExecucao,
+} from "@/lib/rti";
+import {
+  logBulkHistorico, rtiFileUrl, uploadRtiFile,
+  useAddRtiEvidencia, useAddRtiHistorico, useDeleteRtiEvidencia, useDeleteRtiNc,
+  useRtiAreas, useRtiEvidencias, useRtiHistorico, useRtiNc, useRtiNcs, useUpdateRtiNc,
+} from "@/lib/rti-queries";
+
+export const Route = createFileRoute("/rti/nc/$ncId")({
+  component: RtiNcDetailPage,
+  head: () => ({ meta: [{ title: "Não Conformidade — RTI — Gestão NR-10" }] }),
+});
+
+function RtiNcDetailPage() {
+  const { ncId } = Route.useParams();
+  const { isStaff, isAdmin, user } = useAuth();
+  const navigate = useNavigate();
+
+  const { data: nc, isLoading } = useRtiNc(ncId);
+  const { data: areas = [] } = useRtiAreas(nc?.report_id);
+  const { data: siblings = [] } = useRtiNcs(nc?.report_id);
+  const deleteNc = useDeleteRtiNc();
+
+  const actorName =
+    (user?.user_metadata?.display_name as string | undefined) ||
+    user?.email?.split("@")[0] || null;
+
+  const areaNome = useMemo(
+    () => areas.find((a) => a.id === nc?.area_id)?.nome ?? "—",
+    [areas, nc],
+  );
+
+  const { anterior, proxima } = useMemo(() => {
+    if (!nc || siblings.length === 0) return { anterior: null, proxima: null };
+    const idx = siblings.findIndex((s) => s.id === nc.id);
+    return {
+      anterior: idx > 0 ? siblings[idx - 1] : null,
+      proxima: idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : null,
+    };
+  }, [nc, siblings]);
+
+  async function handleDelete() {
+    if (!nc) return;
+    if (!window.confirm(`Excluir a NC ${nc.numero}? As evidências anexadas também serão excluídas.`)) return;
+    try {
+      await deleteNc.mutateAsync(nc.id);
+      toast.success(`NC ${nc.numero} excluída.`);
+      navigate({ to: "/rti/plano", search: { report: nc.report_id } });
+    } catch (e) {
+      toast.error("Falha ao excluir: " + (e as Error).message);
+    }
+  }
+
+  if (isLoading || !nc) {
+    return (
+      <PageShell>
+        <Skeleton className="h-8 w-72" />
+        <div className="mt-4 grid lg:grid-cols-[1fr_380px] gap-4">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+        </div>
+      </PageShell>
+    );
+  }
+
+  const vencido = ncPrazoVencido(nc);
+
+  return (
+    <PageShell>
+      {/* Navegação */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <Button asChild variant="ghost" size="sm" className="text-muted-foreground -ml-2">
+          <Link to="/rti/plano" search={{ report: nc.report_id }}>
+            <ArrowLeft className="h-4 w-4" /> Plano de Ação
+          </Link>
+        </Button>
+        <div className="flex items-center gap-1">
+          <Button asChild={!!anterior} variant="outline" size="sm" disabled={!anterior} title={anterior ? `NC ${anterior.numero}` : undefined}>
+            {anterior ? (
+              <Link to="/rti/nc/$ncId" params={{ ncId: anterior.id }}>
+                <ChevronLeft className="h-4 w-4" /> NC {anterior.numero}
+              </Link>
+            ) : (
+              <span><ChevronLeft className="h-4 w-4" /> Anterior</span>
+            )}
+          </Button>
+          <Button asChild={!!proxima} variant="outline" size="sm" disabled={!proxima} title={proxima ? `NC ${proxima.numero}` : undefined}>
+            {proxima ? (
+              <Link to="/rti/nc/$ncId" params={{ ncId: proxima.id }}>
+                NC {proxima.numero} <ChevronRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <span>Próxima <ChevronRight className="h-4 w-4" /></span>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Cabeçalho */}
+      <div className="mt-3 flex items-start justify-between flex-wrap gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold leading-tight">
+            NC {nc.numero} <span className="font-normal text-muted-foreground">— {areaNome}</span>
+          </h1>
+          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold ${RTI_PRIORIDADE_BADGE[clampPrioridade(nc.prioridade)]}`}>
+              {RTI_PRIORIDADE_LABELS[clampPrioridade(nc.prioridade)]}
+            </span>
+            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${RTI_NC_STATUS_BADGE[nc.status]}`}>
+              {RTI_NC_STATUS_LABELS[nc.status]}{nc.status === "em_andamento" ? ` · ${nc.progresso}%` : ""}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+              {RTI_TIPO_EXECUCAO_LABELS[nc.tipo_execucao]}
+            </span>
+            {vencido && (
+              <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700">
+                Prazo vencido: {formatDatePtBR(nc.prazo)}
+              </span>
+            )}
+          </div>
+        </div>
+        {isAdmin && (
+          <Button variant="outline" size="sm" className="text-destructive" onClick={handleDelete}>
+            <Trash2 className="h-4 w-4" /> Excluir NC
+          </Button>
+        )}
+      </div>
+
+      <div className="mt-4 grid lg:grid-cols-[1fr_400px] gap-4 items-start">
+        {/* Coluna principal */}
+        <div className="space-y-4 min-w-0">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">Não conformidade constatada</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{nc.descricao}</p>
+              {nc.recomendacao && (
+                <div className="rounded-md border bg-muted/30 p-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Recomendação do auditor
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{nc.recomendacao}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <EvidenceSection
+            nc={nc} tipo="constatacao" canEdit={isStaff} actorName={actorName}
+            titulo="Registro da não conformidade"
+            descricao="Fotos e documentos que evidenciam o problema constatado na inspeção."
+            icon={<Camera className="h-4 w-4 text-primary" />}
+          />
+          <EvidenceSection
+            nc={nc} tipo="correcao" canEdit={isStaff} actorName={actorName}
+            titulo="Evidências da correção"
+            descricao="Comprovação da ação corretiva executada (fotos do depois, OS encerrada, laudos...)."
+            icon={<CheckCheck className="h-4 w-4 text-emerald-600" />}
+          />
+        </div>
+
+        {/* Coluna lateral */}
+        <div className="space-y-4">
+          <GestaoCard nc={nc} canEdit={isStaff} actorName={actorName} />
+          <HistoricoCard ncId={nc.id} canComment={isStaff} actorName={actorName} />
+        </div>
+      </div>
+    </PageShell>
+  );
+}
+
+// ── Gestão (tratativa) ───────────────────────────────────────────────────────
+
+/** Campo de custo: vazio = não informado (null); "0" = zero explícito. */
+function parseCusto(s: string): number | null {
+  const t = s.trim();
+  if (t === "") return null;
+  const n = Number(t);
+  return isFinite(n) ? n : null;
+}
+
+function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; actorName: string | null }) {
+  const updateNc = useUpdateRtiNc();
+
+  const [status, setStatus] = useState<RtiNcStatus>(nc.status);
+  const [progresso, setProgresso] = useState(nc.progresso);
+  const [responsavel, setResponsavel] = useState(nc.responsavel ?? "");
+  const [prazo, setPrazo] = useState(nc.prazo ?? "");
+  const [tipo, setTipo] = useState<RtiTipoExecucao>(nc.tipo_execucao);
+  const [osNumero, setOsNumero] = useState(nc.os_numero ?? "");
+  const [prioridade, setPrioridade] = useState(String(nc.prioridade));
+  const [custoPlanejado, setCustoPlanejado] = useState(nc.custo_planejado == null ? "" : String(nc.custo_planejado));
+  const [custoRealizado, setCustoRealizado] = useState(nc.custo_realizado == null ? "" : String(nc.custo_realizado));
+  const [situacao, setSituacao] = useState(nc.situacao_atual ?? "");
+  const [busy, setBusy] = useState(false);
+
+  // Ressincroniza ao navegar entre NCs (anterior/próxima)
+  useEffect(() => {
+    setStatus(nc.status);
+    setProgresso(nc.progresso);
+    setResponsavel(nc.responsavel ?? "");
+    setPrazo(nc.prazo ?? "");
+    setTipo(nc.tipo_execucao);
+    setOsNumero(nc.os_numero ?? "");
+    setPrioridade(String(nc.prioridade));
+    setCustoPlanejado(nc.custo_planejado == null ? "" : String(nc.custo_planejado));
+    setCustoRealizado(nc.custo_realizado == null ? "" : String(nc.custo_realizado));
+    setSituacao(nc.situacao_atual ?? "");
+  }, [nc]);
+
+  function onStatusChange(s: RtiNcStatus) {
+    setStatus(s);
+    if (s === "concluida") setProgresso(100);
+    if (s === "pendente") setProgresso(0);
+  }
+
+  async function salvar(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const patch: Partial<RtiNc> & { id: string } = {
+        id: nc.id,
+        status,
+        progresso,
+        responsavel: responsavel.trim() || null,
+        prazo: prazo || null,
+        tipo_execucao: tipo,
+        os_numero: osNumero.trim() || null,
+        prioridade: Number(prioridade),
+        custo_planejado: parseCusto(custoPlanejado),
+        custo_realizado: parseCusto(custoRealizado),
+        situacao_atual: situacao.trim() || null,
+        concluida_em:
+          status === "concluida" ? (nc.concluida_em ?? new Date().toISOString().slice(0, 10)) : null,
+      };
+
+      // Log das mudanças relevantes
+      const mudancas: string[] = [];
+      if (status !== nc.status) mudancas.push(`status → ${RTI_NC_STATUS_LABELS[status]}`);
+      if (progresso !== nc.progresso) mudancas.push(`progresso → ${progresso}%`);
+      if ((responsavel.trim() || null) !== nc.responsavel) mudancas.push(`responsável → ${responsavel.trim() || "—"}`);
+      if ((prazo || null) !== nc.prazo) mudancas.push(`prazo → ${prazo ? formatDatePtBR(prazo) : "—"}`);
+      if (tipo !== nc.tipo_execucao) mudancas.push(`tipo → ${RTI_TIPO_EXECUCAO_LABELS[tipo]}`);
+      if ((osNumero.trim() || null) !== nc.os_numero) mudancas.push(`OS → ${osNumero.trim() || "—"}`);
+      if (Number(prioridade) !== nc.prioridade) mudancas.push(`prioridade → P${prioridade}`);
+      const cpNovo = parseCusto(custoPlanejado);
+      const crNovo = parseCusto(custoRealizado);
+      if (cpNovo !== nc.custo_planejado) mudancas.push(`custo planejado → ${cpNovo == null ? "não informado" : formatBRL(cpNovo)}`);
+      if (crNovo !== nc.custo_realizado) mudancas.push(`custo realizado → ${crNovo == null ? "não informado" : formatBRL(crNovo)}`);
+      if ((situacao.trim() || null) !== nc.situacao_atual) mudancas.push("situação atual atualizada");
+
+      await updateNc.mutateAsync(patch);
+      if (mudancas.length > 0) {
+        await logBulkHistorico([nc.id], mudancas.join("; "), actorName);
+      }
+      toast.success("NC atualizada.");
+    } catch (err) {
+      toast.error("Falha ao salvar: " + (err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!canEdit) {
+    return (
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-sm">Tratativa</CardTitle></CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <InfoRow label="Responsável" value={nc.responsavel ?? "—"} />
+          <InfoRow label="Prazo" value={nc.prazo ? formatDatePtBR(nc.prazo) : "—"} />
+          <InfoRow label="Nº OS" value={nc.os_numero ?? "—"} />
+          <InfoRow label="Custo planejado" value={nc.custo_planejado == null ? "Não informado" : formatBRL(nc.custo_planejado)} />
+          <InfoRow label="Custo realizado" value={nc.custo_realizado == null ? "Não informado" : formatBRL(nc.custo_realizado)} />
+          {nc.concluida_em && <InfoRow label="Concluída em" value={formatDatePtBR(nc.concluida_em)} />}
+          {nc.situacao_atual && (
+            <div className="pt-1">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Situação atual</div>
+              <p className="mt-1 whitespace-pre-wrap">{nc.situacao_atual}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-sm">Tratativa</CardTitle></CardHeader>
+      <CardContent>
+        <form onSubmit={salvar} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select value={status} onValueChange={(v) => onStatusChange(v as RtiNcStatus)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {RTI_NC_STATUSES.map((s) => <SelectItem key={s} value={s}>{RTI_NC_STATUS_LABELS[s]}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Prioridade</Label>
+              <Select value={prioridade} onValueChange={setPrioridade}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {RTI_PRIORIDADES.map((p) => <SelectItem key={p} value={String(p)}>{RTI_PRIORIDADE_LABELS[p]}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label>Progresso</Label>
+              <span className="text-xs font-semibold tabular-nums">{progresso}%</span>
+            </div>
+            <Slider
+              value={[progresso]} min={0} max={100} step={5}
+              onValueChange={(v) => setProgresso(v[0] ?? 0)}
+              disabled={status === "concluida"}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="g-resp">Responsável</Label>
+              <Input id="g-resp" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} maxLength={150} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="g-prazo">Prazo</Label>
+              <Input id="g-prazo" type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Tipo de execução</Label>
+              <Select value={tipo} onValueChange={(v) => setTipo(v as RtiTipoExecucao)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="os">OS (manutenção)</SelectItem>
+                  <SelectItem value="investimento">Investimento</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="g-os">Nº da OS</Label>
+              <Input id="g-os" value={osNumero} onChange={(e) => setOsNumero(e.target.value)} maxLength={60} placeholder="—" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="g-cp">Custo planejado (R$)</Label>
+              <Input id="g-cp" type="number" min={0} step="0.01" value={custoPlanejado} onChange={(e) => setCustoPlanejado(e.target.value)} placeholder="Não informado" />
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Deixe vazio = não informado<br />
+                0 = sem custo p/ executar
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="g-cr">Custo realizado (R$)</Label>
+              <Input id="g-cr" type="number" min={0} step="0.01" value={custoRealizado} onChange={(e) => setCustoRealizado(e.target.value)} placeholder="Não informado" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="g-sit">Situação atual / observações</Label>
+            <Textarea
+              id="g-sit" value={situacao} onChange={(e) => setSituacao(e.target.value)} rows={3} maxLength={2000}
+              placeholder="Ex.: OS aberta em 10/06, aguardando material. Previsão de execução na parada de safra."
+            />
+          </div>
+          <Button type="submit" disabled={busy} className="w-full bg-brand-gradient text-white shadow-brand">
+            <Save className="h-4 w-4" /> {busy ? "Salvando..." : "Salvar tratativa"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-sm text-right">{value}</span>
+    </div>
+  );
+}
+
+// ── Evidências ───────────────────────────────────────────────────────────────
+
+function EvidenceSection({
+  nc, tipo, canEdit, actorName, titulo, descricao, icon,
+}: {
+  nc: RtiNc;
+  tipo: RtiEvidenciaTipo;
+  canEdit: boolean;
+  actorName: string | null;
+  titulo: string;
+  descricao: string;
+  icon: React.ReactNode;
+}) {
+  const { data: todas = [], isLoading } = useRtiEvidencias(nc.id);
+  const addEvidencia = useAddRtiEvidencia();
+  const deleteEvidencia = useDeleteRtiEvidencia();
+  const addHistorico = useAddRtiHistorico();
+
+  const evidencias = todas.filter((e) => e.tipo === tipo);
+  const [caption, setCaption] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<RtiNcEvidencia | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function onFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const list = [...files];
+    for (const f of list) {
+      const okTipo = f.type.startsWith("image/") || f.type === "application/pdf";
+      if (!okTipo) return toast.error(`"${f.name}": apenas imagens ou PDF.`);
+      if (f.size > 15 * 1024 * 1024) return toast.error(`"${f.name}" excede 15 MB.`);
+    }
+    setBusy(true);
+    try {
+      for (const f of list) {
+        const path = await uploadRtiFile(f, `nc-${nc.numero}`);
+        await addEvidencia.mutateAsync({
+          nc_id: nc.id,
+          tipo,
+          file_path: path,
+          file_name: f.name,
+          mime_type: f.type,
+          descricao: caption.trim() || null,
+          created_by_name: actorName,
+        });
+      }
+      await addHistorico.mutateAsync({
+        nc_id: nc.id,
+        tipo: "alteracao",
+        texto: `${list.length} ${list.length === 1 ? "arquivo anexado" : "arquivos anexados"} em "${titulo}"${caption.trim() ? ` — ${caption.trim()}` : ""}`,
+        autor_nome: actorName,
+      });
+      setCaption("");
+      if (fileRef.current) fileRef.current.value = "";
+      toast.success(`${list.length} ${list.length === 1 ? "evidência anexada" : "evidências anexadas"}.`);
+    } catch (e) {
+      toast.error("Falha no upload: " + (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(ev: RtiNcEvidencia) {
+    if (!window.confirm(`Excluir a evidência "${ev.file_name}"?`)) return;
+    try {
+      await deleteEvidencia.mutateAsync({ id: ev.id, nc_id: ev.nc_id, file_path: ev.file_path });
+      toast.success("Evidência excluída.");
+    } catch (e) {
+      toast.error("Falha ao excluir: " + (e as Error).message);
+    }
+  }
+
+  const isImage = (ev: RtiNcEvidencia) => (ev.mime_type ?? "").startsWith("image/");
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          {icon} {titulo}
+          <span className="text-xs font-normal text-muted-foreground">({evidencias.length})</span>
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">{descricao}</p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <Skeleton className="h-24" />
+        ) : evidencias.length === 0 ? (
+          <div className="rounded-md border border-dashed bg-muted/20 p-5 text-center text-xs text-muted-foreground">
+            Nenhuma evidência anexada{tipo === "correcao" && nc.status === "concluida" ? " — anexe a comprovação da correção para defesa em auditoria." : "."}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {evidencias.map((ev) => (
+              <div key={ev.id} className="group relative rounded-md border overflow-hidden bg-muted/20">
+                {isImage(ev) ? (
+                  <button
+                    type="button"
+                    className="block w-full aspect-square cursor-zoom-in"
+                    onClick={() => setPreview(ev)}
+                    title={ev.descricao ?? ev.file_name}
+                  >
+                    <img
+                      src={rtiFileUrl(ev.file_path)}
+                      alt={ev.descricao ?? ev.file_name}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ) : (
+                  <a
+                    href={rtiFileUrl(ev.file_path)} target="_blank" rel="noreferrer"
+                    className="flex aspect-square flex-col items-center justify-center gap-1.5 p-2 text-center"
+                    title={ev.descricao ?? ev.file_name}
+                  >
+                    <FileText className="h-7 w-7 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground line-clamp-2 break-all">{ev.file_name}</span>
+                  </a>
+                )}
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => remove(ev)}
+                    className="absolute top-1 right-1 hidden group-hover:grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white hover:bg-red-600"
+                    title="Excluir evidência"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {canEdit && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-2.5">
+            <Input
+              placeholder="Legenda (opcional)" className="h-8 flex-1 min-w-[140px] text-xs"
+              value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={300}
+            />
+            <input
+              ref={fileRef} type="file" multiple accept="image/*,application/pdf"
+              className="hidden" id={`ev-file-${tipo}-${nc.id}`}
+              onChange={(e) => onFiles(e.target.files)}
+            />
+            <Button
+              type="button" size="sm" variant="outline" className="h-8" disabled={busy}
+              onClick={() => fileRef.current?.click()}
+            >
+              <ImagePlus className="h-4 w-4" /> {busy ? "Enviando..." : "Anexar fotos / PDF"}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+
+      {/* Lightbox */}
+      {preview && (
+        <Dialog open onOpenChange={(o) => { if (!o) setPreview(null); }}>
+          <DialogContent className="max-w-3xl w-[calc(100vw-1rem)] p-3">
+            <DialogHeader className="pr-8">
+              <DialogTitle className="text-sm leading-tight truncate">{preview.descricao ?? preview.file_name}</DialogTitle>
+            </DialogHeader>
+            <img
+              src={rtiFileUrl(preview.file_path)}
+              alt={preview.descricao ?? preview.file_name}
+              className="max-h-[70vh] w-full object-contain rounded"
+            />
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>
+                {preview.created_by_name && <>Por {preview.created_by_name} · </>}
+                {formatDatePtBR(preview.created_at.slice(0, 10))}
+              </span>
+              <a
+                href={rtiFileUrl(preview.file_path)} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1 underline"
+              >
+                <Download className="h-3 w-3" /> Abrir original
+              </a>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </Card>
+  );
+}
+
+// ── Histórico ────────────────────────────────────────────────────────────────
+
+function HistoricoCard({ ncId, canComment, actorName }: { ncId: string; canComment: boolean; actorName: string | null }) {
+  const { data: historico = [], isLoading } = useRtiHistorico(ncId);
+  const addHistorico = useAddRtiHistorico();
+  const [comentario, setComentario] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function comentar(e: FormEvent) {
+    e.preventDefault();
+    if (!comentario.trim()) return;
+    setBusy(true);
+    try {
+      await addHistorico.mutateAsync({
+        nc_id: ncId,
+        tipo: "comentario",
+        texto: comentario.trim(),
+        autor_nome: actorName,
+      });
+      setComentario("");
+    } catch (err) {
+      toast.error("Falha ao comentar: " + (err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <History className="h-4 w-4 text-primary" /> Histórico
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {canComment && (
+          <form onSubmit={comentar} className="flex items-start gap-2">
+            <Textarea
+              value={comentario} onChange={(e) => setComentario(e.target.value)}
+              rows={2} maxLength={1000} placeholder="Adicionar comentário..."
+              className="text-sm"
+            />
+            <Button type="submit" size="sm" variant="outline" disabled={busy || !comentario.trim()} title="Comentar">
+              <MessageSquarePlus className="h-4 w-4" />
+            </Button>
+          </form>
+        )}
+        {isLoading ? (
+          <Skeleton className="h-20" />
+        ) : historico.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-2">Nenhum registro ainda.</p>
+        ) : (
+          <ol className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+            {historico.map((h) => (
+              <li key={h.id} className="relative pl-4 border-l-2 border-muted">
+                <span
+                  className={`absolute -left-[5px] top-1.5 h-2 w-2 rounded-full ${h.tipo === "comentario" ? "bg-blue-400" : "bg-amber-400"}`}
+                />
+                <p className="text-xs whitespace-pre-wrap leading-relaxed">{h.texto}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
+                  {h.autor_nome && <>{h.autor_nome} · </>}
+                  {new Date(h.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                </p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
