@@ -20,7 +20,7 @@ const schema = z.object({
   diploma: z.string().optional(),
   diploma_conclusao: z.string().optional(),
   crea_cft: z.string().optional(),
-  status: z.enum(["ativo", "afastado", "desligado"]).default("ativo"),
+  status: z.enum(["ativo", "afastado", "desligado"]),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -51,8 +51,40 @@ export function EmployeeDialog({ open, onOpenChange, employee }: Props) {
 
   async function onSubmit(values: FormValues) {
     try {
-      await upsert.mutateAsync({ ...values, id: employee?.id });
+      // Gatilhos de reciclagem extraordinária (NR-10 10.8.8.x):
+      // retorno de afastamento > 3 meses e mudança de função exigem reciclagem.
+      const extras: Partial<Employee> = {};
+      const today = new Date().toISOString().slice(0, 10);
+      let gatilho: string | null = null;
+
+      if (employee) {
+        if (employee.status !== "afastado" && values.status === "afastado") {
+          extras.afastado_desde = today;
+        }
+        if (employee.status === "afastado" && values.status === "ativo") {
+          extras.retorno_em = today;
+          const desde = employee.afastado_desde;
+          if (desde) {
+            const dias = Math.floor((Date.parse(today) - Date.parse(desde)) / 86_400_000);
+            if (dias > 90) gatilho = "Retorno de afastamento superior a 3 meses";
+          }
+        }
+        const funcaoAntiga = (employee.funcao ?? "").trim();
+        const funcaoNova = (values.funcao ?? "").trim();
+        if (funcaoAntiga && funcaoNova && funcaoAntiga !== funcaoNova) {
+          gatilho = gatilho ? `${gatilho} · Mudança de função` : "Mudança de função";
+        }
+        if (gatilho) {
+          extras.reciclagem_requerida = true;
+          extras.reciclagem_motivo = gatilho;
+        }
+      }
+
+      await upsert.mutateAsync({ ...values, ...extras, id: employee?.id });
       toast.success(employee ? "Colaborador atualizado" : "Colaborador cadastrado");
+      if (gatilho) {
+        toast.warning(`Reciclagem extraordinária sinalizada: ${gatilho} (NR-10 10.8.8). A flag é limpa ao registrar nova reciclagem.`);
+      }
       onOpenChange(false);
     } catch {
       toast.error("Erro ao salvar colaborador");

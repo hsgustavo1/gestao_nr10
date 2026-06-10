@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { CheckCircle2, XCircle, MinusCircle, Upload, Pencil } from "lucide-react";
+import { CheckCircle2, XCircle, MinusCircle, Upload, Pencil, Users } from "lucide-react";
 import { z } from "zod";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useEmployees, useNR10Trainings } from "@/lib/qualificacoes-queries";
 import { NR10TrainingDialog } from "@/components/nr10-training-dialog";
+import { NR10TurmaDialog } from "@/components/nr10-turma-dialog";
 import { trainingExpiryStatus, formatDatePtBR, type TrainingType, type NR10Training } from "@/lib/qualificacoes";
 import { cn } from "@/lib/utils";
 
@@ -111,6 +112,7 @@ function NR10Page() {
   const { data: trainings = [], isLoading: trLoading } = useNR10Trainings();
   const isLoading = empLoading || trLoading;
   const [dialog, setDialog] = useState<DialogState | null>(null);
+  const [turmaOpen, setTurmaOpen] = useState(false);
 
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
@@ -213,6 +215,12 @@ function NR10Page() {
               Por Integrante
             </button>
           </div>
+          {isStaff && (
+            <Button variant="outline" className="gap-1.5" onClick={() => setTurmaOpen(true)}>
+              <Users className="h-4 w-4" />
+              Registrar turma
+            </Button>
+          )}
           {isAdmin && (
             <Button asChild className="bg-brand-gradient text-white shadow-brand hover:opacity-95 gap-1.5">
               <Link to="/admin/certificados/importar">
@@ -254,7 +262,17 @@ function NR10Page() {
                   ))
                 : employees.map((emp) => (
                     <tr key={emp.id} className="border-b hover:bg-muted/20">
-                      <td className="py-3 px-3 font-medium">{emp.name}</td>
+                      <td className="py-3 px-3 font-medium">
+                        {emp.name}
+                        {emp.reciclagem_requerida && (
+                          <span
+                            className="ml-1.5 inline-flex items-center rounded-full border border-red-300 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
+                            title={`Reciclagem extraordinária pendente${emp.reciclagem_motivo ? `: ${emp.reciclagem_motivo}` : ""} (NR-10 10.8.8)`}
+                          >
+                            Reciclagem
+                          </span>
+                        )}
+                      </td>
                       <td className="py-2 px-2 text-muted-foreground">{emp.matricula}</td>
                       {COLUMNS.map((col) => {
                         const training = trainingMap.get(`${emp.id}:${col.type}:${col.category}`);
@@ -483,6 +501,10 @@ function NR10Page() {
           defaultCategory={dialog.category}
           training={dialog.training}
         />
+      )}
+
+      {isStaff && turmaOpen && (
+        <NR10TurmaDialog open={turmaOpen} onOpenChange={setTurmaOpen} />
       )}
     </PageShell>
   );

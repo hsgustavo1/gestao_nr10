@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogIn, LogOut, Eye, Menu, ChevronDown } from "lucide-react";
+import { LogIn, LogOut, Eye, Menu, ChevronDown, BellRing } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useVencimentosBadge } from "@/lib/vencimentos";
 import {
   Sheet,
   SheetContent,
@@ -76,16 +77,27 @@ export function SiteHeader() {
                 {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>RAC — Carga</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/certificados/importar" onNav={() => setMenuOpen(false)}>RAC — Importar Certificados</MobileNavLink>}
                 {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>RAC — Controle de acessos</MobileNavLink>}
-                <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>NR-10</MobileNavLink>
-                <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>RTI</MobileNavLink>
+                <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>NR-10 — Prontuário (PIE)</MobileNavLink>
+                <MobileNavLink to="/relatorio" onNav={() => setMenuOpen(false)}>NR-10 — Relatório de Conformidade</MobileNavLink>
+                <MobileNavLink to="/relatorio/dossie" onNav={() => setMenuOpen(false)}>NR-10 — Dossiê de Fiscalização</MobileNavLink>
+                <MobileNavLink to="/vencimentos" onNav={() => setMenuOpen(false)}>NR-10 — Central de Vencimentos</MobileNavLink>
+                <MobileNavLink to="/incidentes" onNav={() => setMenuOpen(false)}>NR-10 — Incidentes Elétricos</MobileNavLink>
+                {isAdmin && <MobileNavLink to="/admin/auditoria" onNav={() => setMenuOpen(false)}>NR-10 — Auditoria</MobileNavLink>}
+                <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>RTI — Dashboard</MobileNavLink>
+                <MobileNavLink to="/rti/plano" onNav={() => setMenuOpen(false)}>RTI — Plano de Ação</MobileNavLink>
+                <MobileNavLink to="/rti/custos" onNav={() => setMenuOpen(false)}>RTI — Análise de Custos</MobileNavLink>
+                {isStaff && <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>RTI — Importar planilha</MobileNavLink>}
+                {isStaff && <MobileNavLink to="/rti/evidencias" onNav={() => setMenuOpen(false)}>RTI — Importar evidências</MobileNavLink>}
                 <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>Inspeções — Termografias</MobileNavLink>
                 <MobileNavLink to="/cercon" onNav={() => setMenuOpen(false)}>Inspeções — Cercon</MobileNavLink>
                 <MobileNavLink to="/spda" onNav={() => setMenuOpen(false)}>Inspeções — SPDA</MobileNavLink>
+                <MobileNavLink to="/epis" onNav={() => setMenuOpen(false)}>EPIs e EPCs</MobileNavLink>
                 <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>Pessoas — Dashboard</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Pessoas — Qualificação</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Pessoas — Capacitações NR-10</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>Pessoas — ITs</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/autorizacoes" onNav={() => setMenuOpen(false)}>Pessoas — Autorizações</MobileNavLink>
+                <MobileNavLink to="/qualificacoes/asos" onNav={() => setMenuOpen(false)}>Pessoas — ASOs</MobileNavLink>
                 <MobileNavLink to="/qualificacoes/plh" onNav={() => setMenuOpen(false)}>Pessoas — PLH</MobileNavLink>
                 {isAdmin && <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>Pessoas — Importar xlsx</MobileNavLink>}
               </nav>
@@ -101,10 +113,12 @@ export function SiteHeader() {
 
           <nav className="hidden lg:flex items-center gap-1">
             <RACDropdown />
-            <NavLink to="/nr10">NR-10</NavLink>
-            <NavLink to="/rti">RTI</NavLink>
+            <NR10Dropdown />
+            <RTIDropdown />
             <InspecoesDropdown />
             <QualDropdown />
+            <NavLink to="/epis">EPIs</NavLink>
+            <VencimentosBell />
           </nav>
         </div>
 
@@ -192,6 +206,111 @@ function MobileNavLink({ to, children, onNav }: { to: string; children: React.Re
   );
 }
 
+function NR10Dropdown() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors inline-flex items-center gap-1"
+        >
+          NR-10 <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[240px]">
+        <DropdownMenuItem asChild>
+          <Link to="/nr10" className="cursor-pointer">Prontuário das Instalações (PIE)</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/relatorio" className="cursor-pointer">Relatório de Conformidade</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/relatorio/dossie" className="cursor-pointer">Dossiê de Fiscalização</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/vencimentos" className="cursor-pointer">Central de Vencimentos</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/incidentes" className="cursor-pointer">Incidentes Elétricos</Link>
+        </DropdownMenuItem>
+        <NR10AdminItems />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function NR10AdminItems() {
+  const { isAdmin } = useAuth();
+  if (!isAdmin) return null;
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem asChild>
+        <Link to="/admin/auditoria" className="cursor-pointer">Trilha de Auditoria</Link>
+      </DropdownMenuItem>
+    </>
+  );
+}
+
+function VencimentosBell() {
+  const { count } = useVencimentosBadge();
+  return (
+    <Link
+      to="/vencimentos"
+      title="Central de Vencimentos"
+      className="relative rounded-md px-2.5 py-1.5 text-white/75 hover:text-white transition-colors inline-flex items-center"
+      activeProps={{ className: "text-white" }}
+    >
+      <BellRing className="h-4 w-4" />
+      {count > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 grid min-w-[16px] h-4 place-items-center rounded-full bg-gradient-to-br from-[#F79220] to-[#E35D12] px-1 text-[10px] font-bold text-white">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+function RTIDropdown() {
+  const { isStaff } = useAuth();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors inline-flex items-center gap-1"
+        >
+          RTI <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[220px]">
+        <DropdownMenuItem asChild>
+          <Link to="/rti" className="cursor-pointer">Dashboard do Plano de Ação</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/rti/plano" className="cursor-pointer">Plano de Ação (NCs)</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/rti/custos" className="cursor-pointer">Análise de Custos</Link>
+        </DropdownMenuItem>
+        {isStaff && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/rti/importar" className="cursor-pointer">Importar planilha / Relatórios</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/rti/evidencias" className="cursor-pointer">Importar evidências em massa</Link>
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function InspecoesDropdown() {
   return (
     <DropdownMenu>
@@ -272,6 +391,7 @@ function QualDropdown() {
     { to: "/qualificacoes/nr10", label: "Capacitações NR-10" },
     { to: "/qualificacoes/instrucoes", label: "Instruções de trabalho" },
     { to: "/qualificacoes/autorizacoes", label: "Autorizações" },
+    { to: "/qualificacoes/asos", label: "ASOs" },
     { to: "/qualificacoes/plh", label: "PLH" },
   ] as const;
 

@@ -45,6 +45,12 @@ export type Employee = {
   crea_cft: string | null;
   active: boolean;
   status: "ativo" | "afastado" | "desligado";
+  // Gatilhos de reciclagem extraordinária (NR-10 10.8.8.x) — opcionais para
+  // não quebrar fluxos de importação que montam Employee parcial.
+  afastado_desde?: string | null;
+  retorno_em?: string | null;
+  reciclagem_requerida?: boolean;
+  reciclagem_motivo?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -69,6 +75,12 @@ export type NR10Training = {
   training_date: string | null;
   art: string | null;
   responsavel_tecnico: string | null;
+  // Registro completo p/ fiscalização — opcionais para compatibilidade com
+  // fluxos existentes de upsert/importação.
+  carga_horaria?: number | null;
+  entidade?: string | null;
+  instrutor?: string | null;
+  conteudo_programatico?: string | null;
   valid: boolean;
   created_at: string;
   updated_at: string;

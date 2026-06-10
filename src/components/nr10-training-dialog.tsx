@@ -22,7 +22,11 @@ const schema = z.object({
   training_date: z.string().optional(),
   art: z.string().optional(),
   responsavel_tecnico: z.string().optional(),
-  valid: z.boolean().default(false),
+  carga_horaria: z.string().optional(),
+  entidade: z.string().optional(),
+  instrutor: z.string().optional(),
+  conteudo_programatico: z.string().optional(),
+  valid: z.boolean(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -53,13 +57,27 @@ export function NR10TrainingDialog({ open, onOpenChange, employeeId, employeeNam
       training_date: training?.training_date ?? "",
       art: training?.art ?? "",
       responsavel_tecnico: training?.responsavel_tecnico ?? "",
+      carga_horaria: training?.carga_horaria != null ? String(training.carga_horaria) : "",
+      entidade: training?.entidade ?? "",
+      instrutor: training?.instrutor ?? "",
+      conteudo_programatico: training?.conteudo_programatico ?? "",
       valid: training?.valid ?? false,
     },
   });
 
   async function onSubmit(values: FormValues) {
     try {
-      await upsert.mutateAsync(values);
+      const carga = values.carga_horaria?.trim();
+      await upsert.mutateAsync({
+        ...values,
+        training_date: values.training_date || null,
+        art: values.art?.trim() || null,
+        responsavel_tecnico: values.responsavel_tecnico?.trim() || null,
+        carga_horaria: carga ? parseInt(carga, 10) : null,
+        entidade: values.entidade?.trim() || null,
+        instrutor: values.instrutor?.trim() || null,
+        conteudo_programatico: values.conteudo_programatico?.trim() || null,
+      });
       toast.success("Treinamento salvo");
       onOpenChange(false);
     } catch {
@@ -143,6 +161,30 @@ export function NR10TrainingDialog({ open, onOpenChange, employeeId, employeeNam
                 <FormItem>
                   <FormLabel>Responsável técnico</FormLabel>
                   <FormControl><Input {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="carga_horaria" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Carga horária (h)</FormLabel>
+                  <FormControl><Input type="number" min={1} placeholder="Ex.: 40" {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="entidade" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Entidade / instituição</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="instrutor" render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Instrutor</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="conteudo_programatico" render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Conteúdo programático (resumo)</FormLabel>
+                  <FormControl><Input placeholder="Tópicos abordados no treinamento" {...field} /></FormControl>
                 </FormItem>
               )} />
               <FormField control={form.control} name="valid" render={({ field }) => (

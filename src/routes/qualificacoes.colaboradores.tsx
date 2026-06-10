@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Paperclip, FileText } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
@@ -119,7 +119,16 @@ function ColaboradoresPage() {
                 ))
               : filteredEmployees.map((emp) => (
                   <tr key={emp.id} className="border-b hover:bg-muted/30 transition-colors">
-                    <td className="py-3 pr-4 font-medium">{emp.name}</td>
+                    <td className="py-3 pr-4 font-medium">
+                      <Link
+                        to="/qualificacoes/colaborador/$id"
+                        params={{ id: emp.id }}
+                        className="hover:underline"
+                        title="Abrir dossiê do colaborador"
+                      >
+                        {emp.name}
+                      </Link>
+                    </td>
                     <td className="py-3 pr-4 text-muted-foreground">{emp.matricula}</td>
                     <td className="py-3 pr-4">
                       {emp.setor && <Badge variant="outline">{emp.setor}</Badge>}

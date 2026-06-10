@@ -14,11 +14,38 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VencimentosIndexRouteImport } from './routes/vencimentos.index'
+import { Route as TermografiasIndexRouteImport } from './routes/termografias.index'
+import { Route as SpdaIndexRouteImport } from './routes/spda.index'
+import { Route as RtiIndexRouteImport } from './routes/rti.index'
+import { Route as RelatorioIndexRouteImport } from './routes/relatorio.index'
+import { Route as QualificacoesIndexRouteImport } from './routes/qualificacoes.index'
+import { Route as Nr10IndexRouteImport } from './routes/nr10.index'
+import { Route as IncidentesIndexRouteImport } from './routes/incidentes.index'
+import { Route as EpisIndexRouteImport } from './routes/epis.index'
+import { Route as CerconIndexRouteImport } from './routes/cercon.index'
 import { Route as CadeadosIndexRouteImport } from './routes/cadeados.index'
+import { Route as RtiPlanoRouteImport } from './routes/rti.plano'
+import { Route as RtiImportarRouteImport } from './routes/rti.importar'
+import { Route as RtiEvidenciasRouteImport } from './routes/rti.evidencias'
+import { Route as RtiCustosRouteImport } from './routes/rti.custos'
+import { Route as RelatorioDossieRouteImport } from './routes/relatorio.dossie'
+import { Route as QualificacoesPlhRouteImport } from './routes/qualificacoes.plh'
+import { Route as QualificacoesNr10RouteImport } from './routes/qualificacoes.nr10'
+import { Route as QualificacoesInstrucoesRouteImport } from './routes/qualificacoes.instrucoes'
+import { Route as QualificacoesColaboradoresRouteImport } from './routes/qualificacoes.colaboradores'
+import { Route as QualificacoesAutorizacoesRouteImport } from './routes/qualificacoes.autorizacoes'
+import { Route as QualificacoesAsosRouteImport } from './routes/qualificacoes.asos'
+import { Route as CarteirinhaMatriculaRouteImport } from './routes/carteirinha.$matricula'
 import { Route as CadeadosCodigoRouteImport } from './routes/cadeados.$codigo'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminCargaRouteImport } from './routes/admin.carga'
+import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
+import { Route as RtiNcNcIdRouteImport } from './routes/rti.nc.$ncId'
+import { Route as QualificacoesColaboradorIdRouteImport } from './routes/qualificacoes.colaborador.$id'
+import { Route as AdminQualificacoesCargaRouteImport } from './routes/admin.qualificacoes.carga'
+import { Route as AdminCertificadosImportarRouteImport } from './routes/admin.certificados.importar'
 
 const ViolacoesRoute = ViolacoesRouteImport.update({
   id: '/violacoes',
@@ -45,9 +72,121 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VencimentosIndexRoute = VencimentosIndexRouteImport.update({
+  id: '/vencimentos/',
+  path: '/vencimentos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermografiasIndexRoute = TermografiasIndexRouteImport.update({
+  id: '/termografias/',
+  path: '/termografias/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpdaIndexRoute = SpdaIndexRouteImport.update({
+  id: '/spda/',
+  path: '/spda/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RtiIndexRoute = RtiIndexRouteImport.update({
+  id: '/rti/',
+  path: '/rti/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatorioIndexRoute = RelatorioIndexRouteImport.update({
+  id: '/relatorio/',
+  path: '/relatorio/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QualificacoesIndexRoute = QualificacoesIndexRouteImport.update({
+  id: '/qualificacoes/',
+  path: '/qualificacoes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Nr10IndexRoute = Nr10IndexRouteImport.update({
+  id: '/nr10/',
+  path: '/nr10/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IncidentesIndexRoute = IncidentesIndexRouteImport.update({
+  id: '/incidentes/',
+  path: '/incidentes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EpisIndexRoute = EpisIndexRouteImport.update({
+  id: '/epis/',
+  path: '/epis/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CerconIndexRoute = CerconIndexRouteImport.update({
+  id: '/cercon/',
+  path: '/cercon/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CadeadosIndexRoute = CadeadosIndexRouteImport.update({
   id: '/cadeados/',
   path: '/cadeados/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RtiPlanoRoute = RtiPlanoRouteImport.update({
+  id: '/rti/plano',
+  path: '/rti/plano',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RtiImportarRoute = RtiImportarRouteImport.update({
+  id: '/rti/importar',
+  path: '/rti/importar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RtiEvidenciasRoute = RtiEvidenciasRouteImport.update({
+  id: '/rti/evidencias',
+  path: '/rti/evidencias',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RtiCustosRoute = RtiCustosRouteImport.update({
+  id: '/rti/custos',
+  path: '/rti/custos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatorioDossieRoute = RelatorioDossieRouteImport.update({
+  id: '/relatorio/dossie',
+  path: '/relatorio/dossie',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QualificacoesPlhRoute = QualificacoesPlhRouteImport.update({
+  id: '/qualificacoes/plh',
+  path: '/qualificacoes/plh',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QualificacoesNr10Route = QualificacoesNr10RouteImport.update({
+  id: '/qualificacoes/nr10',
+  path: '/qualificacoes/nr10',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QualificacoesInstrucoesRoute = QualificacoesInstrucoesRouteImport.update({
+  id: '/qualificacoes/instrucoes',
+  path: '/qualificacoes/instrucoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QualificacoesColaboradoresRoute =
+  QualificacoesColaboradoresRouteImport.update({
+    id: '/qualificacoes/colaboradores',
+    path: '/qualificacoes/colaboradores',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const QualificacoesAutorizacoesRoute =
+  QualificacoesAutorizacoesRouteImport.update({
+    id: '/qualificacoes/autorizacoes',
+    path: '/qualificacoes/autorizacoes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const QualificacoesAsosRoute = QualificacoesAsosRouteImport.update({
+  id: '/qualificacoes/asos',
+  path: '/qualificacoes/asos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CarteirinhaMatriculaRoute = CarteirinhaMatriculaRouteImport.update({
+  id: '/carteirinha/$matricula',
+  path: '/carteirinha/$matricula',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CadeadosCodigoRoute = CadeadosCodigoRouteImport.update({
@@ -70,6 +209,33 @@ const AdminCargaRoute = AdminCargaRouteImport.update({
   path: '/admin/carga',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
+  id: '/admin/auditoria',
+  path: '/admin/auditoria',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RtiNcNcIdRoute = RtiNcNcIdRouteImport.update({
+  id: '/rti/nc/$ncId',
+  path: '/rti/nc/$ncId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QualificacoesColaboradorIdRoute =
+  QualificacoesColaboradorIdRouteImport.update({
+    id: '/qualificacoes/colaborador/$id',
+    path: '/qualificacoes/colaborador/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminQualificacoesCargaRoute = AdminQualificacoesCargaRouteImport.update({
+  id: '/admin/qualificacoes/carga',
+  path: '/admin/qualificacoes/carga',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCertificadosImportarRoute =
+  AdminCertificadosImportarRouteImport.update({
+    id: '/admin/certificados/importar',
+    path: '/admin/certificados/importar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -77,11 +243,38 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/violacoes': typeof ViolacoesRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/carga': typeof AdminCargaRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
+  '/carteirinha/$matricula': typeof CarteirinhaMatriculaRoute
+  '/qualificacoes/asos': typeof QualificacoesAsosRoute
+  '/qualificacoes/autorizacoes': typeof QualificacoesAutorizacoesRoute
+  '/qualificacoes/colaboradores': typeof QualificacoesColaboradoresRoute
+  '/qualificacoes/instrucoes': typeof QualificacoesInstrucoesRoute
+  '/qualificacoes/nr10': typeof QualificacoesNr10Route
+  '/qualificacoes/plh': typeof QualificacoesPlhRoute
+  '/relatorio/dossie': typeof RelatorioDossieRoute
+  '/rti/custos': typeof RtiCustosRoute
+  '/rti/evidencias': typeof RtiEvidenciasRoute
+  '/rti/importar': typeof RtiImportarRoute
+  '/rti/plano': typeof RtiPlanoRoute
   '/cadeados/': typeof CadeadosIndexRoute
+  '/cercon/': typeof CerconIndexRoute
+  '/epis/': typeof EpisIndexRoute
+  '/incidentes/': typeof IncidentesIndexRoute
+  '/nr10/': typeof Nr10IndexRoute
+  '/qualificacoes/': typeof QualificacoesIndexRoute
+  '/relatorio/': typeof RelatorioIndexRoute
+  '/rti/': typeof RtiIndexRoute
+  '/spda/': typeof SpdaIndexRoute
+  '/termografias/': typeof TermografiasIndexRoute
+  '/vencimentos/': typeof VencimentosIndexRoute
+  '/admin/certificados/importar': typeof AdminCertificadosImportarRoute
+  '/admin/qualificacoes/carga': typeof AdminQualificacoesCargaRoute
+  '/qualificacoes/colaborador/$id': typeof QualificacoesColaboradorIdRoute
+  '/rti/nc/$ncId': typeof RtiNcNcIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -89,11 +282,38 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/violacoes': typeof ViolacoesRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/carga': typeof AdminCargaRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
+  '/carteirinha/$matricula': typeof CarteirinhaMatriculaRoute
+  '/qualificacoes/asos': typeof QualificacoesAsosRoute
+  '/qualificacoes/autorizacoes': typeof QualificacoesAutorizacoesRoute
+  '/qualificacoes/colaboradores': typeof QualificacoesColaboradoresRoute
+  '/qualificacoes/instrucoes': typeof QualificacoesInstrucoesRoute
+  '/qualificacoes/nr10': typeof QualificacoesNr10Route
+  '/qualificacoes/plh': typeof QualificacoesPlhRoute
+  '/relatorio/dossie': typeof RelatorioDossieRoute
+  '/rti/custos': typeof RtiCustosRoute
+  '/rti/evidencias': typeof RtiEvidenciasRoute
+  '/rti/importar': typeof RtiImportarRoute
+  '/rti/plano': typeof RtiPlanoRoute
   '/cadeados': typeof CadeadosIndexRoute
+  '/cercon': typeof CerconIndexRoute
+  '/epis': typeof EpisIndexRoute
+  '/incidentes': typeof IncidentesIndexRoute
+  '/nr10': typeof Nr10IndexRoute
+  '/qualificacoes': typeof QualificacoesIndexRoute
+  '/relatorio': typeof RelatorioIndexRoute
+  '/rti': typeof RtiIndexRoute
+  '/spda': typeof SpdaIndexRoute
+  '/termografias': typeof TermografiasIndexRoute
+  '/vencimentos': typeof VencimentosIndexRoute
+  '/admin/certificados/importar': typeof AdminCertificadosImportarRoute
+  '/admin/qualificacoes/carga': typeof AdminQualificacoesCargaRoute
+  '/qualificacoes/colaborador/$id': typeof QualificacoesColaboradorIdRoute
+  '/rti/nc/$ncId': typeof RtiNcNcIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,11 +322,38 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/violacoes': typeof ViolacoesRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/carga': typeof AdminCargaRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
+  '/carteirinha/$matricula': typeof CarteirinhaMatriculaRoute
+  '/qualificacoes/asos': typeof QualificacoesAsosRoute
+  '/qualificacoes/autorizacoes': typeof QualificacoesAutorizacoesRoute
+  '/qualificacoes/colaboradores': typeof QualificacoesColaboradoresRoute
+  '/qualificacoes/instrucoes': typeof QualificacoesInstrucoesRoute
+  '/qualificacoes/nr10': typeof QualificacoesNr10Route
+  '/qualificacoes/plh': typeof QualificacoesPlhRoute
+  '/relatorio/dossie': typeof RelatorioDossieRoute
+  '/rti/custos': typeof RtiCustosRoute
+  '/rti/evidencias': typeof RtiEvidenciasRoute
+  '/rti/importar': typeof RtiImportarRoute
+  '/rti/plano': typeof RtiPlanoRoute
   '/cadeados/': typeof CadeadosIndexRoute
+  '/cercon/': typeof CerconIndexRoute
+  '/epis/': typeof EpisIndexRoute
+  '/incidentes/': typeof IncidentesIndexRoute
+  '/nr10/': typeof Nr10IndexRoute
+  '/qualificacoes/': typeof QualificacoesIndexRoute
+  '/relatorio/': typeof RelatorioIndexRoute
+  '/rti/': typeof RtiIndexRoute
+  '/spda/': typeof SpdaIndexRoute
+  '/termografias/': typeof TermografiasIndexRoute
+  '/vencimentos/': typeof VencimentosIndexRoute
+  '/admin/certificados/importar': typeof AdminCertificadosImportarRoute
+  '/admin/qualificacoes/carga': typeof AdminQualificacoesCargaRoute
+  '/qualificacoes/colaborador/$id': typeof QualificacoesColaboradorIdRoute
+  '/rti/nc/$ncId': typeof RtiNcNcIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -116,11 +363,38 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/violacoes'
+    | '/admin/auditoria'
     | '/admin/carga'
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
+    | '/carteirinha/$matricula'
+    | '/qualificacoes/asos'
+    | '/qualificacoes/autorizacoes'
+    | '/qualificacoes/colaboradores'
+    | '/qualificacoes/instrucoes'
+    | '/qualificacoes/nr10'
+    | '/qualificacoes/plh'
+    | '/relatorio/dossie'
+    | '/rti/custos'
+    | '/rti/evidencias'
+    | '/rti/importar'
+    | '/rti/plano'
     | '/cadeados/'
+    | '/cercon/'
+    | '/epis/'
+    | '/incidentes/'
+    | '/nr10/'
+    | '/qualificacoes/'
+    | '/relatorio/'
+    | '/rti/'
+    | '/spda/'
+    | '/termografias/'
+    | '/vencimentos/'
+    | '/admin/certificados/importar'
+    | '/admin/qualificacoes/carga'
+    | '/qualificacoes/colaborador/$id'
+    | '/rti/nc/$ncId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,11 +402,38 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/violacoes'
+    | '/admin/auditoria'
     | '/admin/carga'
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
+    | '/carteirinha/$matricula'
+    | '/qualificacoes/asos'
+    | '/qualificacoes/autorizacoes'
+    | '/qualificacoes/colaboradores'
+    | '/qualificacoes/instrucoes'
+    | '/qualificacoes/nr10'
+    | '/qualificacoes/plh'
+    | '/relatorio/dossie'
+    | '/rti/custos'
+    | '/rti/evidencias'
+    | '/rti/importar'
+    | '/rti/plano'
     | '/cadeados'
+    | '/cercon'
+    | '/epis'
+    | '/incidentes'
+    | '/nr10'
+    | '/qualificacoes'
+    | '/relatorio'
+    | '/rti'
+    | '/spda'
+    | '/termografias'
+    | '/vencimentos'
+    | '/admin/certificados/importar'
+    | '/admin/qualificacoes/carga'
+    | '/qualificacoes/colaborador/$id'
+    | '/rti/nc/$ncId'
   id:
     | '__root__'
     | '/'
@@ -140,11 +441,38 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/violacoes'
+    | '/admin/auditoria'
     | '/admin/carga'
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
+    | '/carteirinha/$matricula'
+    | '/qualificacoes/asos'
+    | '/qualificacoes/autorizacoes'
+    | '/qualificacoes/colaboradores'
+    | '/qualificacoes/instrucoes'
+    | '/qualificacoes/nr10'
+    | '/qualificacoes/plh'
+    | '/relatorio/dossie'
+    | '/rti/custos'
+    | '/rti/evidencias'
+    | '/rti/importar'
+    | '/rti/plano'
     | '/cadeados/'
+    | '/cercon/'
+    | '/epis/'
+    | '/incidentes/'
+    | '/nr10/'
+    | '/qualificacoes/'
+    | '/relatorio/'
+    | '/rti/'
+    | '/spda/'
+    | '/termografias/'
+    | '/vencimentos/'
+    | '/admin/certificados/importar'
+    | '/admin/qualificacoes/carga'
+    | '/qualificacoes/colaborador/$id'
+    | '/rti/nc/$ncId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -153,11 +481,38 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ViolacoesRoute: typeof ViolacoesRoute
+  AdminAuditoriaRoute: typeof AdminAuditoriaRoute
   AdminCargaRoute: typeof AdminCargaRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   CadeadosCodigoRoute: typeof CadeadosCodigoRoute
+  CarteirinhaMatriculaRoute: typeof CarteirinhaMatriculaRoute
+  QualificacoesAsosRoute: typeof QualificacoesAsosRoute
+  QualificacoesAutorizacoesRoute: typeof QualificacoesAutorizacoesRoute
+  QualificacoesColaboradoresRoute: typeof QualificacoesColaboradoresRoute
+  QualificacoesInstrucoesRoute: typeof QualificacoesInstrucoesRoute
+  QualificacoesNr10Route: typeof QualificacoesNr10Route
+  QualificacoesPlhRoute: typeof QualificacoesPlhRoute
+  RelatorioDossieRoute: typeof RelatorioDossieRoute
+  RtiCustosRoute: typeof RtiCustosRoute
+  RtiEvidenciasRoute: typeof RtiEvidenciasRoute
+  RtiImportarRoute: typeof RtiImportarRoute
+  RtiPlanoRoute: typeof RtiPlanoRoute
   CadeadosIndexRoute: typeof CadeadosIndexRoute
+  CerconIndexRoute: typeof CerconIndexRoute
+  EpisIndexRoute: typeof EpisIndexRoute
+  IncidentesIndexRoute: typeof IncidentesIndexRoute
+  Nr10IndexRoute: typeof Nr10IndexRoute
+  QualificacoesIndexRoute: typeof QualificacoesIndexRoute
+  RelatorioIndexRoute: typeof RelatorioIndexRoute
+  RtiIndexRoute: typeof RtiIndexRoute
+  SpdaIndexRoute: typeof SpdaIndexRoute
+  TermografiasIndexRoute: typeof TermografiasIndexRoute
+  VencimentosIndexRoute: typeof VencimentosIndexRoute
+  AdminCertificadosImportarRoute: typeof AdminCertificadosImportarRoute
+  AdminQualificacoesCargaRoute: typeof AdminQualificacoesCargaRoute
+  QualificacoesColaboradorIdRoute: typeof QualificacoesColaboradorIdRoute
+  RtiNcNcIdRoute: typeof RtiNcNcIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -197,11 +552,165 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vencimentos/': {
+      id: '/vencimentos/'
+      path: '/vencimentos'
+      fullPath: '/vencimentos/'
+      preLoaderRoute: typeof VencimentosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termografias/': {
+      id: '/termografias/'
+      path: '/termografias'
+      fullPath: '/termografias/'
+      preLoaderRoute: typeof TermografiasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spda/': {
+      id: '/spda/'
+      path: '/spda'
+      fullPath: '/spda/'
+      preLoaderRoute: typeof SpdaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rti/': {
+      id: '/rti/'
+      path: '/rti'
+      fullPath: '/rti/'
+      preLoaderRoute: typeof RtiIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorio/': {
+      id: '/relatorio/'
+      path: '/relatorio'
+      fullPath: '/relatorio/'
+      preLoaderRoute: typeof RelatorioIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualificacoes/': {
+      id: '/qualificacoes/'
+      path: '/qualificacoes'
+      fullPath: '/qualificacoes/'
+      preLoaderRoute: typeof QualificacoesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nr10/': {
+      id: '/nr10/'
+      path: '/nr10'
+      fullPath: '/nr10/'
+      preLoaderRoute: typeof Nr10IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/incidentes/': {
+      id: '/incidentes/'
+      path: '/incidentes'
+      fullPath: '/incidentes/'
+      preLoaderRoute: typeof IncidentesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/epis/': {
+      id: '/epis/'
+      path: '/epis'
+      fullPath: '/epis/'
+      preLoaderRoute: typeof EpisIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cercon/': {
+      id: '/cercon/'
+      path: '/cercon'
+      fullPath: '/cercon/'
+      preLoaderRoute: typeof CerconIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cadeados/': {
       id: '/cadeados/'
       path: '/cadeados'
       fullPath: '/cadeados/'
       preLoaderRoute: typeof CadeadosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rti/plano': {
+      id: '/rti/plano'
+      path: '/rti/plano'
+      fullPath: '/rti/plano'
+      preLoaderRoute: typeof RtiPlanoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rti/importar': {
+      id: '/rti/importar'
+      path: '/rti/importar'
+      fullPath: '/rti/importar'
+      preLoaderRoute: typeof RtiImportarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rti/evidencias': {
+      id: '/rti/evidencias'
+      path: '/rti/evidencias'
+      fullPath: '/rti/evidencias'
+      preLoaderRoute: typeof RtiEvidenciasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rti/custos': {
+      id: '/rti/custos'
+      path: '/rti/custos'
+      fullPath: '/rti/custos'
+      preLoaderRoute: typeof RtiCustosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorio/dossie': {
+      id: '/relatorio/dossie'
+      path: '/relatorio/dossie'
+      fullPath: '/relatorio/dossie'
+      preLoaderRoute: typeof RelatorioDossieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualificacoes/plh': {
+      id: '/qualificacoes/plh'
+      path: '/qualificacoes/plh'
+      fullPath: '/qualificacoes/plh'
+      preLoaderRoute: typeof QualificacoesPlhRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualificacoes/nr10': {
+      id: '/qualificacoes/nr10'
+      path: '/qualificacoes/nr10'
+      fullPath: '/qualificacoes/nr10'
+      preLoaderRoute: typeof QualificacoesNr10RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualificacoes/instrucoes': {
+      id: '/qualificacoes/instrucoes'
+      path: '/qualificacoes/instrucoes'
+      fullPath: '/qualificacoes/instrucoes'
+      preLoaderRoute: typeof QualificacoesInstrucoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualificacoes/colaboradores': {
+      id: '/qualificacoes/colaboradores'
+      path: '/qualificacoes/colaboradores'
+      fullPath: '/qualificacoes/colaboradores'
+      preLoaderRoute: typeof QualificacoesColaboradoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualificacoes/autorizacoes': {
+      id: '/qualificacoes/autorizacoes'
+      path: '/qualificacoes/autorizacoes'
+      fullPath: '/qualificacoes/autorizacoes'
+      preLoaderRoute: typeof QualificacoesAutorizacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualificacoes/asos': {
+      id: '/qualificacoes/asos'
+      path: '/qualificacoes/asos'
+      fullPath: '/qualificacoes/asos'
+      preLoaderRoute: typeof QualificacoesAsosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/carteirinha/$matricula': {
+      id: '/carteirinha/$matricula'
+      path: '/carteirinha/$matricula'
+      fullPath: '/carteirinha/$matricula'
+      preLoaderRoute: typeof CarteirinhaMatriculaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cadeados/$codigo': {
@@ -232,6 +741,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCargaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/auditoria': {
+      id: '/admin/auditoria'
+      path: '/admin/auditoria'
+      fullPath: '/admin/auditoria'
+      preLoaderRoute: typeof AdminAuditoriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rti/nc/$ncId': {
+      id: '/rti/nc/$ncId'
+      path: '/rti/nc/$ncId'
+      fullPath: '/rti/nc/$ncId'
+      preLoaderRoute: typeof RtiNcNcIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualificacoes/colaborador/$id': {
+      id: '/qualificacoes/colaborador/$id'
+      path: '/qualificacoes/colaborador/$id'
+      fullPath: '/qualificacoes/colaborador/$id'
+      preLoaderRoute: typeof QualificacoesColaboradorIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/qualificacoes/carga': {
+      id: '/admin/qualificacoes/carga'
+      path: '/admin/qualificacoes/carga'
+      fullPath: '/admin/qualificacoes/carga'
+      preLoaderRoute: typeof AdminQualificacoesCargaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/certificados/importar': {
+      id: '/admin/certificados/importar'
+      path: '/admin/certificados/importar'
+      fullPath: '/admin/certificados/importar'
+      preLoaderRoute: typeof AdminCertificadosImportarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -241,12 +785,48 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ViolacoesRoute: ViolacoesRoute,
+  AdminAuditoriaRoute: AdminAuditoriaRoute,
   AdminCargaRoute: AdminCargaRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   CadeadosCodigoRoute: CadeadosCodigoRoute,
+  CarteirinhaMatriculaRoute: CarteirinhaMatriculaRoute,
+  QualificacoesAsosRoute: QualificacoesAsosRoute,
+  QualificacoesAutorizacoesRoute: QualificacoesAutorizacoesRoute,
+  QualificacoesColaboradoresRoute: QualificacoesColaboradoresRoute,
+  QualificacoesInstrucoesRoute: QualificacoesInstrucoesRoute,
+  QualificacoesNr10Route: QualificacoesNr10Route,
+  QualificacoesPlhRoute: QualificacoesPlhRoute,
+  RelatorioDossieRoute: RelatorioDossieRoute,
+  RtiCustosRoute: RtiCustosRoute,
+  RtiEvidenciasRoute: RtiEvidenciasRoute,
+  RtiImportarRoute: RtiImportarRoute,
+  RtiPlanoRoute: RtiPlanoRoute,
   CadeadosIndexRoute: CadeadosIndexRoute,
+  CerconIndexRoute: CerconIndexRoute,
+  EpisIndexRoute: EpisIndexRoute,
+  IncidentesIndexRoute: IncidentesIndexRoute,
+  Nr10IndexRoute: Nr10IndexRoute,
+  QualificacoesIndexRoute: QualificacoesIndexRoute,
+  RelatorioIndexRoute: RelatorioIndexRoute,
+  RtiIndexRoute: RtiIndexRoute,
+  SpdaIndexRoute: SpdaIndexRoute,
+  TermografiasIndexRoute: TermografiasIndexRoute,
+  VencimentosIndexRoute: VencimentosIndexRoute,
+  AdminCertificadosImportarRoute: AdminCertificadosImportarRoute,
+  AdminQualificacoesCargaRoute: AdminQualificacoesCargaRoute,
+  QualificacoesColaboradorIdRoute: QualificacoesColaboradorIdRoute,
+  RtiNcNcIdRoute: RtiNcNcIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { Pencil, Printer, History, ChevronUp } from "lucide-react";
+import { Pencil, Printer, History, ChevronUp, IdCard } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
-import { useEmployees, useWorkAuthorizations, useAuthorizationHistory } from "@/lib/qualificacoes-queries";
+import { useEmployees, useWorkAuthorizations, useAuthorizationHistory, useNR10Trainings } from "@/lib/qualificacoes-queries";
+import { useASOs } from "@/lib/asos-queries";
+import { latestASOByEmployee } from "@/lib/asos";
+import { computeAptidao, type Aptidao } from "@/lib/aptidao";
 import { AuthorizationDialog } from "@/components/authorization-dialog";
 import { AuthorizationPrintDialog } from "@/components/authorization-print-dialog";
 import { formatDatePtBR } from "@/lib/qualificacoes";
@@ -57,6 +60,8 @@ function AutorizacoesPage() {
   const { isStaff } = useAuth();
   const { data: employees = [], isLoading: empLoading } = useEmployees();
   const { data: authorizations = [], isLoading: authLoading } = useWorkAuthorizations();
+  const { data: trainings = [] } = useNR10Trainings();
+  const { data: asos = [] } = useASOs();
 
   const search = Route.useSearch();
 
@@ -90,6 +95,27 @@ function AutorizacoesPage() {
     setDialogOpen(true);
   }
 
+  // Aptidão computada (motor): autorização + NR-10 Básico + ASO + reciclagem
+  const aptidaoByEmployee = useMemo(() => {
+    const latestASOs = latestASOByEmployee(asos);
+    const trainingsByEmp = new Map<string, typeof trainings>();
+    for (const t of trainings) {
+      const arr = trainingsByEmp.get(t.employee_id);
+      if (arr) arr.push(t);
+      else trainingsByEmp.set(t.employee_id, [t]);
+    }
+    const map = new Map<string, Aptidao>();
+    for (const emp of employees) {
+      map.set(emp.id, computeAptidao({
+        employee: emp,
+        trainings: trainingsByEmp.get(emp.id) ?? [],
+        authorization: authByEmployee.get(emp.id) ?? null,
+        aso: latestASOs.get(emp.id) ?? null,
+      }));
+    }
+    return map;
+  }, [employees, trainings, asos, authByEmployee]);
+
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
       if (nameSearch && !emp.name.toLowerCase().includes(nameSearch.toLowerCase())) return false;
@@ -103,7 +129,7 @@ function AutorizacoesPage() {
     });
   }, [employees, nameSearch, setorFilter, levelFilter, validFilter, authByEmployee]);
 
-  const colSpan = isStaff ? 7 : 6;
+  const colSpan = isStaff ? 8 : 7;
 
   return (
     <PageShell>
@@ -176,6 +202,7 @@ function AutorizacoesPage() {
                 <th className="py-2 pr-4 font-medium">Nível</th>
                 <th className="py-2 pr-4 font-medium">Data autorização</th>
                 <th className="py-2 pr-4 font-medium">Válida</th>
+                <th className="py-2 pr-4 font-medium">Aptidão</th>
                 {isStaff && <th className="py-2 font-medium">Ações</th>}
               </tr>
             </thead>
@@ -197,7 +224,16 @@ function AutorizacoesPage() {
                     return (
                       <>
                         <tr key={emp.id} className="border-b hover:bg-muted/30 transition-colors">
-                          <td className="py-3 pr-4 font-medium">{emp.name}</td>
+                          <td className="py-3 pr-4 font-medium">
+                            <Link
+                              to="/qualificacoes/colaborador/$id"
+                              params={{ id: emp.id }}
+                              className="hover:underline"
+                              title="Abrir dossiê do colaborador"
+                            >
+                              {emp.name}
+                            </Link>
+                          </td>
                           <td className="py-3 pr-4 text-muted-foreground">{emp.matricula}</td>
                           <td className="py-3 pr-4">
                             {emp.setor && <Badge variant="outline">{emp.setor}</Badge>}
@@ -223,6 +259,24 @@ function AutorizacoesPage() {
                               </Badge>
                             ) : null}
                           </td>
+                          <td className="py-3 pr-4">
+                            {auth ? (() => {
+                              const apt = aptidaoByEmployee.get(emp.id);
+                              if (!apt) return null;
+                              return apt.apto ? (
+                                <Badge className="bg-emerald-600 text-white">Apto</Badge>
+                              ) : (
+                                <Badge
+                                  variant="destructive"
+                                  title={apt.bloqueantes.map((b) => b.label + (b.detail ? ` (${b.detail})` : "")).join(" · ")}
+                                >
+                                  Bloqueado ({apt.bloqueantes.length})
+                                </Badge>
+                              );
+                            })() : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
                           {isStaff && (
                             <td className="py-3">
                               <div className="flex items-center gap-0.5">
@@ -237,6 +291,17 @@ function AutorizacoesPage() {
                                     <Printer className="h-3.5 w-3.5" />
                                   </Button>
                                 )}
+                                <Button
+                                  asChild
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                  title="Carteirinha digital (QR)"
+                                >
+                                  <Link to="/carteirinha/$matricula" params={{ matricula: emp.matricula }} target="_blank">
+                                    <IdCard className="h-3.5 w-3.5" />
+                                  </Link>
+                                </Button>
                                 <Button
                                   size="icon"
                                   variant="ghost"

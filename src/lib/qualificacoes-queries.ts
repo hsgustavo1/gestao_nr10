@@ -82,10 +82,51 @@ export function useUpsertNR10Training() {
         .select()
         .single();
       if (error) throw error;
+      // Nova reciclagem limpa a flag de reciclagem extraordinária pendente
+      // (gatilhos: retorno de afastamento > 3 meses, mudança de função).
+      if (payload.category === "reciclagem") {
+        await supabase
+          .from("employees")
+          .update({ reciclagem_requerida: false, reciclagem_motivo: null })
+          .eq("id", payload.employee_id);
+      }
       return data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["nr10_trainings"] });
+      qc.invalidateQueries({ queryKey: qualKeys.employees });
+    },
+  });
+}
+
+/** Registro de treinamento em turma: um upsert por colaborador selecionado. */
+export function useRegistrarTurma() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeIds,
+      training,
+    }: {
+      employeeIds: string[];
+      training: Omit<NR10Training, "id" | "created_at" | "updated_at" | "employee_id">;
+    }) => {
+      const rows = employeeIds.map((employee_id) => ({ ...training, employee_id }));
+      const { error } = await supabase
+        .from("nr10_trainings")
+        .upsert(rows, { onConflict: "employee_id,training_type,category" });
+      if (error) throw error;
+      // Reciclagem em turma também limpa a flag de reciclagem extraordinária
+      if (training.category === "reciclagem" && employeeIds.length > 0) {
+        await supabase
+          .from("employees")
+          .update({ reciclagem_requerida: false, reciclagem_motivo: null })
+          .in("id", employeeIds);
+      }
+      return rows.length;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["nr10_trainings"] });
+      qc.invalidateQueries({ queryKey: qualKeys.employees });
     },
   });
 }
