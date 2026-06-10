@@ -97,6 +97,20 @@ function RtiDashboardPage() {
       .slice(0, 12);
   }, [ncs, areas]);
 
+  const responsavelChart = useMemo(() => {
+    const SEM = "Sem responsável";
+    const abertas = new Map<string, number>();
+    for (const nc of ncs) {
+      if (nc.status === "concluida") continue;
+      const nome = nc.responsavel?.trim() || SEM;
+      abertas.set(nome, (abertas.get(nome) ?? 0) + 1);
+    }
+    return [...abertas.entries()]
+      .map(([nome, count]) => ({ nome, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12);
+  }, [ncs]);
+
   const gotoPlano = (search: Record<string, string>) => {
     if (!activeReport) return;
     navigate({ to: "/rti/plano", search: { report: activeReport.id, ...search } });
@@ -393,6 +407,40 @@ function RtiDashboardPage() {
                     <Bar
                       dataKey="count" fill="#E35D12" radius={[0, 4, 4, 0]} className="cursor-pointer"
                       onClick={(d: { nome?: string }) => d.nome && gotoPlano({ area: d.nome })}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* NCs abertas por responsável */}
+          {responsavelChart.length > 0 && (
+            <Card className="mt-3">
+              <CardHeader className="pb-0">
+                <CardTitle className="text-sm">
+                  NCs abertas por responsável{" "}
+                  <span className="font-normal text-muted-foreground">(clique para filtrar)</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent style={{ height: Math.max(220, responsavelChart.length * 32 + 40) }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={responsavelChart} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <YAxis
+                      type="category" dataKey="nome" width={230}
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(v: string) => (v.length > 34 ? v.slice(0, 33) + "…" : v)}
+                    />
+                    <Tooltip formatter={(v: number) => [`${v} NCs abertas`, ""]} />
+                    <Bar
+                      dataKey="count" fill="#0A2D48" radius={[0, 4, 4, 0]} className="cursor-pointer"
+                      onClick={(d: { nome?: string }) => {
+                        if (!d.nome) return;
+                        // "Sem responsável" não tem texto buscável; os demais filtram por busca textual
+                        if (d.nome !== "Sem responsável") gotoPlano({ q: d.nome });
+                      }}
                     />
                   </BarChart>
                 </ResponsiveContainer>

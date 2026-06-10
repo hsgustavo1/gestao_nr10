@@ -561,6 +561,7 @@ function RtiPlanoPage() {
         <NovaNcDialog
           reportId={activeReport.id}
           proximoNumero={ncs.reduce((max, nc) => Math.max(max, nc.numero), 0) + 1}
+          numerosExistentes={new Set(ncs.map((nc) => nc.numero))}
           onOpenChange={(o) => { if (!o) setNovaNcOpen(false); }}
           actorName={actorName}
         />
@@ -803,10 +804,11 @@ function BulkCustoControl({
 // ── Nova NC ──────────────────────────────────────────────────────────────────
 
 function NovaNcDialog({
-  reportId, proximoNumero, onOpenChange, actorName,
+  reportId, proximoNumero, numerosExistentes, onOpenChange, actorName,
 }: {
   reportId: string;
   proximoNumero: number;
+  numerosExistentes: Set<number>;
   onOpenChange: (o: boolean) => void;
   actorName: string | null;
 }) {
@@ -826,11 +828,25 @@ function NovaNcDialog({
   const [custoPlanejado, setCustoPlanejado] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const numeroDuplicado = numerosExistentes.has(numero);
+
+  /** Próximo número livre a partir de um valor (para o atalho de sugestão). */
+  function proximoLivre(from: number): number {
+    let n = Math.max(1, from);
+    while (numerosExistentes.has(n)) n += 1;
+    return n;
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!descricao.trim()) return toast.error("Descreva a não conformidade.");
     if ((areaId === "" || areaId === "__nova__") && !novaArea.trim())
       return toast.error("Selecione ou crie a área.");
+    if (numeroDuplicado) {
+      return toast.error(
+        `A NC nº ${numero} já existe neste relatório. Escolha outro número — a próxima livre é a ${proximoLivre(numero)}.`,
+      );
+    }
 
     setBusy(true);
     try {
@@ -899,9 +915,26 @@ function NovaNcDialog({
               <Input
                 id="nc-numero" type="number" min={1} value={numero}
                 onChange={(e) => setNumero(Number(e.target.value))} required
+                aria-invalid={numeroDuplicado}
+                className={numeroDuplicado ? "border-red-400 focus-visible:ring-red-400" : ""}
               />
             </div>
           </div>
+          {numeroDuplicado && (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
+              <span className="inline-flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                A NC nº {numero} já existe neste relatório.
+              </span>
+              <button
+                type="button"
+                className="font-semibold underline whitespace-nowrap"
+                onClick={() => setNumero(proximoLivre(numero))}
+              >
+                Usar nº {proximoLivre(numero)}
+              </button>
+            </div>
+          )}
           {(areaId === "__nova__" || (areaId === "" && areas.length === 0)) && (
             <div className="space-y-1.5">
               <Label htmlFor="nc-nova-area">Nome da nova área</Label>
@@ -958,7 +991,7 @@ function NovaNcDialog({
           </div>
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancelar</Button>
-            <Button type="submit" disabled={busy} className="bg-brand-gradient text-white shadow-brand">
+            <Button type="submit" disabled={busy || numeroDuplicado} className="bg-brand-gradient text-white shadow-brand">
               {busy ? "Salvando..." : "Registrar NC"}
             </Button>
           </DialogFooter>

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import {
   formatBRL,
-  RTI_PRIORIDADE_COLORS, RTI_PRIORIDADE_LABELS, RTI_TIPO_EXECUCAO_LABELS,
+  RTI_PRIORIDADE_LABELS, RTI_TIPO_EXECUCAO_LABELS,
   type RtiNc, type RtiPrioridade, type RtiTipoExecucao,
 } from "@/lib/rti";
 import { useRtiAreas, useRtiNcs, useRtiReports } from "@/lib/rti-queries";
@@ -34,7 +34,6 @@ export const Route = createFileRoute("/rti/custos")({
 
 const PLANEJADO_COLOR = "#0A2D48";
 const REALIZADO_COLOR = "#F79220";
-const TIPO_COLORS: Record<RtiTipoExecucao, string> = { os: "#0A2D48", investimento: "#F79220" };
 
 type Agg = { planejado: number; realizado: number; qtd: number };
 const zero = (): Agg => ({ planejado: 0, realizado: 0, qtd: 0 });
@@ -298,7 +297,7 @@ function RtiCustosPage() {
                     <Tooltip formatter={costTooltipFmt} />
                     <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     <Bar
-                      dataKey="planejado" name="Planejado" radius={[0, 3, 3, 0]} className="cursor-pointer"
+                      dataKey="planejado" name="Planejado" fill={PLANEJADO_COLOR} radius={[0, 3, 3, 0]} className="cursor-pointer"
                       onClick={(d: { nome?: string }) => d.nome && toggle("setor", d.nome)}
                     >
                       {charts.byArea.map((d) => (
@@ -309,7 +308,7 @@ function RtiCustosPage() {
                       ))}
                     </Bar>
                     <Bar
-                      dataKey="realizado" name="Realizado" radius={[0, 3, 3, 0]} className="cursor-pointer"
+                      dataKey="realizado" name="Realizado" fill={REALIZADO_COLOR} radius={[0, 3, 3, 0]} className="cursor-pointer"
                       onClick={(d: { nome?: string }) => d.nome && toggle("setor", d.nome)}
                     >
                       {charts.byArea.map((d) => (
@@ -343,25 +342,24 @@ function RtiCustosPage() {
                     <Tooltip formatter={costTooltipFmt} />
                     <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     <Bar
-                      dataKey="planejado" name="Planejado" radius={[4, 4, 0, 0]} className="cursor-pointer"
+                      dataKey="planejado" name="Planejado" fill={PLANEJADO_COLOR} radius={[4, 4, 0, 0]} className="cursor-pointer"
                       onClick={(d: { prioridade?: RtiPrioridade }) => d.prioridade && toggle("prioridade", String(d.prioridade))}
                     >
                       {charts.byPrioridade.map((d) => (
                         <Cell
-                          key={d.prioridade} fill={RTI_PRIORIDADE_COLORS[d.prioridade]}
+                          key={d.prioridade} fill={PLANEJADO_COLOR}
                           fillOpacity={search.prioridade === "all" || search.prioridade === String(d.prioridade) ? 1 : 0.3}
                         />
                       ))}
                     </Bar>
                     <Bar
-                      dataKey="realizado" name="Realizado" radius={[4, 4, 0, 0]} className="cursor-pointer"
+                      dataKey="realizado" name="Realizado" fill={REALIZADO_COLOR} radius={[4, 4, 0, 0]} className="cursor-pointer"
                       onClick={(d: { prioridade?: RtiPrioridade }) => d.prioridade && toggle("prioridade", String(d.prioridade))}
                     >
                       {charts.byPrioridade.map((d) => (
                         <Cell
-                          key={d.prioridade} fill={RTI_PRIORIDADE_COLORS[d.prioridade]} fillOpacity={
-                            search.prioridade === "all" || search.prioridade === String(d.prioridade) ? 0.55 : 0.2
-                          }
+                          key={d.prioridade} fill={REALIZADO_COLOR}
+                          fillOpacity={search.prioridade === "all" || search.prioridade === String(d.prioridade) ? 1 : 0.3}
                         />
                       ))}
                     </Bar>
@@ -387,18 +385,18 @@ function RtiCustosPage() {
                     <Tooltip formatter={costTooltipFmt} />
                     <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     <Bar
-                      dataKey="planejado" name="Planejado" radius={[4, 4, 0, 0]} className="cursor-pointer"
+                      dataKey="planejado" name="Planejado" fill={PLANEJADO_COLOR} radius={[4, 4, 0, 0]} className="cursor-pointer"
                       onClick={(d: { tipo?: RtiTipoExecucao }) => d.tipo && toggle("tipo", d.tipo)}
                     >
                       {charts.byTipo.map((d) => (
                         <Cell
-                          key={d.tipo} fill={TIPO_COLORS[d.tipo]}
+                          key={d.tipo} fill={PLANEJADO_COLOR}
                           fillOpacity={search.tipo === "all" || search.tipo === d.tipo ? 1 : 0.3}
                         />
                       ))}
                     </Bar>
                     <Bar
-                      dataKey="realizado" name="Realizado" radius={[4, 4, 0, 0]} className="cursor-pointer"
+                      dataKey="realizado" name="Realizado" fill={REALIZADO_COLOR} radius={[4, 4, 0, 0]} className="cursor-pointer"
                       onClick={(d: { tipo?: RtiTipoExecucao }) => d.tipo && toggle("tipo", d.tipo)}
                     >
                       {charts.byTipo.map((d) => (

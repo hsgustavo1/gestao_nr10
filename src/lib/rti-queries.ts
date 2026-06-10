@@ -334,6 +334,23 @@ export function useAddRtiEvidencia() {
   });
 }
 
+export function useUpdateRtiEvidencia() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, nc_id, descricao }: { id: string; nc_id: string; descricao: string | null }) => {
+      const { error } = await supabase
+        .from("rti_nc_evidencias")
+        .update({ descricao })
+        .eq("id", id);
+      if (error) throw error;
+      return { id, nc_id, descricao };
+    },
+    onSuccess: (ev) => {
+      qc.invalidateQueries({ queryKey: rtiKeys.evidencias(ev.nc_id) });
+    },
+  });
+}
+
 export function useDeleteRtiEvidencia() {
   const qc = useQueryClient();
   return useMutation({

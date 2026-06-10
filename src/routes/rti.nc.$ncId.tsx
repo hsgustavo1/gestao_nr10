@@ -31,7 +31,7 @@ import {
 import {
   logBulkHistorico, rtiFileUrl, uploadRtiFile,
   useAddRtiEvidencia, useAddRtiHistorico, useDeleteRtiEvidencia, useDeleteRtiNc,
-  useRtiAreas, useRtiEvidencias, useRtiHistorico, useRtiNc, useRtiNcs, useUpdateRtiNc,
+  useRtiAreas, useRtiEvidencias, useRtiHistorico, useRtiNc, useRtiNcs, useUpdateRtiEvidencia, useUpdateRtiNc,
 } from "@/lib/rti-queries";
 
 export const Route = createFileRoute("/rti/nc/$ncId")({
@@ -209,6 +209,8 @@ function parseCusto(s: string): number | null {
 function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; actorName: string | null }) {
   const updateNc = useUpdateRtiNc();
 
+  const hoje = () => new Date().toISOString().slice(0, 10);
+
   const [status, setStatus] = useState<RtiNcStatus>(nc.status);
   const [progresso, setProgresso] = useState(nc.progresso);
   const [responsavel, setResponsavel] = useState(nc.responsavel ?? "");
@@ -219,6 +221,7 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
   const [custoPlanejado, setCustoPlanejado] = useState(nc.custo_planejado == null ? "" : String(nc.custo_planejado));
   const [custoRealizado, setCustoRealizado] = useState(nc.custo_realizado == null ? "" : String(nc.custo_realizado));
   const [situacao, setSituacao] = useState(nc.situacao_atual ?? "");
+  const [concluidaEm, setConcluidaEm] = useState(nc.concluida_em ?? "");
   const [busy, setBusy] = useState(false);
 
   // Ressincroniza ao navegar entre NCs (anterior/próxima)
@@ -233,18 +236,40 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
     setCustoPlanejado(nc.custo_planejado == null ? "" : String(nc.custo_planejado));
     setCustoRealizado(nc.custo_realizado == null ? "" : String(nc.custo_realizado));
     setSituacao(nc.situacao_atual ?? "");
+    setConcluidaEm(nc.concluida_em ?? "");
   }, [nc]);
 
   function onStatusChange(s: RtiNcStatus) {
     setStatus(s);
-    if (s === "concluida") setProgresso(100);
-    if (s === "pendente") setProgresso(0);
+    // Concluída → 100% e data de conclusão (hoje, se ainda não informada)
+    if (s === "concluida") {
+      setProgresso(100);
+      setConcluidaEm((prev) => prev || hoje());
+    }
+    if (s === "pendente") {
+      setProgresso(0);
+      setConcluidaEm("");
+    }
+    if (s === "em_andamento" && concluidaEm) setConcluidaEm("");
+  }
+
+  function onProgressoChange(raw: number) {
+    const v = Math.max(0, Math.min(100, Math.round(raw)));
+    setProgresso(v);
+    // Inserir progresso move automaticamente para "Em andamento" (quando ainda pendente)
+    if (v > 0 && v < 100 && status === "pendente") setStatus("em_andamento");
+    // Progresso 100% conclui a ação
+    if (v === 100) {
+      setStatus("concluida");
+      setConcluidaEm((prev) => prev || hoje());
+    }
   }
 
   async function salvar(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
+      const concluidaEmFinal = status === "concluida" ? (concluidaEm || hoje()) : null;
       const patch: Partial<RtiNc> & { id: string } = {
         id: nc.id,
         status,
@@ -257,11 +282,10 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
         custo_planejado: parseCusto(custoPlanejado),
         custo_realizado: parseCusto(custoRealizado),
         situacao_atual: situacao.trim() || null,
-        concluida_em:
-          status === "concluida" ? (nc.concluida_em ?? new Date().toISOString().slice(0, 10)) : null,
+        concluida_em: concluidaEmFinal,
       };
 
-      // Log das mudanças relevantes
+      // Log de TODAS as mudanças relevantes (cada uma fica no histórico)
       const mudancas: string[] = [];
       if (status !== nc.status) mudancas.push(`status → ${RTI_NC_STATUS_LABELS[status]}`);
       if (progresso !== nc.progresso) mudancas.push(`progresso → ${progresso}%`);
@@ -274,12 +298,18 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
       const crNovo = parseCusto(custoRealizado);
       if (cpNovo !== nc.custo_planejado) mudancas.push(`custo planejado → ${cpNovo == null ? "não informado" : formatBRL(cpNovo)}`);
       if (crNovo !== nc.custo_realizado) mudancas.push(`custo realizado → ${crNovo == null ? "não informado" : formatBRL(crNovo)}`);
+      if (concluidaEmFinal !== nc.concluida_em) {
+        mudancas.push(`data de conclusão → ${concluidaEmFinal ? formatDatePtBR(concluidaEmFinal) : "—"}`);
+      }
       if ((situacao.trim() || null) !== nc.situacao_atual) mudancas.push("situação atual atualizada");
 
-      await updateNc.mutateAsync(patch);
-      if (mudancas.length > 0) {
-        await logBulkHistorico([nc.id], mudancas.join("; "), actorName);
+      if (mudancas.length === 0) {
+        toast.info("Nenhuma alteração para salvar.");
+        return;
       }
+
+      await updateNc.mutateAsync(patch);
+      await logBulkHistorico([nc.id], mudancas.join("; "), actorName);
       toast.success("NC atualizada.");
     } catch (err) {
       toast.error("Falha ao salvar: " + (err as Error).message);
@@ -310,11 +340,20 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
     );
   }
 
+  const saveButton = (
+    <Button type="submit" disabled={busy} className="w-full bg-brand-gradient text-white shadow-brand">
+      <Save className="h-4 w-4" /> {busy ? "Salvando..." : "Salvar tratativa"}
+    </Button>
+  );
+
   return (
     <Card>
       <CardHeader className="pb-2"><CardTitle className="text-sm">Tratativa</CardTitle></CardHeader>
       <CardContent>
         <form onSubmit={salvar} className="space-y-3">
+          {/* Salvar (topo) — evita perder alterações em telas pequenas */}
+          {saveButton}
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Status</Label>
@@ -337,14 +376,24 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label>Progresso</Label>
-              <span className="text-xs font-semibold tabular-nums">{progresso}%</span>
+              <Label htmlFor="g-prog">Progresso</Label>
+              <div className="flex items-center gap-1">
+                <Input
+                  id="g-prog" type="number" min={0} max={100} step={5}
+                  value={progresso}
+                  onChange={(e) => onProgressoChange(Number(e.target.value))}
+                  className="h-7 w-16 text-xs text-right tabular-nums"
+                />
+                <span className="text-xs font-semibold text-muted-foreground">%</span>
+              </div>
             </div>
             <Slider
               value={[progresso]} min={0} max={100} step={5}
-              onValueChange={(v) => setProgresso(v[0] ?? 0)}
-              disabled={status === "concluida"}
+              onValueChange={(v) => onProgressoChange(v[0] ?? 0)}
             />
+            <p className="text-[10px] text-muted-foreground">
+              Ao registrar progresso a NC passa a "Em andamento"; 100% conclui automaticamente.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -372,6 +421,19 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
               <Input id="g-os" value={osNumero} onChange={(e) => setOsNumero(e.target.value)} maxLength={60} placeholder="—" />
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="g-concl">Data de conclusão</Label>
+            <Input
+              id="g-concl" type="date" value={concluidaEm}
+              onChange={(e) => setConcluidaEm(e.target.value)}
+              disabled={status !== "concluida"}
+            />
+            <p className="text-[10px] text-muted-foreground">
+              {status === "concluida"
+                ? "Em branco = preenchida com a data de hoje ao salvar."
+                : "Disponível quando a NC estiver concluída."}
+            </p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="g-cp">Custo planejado (R$)</Label>
@@ -393,9 +455,7 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
               placeholder="Ex.: OS aberta em 10/06, aguardando material. Previsão de execução na parada de safra."
             />
           </div>
-          <Button type="submit" disabled={busy} className="w-full bg-brand-gradient text-white shadow-brand">
-            <Save className="h-4 w-4" /> {busy ? "Salvando..." : "Salvar tratativa"}
-          </Button>
+          {saveButton}
         </form>
       </CardContent>
     </Card>
@@ -438,10 +498,20 @@ function EvidenceSection({
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     const list = [...files];
+    // Nomes já anexados a esta NC neste tipo de evidência (bloqueia duplicado).
+    const existentes = new Set(evidencias.map((e) => e.file_name));
     for (const f of list) {
       const okTipo = f.type.startsWith("image/") || f.type === "application/pdf";
       if (!okTipo) return toast.error(`"${f.name}": apenas imagens ou PDF.`);
       if (f.size > 15 * 1024 * 1024) return toast.error(`"${f.name}" excede 15 MB.`);
+      if (existentes.has(f.name))
+        return toast.error(`"${f.name}" já foi anexado a esta NC em "${titulo}". Renomeie o arquivo se for uma versão diferente.`);
+    }
+    // Bloqueia também duplicados dentro da mesma seleção
+    const naSelecao = new Set<string>();
+    for (const f of list) {
+      if (naSelecao.has(f.name)) return toast.error(`"${f.name}" está repetido na seleção.`);
+      naSelecao.add(f.name);
     }
     setBusy(true);
     try {
@@ -520,14 +590,15 @@ function EvidenceSection({
                     />
                   </button>
                 ) : (
-                  <a
-                    href={rtiFileUrl(ev.file_path)} target="_blank" rel="noreferrer"
-                    className="flex aspect-square flex-col items-center justify-center gap-1.5 p-2 text-center"
+                  <button
+                    type="button"
+                    onClick={() => setPreview(ev)}
+                    className="flex aspect-square w-full flex-col items-center justify-center gap-1.5 p-2 text-center cursor-pointer"
                     title={ev.descricao ?? ev.file_name}
                   >
                     <FileText className="h-7 w-7 text-muted-foreground" />
-                    <span className="text-[10px] text-muted-foreground line-clamp-2 break-all">{ev.file_name}</span>
-                  </a>
+                    <span className="text-[10px] text-muted-foreground line-clamp-2 break-all">{ev.descricao ?? ev.file_name}</span>
+                  </button>
                 )}
                 {canEdit && (
                   <button
@@ -545,54 +616,135 @@ function EvidenceSection({
         )}
 
         {canEdit && (
-          <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-2.5">
-            <Input
-              placeholder="Legenda (opcional)" className="h-8 flex-1 min-w-[140px] text-xs"
-              value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={300}
-            />
-            <input
-              ref={fileRef} type="file" multiple accept="image/*,application/pdf"
-              className="hidden" id={`ev-file-${tipo}-${nc.id}`}
-              onChange={(e) => onFiles(e.target.files)}
-            />
-            <Button
-              type="button" size="sm" variant="outline" className="h-8" disabled={busy}
-              onClick={() => fileRef.current?.click()}
-            >
-              <ImagePlus className="h-4 w-4" /> {busy ? "Enviando..." : "Anexar fotos / PDF"}
-            </Button>
+          <div className="rounded-md border bg-muted/20 p-2.5 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                placeholder="Legenda (opcional)" className="h-8 flex-1 min-w-[140px] text-xs"
+                value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={300}
+              />
+              <input
+                ref={fileRef} type="file" multiple accept="image/*,application/pdf"
+                className="hidden" id={`ev-file-${tipo}-${nc.id}`}
+                onChange={(e) => onFiles(e.target.files)}
+              />
+              <Button
+                type="button" size="sm" variant="outline" className="h-8" disabled={busy}
+                onClick={() => fileRef.current?.click()}
+              >
+                <ImagePlus className="h-4 w-4" /> {busy ? "Enviando..." : "Anexar fotos / PDF"}
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Digite a legenda antes de anexar. Você também pode editá-la depois, clicando na foto.
+            </p>
           </div>
         )}
       </CardContent>
 
       {/* Lightbox */}
       {preview && (
-        <Dialog open onOpenChange={(o) => { if (!o) setPreview(null); }}>
-          <DialogContent className="max-w-3xl w-[calc(100vw-1rem)] p-3">
-            <DialogHeader className="pr-8">
-              <DialogTitle className="text-sm leading-tight truncate">{preview.descricao ?? preview.file_name}</DialogTitle>
-            </DialogHeader>
-            <img
-              src={rtiFileUrl(preview.file_path)}
-              alt={preview.descricao ?? preview.file_name}
-              className="max-h-[70vh] w-full object-contain rounded"
-            />
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>
-                {preview.created_by_name && <>Por {preview.created_by_name} · </>}
-                {formatDatePtBR(preview.created_at.slice(0, 10))}
-              </span>
-              <a
-                href={rtiFileUrl(preview.file_path)} target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-1 underline"
-              >
-                <Download className="h-3 w-3" /> Abrir original
-              </a>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <EvidenceLightbox
+          ev={preview}
+          canEdit={canEdit}
+          actorName={actorName}
+          onClose={() => setPreview(null)}
+        />
       )}
     </Card>
+  );
+}
+
+function EvidenceLightbox({
+  ev, canEdit, actorName, onClose,
+}: {
+  ev: RtiNcEvidencia;
+  canEdit: boolean;
+  actorName: string | null;
+  onClose: () => void;
+}) {
+  const updateEvidencia = useUpdateRtiEvidencia();
+  const addHistorico = useAddRtiHistorico();
+  const [caption, setCaption] = useState(ev.descricao ?? "");
+  const [busy, setBusy] = useState(false);
+  const isImage = (ev.mime_type ?? "").startsWith("image/");
+  const dirty = caption.trim() !== (ev.descricao ?? "").trim();
+
+  async function salvarLegenda() {
+    setBusy(true);
+    try {
+      const nova = caption.trim() || null;
+      await updateEvidencia.mutateAsync({ id: ev.id, nc_id: ev.nc_id, descricao: nova });
+      await addHistorico.mutateAsync({
+        nc_id: ev.nc_id,
+        tipo: "alteracao",
+        texto: `Legenda da evidência "${ev.file_name}" ${nova ? `atualizada para "${nova}"` : "removida"}`,
+        autor_nome: actorName,
+      });
+      toast.success("Legenda atualizada.");
+    } catch (e) {
+      toast.error("Falha ao salvar legenda: " + (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-3xl w-[calc(100vw-1rem)] p-3">
+        <DialogHeader className="pr-8">
+          <DialogTitle className="text-sm leading-tight truncate">{ev.file_name}</DialogTitle>
+        </DialogHeader>
+        {isImage ? (
+          <img
+            src={rtiFileUrl(ev.file_path)}
+            alt={ev.descricao ?? ev.file_name}
+            className="max-h-[60vh] w-full object-contain rounded"
+          />
+        ) : (
+          <a
+            href={rtiFileUrl(ev.file_path)} target="_blank" rel="noreferrer"
+            className="flex flex-col items-center justify-center gap-2 rounded border border-dashed bg-muted/20 py-10 text-sm text-muted-foreground"
+          >
+            <FileText className="h-10 w-10" /> Abrir documento
+          </a>
+        )}
+
+        {/* Legenda editável */}
+        {canEdit ? (
+          <div className="space-y-1.5">
+            <Label htmlFor="ev-caption" className="text-[11px] text-muted-foreground">Legenda</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="ev-caption" className="h-8 text-sm"
+                placeholder="Legenda (opcional)"
+                value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={300}
+              />
+              <Button
+                type="button" size="sm" className="h-8 bg-brand-gradient text-white shadow-brand"
+                disabled={busy || !dirty} onClick={salvarLegenda}
+              >
+                <Save className="h-3.5 w-3.5" /> {busy ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          ev.descricao && <p className="text-sm">{ev.descricao}</p>
+        )}
+
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>
+            {ev.created_by_name && <>Por {ev.created_by_name} · </>}
+            {formatDatePtBR(ev.created_at.slice(0, 10))}
+          </span>
+          <a
+            href={rtiFileUrl(ev.file_path)} target="_blank" rel="noreferrer"
+            className="inline-flex items-center gap-1 underline"
+          >
+            <Download className="h-3 w-3" /> Abrir original
+          </a>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
