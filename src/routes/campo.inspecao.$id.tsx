@@ -427,7 +427,11 @@ function CapturaPontoSheet({
     <Dialog open onOpenChange={(o) => { if (!busy) onOpenChange(o); }}>
       <DialogContent
         className="max-h-[92vh] w-[calc(100vw-1rem)] sm:max-w-lg flex flex-col p-0 gap-0"
-        onInteractOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          // iOS fires focusoutside when the OS returns from the native camera.
+          // Block only that event; genuine backdrop taps (pointerdownoutside) still close.
+          if (e.type === "focusoutside") e.preventDefault();
+        }}
       >
         <DialogHeader className="p-4 pb-2 border-b">
           <DialogTitle className="flex items-center gap-2 leading-tight">
