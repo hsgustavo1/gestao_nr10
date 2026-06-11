@@ -1,8 +1,9 @@
 import type { RtiTipoExecucao } from "./rti";
 
-// ── Coleta em Campo (RTI) — tipos e constantes ───────────────────────────────
-// O engenheiro consultor coleta em campo (fotos + modos de falha pré-mapeados,
-// com entrada manual quando o modo não existe) e o sistema compõe o RTI.
+// ── Coleta em Campo (RTI) v2 — árvore hierárquica + fluxo foto-primeiro ──────
+// O engenheiro consultor coleta em campo organizando por uma árvore
+// Setor → Ativo → Componente. Ele "estaciona" num nível e cria pontos de
+// coleta sucessivos: cada ponto = fotos + 1..N modos de falha (achados).
 
 export type NormaRef = { norma: string; item: string };
 
@@ -52,13 +53,43 @@ export type FieldInspection = {
   updated_at: string;
 };
 
+// ── Árvore Setor → Ativo → Componente ────────────────────────────────────────
+
+export const NIVEIS_ARVORE = ["setor", "ativo", "componente"] as const;
+export type NivelArvore = typeof NIVEIS_ARVORE[number];
+
+export const NIVEL_LABEL: Record<NivelArvore, string> = {
+  setor: "Setor",
+  ativo: "Ativo",
+  componente: "Componente",
+};
+
+/** Próximo nível abaixo (setor→ativo→componente); componente é o último. */
+export function proximoNivel(nivel: NivelArvore | null): NivelArvore | null {
+  if (nivel === null) return "setor";
+  if (nivel === "setor") return "ativo";
+  if (nivel === "ativo") return "componente";
+  return null; // componente não tem filho
+}
+
+export type FieldNode = {
+  id: string;
+  inspection_id: string;
+  parent_id: string | null;
+  nivel: NivelArvore;
+  nome: string;
+  ordem: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type FieldPoint = {
   id: string;
   inspection_id: string;
-  area_nome: string;
-  nome: string;
-  ordem: number;
+  node_id: string;
+  titulo: string | null;
   observacoes: string | null;
+  ordem: number;
   created_at: string;
   updated_at: string;
 };
@@ -76,14 +107,57 @@ export type FieldFinding = {
   updated_at: string;
 };
 
+/** Achado manual em edição na UI (antes de virar field_finding). */
+export type AchadoNovoUI = {
+  descricao: string;
+  recomendacao: string | null;
+  prioridade: number;
+  tipo_execucao: RtiTipoExecucao;
+  observacao: string | null;
+};
+
 export type FieldPhoto = {
   id: string;
-  finding_id: string;
+  point_id: string;
   file_path: string;
   file_name: string;
   legenda: string | null;
+  ordem: number;
   created_at: string;
 };
+
+// ── Helpers da árvore ────────────────────────────────────────────────────────
+
+/** Caminho do setor (raiz) até o nó informado, inclusive. */
+export function nodePath(nodeId: string, byId: Map<string, FieldNode>): FieldNode[] {
+  const path: FieldNode[] = [];
+  let cur: FieldNode | undefined = byId.get(nodeId);
+  let guard = 0;
+  while (cur && guard++ < 10) {
+    path.unshift(cur);
+    cur = cur.parent_id ? byId.get(cur.parent_id) : undefined;
+  }
+  return path;
+}
+
+/** Nó-setor (raiz) do caminho de um nó. */
+export function setorDoNo(nodeId: string, byId: Map<string, FieldNode>): FieldNode | null {
+  const path = nodePath(nodeId, byId);
+  return path[0] ?? null;
+}
+
+/** Nomes abaixo do setor (ativo › componente) — usado como prefixo da NC. */
+export function caminhoAbaixoDoSetor(nodeId: string, byId: Map<string, FieldNode>): string {
+  const path = nodePath(nodeId, byId);
+  return path.slice(1).map((n) => n.nome).join(" › ");
+}
+
+/** Filhos diretos de um nó (parentId null = setores na raiz). */
+export function filhosDoNo(parentId: string | null, nodes: FieldNode[]): FieldNode[] {
+  return nodes
+    .filter((n) => (n.parent_id ?? null) === parentId)
+    .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome));
+}
 
 /** Agrupa modos de falha ativos por categoria, na ordem do seed. */
 export function modosPorCategoria(modos: RtiModoFalha[]): Map<string, RtiModoFalha[]> {
@@ -102,6 +176,28 @@ export function formatNormas(normas: NormaRef[]): string {
   return normas
     .map((n) => (n.item && n.item !== "—" ? `${n.norma} ${n.item}` : n.norma))
     .join(" · ");
+}
+
+// ── Carga de estrutura por planilha ──────────────────────────────────────────
+
+/** Linha da planilha de carga da árvore. */
+export type EstruturaLinha = { setor: string; ativo: string | null; componente: string | null };
+
+/** Deduplica e ordena as linhas de carga, ignorando vazias. */
+export function normalizarEstrutura(linhas: EstruturaLinha[]): EstruturaLinha[] {
+  const seen = new Set<string>();
+  const out: EstruturaLinha[] = [];
+  for (const l of linhas) {
+    const setor = l.setor?.trim();
+    if (!setor) continue;
+    const ativo = l.ativo?.trim() || null;
+    const componente = ativo ? (l.componente?.trim() || null) : null; // componente exige ativo
+    const key = `${setor}|${ativo ?? ""}|${componente ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ setor, ativo, componente });
+  }
+  return out;
 }
 
 // ── Redimensionamento de fotos no cliente ────────────────────────────────────

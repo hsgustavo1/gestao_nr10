@@ -472,70 +472,121 @@ export type Database = {
           },
         ]
       }
+      field_nodes: {
+        Row: {
+          created_at: string
+          id: string
+          inspection_id: string
+          nivel: string
+          nome: string
+          ordem: number
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inspection_id: string
+          nivel: string
+          nome: string
+          ordem?: number
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inspection_id?: string
+          nivel?: string
+          nome?: string
+          ordem?: number
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_nodes_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "field_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_nodes_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "field_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       field_photos: {
         Row: {
           created_at: string
           file_name: string
           file_path: string
-          finding_id: string
           id: string
           legenda: string | null
+          ordem: number
+          point_id: string
         }
         Insert: {
           created_at?: string
           file_name: string
           file_path: string
-          finding_id: string
           id?: string
           legenda?: string | null
+          ordem?: number
+          point_id: string
         }
         Update: {
           created_at?: string
           file_name?: string
           file_path?: string
-          finding_id?: string
           id?: string
           legenda?: string | null
+          ordem?: number
+          point_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "field_photos_finding_id_fkey"
-            columns: ["finding_id"]
+            foreignKeyName: "field_photos_point_id_fkey"
+            columns: ["point_id"]
             isOneToOne: false
-            referencedRelation: "field_findings"
+            referencedRelation: "field_points"
             referencedColumns: ["id"]
           },
         ]
       }
       field_points: {
         Row: {
-          area_nome: string
           created_at: string
           id: string
           inspection_id: string
-          nome: string
+          node_id: string
           observacoes: string | null
           ordem: number
+          titulo: string | null
           updated_at: string
         }
         Insert: {
-          area_nome: string
           created_at?: string
           id?: string
           inspection_id: string
-          nome: string
+          node_id: string
           observacoes?: string | null
           ordem?: number
+          titulo?: string | null
           updated_at?: string
         }
         Update: {
-          area_nome?: string
           created_at?: string
           id?: string
           inspection_id?: string
-          nome?: string
+          node_id?: string
           observacoes?: string | null
           ordem?: number
+          titulo?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -544,6 +595,13 @@ export type Database = {
             columns: ["inspection_id"]
             isOneToOne: false
             referencedRelation: "field_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_points_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "field_nodes"
             referencedColumns: ["id"]
           },
         ]
