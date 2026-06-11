@@ -237,7 +237,51 @@ Estratégias de cache:
 
 ## O que NÃO está no escopo
 
-- Substituição do `@lovable.dev/vite-tanstack-config` no app principal (tarefa separada)
+- Substituição do `@lovable.dev/vite-tanstack-config` no app principal (ver Roadmap abaixo)
 - Compartilhamento de componentes via monorepo/package (complexidade desnecessária agora)
 - Resolução de conflitos sofisticada (multi-inspetor no mesmo ponto)
 - Edição offline de inspeções já importadas para o RTI
+
+---
+
+## Roadmap — Item Crítico: Desvinculação do Lovable
+
+### Contexto
+O app principal (`gestao_nr10`) tem sua configuração Vite encapsulada em `@lovable.dev/vite-tanstack-config`, herança de uma fase inicial de prototipação no Lovable. Existe em paralelo um projeto RAC separado crescendo ativamente no Lovable (com GitHub integrado). A estratégia é:
+
+1. Deixar o projeto RAC no Lovable evoluir normalmente
+2. Periodicamente consultar o GitHub do projeto RAC para identificar upgrades relevantes (componentes, configurações, dependências)
+3. Portar manualmente os upgrades úteis para o `gestao_nr10`, já desvinculado do Lovable
+
+### Por que é crítico
+- `@lovable.dev/vite-tanstack-config` bloqueia adição de plugins Vite (ex.: `vite-plugin-pwa` no app principal, otimizações de bundle, etc.)
+- Impede controle total sobre build, SSR e deploy
+- Cria dependência de um pacote privado externo sem SLA para projetos fora do ecossistema Lovable
+- A `campo-pwa` já nasce desvinculada — o app principal deve seguir o mesmo caminho antes que a divergência fique grande demais
+
+### Plano de desvinculação
+
+**Pré-requisito**: ler o código-fonte de `@lovable.dev/vite-tanstack-config` (via `node_modules`) para mapear exatamente o que ele configura e não perder nenhum comportamento.
+
+**Etapas**:
+1. Extrair config equivalente em `vite.config.ts` nativo, incluindo:
+   - `@tanstack/router-plugin/vite`
+   - `@vitejs/plugin-react`
+   - `@tailwindcss/vite`
+   - `vite-tsconfig-paths`
+   - `@cloudflare/vite-plugin` (build)
+   - aliases `@/` e deduplicação React/TanStack
+   - injeção de variáveis `VITE_*`
+2. Remover `@lovable.dev/vite-tanstack-config` e `@lovable.dev/*` do `package.json`
+3. Verificar build local (`vite build`) e dev server (`vite dev`)
+4. Verificar deploy no Cloudflare Pages/Workers
+5. Remover `componentTagger` (plugin de dev do Lovable, não necessário fora do ambiente deles)
+
+**Quando fazer**: após a entrega dos itens 1, 2 e 3 deste spec — não bloqueia a implementação atual, mas deve preceder qualquer nova funcionalidade que exija plugins Vite adicionais no app principal.
+
+### Consulta ao GitHub do projeto RAC (Lovable)
+Antes de cada ciclo de manutenção do `gestao_nr10`:
+- Consultar commits recentes do projeto RAC no GitHub
+- Identificar upgrades de dependências (React, TanStack, Supabase, shadcn)
+- Identificar novos componentes UI reusáveis
+- Portar manualmente o que for relevante — sem merge automático (os projetos têm bases de código diferentes)
