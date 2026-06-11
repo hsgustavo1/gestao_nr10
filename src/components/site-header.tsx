@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LogIn, LogOut, Eye, Menu, ChevronDown, BellRing } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -17,6 +17,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 /**
  * Topbar Atvos — fundo azul-marinho fixo (#0A2D48), wordmark "atvos."
@@ -69,39 +74,69 @@ export function SiteHeader() {
                   </div>
                 </div>
               )}
-              <nav className="flex flex-col p-2">
-                <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>RAC — Dashboard</MobileNavLink>
-                <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>RAC — Base de dados</MobileNavLink>
-                <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>RAC — Violações</MobileNavLink>
-                {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>RAC — Inconsistências</MobileNavLink>}
-                {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>RAC — Carga</MobileNavLink>}
-                {isAdmin && <MobileNavLink to="/admin/certificados/importar" onNav={() => setMenuOpen(false)}>RAC — Importar Certificados</MobileNavLink>}
-                {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>RAC — Controle de acessos</MobileNavLink>}
-                <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>NR-10 — Prontuário (PIE)</MobileNavLink>
-                <MobileNavLink to="/relatorio" onNav={() => setMenuOpen(false)}>NR-10 — Relatório de Conformidade</MobileNavLink>
-                <MobileNavLink to="/relatorio/dossie" onNav={() => setMenuOpen(false)}>NR-10 — Dossiê de Fiscalização</MobileNavLink>
-                <MobileNavLink to="/vencimentos" onNav={() => setMenuOpen(false)}>NR-10 — Central de Vencimentos</MobileNavLink>
-                <MobileNavLink to="/incidentes" onNav={() => setMenuOpen(false)}>NR-10 — Incidentes Elétricos</MobileNavLink>
-                {isAdmin && <MobileNavLink to="/admin/auditoria" onNav={() => setMenuOpen(false)}>NR-10 — Auditoria</MobileNavLink>}
-                <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>RTI — Dashboard</MobileNavLink>
-                <MobileNavLink to="/rti/plano" onNav={() => setMenuOpen(false)}>RTI — Plano de Ação</MobileNavLink>
-                <MobileNavLink to="/rti/custos" onNav={() => setMenuOpen(false)}>RTI — Análise de Custos</MobileNavLink>
-                <MobileNavLink to="/campo" onNav={() => setMenuOpen(false)}>RTI — Coleta em Campo</MobileNavLink>
-                <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>RTI — Modos de falha</MobileNavLink>
-                {isStaff && <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>RTI — Importar planilha</MobileNavLink>}
-                {isStaff && <MobileNavLink to="/rti/evidencias" onNav={() => setMenuOpen(false)}>RTI — Importar evidências</MobileNavLink>}
-                <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>Inspeções — Termografias</MobileNavLink>
-                <MobileNavLink to="/cercon" onNav={() => setMenuOpen(false)}>Inspeções — Cercon</MobileNavLink>
-                <MobileNavLink to="/spda" onNav={() => setMenuOpen(false)}>Inspeções — SPDA</MobileNavLink>
+              <nav className="flex flex-col p-2 gap-0.5">
+                <MobileNavGroup
+                  label="RAC — Bloqueio"
+                  prefixes={["/dashboard", "/cadeados", "/violacoes", "/admin/reports", "/admin/carga", "/admin/certificados", "/admin/usuarios"]}
+                >
+                  <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
+                  <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>Base de dados</MobileNavLink>
+                  <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>Violações</MobileNavLink>
+                  {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>Inconsistências</MobileNavLink>}
+                  {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>Carga</MobileNavLink>}
+                  {isAdmin && <MobileNavLink to="/admin/certificados/importar" onNav={() => setMenuOpen(false)}>Importar Certificados</MobileNavLink>}
+                  {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>Controle de acessos</MobileNavLink>}
+                </MobileNavGroup>
+
+                <MobileNavGroup
+                  label="NR-10"
+                  prefixes={["/nr10", "/relatorio", "/vencimentos", "/incidentes", "/admin/auditoria"]}
+                >
+                  <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>Prontuário (PIE)</MobileNavLink>
+                  <MobileNavLink to="/relatorio" onNav={() => setMenuOpen(false)}>Relatório de Conformidade</MobileNavLink>
+                  <MobileNavLink to="/relatorio/dossie" onNav={() => setMenuOpen(false)}>Dossiê de Fiscalização</MobileNavLink>
+                  <MobileNavLink to="/vencimentos" onNav={() => setMenuOpen(false)}>Central de Vencimentos</MobileNavLink>
+                  <MobileNavLink to="/incidentes" onNav={() => setMenuOpen(false)}>Incidentes Elétricos</MobileNavLink>
+                  {isAdmin && <MobileNavLink to="/admin/auditoria" onNav={() => setMenuOpen(false)}>Auditoria</MobileNavLink>}
+                </MobileNavGroup>
+
+                <MobileNavGroup
+                  label="RTI"
+                  prefixes={["/rti", "/campo"]}
+                >
+                  <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
+                  <MobileNavLink to="/rti/plano" onNav={() => setMenuOpen(false)}>Plano de Ação</MobileNavLink>
+                  <MobileNavLink to="/rti/custos" onNav={() => setMenuOpen(false)}>Análise de Custos</MobileNavLink>
+                  <MobileNavLink to="/campo" onNav={() => setMenuOpen(false)}>Coleta em Campo</MobileNavLink>
+                  <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>Modos de falha</MobileNavLink>
+                  {isStaff && <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>Importar planilha</MobileNavLink>}
+                  {isStaff && <MobileNavLink to="/rti/evidencias" onNav={() => setMenuOpen(false)}>Importar evidências</MobileNavLink>}
+                </MobileNavGroup>
+
+                <MobileNavGroup
+                  label="Inspeções"
+                  prefixes={["/termografias", "/cercon", "/spda"]}
+                >
+                  <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>Termografias</MobileNavLink>
+                  <MobileNavLink to="/cercon" onNav={() => setMenuOpen(false)}>Cercon</MobileNavLink>
+                  <MobileNavLink to="/spda" onNav={() => setMenuOpen(false)}>SPDA</MobileNavLink>
+                </MobileNavGroup>
+
+                <MobileNavGroup
+                  label="Pessoas"
+                  prefixes={["/qualificacoes", "/admin/qualificacoes"]}
+                >
+                  <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Qualificação</MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Capacitações NR-10</MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>ITs</MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/autorizacoes" onNav={() => setMenuOpen(false)}>Autorizações</MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/asos" onNav={() => setMenuOpen(false)}>ASOs</MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/plh" onNav={() => setMenuOpen(false)}>PLH</MobileNavLink>
+                  {isAdmin && <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>Importar xlsx</MobileNavLink>}
+                </MobileNavGroup>
+
                 <MobileNavLink to="/epis" onNav={() => setMenuOpen(false)}>EPIs e EPCs</MobileNavLink>
-                <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>Pessoas — Dashboard</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Pessoas — Qualificação</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Pessoas — Capacitações NR-10</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>Pessoas — ITs</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/autorizacoes" onNav={() => setMenuOpen(false)}>Pessoas — Autorizações</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/asos" onNav={() => setMenuOpen(false)}>Pessoas — ASOs</MobileNavLink>
-                <MobileNavLink to="/qualificacoes/plh" onNav={() => setMenuOpen(false)}>Pessoas — PLH</MobileNavLink>
-                {isAdmin && <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>Pessoas — Importar xlsx</MobileNavLink>}
               </nav>
             </SheetContent>
           </Sheet>
@@ -205,6 +240,36 @@ function MobileNavLink({ to, children, onNav }: { to: string; children: React.Re
     >
       {children}
     </Link>
+  );
+}
+
+function MobileNavGroup({
+  label,
+  prefixes,
+  children,
+}: {
+  label: string;
+  prefixes: string[];
+  children: React.ReactNode;
+}) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isActive = prefixes.some((p) => pathname.startsWith(p));
+  const [open, setOpen] = useState(isActive);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full flex items-center justify-between rounded-md px-3 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors">
+        <span>{label}</span>
+        <ChevronDown
+          className={`h-4 w-4 text-white/50 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="ml-3 pl-3 border-l border-white/10 flex flex-col gap-0.5 py-1">
+          {children}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
