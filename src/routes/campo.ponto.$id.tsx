@@ -123,7 +123,7 @@ function CampoPontoPage() {
             <h2 className="text-sm font-semibold inline-flex items-center gap-1.5"><Camera className="h-4 w-4 text-primary" /> Fotos ({photos.length})</h2>
             {isStaff && (
               <>
-                <input ref={cameraRef} type="file" accept="image/*,application/pdf" multiple capture="environment" className="hidden" onChange={(e) => onFiles(e.target.files)} />
+                <input ref={cameraRef} type="file" accept="image/*,application/pdf" capture="environment" className="hidden" onChange={(e) => onFiles(e.target.files)} />
                 <Button type="button" size="sm" variant="outline" disabled={uploading} onClick={() => cameraRef.current?.click()}>
                   <ImagePlus className="h-4 w-4" /> {uploading ? "Enviando..." : "Foto"}
                 </Button>
