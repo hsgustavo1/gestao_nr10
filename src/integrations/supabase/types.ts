@@ -365,6 +365,189 @@ export type Database = {
           },
         ]
       }
+      field_findings: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          modo_falha_id: string | null
+          observacao: string | null
+          point_id: string
+          prioridade: number
+          recomendacao: string | null
+          tipo_execucao: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          modo_falha_id?: string | null
+          observacao?: string | null
+          point_id: string
+          prioridade?: number
+          recomendacao?: string | null
+          tipo_execucao?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          modo_falha_id?: string | null
+          observacao?: string | null
+          point_id?: string
+          prioridade?: number
+          recomendacao?: string | null
+          tipo_execucao?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_findings_point_id_fkey"
+            columns: ["point_id"]
+            isOneToOne: false
+            referencedRelation: "field_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_findings_modo_falha_id_fkey"
+            columns: ["modo_falha_id"]
+            isOneToOne: false
+            referencedRelation: "rti_modos_falha"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_inspections: {
+        Row: {
+          cliente: string | null
+          created_at: string
+          created_by_name: string | null
+          data_inspecao: string
+          engenheiro: string | null
+          id: string
+          local: string | null
+          notes: string | null
+          report_id: string | null
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          cliente?: string | null
+          created_at?: string
+          created_by_name?: string | null
+          data_inspecao?: string
+          engenheiro?: string | null
+          id?: string
+          local?: string | null
+          notes?: string | null
+          report_id?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          cliente?: string | null
+          created_at?: string
+          created_by_name?: string | null
+          data_inspecao?: string
+          engenheiro?: string | null
+          id?: string
+          local?: string | null
+          notes?: string | null
+          report_id?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_inspections_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rti_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_photos: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          finding_id: string
+          id: string
+          legenda: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          finding_id: string
+          id?: string
+          legenda?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          finding_id?: string
+          id?: string
+          legenda?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_photos_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: false
+            referencedRelation: "field_findings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_points: {
+        Row: {
+          area_nome: string
+          created_at: string
+          id: string
+          inspection_id: string
+          nome: string
+          observacoes: string | null
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          area_nome: string
+          created_at?: string
+          id?: string
+          inspection_id: string
+          nome: string
+          observacoes?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          area_nome?: string
+          created_at?: string
+          id?: string
+          inspection_id?: string
+          nome?: string
+          observacoes?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_points_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "field_inspections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_actions: {
         Row: {
           completed_at: string | null
@@ -962,6 +1145,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rti_modos_falha: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          codigo: string
+          created_at: string
+          descricao_padrao: string
+          id: string
+          label: string
+          normas: Json
+          ordem: number
+          prioridade_sugerida: number
+          recomendacao_padrao: string | null
+          tipo_execucao_sugerido: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          codigo: string
+          created_at?: string
+          descricao_padrao: string
+          id?: string
+          label: string
+          normas?: Json
+          ordem?: number
+          prioridade_sugerida?: number
+          recomendacao_padrao?: string | null
+          tipo_execucao_sugerido?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          codigo?: string
+          created_at?: string
+          descricao_padrao?: string
+          id?: string
+          label?: string
+          normas?: Json
+          ordem?: number
+          prioridade_sugerida?: number
+          recomendacao_padrao?: string | null
+          tipo_execucao_sugerido?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       rti_nc_evidencias: {
         Row: {

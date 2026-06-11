@@ -103,7 +103,8 @@ describe("prontuarioCompleteness", () => {
     expect(r.missing).toHaveLength(PIE_REQUIRED_CATEGORIES.length - 1);
   });
   it("documento vencido não cobre a categoria", () => {
-    const r = prontuarioCompleteness([doc("esquema_unifilar", iso(addDays(hoje, -1)))]);
+    // -2 dias evita a borda de 24h (ancoragem em T12:00:00) — robusto à hora do dia
+    const r = prontuarioCompleteness([doc("esquema_unifilar", iso(addDays(hoje, -2)))]);
     expect(r.missing).toContain("esquema_unifilar");
   });
   it("documento perene cobre a categoria", () => {
@@ -132,7 +133,8 @@ describe("asoStatus", () => {
     expect(asoStatus(asoBase({ validity_date: iso(addDays(hoje, 30)) }))).toBe("expiring");
   });
   it("vencido → expired", () => {
-    expect(asoStatus(asoBase({ validity_date: iso(addDays(hoje, -1)) }))).toBe("expired");
+    // -2 dias evita a borda de 24h (ancoragem em T12:00:00) — robusto à hora do dia
+    expect(asoStatus(asoBase({ validity_date: iso(addDays(hoje, -2)) }))).toBe("expired");
   });
   it("inapto tem precedência sobre validade", () => {
     expect(asoStatus(asoBase({ resultado: "inapto" }))).toBe("inapto");

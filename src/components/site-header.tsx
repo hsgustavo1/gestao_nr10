@@ -86,6 +86,8 @@ export function SiteHeader() {
                 <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>RTI — Dashboard</MobileNavLink>
                 <MobileNavLink to="/rti/plano" onNav={() => setMenuOpen(false)}>RTI — Plano de Ação</MobileNavLink>
                 <MobileNavLink to="/rti/custos" onNav={() => setMenuOpen(false)}>RTI — Análise de Custos</MobileNavLink>
+                <MobileNavLink to="/campo" onNav={() => setMenuOpen(false)}>RTI — Coleta em Campo</MobileNavLink>
+                <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>RTI — Modos de falha</MobileNavLink>
                 {isStaff && <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>RTI — Importar planilha</MobileNavLink>}
                 {isStaff && <MobileNavLink to="/rti/evidencias" onNav={() => setMenuOpen(false)}>RTI — Importar evidências</MobileNavLink>}
                 <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>Inspeções — Termografias</MobileNavLink>
@@ -294,6 +296,13 @@ function RTIDropdown() {
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/rti/custos" className="cursor-pointer">Análise de Custos</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/campo" className="cursor-pointer">Coleta em Campo</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/campo/modos" className="cursor-pointer">Base de modos de falha</Link>
         </DropdownMenuItem>
         {isStaff && (
           <>
