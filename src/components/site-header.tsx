@@ -253,16 +253,20 @@ function MobileNavGroup({
   children: React.ReactNode;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isActive = prefixes.some((p) => pathname.startsWith(p));
-  const [open, setOpen] = useState(isActive);
+  const open = prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="w-full flex items-center justify-between rounded-md px-3 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors">
-        <span>{label}</span>
-        <ChevronDown
-          className={`h-4 w-4 text-white/50 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
+    <Collapsible open={open}>
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className="w-full flex items-center justify-between rounded-md px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-white/10"
+        >
+          <span className={open ? "text-white" : "text-white/90"}>{label}</span>
+          <ChevronDown
+            className={`h-4 w-4 text-white/50 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="ml-3 pl-3 border-l border-white/10 flex flex-col gap-0.5 py-1">
