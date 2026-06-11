@@ -74,18 +74,21 @@ async function downloadInspectionData(inspectionId: string): Promise<void> {
   if (findingsRes.error) throw findingsRes.error
   if (photosRes.error) throw photosRes.error
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fd = findingsRes.data as any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pd = photosRes.data as any[]
+
   await Promise.all([
     db.points.bulkPut((pointsData ?? []).map((p) => ({ ...p, _synced: true }))),
     nodesRes.data
       ? db.nodes.bulkPut(nodesRes.data.map((n) => ({ ...n, _synced: true })))
       : Promise.resolve(),
-    findingsRes.data
-      ? db.findings.bulkPut(findingsRes.data.map((f) => ({ ...f, _synced: true })))
+    fd
+      ? db.findings.bulkPut(fd.map((f) => ({ ...f, _synced: true })))
       : Promise.resolve(),
-    photosRes.data
-      ? db.photos.bulkPut(
-          photosRes.data.map((p) => ({ ...p, blob: null, _synced: true })),
-        )
+    pd
+      ? db.photos.bulkPut(pd.map((p) => ({ ...p, blob: null, _synced: true })))
       : Promise.resolve(),
   ])
 }
