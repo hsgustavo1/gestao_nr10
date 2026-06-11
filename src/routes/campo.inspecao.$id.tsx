@@ -425,7 +425,10 @@ function CapturaPontoSheet({
 
   return (
     <Dialog open onOpenChange={(o) => { if (!busy) onOpenChange(o); }}>
-      <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] sm:max-w-lg flex flex-col p-0 gap-0">
+      <DialogContent
+        className="max-h-[92vh] w-[calc(100vw-1rem)] sm:max-w-lg flex flex-col p-0 gap-0"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader className="p-4 pb-2 border-b">
           <DialogTitle className="flex items-center gap-2 leading-tight">
             <Camera className="h-5 w-5 shrink-0 text-primary" /> Novo ponto de coleta
@@ -438,7 +441,7 @@ function CapturaPontoSheet({
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* 1) Fotos */}
           <div>
-            <input ref={cameraRef} type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => addFotos(e.target.files)} />
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => addFotos(e.target.files)} />
             <input ref={galeriaRef} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => addFotos(e.target.files)} />
             <div className="flex gap-2">
               <Button type="button" className="flex-1 h-11 bg-brand-gradient text-white shadow-brand" onClick={() => cameraRef.current?.click()}>
