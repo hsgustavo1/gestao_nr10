@@ -47,6 +47,8 @@ export type FieldInspection = {
 
 export const NIVEIS_ARVORE = ['setor', 'ativo', 'componente'] as const
 export type NivelArvore = typeof NIVEIS_ARVORE[number]
+/** Alias for NivelArvore — used in campo.ts helpers. */
+export type NodeType = NivelArvore
 
 export type FieldNode = {
   id: string
