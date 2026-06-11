@@ -24,6 +24,7 @@ import { Route as Nr10IndexRouteImport } from './routes/nr10.index'
 import { Route as IncidentesIndexRouteImport } from './routes/incidentes.index'
 import { Route as EpisIndexRouteImport } from './routes/epis.index'
 import { Route as CerconIndexRouteImport } from './routes/cercon.index'
+import { Route as CampoIndexRouteImport } from './routes/campo.index'
 import { Route as CadeadosIndexRouteImport } from './routes/cadeados.index'
 import { Route as RtiPlanoRouteImport } from './routes/rti.plano'
 import { Route as RtiImportarRouteImport } from './routes/rti.importar'
@@ -37,6 +38,7 @@ import { Route as QualificacoesColaboradoresRouteImport } from './routes/qualifi
 import { Route as QualificacoesAutorizacoesRouteImport } from './routes/qualificacoes.autorizacoes'
 import { Route as QualificacoesAsosRouteImport } from './routes/qualificacoes.asos'
 import { Route as CarteirinhaMatriculaRouteImport } from './routes/carteirinha.$matricula'
+import { Route as CampoModosRouteImport } from './routes/campo.modos'
 import { Route as CadeadosCodigoRouteImport } from './routes/cadeados.$codigo'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -44,6 +46,8 @@ import { Route as AdminCargaRouteImport } from './routes/admin.carga'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 import { Route as RtiNcNcIdRouteImport } from './routes/rti.nc.$ncId'
 import { Route as QualificacoesColaboradorIdRouteImport } from './routes/qualificacoes.colaborador.$id'
+import { Route as CampoPontoIdRouteImport } from './routes/campo.ponto.$id'
+import { Route as CampoInspecaoIdRouteImport } from './routes/campo.inspecao.$id'
 import { Route as AdminQualificacoesCargaRouteImport } from './routes/admin.qualificacoes.carga'
 import { Route as AdminCertificadosImportarRouteImport } from './routes/admin.certificados.importar'
 
@@ -122,6 +126,11 @@ const CerconIndexRoute = CerconIndexRouteImport.update({
   path: '/cercon/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CampoIndexRoute = CampoIndexRouteImport.update({
+  id: '/campo/',
+  path: '/campo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CadeadosIndexRoute = CadeadosIndexRouteImport.update({
   id: '/cadeados/',
   path: '/cadeados/',
@@ -189,6 +198,11 @@ const CarteirinhaMatriculaRoute = CarteirinhaMatriculaRouteImport.update({
   path: '/carteirinha/$matricula',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CampoModosRoute = CampoModosRouteImport.update({
+  id: '/campo/modos',
+  path: '/campo/modos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CadeadosCodigoRoute = CadeadosCodigoRouteImport.update({
   id: '/cadeados/$codigo',
   path: '/cadeados/$codigo',
@@ -225,6 +239,16 @@ const QualificacoesColaboradorIdRoute =
     path: '/qualificacoes/colaborador/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
+const CampoPontoIdRoute = CampoPontoIdRouteImport.update({
+  id: '/campo/ponto/$id',
+  path: '/campo/ponto/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CampoInspecaoIdRoute = CampoInspecaoIdRouteImport.update({
+  id: '/campo/inspecao/$id',
+  path: '/campo/inspecao/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminQualificacoesCargaRoute = AdminQualificacoesCargaRouteImport.update({
   id: '/admin/qualificacoes/carga',
   path: '/admin/qualificacoes/carga',
@@ -248,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
+  '/campo/modos': typeof CampoModosRoute
   '/carteirinha/$matricula': typeof CarteirinhaMatriculaRoute
   '/qualificacoes/asos': typeof QualificacoesAsosRoute
   '/qualificacoes/autorizacoes': typeof QualificacoesAutorizacoesRoute
@@ -261,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/rti/importar': typeof RtiImportarRoute
   '/rti/plano': typeof RtiPlanoRoute
   '/cadeados/': typeof CadeadosIndexRoute
+  '/campo/': typeof CampoIndexRoute
   '/cercon/': typeof CerconIndexRoute
   '/epis/': typeof EpisIndexRoute
   '/incidentes/': typeof IncidentesIndexRoute
@@ -273,6 +299,8 @@ export interface FileRoutesByFullPath {
   '/vencimentos/': typeof VencimentosIndexRoute
   '/admin/certificados/importar': typeof AdminCertificadosImportarRoute
   '/admin/qualificacoes/carga': typeof AdminQualificacoesCargaRoute
+  '/campo/inspecao/$id': typeof CampoInspecaoIdRoute
+  '/campo/ponto/$id': typeof CampoPontoIdRoute
   '/qualificacoes/colaborador/$id': typeof QualificacoesColaboradorIdRoute
   '/rti/nc/$ncId': typeof RtiNcNcIdRoute
 }
@@ -287,6 +315,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
+  '/campo/modos': typeof CampoModosRoute
   '/carteirinha/$matricula': typeof CarteirinhaMatriculaRoute
   '/qualificacoes/asos': typeof QualificacoesAsosRoute
   '/qualificacoes/autorizacoes': typeof QualificacoesAutorizacoesRoute
@@ -300,6 +329,7 @@ export interface FileRoutesByTo {
   '/rti/importar': typeof RtiImportarRoute
   '/rti/plano': typeof RtiPlanoRoute
   '/cadeados': typeof CadeadosIndexRoute
+  '/campo': typeof CampoIndexRoute
   '/cercon': typeof CerconIndexRoute
   '/epis': typeof EpisIndexRoute
   '/incidentes': typeof IncidentesIndexRoute
@@ -312,6 +342,8 @@ export interface FileRoutesByTo {
   '/vencimentos': typeof VencimentosIndexRoute
   '/admin/certificados/importar': typeof AdminCertificadosImportarRoute
   '/admin/qualificacoes/carga': typeof AdminQualificacoesCargaRoute
+  '/campo/inspecao/$id': typeof CampoInspecaoIdRoute
+  '/campo/ponto/$id': typeof CampoPontoIdRoute
   '/qualificacoes/colaborador/$id': typeof QualificacoesColaboradorIdRoute
   '/rti/nc/$ncId': typeof RtiNcNcIdRoute
 }
@@ -327,6 +359,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
+  '/campo/modos': typeof CampoModosRoute
   '/carteirinha/$matricula': typeof CarteirinhaMatriculaRoute
   '/qualificacoes/asos': typeof QualificacoesAsosRoute
   '/qualificacoes/autorizacoes': typeof QualificacoesAutorizacoesRoute
@@ -340,6 +373,7 @@ export interface FileRoutesById {
   '/rti/importar': typeof RtiImportarRoute
   '/rti/plano': typeof RtiPlanoRoute
   '/cadeados/': typeof CadeadosIndexRoute
+  '/campo/': typeof CampoIndexRoute
   '/cercon/': typeof CerconIndexRoute
   '/epis/': typeof EpisIndexRoute
   '/incidentes/': typeof IncidentesIndexRoute
@@ -352,6 +386,8 @@ export interface FileRoutesById {
   '/vencimentos/': typeof VencimentosIndexRoute
   '/admin/certificados/importar': typeof AdminCertificadosImportarRoute
   '/admin/qualificacoes/carga': typeof AdminQualificacoesCargaRoute
+  '/campo/inspecao/$id': typeof CampoInspecaoIdRoute
+  '/campo/ponto/$id': typeof CampoPontoIdRoute
   '/qualificacoes/colaborador/$id': typeof QualificacoesColaboradorIdRoute
   '/rti/nc/$ncId': typeof RtiNcNcIdRoute
 }
@@ -368,6 +404,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
+    | '/campo/modos'
     | '/carteirinha/$matricula'
     | '/qualificacoes/asos'
     | '/qualificacoes/autorizacoes'
@@ -381,6 +418,7 @@ export interface FileRouteTypes {
     | '/rti/importar'
     | '/rti/plano'
     | '/cadeados/'
+    | '/campo/'
     | '/cercon/'
     | '/epis/'
     | '/incidentes/'
@@ -393,6 +431,8 @@ export interface FileRouteTypes {
     | '/vencimentos/'
     | '/admin/certificados/importar'
     | '/admin/qualificacoes/carga'
+    | '/campo/inspecao/$id'
+    | '/campo/ponto/$id'
     | '/qualificacoes/colaborador/$id'
     | '/rti/nc/$ncId'
   fileRoutesByTo: FileRoutesByTo
@@ -407,6 +447,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
+    | '/campo/modos'
     | '/carteirinha/$matricula'
     | '/qualificacoes/asos'
     | '/qualificacoes/autorizacoes'
@@ -420,6 +461,7 @@ export interface FileRouteTypes {
     | '/rti/importar'
     | '/rti/plano'
     | '/cadeados'
+    | '/campo'
     | '/cercon'
     | '/epis'
     | '/incidentes'
@@ -432,6 +474,8 @@ export interface FileRouteTypes {
     | '/vencimentos'
     | '/admin/certificados/importar'
     | '/admin/qualificacoes/carga'
+    | '/campo/inspecao/$id'
+    | '/campo/ponto/$id'
     | '/qualificacoes/colaborador/$id'
     | '/rti/nc/$ncId'
   id:
@@ -446,6 +490,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
+    | '/campo/modos'
     | '/carteirinha/$matricula'
     | '/qualificacoes/asos'
     | '/qualificacoes/autorizacoes'
@@ -459,6 +504,7 @@ export interface FileRouteTypes {
     | '/rti/importar'
     | '/rti/plano'
     | '/cadeados/'
+    | '/campo/'
     | '/cercon/'
     | '/epis/'
     | '/incidentes/'
@@ -471,6 +517,8 @@ export interface FileRouteTypes {
     | '/vencimentos/'
     | '/admin/certificados/importar'
     | '/admin/qualificacoes/carga'
+    | '/campo/inspecao/$id'
+    | '/campo/ponto/$id'
     | '/qualificacoes/colaborador/$id'
     | '/rti/nc/$ncId'
   fileRoutesById: FileRoutesById
@@ -486,6 +534,7 @@ export interface RootRouteChildren {
   AdminReportsRoute: typeof AdminReportsRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   CadeadosCodigoRoute: typeof CadeadosCodigoRoute
+  CampoModosRoute: typeof CampoModosRoute
   CarteirinhaMatriculaRoute: typeof CarteirinhaMatriculaRoute
   QualificacoesAsosRoute: typeof QualificacoesAsosRoute
   QualificacoesAutorizacoesRoute: typeof QualificacoesAutorizacoesRoute
@@ -499,6 +548,7 @@ export interface RootRouteChildren {
   RtiImportarRoute: typeof RtiImportarRoute
   RtiPlanoRoute: typeof RtiPlanoRoute
   CadeadosIndexRoute: typeof CadeadosIndexRoute
+  CampoIndexRoute: typeof CampoIndexRoute
   CerconIndexRoute: typeof CerconIndexRoute
   EpisIndexRoute: typeof EpisIndexRoute
   IncidentesIndexRoute: typeof IncidentesIndexRoute
@@ -511,6 +561,8 @@ export interface RootRouteChildren {
   VencimentosIndexRoute: typeof VencimentosIndexRoute
   AdminCertificadosImportarRoute: typeof AdminCertificadosImportarRoute
   AdminQualificacoesCargaRoute: typeof AdminQualificacoesCargaRoute
+  CampoInspecaoIdRoute: typeof CampoInspecaoIdRoute
+  CampoPontoIdRoute: typeof CampoPontoIdRoute
   QualificacoesColaboradorIdRoute: typeof QualificacoesColaboradorIdRoute
   RtiNcNcIdRoute: typeof RtiNcNcIdRoute
 }
@@ -622,6 +674,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CerconIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/campo/': {
+      id: '/campo/'
+      path: '/campo'
+      fullPath: '/campo/'
+      preLoaderRoute: typeof CampoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cadeados/': {
       id: '/cadeados/'
       path: '/cadeados'
@@ -713,6 +772,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CarteirinhaMatriculaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/campo/modos': {
+      id: '/campo/modos'
+      path: '/campo/modos'
+      fullPath: '/campo/modos'
+      preLoaderRoute: typeof CampoModosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cadeados/$codigo': {
       id: '/cadeados/$codigo'
       path: '/cadeados/$codigo'
@@ -762,6 +828,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QualificacoesColaboradorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/campo/ponto/$id': {
+      id: '/campo/ponto/$id'
+      path: '/campo/ponto/$id'
+      fullPath: '/campo/ponto/$id'
+      preLoaderRoute: typeof CampoPontoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/campo/inspecao/$id': {
+      id: '/campo/inspecao/$id'
+      path: '/campo/inspecao/$id'
+      fullPath: '/campo/inspecao/$id'
+      preLoaderRoute: typeof CampoInspecaoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/qualificacoes/carga': {
       id: '/admin/qualificacoes/carga'
       path: '/admin/qualificacoes/carga'
@@ -790,6 +870,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminReportsRoute: AdminReportsRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   CadeadosCodigoRoute: CadeadosCodigoRoute,
+  CampoModosRoute: CampoModosRoute,
   CarteirinhaMatriculaRoute: CarteirinhaMatriculaRoute,
   QualificacoesAsosRoute: QualificacoesAsosRoute,
   QualificacoesAutorizacoesRoute: QualificacoesAutorizacoesRoute,
@@ -803,6 +884,7 @@ const rootRouteChildren: RootRouteChildren = {
   RtiImportarRoute: RtiImportarRoute,
   RtiPlanoRoute: RtiPlanoRoute,
   CadeadosIndexRoute: CadeadosIndexRoute,
+  CampoIndexRoute: CampoIndexRoute,
   CerconIndexRoute: CerconIndexRoute,
   EpisIndexRoute: EpisIndexRoute,
   IncidentesIndexRoute: IncidentesIndexRoute,
@@ -815,6 +897,8 @@ const rootRouteChildren: RootRouteChildren = {
   VencimentosIndexRoute: VencimentosIndexRoute,
   AdminCertificadosImportarRoute: AdminCertificadosImportarRoute,
   AdminQualificacoesCargaRoute: AdminQualificacoesCargaRoute,
+  CampoInspecaoIdRoute: CampoInspecaoIdRoute,
+  CampoPontoIdRoute: CampoPontoIdRoute,
   QualificacoesColaboradorIdRoute: QualificacoesColaboradorIdRoute,
   RtiNcNcIdRoute: RtiNcNcIdRoute,
 }
