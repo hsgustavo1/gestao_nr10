@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { addDays, addYears, format } from "date-fns";
-import { trainingExpiryStatus } from "../qualificacoes";
+import { trainingExpiryStatus, formatDatePtBR } from "../qualificacoes";
 import { ncPrazoBucket } from "../rti";
-import { epiTestStatus, nextTestDate, type EPI, type EPITest } from "../epis";
+import { epiTestStatus, nextTestDate, lastTestByEpi, type EPI, type EPITest } from "../epis";
 import { prontuarioCompleteness, PIE_REQUIRED_CATEGORIES, type NR10Document } from "../prontuario";
-import { asoStatus, type ASO } from "../asos";
-import { computeAptidao } from "../aptidao";
+import { asoStatus, latestASOByEmployee, type ASO } from "../asos";
+import { computeAptidao, latestBasicoDate } from "../aptidao";
 
 // As regras de validade/vencimento são o core do produto: estes testes
 // protegem contra regressões nos cálculos de conformidade NR-10.
@@ -240,5 +240,91 @@ describe("computeAptidao", () => {
     });
     expect(r.apto).toBe(false);
     expect(r.bloqueantes.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+// ── latestBasicoDate: data que ancora a reciclagem bienal ────────────────────
+
+describe("latestBasicoDate", () => {
+  it("sem treinamentos → null", () => {
+    expect(latestBasicoDate([])).toBeNull();
+  });
+  it("ignora tipos que não são nr10_basico", () => {
+    expect(
+      latestBasicoDate([{ training_type: "sep", category: "formacao", training_date: iso(hoje) }]),
+    ).toBeNull();
+  });
+  it("ignora registros sem data", () => {
+    expect(
+      latestBasicoDate([{ training_type: "nr10_basico", category: "formacao", training_date: null }]),
+    ).toBeNull();
+  });
+  it("retorna a data mais recente entre formação e reciclagem", () => {
+    const recente = iso(addDays(hoje, -10));
+    expect(
+      latestBasicoDate([
+        { training_type: "nr10_basico", category: "formacao", training_date: iso(addYears(hoje, -3)) },
+        { training_type: "nr10_basico", category: "reciclagem", training_date: recente },
+      ]),
+    ).toBe(recente);
+  });
+});
+
+// ── formatDatePtBR: exibição de datas ────────────────────────────────────────
+
+describe("formatDatePtBR", () => {
+  it("null/undefined → travessão", () => {
+    expect(formatDatePtBR(null)).toBe("—");
+    expect(formatDatePtBR(undefined)).toBe("—");
+  });
+  it("formata ISO para dd/MM/yyyy", () => {
+    expect(formatDatePtBR("2026-03-15")).toBe("15/03/2026");
+  });
+  it("entrada inválida → devolve a própria string (fallback)", () => {
+    expect(formatDatePtBR("não-é-data")).toBe("não-é-data");
+  });
+});
+
+// ── latestASOByEmployee: seleção do ASO vigente por colaborador ──────────────
+
+describe("latestASOByEmployee", () => {
+  const aso = (employee_id: string, exam_date: string): ASO => ({
+    id: crypto.randomUUID(), employee_id, exam_date, validity_date: exam_date,
+    tipo: "periodico", resultado: "apto", apto_eletricidade: true, restricoes: null,
+    medico: null, file_path: null, notes: null, created_by_name: null,
+    created_at: "", updated_at: "",
+  });
+
+  it("lista vazia → mapa vazio", () => {
+    expect(latestASOByEmployee([]).size).toBe(0);
+  });
+  it("seleciona o ASO de exame mais recente por colaborador", () => {
+    const map = latestASOByEmployee([
+      aso("e1", "2025-01-01"),
+      aso("e1", "2026-01-01"),
+      aso("e2", "2024-06-01"),
+    ]);
+    expect(map.size).toBe(2);
+    expect(map.get("e1")!.exam_date).toBe("2026-01-01");
+    expect(map.get("e2")!.exam_date).toBe("2024-06-01");
+  });
+});
+
+// ── lastTestByEpi: seleção do último ensaio por EPI ──────────────────────────
+
+describe("lastTestByEpi", () => {
+  const ensaio = (epi_id: string, test_date: string): EPITest => ({
+    id: crypto.randomUUID(), epi_id, test_date, result: "aprovado",
+    laboratory: null, certificate_path: null, notes: null, created_at: "",
+  });
+
+  it("seleciona o ensaio mais recente por EPI", () => {
+    const map = lastTestByEpi([
+      ensaio("epi1", "2025-01-01"),
+      ensaio("epi1", "2025-09-01"),
+      ensaio("epi2", "2024-12-01"),
+    ]);
+    expect(map.get("epi1")!.test_date).toBe("2025-09-01");
+    expect(map.get("epi2")!.test_date).toBe("2024-12-01");
   });
 });
