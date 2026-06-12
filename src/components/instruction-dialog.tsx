@@ -12,7 +12,10 @@ import type { WorkInstruction } from "@/lib/qualificacoes";
 const schema = z.object({
   code: z.string().min(1, "Código obrigatório"),
   title: z.string().optional(),
-  validity_months: z.coerce.number().int().min(1).default(24),
+  // Sem .default() aqui: o valor inicial vem de defaultValues no useForm.
+  // Um default no schema deixaria o tipo de entrada opcional e o de saída
+  // obrigatório, quebrando a tipagem do zodResolver/useForm.
+  validity_months: z.coerce.number().int().min(1),
 });
 type FormValues = z.infer<typeof schema>;
 

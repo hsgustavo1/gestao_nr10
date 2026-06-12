@@ -21,9 +21,14 @@ import { ReportInconsistencyDialog } from "@/components/report-inconsistency-dia
 
 type StatusFilter = "all" | "ativos" | "cancelados";
 
+type PadlocksSearch = {
+  color?: PadlockColor | "all";
+  status?: StatusFilter;
+};
+
 export const Route = createFileRoute("/cadeados/")({
   component: PadlocksList,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): PadlocksSearch => ({
     color: (search.color as PadlockColor | "all" | undefined) ?? undefined,
     status: (search.status as StatusFilter | undefined) ?? undefined,
   }),

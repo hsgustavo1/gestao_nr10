@@ -257,9 +257,12 @@ export function useUpsertITTraining() {
 
 // ── Batch import (used by xlsx import page) ───────────────────────────────────
 export async function batchImportQualificacoes(payload: {
-  employees: Omit<Employee, "id" | "created_at" | "updated_at">[];
-  nr10Trainings: Array<Omit<NR10Training, "id" | "created_at" | "updated_at"> & { matricula: string }>;
-  authorizations: Array<Omit<WorkAuthorization, "id" | "created_at" | "updated_at"> & { matricula: string }>;
+  // status (employees), employee_id e is_current são resolvidos internamente:
+  // employee_id vem do mapeamento por matrícula; is_current é definido no insert;
+  // status usa o default do banco ('ativo') preservando afastados/desligados em reimportações.
+  employees: Omit<Employee, "id" | "created_at" | "updated_at" | "status">[];
+  nr10Trainings: Array<Omit<NR10Training, "id" | "created_at" | "updated_at" | "employee_id"> & { matricula: string }>;
+  authorizations: Array<Omit<WorkAuthorization, "id" | "created_at" | "updated_at" | "employee_id" | "is_current"> & { matricula: string }>;
   instructions: Omit<WorkInstruction, "id" | "created_at" | "updated_at">[];
   itTrainings: { matricula: string; instructionCode: string; status: string; conclusao_date: string | null }[];
 }) {

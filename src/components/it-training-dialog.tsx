@@ -43,7 +43,9 @@ export function ITTrainingDialog({ open, onOpenChange, employeeId, employeeName,
 
   async function onSubmit(values: FormValues) {
     try {
-      await upsert.mutateAsync(values);
+      // conclusao_date do form é string | undefined ("" quando vazio);
+      // a coluna aceita string | null, então normalizamos ausência para null.
+      await upsert.mutateAsync({ ...values, conclusao_date: values.conclusao_date || null });
       toast.success("Conclusão de IT registrada");
       onOpenChange(false);
     } catch {
