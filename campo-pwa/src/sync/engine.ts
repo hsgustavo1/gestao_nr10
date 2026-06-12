@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { db } from '@/db/dexie'
-import type { SyncOperation } from '@/db/dexie'
+import type { SyncOperation, SyncQueueItem } from '@/db/dexie'
 
 // Dexie table name → Supabase table name
 const SUPABASE_TABLES: Record<string, string> = {
@@ -110,27 +110,80 @@ export async function enqueue(
     remote_id: null,
     attempts: 0,
     created_at: new Date().toISOString(),
+    next_attempt_at: null,
+    last_error: null,
   })
 }
 
 // ── Upload: sync_queue → Supabase ─────────────────────────────────────────────
 
-export async function processQueue(): Promise<void> {
-  const items = await db.sync_queue.orderBy('created_at').toArray()
-  const pending = items.filter((i) => i.attempts < 3)
+/** Após esgotar as tentativas, o item vira dead-letter (visível na UI, não retentado). */
+export const MAX_SYNC_ATTEMPTS = 5
+const BACKOFF_BASE_MS = 5_000
+const BACKOFF_MAX_MS = 5 * 60_000
 
-  for (const item of pending) {
-    try {
-      if (item.table === 'photos') {
-        await uploadPhoto(item.local_id)
-      } else {
-        await uploadRecord(item)
+/** Atraso exponencial antes da próxima tentativa, dado o número de falhas acumuladas. */
+function backoffDelayMs(attempts: number): number {
+  return Math.min(BACKOFF_BASE_MS * 2 ** (attempts - 1), BACKOFF_MAX_MS)
+}
+
+/** Item pode ser (re)tentado agora? (não esgotou tentativas e o backoff já venceu) */
+function isReady(item: SyncQueueItem, now: number): boolean {
+  if (item.attempts >= MAX_SYNC_ATTEMPTS) return false
+  if (!item.next_attempt_at) return true
+  return Date.parse(item.next_attempt_at) <= now
+}
+
+// Trava de reentrância: vários gatilhos (online, heartbeat, botão) podem chamar
+// processQueue ao mesmo tempo — sem isto, dois envios do mesmo item duplicariam.
+let isProcessing = false
+
+export async function processQueue(): Promise<void> {
+  if (isProcessing) return
+  isProcessing = true
+  try {
+    const items = await db.sync_queue.orderBy('created_at').toArray()
+    const now = Date.now()
+    const ready = items.filter((item) => isReady(item, now))
+
+    for (const item of ready) {
+      try {
+        if (item.table === 'photos') {
+          await uploadPhoto(item.local_id)
+        } else {
+          await uploadRecord(item)
+        }
+        await db.sync_queue.delete(item.id)
+      } catch (err) {
+        const attempts = item.attempts + 1
+        await db.sync_queue.update(item.id, {
+          attempts,
+          next_attempt_at: new Date(now + backoffDelayMs(attempts)).toISOString(),
+          last_error: err instanceof Error ? err.message : String(err),
+        })
       }
-      await db.sync_queue.delete(item.id)
-    } catch {
-      await db.sync_queue.update(item.id, { attempts: item.attempts + 1 })
     }
+  } finally {
+    isProcessing = false
   }
+}
+
+/** Rearma itens que esgotaram as tentativas (dead-letter) para nova tentativa manual. */
+export async function retryFailed(): Promise<void> {
+  const dead = await db.sync_queue
+    .where('attempts')
+    .aboveOrEqual(MAX_SYNC_ATTEMPTS)
+    .toArray()
+  await Promise.all(
+    dead.map((item) =>
+      db.sync_queue.update(item.id, {
+        attempts: 0,
+        next_attempt_at: null,
+        last_error: null,
+      }),
+    ),
+  )
+  await processQueue()
 }
 
 function stripLocalFields(payload: Record<string, unknown>): Record<string, unknown> {
@@ -192,12 +245,22 @@ async function uploadPhoto(localId: string): Promise<void> {
 
 // ── Connectivity watcher ──────────────────────────────────────────────────────
 
+/** Heartbeat: reprocessa itens cujo backoff venceu sem depender de evento `online`. */
+const SYNC_HEARTBEAT_MS = 30_000
+
 export function startConnectivityWatcher(): () => void {
-  const handler = () => {
+  const flush = () => {
     if (navigator.onLine) {
       processQueue().catch(console.error)
     }
   }
-  window.addEventListener('online', handler)
-  return () => window.removeEventListener('online', handler)
+  // Flush imediato ao montar: esvazia a fila criada offline quando o app
+  // reabre já online (o evento `online` não dispara nesse caso).
+  flush()
+  window.addEventListener('online', flush)
+  const heartbeat = window.setInterval(flush, SYNC_HEARTBEAT_MS)
+  return () => {
+    window.removeEventListener('online', flush)
+    window.clearInterval(heartbeat)
+  }
 }

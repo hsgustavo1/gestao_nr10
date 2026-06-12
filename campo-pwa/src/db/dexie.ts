@@ -14,6 +14,11 @@ export interface SyncQueueItem {
   remote_id: string | null
   attempts: number
   created_at: string
+  // Backoff: instante (ISO) a partir do qual o item pode ser retentado.
+  // Opcional — itens gravados antes do backoff não têm o campo (= pronto já).
+  next_attempt_at?: string | null
+  // Última mensagem de erro, para diagnóstico de itens em dead-letter.
+  last_error?: string | null
 }
 
 export type LocalInspection = FieldInspection & { _synced: boolean }
