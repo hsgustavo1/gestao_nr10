@@ -1339,6 +1339,7 @@ export type Database = {
           custo_planejado: number | null
           custo_realizado: number | null
           descricao: string
+          finding_id: string | null
           id: string
           numero: number
           os_numero: string | null
@@ -1360,6 +1361,7 @@ export type Database = {
           custo_planejado?: number | null
           custo_realizado?: number | null
           descricao: string
+          finding_id?: string | null
           id?: string
           numero: number
           os_numero?: string | null
@@ -1381,6 +1383,7 @@ export type Database = {
           custo_planejado?: number | null
           custo_realizado?: number | null
           descricao?: string
+          finding_id?: string | null
           id?: string
           numero?: number
           os_numero?: string | null

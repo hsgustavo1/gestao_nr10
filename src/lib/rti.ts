@@ -108,6 +108,7 @@ export type RtiNc = {
   custo_realizado: number | null;
   situacao_atual: string | null;
   concluida_em: string | null;
+  finding_id: string | null;
   created_at: string;
   updated_at: string;
 };

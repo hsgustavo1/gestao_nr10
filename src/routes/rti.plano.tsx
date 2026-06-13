@@ -876,6 +876,7 @@ function NovaNcDialog({
         custo_realizado: null,
         situacao_atual: null,
         concluida_em: null,
+        finding_id: null,
       });
       await logBulkHistorico([nc.id], "NC registrada manualmente", actorName);
       toast.success(`NC ${numero} registrada.`);

@@ -739,9 +739,21 @@ export async function comporRti({
     .order("numero", { ascending: false }).limit(1);
   let numero = (maxData?.[0]?.numero ?? 0) as number;
 
-  // 5) Cria as NCs (uma por achado), na ordem dos pontos
+  // 4b) Para re-compose em relatório existente: mapa finding_id → NC já criada.
+  // Permite atualizar NCs existentes em vez de duplicar quando achados foram editados.
+  const existingNcByFindingId = new Map<string, RtiNc>();
+  if (destino.mode === "existente") {
+    const { data: existingNcs } = await supabase
+      .from("rti_ncs").select("*").eq("report_id", reportId).not("finding_id", "is", null);
+    for (const nc of (existingNcs ?? []) as RtiNc[]) {
+      if (nc.finding_id) existingNcByFindingId.set(nc.finding_id, nc);
+    }
+  }
+
+  // 5) Cria ou atualiza as NCs (uma por achado), na ordem dos pontos
   const ordered = [...points].sort((a, b) => a.ordem - b.ordem || a.created_at.localeCompare(b.created_at));
   let ncsCriadas = 0;
+  let ncsAtualizadas = 0;
   let fotosCopiadas = 0;
   const totalEtapas = findings.length + photos.length;
   let done = 0;
@@ -754,64 +766,85 @@ export async function comporRti({
     const achadosDoPonto = findingsByPoint.get(point.id) ?? [];
 
     for (const finding of achadosDoPonto) {
-      numero += 1;
       const descricao = (prefixoPonto ? `${prefixoPonto}: ` : "") + finding.descricao;
       const situacaoAtual = finding.observacao?.trim() || null;
+      const existingNc = existingNcByFindingId.get(finding.id);
 
-      const { data: ncData, error: ncErr } = await supabase
-        .from("rti_ncs")
-        .insert({
-          report_id: reportId,
-          area_id: areaIdByNome.get(setorNome)!,
-          numero,
-          descricao,
-          recomendacao: finding.recomendacao,
-          prioridade: finding.prioridade,
-          responsavel: null,
-          status: "pendente",
-          progresso: 0,
-          prazo: null,
-          tipo_execucao: finding.tipo_execucao,
-          os_numero: null,
-          custo_planejado: null,
-          custo_realizado: null,
-          situacao_atual: situacaoAtual,
-          concluida_em: null,
-        })
-        .select().single();
-      if (ncErr) throw ncErr;
-      const nc = ncData as RtiNc;
-      ncsCriadas += 1;
-      done += 1;
-      onProgress?.("Criando NCs", done, totalEtapas);
-
-      // Fotos do ponto → evidência de constatação em cada NC (cópia independente)
-      for (const ph of fotosDoPonto) {
-        const ext = ph.file_path.split(".").pop() ?? "jpg";
-        const novoPath = `evidencias/${crypto.randomUUID()}.${ext}`;
-        const { error: cpErr } = await supabase.storage.from("rti-evidencias").copy(ph.file_path, novoPath);
-        if (cpErr) throw cpErr;
-        const { error: evErr } = await supabase.from("rti_nc_evidencias").insert({
-          nc_id: nc.id,
-          tipo: "constatacao",
-          file_path: novoPath,
-          file_name: ph.file_name,
-          mime_type: "image/jpeg",
-          descricao: ph.legenda,
-          created_by_name: actorName,
+      if (existingNc) {
+        // Achado já foi exportado anteriormente — atualiza NC e registra no histórico
+        const { error: updErr } = await supabase
+          .from("rti_ncs")
+          .update({ descricao, recomendacao: finding.recomendacao, prioridade: finding.prioridade, tipo_execucao: finding.tipo_execucao, situacao_atual: situacaoAtual })
+          .eq("id", existingNc.id);
+        if (updErr) throw updErr;
+        await supabase.from("rti_nc_historico").insert({
+          nc_id: existingNc.id,
+          tipo: "alteracao",
+          texto: `Achado revisado via recomposição da coleta em campo "${inspection.titulo}"`,
+          autor_nome: actorName,
         });
-        if (evErr) throw evErr;
-        fotosCopiadas += 1;
+        ncsAtualizadas += 1;
         done += 1;
-        onProgress?.("Copiando fotos", done, totalEtapas);
-      }
+        onProgress?.("Atualizando NCs", done, totalEtapas);
+      } else {
+        // Achado novo — cria NC e copia fotos
+        numero += 1;
+        const { data: ncData, error: ncErr } = await supabase
+          .from("rti_ncs")
+          .insert({
+            report_id: reportId,
+            area_id: areaIdByNome.get(setorNome)!,
+            numero,
+            descricao,
+            recomendacao: finding.recomendacao,
+            prioridade: finding.prioridade,
+            responsavel: null,
+            status: "pendente",
+            progresso: 0,
+            prazo: null,
+            tipo_execucao: finding.tipo_execucao,
+            os_numero: null,
+            custo_planejado: null,
+            custo_realizado: null,
+            situacao_atual: situacaoAtual,
+            concluida_em: null,
+            finding_id: finding.id,
+          })
+          .select().single();
+        if (ncErr) throw ncErr;
+        const nc = ncData as RtiNc;
+        ncsCriadas += 1;
+        done += 1;
+        onProgress?.("Criando NCs", done, totalEtapas);
 
-      await supabase.from("rti_nc_historico").insert({
-        nc_id: nc.id,
-        tipo: "alteracao",
-        texto: `NC composta a partir da coleta em campo "${inspection.titulo}" (${[setorNome, prefixoPonto].filter(Boolean).join(" › ")})`,
-        autor_nome: actorName,
-      });
+        // Fotos do ponto → evidência de constatação em cada NC (cópia independente)
+        for (const ph of fotosDoPonto) {
+          const ext = ph.file_path.split(".").pop() ?? "jpg";
+          const novoPath = `evidencias/${crypto.randomUUID()}.${ext}`;
+          const { error: cpErr } = await supabase.storage.from("rti-evidencias").copy(ph.file_path, novoPath);
+          if (cpErr) throw cpErr;
+          const { error: evErr } = await supabase.from("rti_nc_evidencias").insert({
+            nc_id: nc.id,
+            tipo: "constatacao",
+            file_path: novoPath,
+            file_name: ph.file_name,
+            mime_type: "image/jpeg",
+            descricao: ph.legenda,
+            created_by_name: actorName,
+          });
+          if (evErr) throw evErr;
+          fotosCopiadas += 1;
+          done += 1;
+          onProgress?.("Copiando fotos", done, totalEtapas);
+        }
+
+        await supabase.from("rti_nc_historico").insert({
+          nc_id: nc.id,
+          tipo: "alteracao",
+          texto: `NC composta a partir da coleta em campo "${inspection.titulo}" (${[setorNome, prefixoPonto].filter(Boolean).join(" › ")})`,
+          autor_nome: actorName,
+        });
+      }
     }
   }
 
