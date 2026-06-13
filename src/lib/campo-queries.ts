@@ -755,9 +755,8 @@ export async function comporRti({
 
     for (const finding of achadosDoPonto) {
       numero += 1;
-      const descricao =
-        (prefixoPonto ? `${prefixoPonto}: ` : "") + finding.descricao +
-        (finding.observacao?.trim() ? `\n\nObservação de campo: ${finding.observacao.trim()}` : "");
+      const descricao = (prefixoPonto ? `${prefixoPonto}: ` : "") + finding.descricao;
+      const situacaoAtual = finding.observacao?.trim() || null;
 
       const { data: ncData, error: ncErr } = await supabase
         .from("rti_ncs")
@@ -776,7 +775,7 @@ export async function comporRti({
           os_numero: null,
           custo_planejado: null,
           custo_realizado: null,
-          situacao_atual: null,
+          situacao_atual: situacaoAtual,
           concluida_em: null,
         })
         .select().single();

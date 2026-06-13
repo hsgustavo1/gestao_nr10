@@ -7,6 +7,7 @@ import { enqueue } from '@/sync/engine'
 import { modosPorCategoria } from '@/lib/campo'
 import { ArrowLeft, Camera, Plus, Trash2, X } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { generateId } from '@/lib/uuid'
 
 type Params = { id: string; nodeId: string }
 
@@ -26,6 +27,7 @@ function FindingForm({
   const [prioridade, setPrioridade] = useState(3)
   const [tipoExecucao, setTipoExecucao] = useState<RtiTipoExecucao>('os')
   const [recomendacao, setRecomendacao] = useState('')
+  const [observacao, setObservacao] = useState('')
   const [saving, setSaving] = useState(false)
 
   const porCategoria = modosPorCategoria(modos)
@@ -43,7 +45,7 @@ function FindingForm({
   async function handleSave() {
     if (!descricao.trim()) return
     setSaving(true)
-    const id = crypto.randomUUID()
+    const id = generateId()
     const now = new Date().toISOString()
     const finding: LocalFinding = {
       id,
@@ -53,7 +55,7 @@ function FindingForm({
       recomendacao: recomendacao.trim() || null,
       prioridade,
       tipo_execucao: tipoExecucao,
-      observacao: null,
+      observacao: observacao.trim() || null,
       created_at: now,
       updated_at: now,
       _synced: false,
@@ -158,6 +160,19 @@ function FindingForm({
             className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+            Observação
+          </label>
+          <textarea
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
+            rows={2}
+            placeholder="Observações adicionais de campo..."
+            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          />
+        </div>
       </div>
     </div>
   )
@@ -245,7 +260,7 @@ export default function PointCapture() {
     const file = e.target.files?.[0]
     if (!file || !nodeId) return
 
-    const photoId = crypto.randomUUID()
+    const photoId = generateId()
     const now = new Date().toISOString()
     const existingCount = (await db.photos.where('point_id').equals(nodeId).count())
     const photo: LocalPhoto = {

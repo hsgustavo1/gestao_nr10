@@ -4,7 +4,7 @@ import { db } from '@/db/dexie'
 import type { LocalNode } from '@/db/dexie'
 import { enqueue } from '@/sync/engine'
 import { filhosDoNo, labelDoTipo, proximoNivel } from '@/lib/campo'
-import { ArrowLeft, Pencil, Plus } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { generateId } from '@/lib/uuid'
 import { EditMetadataModal } from '@/components/EditMetadataModal'
@@ -185,14 +185,49 @@ export default function InspectionDetail() {
   const navigate = useNavigate()
   const [showAddSetor, setShowAddSetor] = useState(false)
   const [showEditMeta, setShowEditMeta] = useState(false)
+  const [reopening, setReopening] = useState(false)
 
   const inspection = useLiveQuery(() => (id ? db.inspections.get(id) : undefined), [id])
   const allNodes = useLiveQuery(
     () => (id ? db.nodes.where('inspection_id').equals(id).toArray() : []),
     [id],
   )
+  const pendingSyncCount = useLiveQuery(
+    async () => {
+      if (!id) return 0
+      const unsyncedPoints = await db.points
+        .where('inspection_id').equals(id)
+        .filter((p) => !p._synced)
+        .count()
+      if (unsyncedPoints > 0) return unsyncedPoints
+      const allPointIds = (await db.points
+        .where('inspection_id').equals(id)
+        .primaryKeys()) as string[]
+      if (allPointIds.length === 0) return 0
+      return db.findings
+        .where('point_id').anyOf(allPointIds)
+        .filter((f) => !f._synced)
+        .count()
+    },
+    [id],
+    0,
+  )
 
   const rootNodes = allNodes ? filhosDoNo(null, allNodes) : []
+
+  const isReadOnly = inspection?.status !== 'em_andamento'
+
+  async function handleReopen() {
+    if (!inspection || reopening) return
+    setReopening(true)
+    try {
+      const updated = { ...inspection, status: 'em_andamento' as const, _synced: false }
+      await db.inspections.put(updated)
+      await enqueue('inspections', 'update', updated, inspection.id)
+    } finally {
+      setReopening(false)
+    }
+  }
 
   if (inspection === undefined || allNodes === undefined) return null
   if (!inspection) {
@@ -225,31 +260,55 @@ export default function InspectionDetail() {
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setShowEditMeta(true)}
-          className="p-1.5 rounded-lg hover:bg-slate-800 shrink-0"
-          aria-label="Editar inspeção"
-        >
-          <Pencil className="h-4 w-4 text-slate-400" />
-        </button>
+        {isReadOnly ? (
+          <button
+            type="button"
+            onClick={handleReopen}
+            disabled={reopening}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 text-xs font-semibold disabled:opacity-40 shrink-0"
+            aria-label="Reabrir inspeção para edição"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reabrir
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowEditMeta(true)}
+            className="p-1.5 rounded-lg hover:bg-slate-800 shrink-0"
+            aria-label="Editar inspeção"
+          >
+            <Pencil className="h-4 w-4 text-slate-400" />
+          </button>
+        )}
         {!inspection._synced && (
           <span className="text-xs text-yellow-500 shrink-0">● não sync</span>
         )}
       </header>
+
+      {isReadOnly && (pendingSyncCount ?? 0) > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-900/30 border-b border-amber-700/40 text-amber-300 text-xs">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            {pendingSyncCount} alteração{(pendingSyncCount ?? 0) > 1 ? 'ões' : ''} pendente{(pendingSyncCount ?? 0) > 1 ? 's' : ''} não enviada{(pendingSyncCount ?? 0) > 1 ? 's' : ''} ao RTI. Reabra para sincronizar.
+          </span>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
             Estrutura
           </p>
-          <button
-            onClick={() => setShowAddSetor(true)}
-            className="text-xs text-blue-400 flex items-center gap-0.5"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Setor
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={() => setShowAddSetor(true)}
+              className="text-xs text-blue-400 flex items-center gap-0.5"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Setor
+            </button>
+          )}
         </div>
 
         {rootNodes.length === 0 && (
