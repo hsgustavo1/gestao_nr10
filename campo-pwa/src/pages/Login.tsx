@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { downloadAll } from '@/sync/engine'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -17,9 +16,6 @@ export default function Login() {
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) throw authError
-      if (data.user) {
-        await downloadAll()
-      }
       navigate('/', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao fazer login')
@@ -72,7 +68,7 @@ export default function Login() {
             disabled={loading}
             className="w-full rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 px-4 py-3 text-sm font-semibold transition-colors"
           >
-            {loading ? 'Entrando e sincronizando...' : 'Entrar'}
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 
