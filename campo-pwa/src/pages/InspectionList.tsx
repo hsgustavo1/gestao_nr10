@@ -2,9 +2,10 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate } from 'react-router-dom'
 import { db } from '@/db/dexie'
 import { supabase } from '@/lib/supabase'
-import { downloadAll, enqueue } from '@/sync/engine'
+import { downloadAll } from '@/sync/engine'
 import { Plus, LogOut, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
+import { CreateInspectionModal } from '@/components/CreateInspectionModal'
 
 const STATUS_LABEL: Record<string, string> = {
   em_andamento: 'Em andamento',
@@ -25,6 +26,7 @@ export default function InspectionList() {
     [],
   )
   const [refreshing, setRefreshing] = useState(false)
+  const [showModal, setShowModal] = useState(false)
 
   async function handleRefresh() {
     setRefreshing(true)
@@ -33,29 +35,6 @@ export default function InspectionList() {
     } finally {
       setRefreshing(false)
     }
-  }
-
-  async function handleNewInspection() {
-    const id = crypto.randomUUID()
-    const now = new Date().toISOString()
-    const inspection = {
-      id,
-      titulo: `Inspeção ${now.slice(0, 10)}`,
-      cliente: null,
-      local: null,
-      engenheiro: null,
-      data_inspecao: now,
-      status: 'em_andamento' as const,
-      report_id: null,
-      notes: null,
-      created_by_name: null,
-      created_at: now,
-      updated_at: now,
-      _synced: false,
-    }
-    await db.inspections.add(inspection)
-    await enqueue('inspections', 'insert', inspection, id)
-    navigate(`/inspecoes/${id}`)
   }
 
   async function handleLogout() {
@@ -126,13 +105,15 @@ export default function InspectionList() {
 
       <div className="p-4 border-t border-slate-800">
         <button
-          onClick={handleNewInspection}
+          onClick={() => setShowModal(true)}
           className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 px-4 py-3.5 font-semibold transition-colors"
         >
           <Plus className="h-5 w-5" />
           Nova inspeção
         </button>
       </div>
+
+      {showModal && <CreateInspectionModal onClose={() => setShowModal(false)} />}
     </div>
   )
 }
