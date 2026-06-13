@@ -37,6 +37,33 @@ async function downloadInspections(): Promise<void> {
   if (error) throw error
 
   const rows = (inspections ?? []).map((i) => ({ ...i, _synced: true as const }))
+
+  // Reconcile deletions: bulkPut is an upsert — it never removes rows, so remote
+  // deletes must be applied explicitly by diffing local vs. server IDs.
+  const remoteIds = new Set(rows.map((i) => i.id))
+  const localIds = (await db.inspections.toCollection().primaryKeys()) as string[]
+  const deletedIds = localIds.filter((id) => !remoteIds.has(id))
+
+  if (deletedIds.length > 0) {
+    // Collect point IDs first — findings/photos only carry point_id, not inspection_id
+    const orphanPointIds = (await db.points
+      .where('inspection_id')
+      .anyOf(deletedIds)
+      .primaryKeys()) as string[]
+
+    await Promise.all([
+      db.inspections.bulkDelete(deletedIds),
+      db.nodes.where('inspection_id').anyOf(deletedIds).delete(),
+      db.points.where('inspection_id').anyOf(deletedIds).delete(),
+      orphanPointIds.length > 0
+        ? db.findings.where('point_id').anyOf(orphanPointIds).delete()
+        : Promise.resolve(),
+      orphanPointIds.length > 0
+        ? db.photos.where('point_id').anyOf(orphanPointIds).delete()
+        : Promise.resolve(),
+    ])
+  }
+
   await db.inspections.bulkPut(rows)
 
   const activeIds = rows
