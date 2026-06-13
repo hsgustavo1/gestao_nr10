@@ -10,8 +10,9 @@ type Props = { onClose: () => void }
 
 export function CreateInspectionModal({ onClose }: Props) {
   const navigate = useNavigate()
-  const today = new Date().toISOString().slice(0, 10)
-  const [titulo, setTitulo] = useState(`Inspeção ${today}`)
+  const [titulo, setTitulo] = useState(
+    () => `Inspeção ${new Date().toISOString().slice(0, 10)}`
+  )
   const [cliente, setCliente] = useState('')
   const [local, setLocal] = useState('')
   const [engenheiro, setEngenheiro] = useState('')
@@ -19,10 +20,17 @@ export function CreateInspectionModal({ onClose }: Props) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const name = data.user?.user_metadata?.full_name ?? data.user?.email ?? ''
-      setEngenheiro(name)
-    })
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data } = await supabase.auth.getUser()
+        if (cancelled) return
+        setEngenheiro(data.user?.user_metadata?.full_name ?? data.user?.email ?? '')
+      } catch {
+        // Offline or unauthenticated — silently degrade; engenheiro stays ''
+      }
+    })()
+    return () => { cancelled = true }
   }, [])
 
   async function handleCreate() {
@@ -52,6 +60,7 @@ export function CreateInspectionModal({ onClose }: Props) {
       navigate(`/inspecoes/${id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar inspeção')
+    } finally {
       setSaving(false)
     }
   }
@@ -62,7 +71,7 @@ export function CreateInspectionModal({ onClose }: Props) {
       <div className="relative w-full bg-slate-900 rounded-t-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-lg">Nova inspeção</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-800">
+          <button type="button" aria-label="Fechar" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-800">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -109,6 +118,7 @@ export function CreateInspectionModal({ onClose }: Props) {
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
         <button
+          type="button"
           onClick={handleCreate}
           disabled={!titulo.trim() || saving}
           className="w-full flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-60 px-4 py-3.5 font-semibold transition-colors"
