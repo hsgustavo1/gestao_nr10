@@ -2,10 +2,10 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate } from 'react-router-dom'
 import { db } from '@/db/dexie'
 import { supabase } from '@/lib/supabase'
-import { downloadAll } from '@/sync/engine'
-import { Plus, LogOut, RefreshCw } from 'lucide-react'
+import { Plus, LogOut, RefreshCw, Cloud, CloudOff } from 'lucide-react'
 import { useState } from 'react'
 import { CreateInspectionModal } from '@/components/CreateInspectionModal'
+import { useSyncStatus } from '@/hooks/useSyncStatus'
 
 const STATUS_LABEL: Record<string, string> = {
   em_andamento: 'Em andamento',
@@ -25,17 +25,8 @@ export default function InspectionList() {
     () => db.inspections.orderBy('created_at').reverse().toArray(),
     [],
   )
-  const [refreshing, setRefreshing] = useState(false)
   const [showModal, setShowModal] = useState(false)
-
-  async function handleRefresh() {
-    setRefreshing(true)
-    try {
-      await downloadAll()
-    } finally {
-      setRefreshing(false)
-    }
-  }
+  const { syncState, lastSyncAt, pendingCount, sync, formatTimeAgo } = useSyncStatus()
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -44,24 +35,44 @@ export default function InspectionList() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-        <h1 className="font-semibold text-lg">Inspeções</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing || !navigator.onLine}
-            className="p-2 rounded-lg hover:bg-slate-800 disabled:opacity-40"
-            aria-label="Atualizar"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            onClick={handleLogout}
-            className="p-2 rounded-lg hover:bg-slate-800"
-            aria-label="Sair"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+      <header className="flex flex-col gap-1 px-4 py-3 border-b border-slate-800">
+        <div className="flex items-center justify-between">
+          <h1 className="font-semibold text-lg">Inspeções</h1>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={sync}
+              disabled={syncState === 'syncing' || !navigator.onLine}
+              className="p-2 rounded-lg hover:bg-slate-800 disabled:opacity-40"
+              aria-label="Atualizar"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="p-2 rounded-lg hover:bg-slate-800"
+              aria-label="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          {navigator.onLine ? (
+            <Cloud className="h-3 w-3 text-green-500" />
+          ) : (
+            <CloudOff className="h-3 w-3 text-slate-500" />
+          )}
+          <span>{formatTimeAgo(lastSyncAt)}</span>
+          {(pendingCount ?? 0) > 0 && (
+            <span className="ml-1 text-yellow-500">
+              · {pendingCount} pendente{(pendingCount ?? 0) > 1 ? 's' : ''}
+            </span>
+          )}
+          {syncState === 'error' && (
+            <span className="ml-1 text-red-400">· Erro ao sincronizar</span>
+          )}
         </div>
       </header>
 
@@ -105,6 +116,7 @@ export default function InspectionList() {
 
       <div className="p-4 border-t border-slate-800">
         <button
+          type="button"
           onClick={() => setShowModal(true)}
           className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 px-4 py-3.5 font-semibold transition-colors"
         >

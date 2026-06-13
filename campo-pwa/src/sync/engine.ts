@@ -1,3 +1,4 @@
+import { generateId } from '@/lib/uuid'
 import { supabase } from '@/lib/supabase'
 import { db } from '@/db/dexie'
 import type { SyncOperation, SyncQueueItem } from '@/db/dexie'
@@ -102,7 +103,7 @@ export async function enqueue(
   localId: string,
 ): Promise<void> {
   await db.sync_queue.add({
-    id: crypto.randomUUID(),
+    id: generateId(),
     operation,
     table,
     payload,
@@ -252,6 +253,7 @@ export function startConnectivityWatcher(): () => void {
   const flush = () => {
     if (navigator.onLine) {
       processQueue().catch(console.error)
+      downloadAll().catch(console.error)
     }
   }
   // Flush imediato ao montar: esvazia a fila criada offline quando o app
