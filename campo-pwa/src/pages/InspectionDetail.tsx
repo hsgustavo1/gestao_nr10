@@ -229,7 +229,7 @@ export default function InspectionDetail() {
           type="button"
           onClick={() => setShowEditMeta(true)}
           className="p-1.5 rounded-lg hover:bg-slate-800 shrink-0"
-          aria-label="Editar metadados"
+          aria-label="Editar inspeção"
         >
           <Pencil className="h-4 w-4 text-slate-400" />
         </button>

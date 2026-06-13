@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { db } from '@/db/dexie'
 import type { LocalInspection } from '@/db/dexie'
 import { enqueue } from '@/sync/engine'
@@ -15,6 +15,12 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
   const [local, setLocal] = useState(inspection.local ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
 
   async function handleSave() {
     if (!titulo.trim() || saving) return
@@ -41,9 +47,14 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full bg-slate-900 rounded-t-2xl p-6 space-y-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-meta-title"
+        className="relative w-full bg-slate-900 rounded-t-2xl p-6 space-y-4"
+      >
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">Editar inspeção</h2>
+          <h2 id="edit-meta-title" className="font-semibold text-lg">Editar inspeção</h2>
           <button type="button" aria-label="Fechar" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-800">
             <X className="h-5 w-5" />
           </button>
@@ -53,6 +64,7 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
           <label className="block">
             <span className="text-sm text-slate-400">Título *</span>
             <input
+              autoFocus
               type="text"
               value={titulo}
               onChange={e => setTitulo(e.target.value)}
@@ -85,7 +97,7 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
           type="button"
           onClick={handleSave}
           disabled={!titulo.trim() || saving}
-          className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 px-4 py-3.5 font-semibold transition-colors"
+          className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-60 px-4 py-3.5 font-semibold transition-colors"
         >
           {saving ? 'Salvando...' : 'Salvar'}
         </button>

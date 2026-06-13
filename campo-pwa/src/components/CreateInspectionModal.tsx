@@ -33,6 +33,12 @@ export function CreateInspectionModal({ onClose }: Props) {
     return () => { cancelled = true }
   }, [])
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
   async function handleCreate() {
     if (!titulo.trim() || saving) return
     setSaving(true)
@@ -68,9 +74,14 @@ export function CreateInspectionModal({ onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full bg-slate-900 rounded-t-2xl p-6 space-y-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-insp-title"
+        className="relative w-full bg-slate-900 rounded-t-2xl p-6 space-y-4"
+      >
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">Nova inspeção</h2>
+          <h2 id="create-insp-title" className="font-semibold text-lg">Nova inspeção</h2>
           <button type="button" aria-label="Fechar" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-800">
             <X className="h-5 w-5" />
           </button>
@@ -80,6 +91,7 @@ export function CreateInspectionModal({ onClose }: Props) {
           <label className="block">
             <span className="text-sm text-slate-400">Título *</span>
             <input
+              autoFocus
               type="text"
               value={titulo}
               onChange={e => setTitulo(e.target.value)}
