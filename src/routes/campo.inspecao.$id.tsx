@@ -28,7 +28,7 @@ import {
 } from "@/lib/rti";
 import {
   FIELD_INSPECTION_STATUS_BADGE, FIELD_INSPECTION_STATUS_LABELS,
-  NIVEL_LABEL, filhosDoNo, formatNormas, modosPorCategoria, nodePath, proximoNivel,
+  NIVEL_LABEL, NIVEL_LABEL_PLURAL, filhosDoNo, formatNormas, modosPorCategoria, nodePath, proximoNivel,
   type AchadoNovoUI, type FieldInspection, type FieldNode, type NivelArvore, type RtiModoFalha,
 } from "@/lib/campo";
 import {
@@ -206,7 +206,7 @@ function CampoInspecaoPage() {
         <div className="mt-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {NIVEL_LABEL[childLevel]}{children.length > 0 ? `s (${children.length})` : "s"}
+              {NIVEL_LABEL_PLURAL[childLevel]}{children.length > 0 ? ` (${children.length})` : ""}
             </h2>
             {isStaff && !jaImportada && (
               <div className="flex gap-1">

@@ -64,6 +64,12 @@ export const NIVEL_LABEL: Record<NivelArvore, string> = {
   componente: "Componente",
 };
 
+export const NIVEL_LABEL_PLURAL: Record<NivelArvore, string> = {
+  setor: "Setores",
+  ativo: "Ativos",
+  componente: "Componentes",
+};
+
 /** Próximo nível abaixo (setor→ativo→componente); componente é o último. */
 export function proximoNivel(nivel: NivelArvore | null): NivelArvore | null {
   if (nivel === null) return "setor";
