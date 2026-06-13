@@ -19,7 +19,8 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@gestao/campo-core": ["../packages/campo-core/src/index.ts"]
     }
   },
   "include": ["src"]

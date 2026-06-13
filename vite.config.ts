@@ -31,6 +31,7 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(process.cwd(), "src"),
+        "@gestao/campo-core": path.resolve(process.cwd(), "packages/campo-core/src/index.ts"),
       },
       // Deduplicação para evitar cópias duplicadas de React/TanStack.
       dedupe: [
