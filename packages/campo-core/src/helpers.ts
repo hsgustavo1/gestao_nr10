@@ -42,7 +42,7 @@ export function nodePath(nodeId: string, allNodes: FieldNode[]): FieldNode[] {
 }
 
 /** Filhos diretos de um nó (parentId null = setores na raiz), ordenados por ordem e nome. */
-export function filhosDoNo(parentId: string | null, allNodes: FieldNode[]): FieldNode[] {
+export function filhosDoNo<T extends FieldNode>(parentId: string | null, allNodes: T[]): T[] {
   return allNodes
     .filter((n) => n.parent_id === parentId)
     .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
