@@ -250,19 +250,21 @@ async function uploadPhoto(localId: string): Promise<void> {
 const SYNC_HEARTBEAT_MS = 30_000
 
 export function startConnectivityWatcher(): () => void {
-  const flush = () => {
+  const uploadFlush = () => {
+    if (navigator.onLine) processQueue().catch(console.error)
+  }
+  const fullFlush = () => {
     if (navigator.onLine) {
       processQueue().catch(console.error)
       downloadAll().catch(console.error)
     }
   }
-  // Flush imediato ao montar: esvazia a fila criada offline quando o app
-  // reabre já online (o evento `online` não dispara nesse caso).
-  flush()
-  window.addEventListener('online', flush)
-  const heartbeat = window.setInterval(flush, SYNC_HEARTBEAT_MS)
+  // Initial flush on mount + full download
+  fullFlush()
+  window.addEventListener('online', fullFlush)
+  const heartbeat = window.setInterval(uploadFlush, SYNC_HEARTBEAT_MS)
   return () => {
-    window.removeEventListener('online', flush)
+    window.removeEventListener('online', fullFlush)
     window.clearInterval(heartbeat)
   }
 }

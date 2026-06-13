@@ -26,7 +26,7 @@ export default function InspectionList() {
     [],
   )
   const [showModal, setShowModal] = useState(false)
-  const { syncState, lastSyncAt, pendingCount, sync, formatTimeAgo } = useSyncStatus()
+  const { syncState, lastSyncAt, pendingCount, sync, formatTimeAgo, isOnline } = useSyncStatus()
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -42,7 +42,7 @@ export default function InspectionList() {
             <button
               type="button"
               onClick={sync}
-              disabled={syncState === 'syncing' || !navigator.onLine}
+              disabled={syncState === 'syncing' || !isOnline}
               className="p-2 rounded-lg hover:bg-slate-800 disabled:opacity-40"
               aria-label="Atualizar"
             >
@@ -59,7 +59,7 @@ export default function InspectionList() {
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
-          {navigator.onLine ? (
+          {isOnline ? (
             <Cloud className="h-3 w-3 text-green-500" />
           ) : (
             <CloudOff className="h-3 w-3 text-slate-500" />
