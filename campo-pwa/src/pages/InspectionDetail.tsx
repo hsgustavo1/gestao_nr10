@@ -4,8 +4,10 @@ import { db } from '@/db/dexie'
 import type { LocalNode } from '@/db/dexie'
 import { enqueue } from '@/sync/engine'
 import { filhosDoNo, labelDoTipo, proximoNivel } from '@/lib/campo'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
+import { generateId } from '@/lib/uuid'
+import { EditMetadataModal } from '@/components/EditMetadataModal'
 
 type Params = { id: string }
 
@@ -31,7 +33,7 @@ function AddNodeModal({
   async function handleSave() {
     if (!nome.trim()) return
     setSaving(true)
-    const id = crypto.randomUUID()
+    const id = generateId()
     const now = new Date().toISOString()
     const siblings = filhosDoNo(parentId, allNodes)
     const node = {
@@ -148,7 +150,7 @@ function NodeRow({
 function AddPointButton({ nodeId, inspectionId }: { nodeId: string; inspectionId: string }) {
   const navigate = useNavigate()
   async function handleAdd() {
-    const id = crypto.randomUUID()
+    const id = generateId()
     const now = new Date().toISOString()
     const existing = await db.points.where('node_id').equals(nodeId).count()
     const point = {
@@ -182,6 +184,7 @@ export default function InspectionDetail() {
   const { id } = useParams<Params>()
   const navigate = useNavigate()
   const [showAddSetor, setShowAddSetor] = useState(false)
+  const [showEditMeta, setShowEditMeta] = useState(false)
 
   const inspection = useLiveQuery(() => (id ? db.inspections.get(id) : undefined), [id])
   const allNodes = useLiveQuery(
@@ -207,6 +210,7 @@ export default function InspectionDetail() {
     <div className="flex flex-col min-h-full">
       <header className="flex items-center gap-3 px-4 py-3 border-b border-slate-800">
         <button
+          type="button"
           onClick={() => navigate('/inspecoes')}
           className="p-1 rounded-lg hover:bg-slate-800"
           aria-label="Voltar"
@@ -215,12 +219,22 @@ export default function InspectionDetail() {
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="font-semibold truncate">{inspection.titulo}</h1>
-          {inspection.cliente && (
-            <p className="text-xs text-slate-400 truncate">{inspection.cliente}</p>
+          {(inspection.cliente || inspection.local) && (
+            <p className="text-xs text-slate-400 truncate">
+              {[inspection.cliente, inspection.local].filter(Boolean).join(' · ')}
+            </p>
           )}
         </div>
+        <button
+          type="button"
+          onClick={() => setShowEditMeta(true)}
+          className="p-1.5 rounded-lg hover:bg-slate-800 shrink-0"
+          aria-label="Editar metadados"
+        >
+          <Pencil className="h-4 w-4 text-slate-400" />
+        </button>
         {!inspection._synced && (
-          <span className="text-xs text-yellow-500 shrink-0">● não sincronizado</span>
+          <span className="text-xs text-yellow-500 shrink-0">● não sync</span>
         )}
       </header>
 
@@ -255,6 +269,12 @@ export default function InspectionDetail() {
           parentId={null}
           allNodes={allNodes}
           onClose={() => setShowAddSetor(false)}
+        />
+      )}
+      {showEditMeta && (
+        <EditMetadataModal
+          inspection={inspection}
+          onClose={() => setShowEditMeta(false)}
         />
       )}
     </div>
