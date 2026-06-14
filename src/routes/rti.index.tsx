@@ -93,8 +93,7 @@ function RtiDashboardPage() {
     }
     return [...abertas.entries()]
       .map(([nome, count]) => ({ nome, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 12);
+      .sort((a, b) => b.count - a.count);
   }, [ncs, areas]);
 
   const responsavelChart = useMemo(() => {
