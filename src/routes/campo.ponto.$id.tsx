@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Camera, ImagePlus, ListChecks, MapPin, Pencil, Plus, Search, Trash2,
+  AlertTriangle, ArrowLeft, Camera, ImagePlus, ListChecks, Lock, MapPin, Pencil, Plus, Search, Trash2,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
@@ -28,8 +28,8 @@ import {
 } from "@/lib/campo";
 import {
   uploadFieldPhoto, useAddFieldPhoto, useDeleteFieldFinding, useDeleteFieldPhoto,
-  useFieldFindings, useFieldNodes, useFieldPoint, useModosFalha, usePointPhotos,
-  useUpdateFieldPhoto, useUpsertFieldFinding,
+  useFieldFindings, useFieldInspection, useFieldNodes, useFieldPoint, useModosFalha,
+  usePointPhotos, useUpdateFieldPhoto, useUpsertFieldFinding,
 } from "@/lib/campo-queries";
 import { rtiFileUrl } from "@/lib/rti-queries";
 
@@ -42,9 +42,12 @@ function CampoPontoPage() {
   const { id } = Route.useParams();
   const { isStaff } = useAuth();
   const { data: point, isLoading } = useFieldPoint(id);
+  const { data: inspection } = useFieldInspection(point?.inspection_id);
   const { data: nodes = [] } = useFieldNodes(point?.inspection_id);
   const { data: findings = [] } = useFieldFindings(id);
   const { data: photos = [] } = usePointPhotos(id);
+
+  const canEdit = isStaff && inspection?.status !== "importada";
 
   const [modoSheetOpen, setModoSheetOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
@@ -116,12 +119,20 @@ function CampoPontoPage() {
         {point.observacoes && <p className="mt-1 text-xs text-muted-foreground">{point.observacoes}</p>}
       </div>
 
+      {/* Banner: inspeção bloqueada */}
+      {isStaff && inspection?.status === "importada" && (
+        <div className="mt-4 flex items-start gap-2 rounded-md border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700">
+          <Lock className="h-4 w-4 shrink-0 mt-0.5 text-slate-500" />
+          <span>Esta inspeção está com RTI composto. Reabra a inspeção para editar os achados e fotos.</span>
+        </div>
+      )}
+
       {/* Fotos do ponto */}
       <Card className="mt-4">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold inline-flex items-center gap-1.5"><Camera className="h-4 w-4 text-primary" /> Fotos ({photos.length})</h2>
-            {isStaff && (
+            {canEdit && (
               <>
                 <input ref={cameraRef} type="file" accept="image/*,application/pdf" capture="environment" className="hidden" onChange={(e) => onFiles(e.target.files)} />
                 <Button type="button" size="sm" variant="outline" disabled={uploading} onClick={() => cameraRef.current?.click()}>
@@ -146,7 +157,7 @@ function CampoPontoPage() {
                       <span className="text-[9px] text-muted-foreground line-clamp-2 break-all">{ph.file_name}</span>
                     </a>
                   )}
-                  {isStaff && (
+                  {canEdit && (
                     <button type="button" onClick={() => removePhoto(ph)} className="absolute top-1 right-1 hidden group-hover:grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white hover:bg-red-600" title="Excluir foto">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -158,10 +169,21 @@ function CampoPontoPage() {
         </CardContent>
       </Card>
 
+      {/* Aviso: foto sem modo de falha */}
+      {photos.length > 0 && findings.length === 0 && (
+        <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+          <span>
+            Este ponto tem {photos.length === 1 ? "1 foto" : `${photos.length} fotos`} mas nenhum modo de falha registrado.
+            Adicione ao menos um modo de falha para que este ponto seja incluído no RTI.
+          </span>
+        </div>
+      )}
+
       {/* Modos de falha (achados) */}
       <div className="mt-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold inline-flex items-center gap-1.5"><ListChecks className="h-4 w-4 text-primary" /> Modos de falha ({findings.length})</h2>
-        {isStaff && (
+        {canEdit && (
           <div className="flex gap-1">
             <Button size="sm" variant="outline" onClick={() => setModoSheetOpen(true)}><Plus className="h-4 w-4" /> Da base</Button>
             <Button size="sm" variant="ghost" onClick={() => { setEditFinding(null); setManualOpen(true); }}>Manual</Button>
@@ -184,7 +206,7 @@ function CampoPontoPage() {
                   <p className="mt-1 text-sm leading-snug whitespace-pre-wrap">{f.descricao}</p>
                   {f.recomendacao && <p className="mt-1 text-[11px] text-muted-foreground leading-snug"><span className="font-semibold">Recomendação:</span> {f.recomendacao}</p>}
                 </div>
-                {isStaff && (
+                {canEdit && (
                   <div className="flex shrink-0 gap-1">
                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditFinding(f); setManualOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                     <DeleteFindingButton finding={f} pointId={id} />
@@ -196,14 +218,14 @@ function CampoPontoPage() {
         )}
       </div>
 
-      {isStaff && modoSheetOpen && (
+      {canEdit && modoSheetOpen && (
         <ModosFalhaSheet pointId={id} jaSelecionados={new Set(findings.map((f) => f.modo_falha_id).filter(Boolean) as string[])} onOpenChange={(o) => { if (!o) setModoSheetOpen(false); }} />
       )}
-      {isStaff && manualOpen && (
+      {canEdit && manualOpen && (
         <FindingDialog pointId={id} existing={editFinding} onOpenChange={(o) => { if (!o) { setManualOpen(false); setEditFinding(null); } }} />
       )}
       {preview && (
-        <PhotoLightbox photo={preview} pointId={id} canEdit={isStaff} onClose={() => setPreview(null)} />
+        <PhotoLightbox photo={preview} pointId={id} canEdit={canEdit} onClose={() => setPreview(null)} />
       )}
     </PageShell>
   );

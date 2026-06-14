@@ -479,6 +479,8 @@ export function useDeleteFieldFinding() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (finding: { id: string; point_id: string }) => {
+      // Unlink rti_ncs that reference this finding before deleting to avoid FK violation.
+      await supabase.from("rti_ncs").update({ finding_id: null }).eq("finding_id", finding.id);
       const { error } = await supabase.from("field_findings").delete().eq("id", finding.id);
       if (error) throw error;
       return finding;
