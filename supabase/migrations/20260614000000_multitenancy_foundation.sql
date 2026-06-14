@@ -248,14 +248,16 @@ $$;
 -- Evita quebrar os INSERTs existentes do app ao tornar org_id NOT NULL.
 -- Se o usuário pertence a exatamente UMA org e não informou org_id, preenche
 -- automaticamente. Se pertence a várias, o app DEVE informar org_id (senão falha).
+-- NOTA: não usar min(org_id) — o Postgres não tem agregado min() para uuid (erro 42883).
 CREATE OR REPLACE FUNCTION public.fn_default_org_id()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE _cnt int; _org uuid;
 BEGIN
   IF NEW.org_id IS NULL AND auth.uid() IS NOT NULL THEN
-    SELECT count(*), min(org_id) INTO _cnt, _org
-      FROM public.org_memberships WHERE user_id = auth.uid();
+    SELECT count(*) INTO _cnt FROM public.org_memberships WHERE user_id = auth.uid();
     IF _cnt = 1 THEN
+      SELECT org_id INTO _org FROM public.org_memberships
+        WHERE user_id = auth.uid() LIMIT 1;
       NEW.org_id := _org;
     END IF;
   END IF;
