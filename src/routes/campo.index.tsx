@@ -168,19 +168,20 @@ function ExcluirInspecaoDialog({
     try {
       const finalScope: ExcluirScope = hasRti ? scope : "campo";
 
-      if (finalScope === "campo" || finalScope === "ambos") {
-        await deleteInsp.mutateAsync(inspection.id);
+      // RTI must be deleted before campo: rti_ncs.finding_id → field_findings.id
+      // Deleting campo first removes field_findings and PostgreSQL blocks rti_ncs deletion.
+      if ((finalScope === "rti" || finalScope === "ambos") && inspection.report_id) {
+        // Clear FK (field_inspections.report_id → rti_reports.id) before deleting the report.
+        await supabase
+          .from("field_inspections")
+          .update({ report_id: null, status: "em_andamento" })
+          .eq("id", inspection.id);
+        await qc.invalidateQueries({ queryKey: ["field_inspections"] });
+        await deleteRti.mutateAsync(inspection.report_id);
       }
 
-      if ((finalScope === "rti" || finalScope === "ambos") && inspection.report_id) {
-        if (finalScope === "rti") {
-          await supabase
-            .from("field_inspections")
-            .update({ report_id: null, status: "em_andamento" })
-            .eq("id", inspection.id);
-          await qc.invalidateQueries({ queryKey: ["field_inspections"] });
-        }
-        await deleteRti.mutateAsync(inspection.report_id);
+      if (finalScope === "campo" || finalScope === "ambos") {
+        await deleteInsp.mutateAsync(inspection.id);
       }
 
       toast.success("Excluído com sucesso.");
