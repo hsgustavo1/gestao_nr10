@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
-  AlertTriangle, ClipboardList, FileSpreadsheet, ShieldAlert, Wallet,
+  AlertTriangle, ClipboardList, FileSpreadsheet, LayoutList, ShieldAlert, Wallet,
 } from "lucide-react";
 import {
   Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -158,6 +158,11 @@ function RtiDashboardPage() {
               <Link to="/rti/plano" search={{ report: activeReport.id }}>
                 <ClipboardList className="h-4 w-4" /> Plano de Ação
               </Link>
+            </Button>
+          )}
+          {isStaff && (
+            <Button asChild variant="outline">
+              <Link to="/rti/gestao"><LayoutList className="h-4 w-4" /> Gestão RTI</Link>
             </Button>
           )}
           {isStaff && (

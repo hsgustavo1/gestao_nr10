@@ -111,6 +111,7 @@ export function SiteHeader() {
                   <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>Modos de falha</MobileNavLink>
                   {isStaff && <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>Importar planilha</MobileNavLink>}
                   {isStaff && <MobileNavLink to="/rti/evidencias" onNav={() => setMenuOpen(false)}>Importar evidências</MobileNavLink>}
+                  {isStaff && <MobileNavLink to="/rti/gestao" onNav={() => setMenuOpen(false)}>Gestão de Relatórios RTI</MobileNavLink>}
                 </MobileNavGroup>
 
                 <MobileNavGroup
@@ -381,6 +382,9 @@ function RTIDropdown() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/rti/evidencias" className="cursor-pointer">Importar evidências em massa</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/rti/gestao" className="cursor-pointer">Gestão de Relatórios RTI</Link>
             </DropdownMenuItem>
           </>
         )}
