@@ -2,8 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Camera, ChevronRight, FileCheck2, FolderTree, Home, ImagePlus,
-  ListChecks, MapPin, Plus, Search, Sparkles, Trash2, Upload, X,
+  AlertTriangle, ArrowLeft, Camera, ChevronRight, FileCheck2, FolderTree, Home, ImagePlus,
+  ListChecks, MapPin, Plus, RotateCcw, Search, Sparkles, Trash2, Upload, X,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,9 @@ function CampoInspecaoPage() {
   const [addNodeOpen, setAddNodeOpen] = useState(false);
   const [cargaOpen, setCargaOpen] = useState(false);
   const [comporOpen, setComporOpen] = useState(false);
+  const [reopening, setReopening] = useState(false);
+
+  const upsertInspection = useUpsertFieldInspection();
 
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const path = useMemo(
@@ -125,6 +128,19 @@ function CampoInspecaoPage() {
   }
 
   const jaImportada = inspection.status === "importada";
+  const foiReaberta = !jaImportada && !!inspection.report_id;
+
+  async function handleReopen() {
+    if (!inspection || reopening) return;
+    setReopening(true);
+    try {
+      await upsertInspection.mutateAsync({ id: inspection.id, titulo: inspection.titulo, status: "em_andamento", report_id: inspection.report_id });
+    } catch (err) {
+      toast.error("Falha ao reabrir: " + (err as Error).message);
+    } finally {
+      setReopening(false);
+    }
+  }
 
   return (
     <PageShell>
@@ -146,7 +162,7 @@ function CampoInspecaoPage() {
         </div>
         {isStaff && !jaImportada && totalAchados > 0 && (
           <Button size="sm" variant="outline" onClick={() => setComporOpen(true)}>
-            <Sparkles className="h-4 w-4" /> Compor RTI
+            <Sparkles className="h-4 w-4" /> {foiReaberta ? "Recompor RTI" : "Compor RTI"}
           </Button>
         )}
       </div>
@@ -157,9 +173,25 @@ function CampoInspecaoPage() {
             <div className="text-sm text-emerald-800 inline-flex items-center gap-2">
               <FileCheck2 className="h-4 w-4 shrink-0" /> Coleta já composta no Plano de Ação RTI.
             </div>
-            <Button asChild size="sm" variant="outline">
-              <Link to="/rti/plano" search={{ report: inspection.report_id }}>Abrir no Plano <ChevronRight className="h-4 w-4" /></Link>
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {isStaff && (
+                <Button size="sm" variant="ghost" className="text-amber-700 hover:text-amber-800 hover:bg-amber-50" onClick={handleReopen} disabled={reopening}>
+                  <RotateCcw className="h-3.5 w-3.5" /> {reopening ? "Reabrindo..." : "Reabrir"}
+                </Button>
+              )}
+              <Button asChild size="sm" variant="outline">
+                <Link to="/rti/plano" search={{ report: inspection.report_id }}>Abrir no Plano <ChevronRight className="h-4 w-4" /></Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {foiReaberta && (
+        <Card className="mt-3 border-amber-300 bg-amber-50/50">
+          <CardContent className="p-3 flex items-center gap-2 text-sm text-amber-800">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+            <span>Inspeção reaberta. Edite os pontos e <strong>Recompor RTI</strong> para atualizar as NCs existentes.</span>
           </CardContent>
         </Card>
       )}
@@ -308,7 +340,7 @@ function CampoInspecaoPage() {
         <CargaEstruturaDialog inspectionId={id} onOpenChange={(o) => { if (!o) setCargaOpen(false); }} />
       )}
       {isStaff && comporOpen && (
-        <ComporRtiDialog inspection={inspection} totalAchados={totalAchados} onOpenChange={(o) => { if (!o) setComporOpen(false); }} />
+        <ComporRtiDialog inspection={inspection} totalAchados={totalAchados} defaultDestino={inspection.report_id ?? undefined} onOpenChange={(o) => { if (!o) setComporOpen(false); }} />
       )}
     </PageShell>
   );
@@ -786,10 +818,11 @@ function CargaEstruturaDialog({ inspectionId, onOpenChange }: { inspectionId: st
 // ── Compor RTI ───────────────────────────────────────────────────────────────
 
 function ComporRtiDialog({
-  inspection, totalAchados, onOpenChange,
+  inspection, totalAchados, defaultDestino, onOpenChange,
 }: {
   inspection: FieldInspection;
   totalAchados: number;
+  defaultDestino?: string;
   onOpenChange: (o: boolean) => void;
 }) {
   const navigate = useNavigate();
@@ -801,7 +834,7 @@ function ComporRtiDialog({
     (user?.user_metadata?.display_name as string | undefined) ||
     user?.email?.split("@")[0] || null;
 
-  const [destino, setDestino] = useState<string>("novo");
+  const [destino, setDestino] = useState<string>(defaultDestino ?? "novo");
   const [busy, setBusy] = useState(false);
   const [progresso, setProgresso] = useState<{ etapa: string; done: number; total: number } | null>(null);
 
@@ -829,8 +862,14 @@ function ComporRtiDialog({
     <Dialog open onOpenChange={(o) => { if (!busy) onOpenChange(o); }}>
       <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 leading-tight"><Sparkles className="h-5 w-5 shrink-0 text-primary" /> Compor RTI</DialogTitle>
-          <DialogDescription>Cada achado vira uma NC (área = Setor); as fotos do ponto viram evidência de constatação.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2 leading-tight">
+            <Sparkles className="h-5 w-5 shrink-0 text-primary" /> {defaultDestino ? "Recompor RTI" : "Compor RTI"}
+          </DialogTitle>
+          <DialogDescription>
+            {defaultDestino
+              ? "Achados novos viram NCs; achados já exportados atualizam a NC existente e registram histórico."
+              : "Cada achado vira uma NC (área = Setor); as fotos do ponto viram evidência de constatação."}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="rounded-md border bg-muted/30 p-3 text-sm"><strong className="tabular-nums">{totalAchados}</strong> achado{totalAchados !== 1 ? "s" : ""} serão convertidos em NCs.</div>
