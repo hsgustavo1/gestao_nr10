@@ -69,13 +69,21 @@ camada de revenda entra já no MVP.
 - RLS reescrita: `USING(true)` → escopo por org; `profiles` restrito a co-membros;
   `fn_audit` agora grava `org_id`; `compliance_snapshots` único por (org, mês).
 
-### Passos manuais pendentes (do usuário)
-1. Aplicar a migração no SQL Editor do Supabase.
-2. Definir-se como platform admin:
-   `INSERT INTO public.platform_admins (user_id) VALUES ('<seu-auth-uid>');`
-3. Conferir backfill: nenhuma linha com `org_id IS NULL` nas tabelas de domínio.
-4. Conectar o PWA ao Vercel (ver `docs/DEPLOY.md`).
-5. Rotacionar chaves do Supabase (estavam no histórico).
+### Estado de implantação (2026-06-14)
+- ✅ Migração APLICADA no Supabase. Verificada ponta a ponta: PWA no Vercel
+  (`campo-pwa.vercel.app`), login, criação de inspeção, sync campo→nuvem→app
+  principal e **upload de foto** funcionando sob a fundação multi-tenant.
+- ✅ Platform admin definido (usuário hsgustavo1).
+- ⚠️ Patch pós-aplicação já no repo (commit `eaf3b86`): `fn_default_org_id` não
+  pode usar `min(uuid)` (Postgres não tem esse agregado → erro 42883 quebrava
+  todos os inserts `field_*`). Se for reaplicar a migração do zero, o arquivo já
+  está corrigido.
+
+### Passos manuais ainda pendentes (do usuário)
+1. ⏳ Rotacionar as chaves do Supabase (estiveram no histórico do git).
+2. ⏳ Reprocessar/limpar itens "dead-letter" da fila do PWA que falharam ANTES do
+   patch (a inspeção que "piscou" e fotos antigas). Itens novos sincronizam ok.
+3. (Opcional) Migrar o app principal para o Vercel — hoje continua na Cloudflare.
 
 ## Próximas fases (ordem sugerida)
 
