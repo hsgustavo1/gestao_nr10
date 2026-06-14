@@ -56,6 +56,7 @@ export function CreateInspectionModal({ onClose }: Props) {
         status: 'em_andamento' as const,
         report_id: null,
         notes: null,
+        arquivada_campo: false,
         created_by_name: engenheiro || null,
         created_at: now,
         updated_at: now,

@@ -4,8 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
+// Base configurável: no Vercel (site separado) use VITE_PWA_BASE=/ ; local/sub-path mantém '/campo-pwa/'.
+const PWA_BASE = process.env.VITE_PWA_BASE ?? '/campo-pwa/'
+
 export default defineConfig({
-  base: '/campo-pwa/',
+  base: PWA_BASE,
   server: {
     port: parseInt(process.env.PORT ?? '8082'),
     host: true,
@@ -30,8 +33,8 @@ export default defineConfig({
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/campo-pwa/',
-        scope: '/campo-pwa/',
+        start_url: PWA_BASE,
+        scope: PWA_BASE,
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LogIn, LogOut, Eye, Menu, ChevronDown, BellRing } from "lucide-react";
+import { LogIn, LogOut, Eye, Menu, ChevronDown, BellRing, Building2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useVencimentosBadge } from "@/lib/vencimentos";
@@ -162,6 +162,7 @@ export function SiteHeader() {
 
         {/* Pill usuário ou botão Entrar */}
         <div className="flex items-center gap-2 shrink-0">
+          <OrgSwitcher />
           {user ? (
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex items-center gap-2.5 rounded-full bg-white/8 pr-3 pl-1 py-1 ring-1 ring-white/10">
@@ -213,6 +214,47 @@ export function SiteHeader() {
         </div>
       </div>
     </header>
+  );
+}
+
+/** Seletor de organização ativa. Só aparece quando o usuário tem 2+ orgs
+ * (consultor entre clientes, empresa-mãe entre unidades). Antes da migração
+ * de tenancy estar aplicada/semeada, `orgs` fica vazio e este componente
+ * não renderiza nada — comportamento atual preservado. */
+function OrgSwitcher() {
+  const { orgs, currentOrg, setCurrentOrg } = useAuth();
+  if (orgs.length <= 1) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded-md bg-white/8 ring-1 ring-white/10 px-3 py-1.5 text-xs font-medium text-white/85 hover:bg-white/15 transition-colors"
+        >
+          <Building2 className="h-3.5 w-3.5" />
+          <span className="max-w-[120px] sm:max-w-[160px] truncate">
+            {currentOrg?.nome ?? "Selecionar"}
+          </span>
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[220px]">
+        {orgs.map((o) => (
+          <DropdownMenuItem
+            key={o.id}
+            onClick={() => setCurrentOrg(o.id)}
+            className="cursor-pointer gap-2"
+          >
+            <span className="flex-1 truncate">{o.nome}</span>
+            {o.id === currentOrg?.id && (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                atual
+              </span>
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
