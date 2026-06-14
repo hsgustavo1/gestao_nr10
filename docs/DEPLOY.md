@@ -13,9 +13,11 @@ e base configurável em [`campo-pwa/vite.config.ts`](../campo-pwa/vite.config.ts
    - Build Command: `npm run build` · Output: `dist` (já no `vercel.json`).
 4. **Environment Variables** (Settings → Environment Variables):
    - `VITE_SUPABASE_URL` = URL do seu projeto Supabase
-   - `VITE_SUPABASE_PUBLISHABLE_KEY` = chave pública (anon)
+   - `VITE_SUPABASE_ANON_KEY` = chave pública (anon) — **nome usado pelo PWA**
+     (o código também aceita `VITE_SUPABASE_PUBLISHABLE_KEY` como alternativa).
    - `VITE_PWA_BASE` = `/`  ← essencial: faz o PWA rodar na raiz do domínio
-     próprio (sem isso ele assume `/campo-pwa/` do setup local).
+     próprio (sem isso ele assume `/campo-pwa/` do setup local). Também corrige o
+     `basename` do router (que deriva dessa base).
 5. **Deploy.** A URL pública gerada já permite instalar o PWA no celular e testar
    coleta offline + sync, sem depender de localhost.
 

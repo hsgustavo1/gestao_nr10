@@ -9,11 +9,15 @@ import PointCapture from '@/pages/PointCapture'
 import Layout from '@/components/Layout'
 import './index.css'
 
+// Deriva o basename da base do Vite (VITE_PWA_BASE). No Vercel (base '/') vira '/';
+// localmente em sub-path ('/campo-pwa/') vira '/campo-pwa'.
+const routerBase = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
 function App() {
   useRegisterSW({ immediate: true })
 
   return (
-    <BrowserRouter basename="/campo-pwa">
+    <BrowserRouter basename={routerBase}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Layout />}>
