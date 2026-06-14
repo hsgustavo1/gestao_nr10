@@ -16,8 +16,9 @@ export default function Layout() {
   }, [navigate])
 
   useEffect(() => {
+    if (!checked) return
     return startConnectivityWatcher()
-  }, [])
+  }, [checked])
 
   if (!checked) return null
 

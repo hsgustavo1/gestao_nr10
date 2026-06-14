@@ -3,9 +3,20 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { db } from '@/db/dexie'
 import type { LocalNode } from '@/db/dexie'
 import { enqueue } from '@/sync/engine'
-import { filhosDoNo, labelDoTipo, proximoNivel } from '@/lib/campo'
-import { AlertTriangle, ArrowLeft, Pencil, Plus, RotateCcw } from 'lucide-react'
-import { useState } from 'react'
+import { filhosDoNo, labelDoTipo, nodePath, proximoNivel } from '@/lib/campo'
+import {
+  AlertTriangle,
+  Archive,
+  ArrowLeft,
+  Camera,
+  ChevronRight,
+  FolderTree,
+  Home,
+  Pencil,
+  Plus,
+  RotateCcw,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { generateId } from '@/lib/uuid'
 import { EditMetadataModal } from '@/components/EditMetadataModal'
 
@@ -61,20 +72,20 @@ function AddNodeModal({
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           placeholder={`Nome do ${labelDoTipo(nivel).toLowerCase()}`}
-          className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
         />
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-slate-600 py-2.5 text-sm"
+            className="flex-1 rounded-lg border border-slate-600 py-3 text-sm"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving || !nome.trim()}
-            className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 py-2.5 text-sm font-semibold"
+            className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 py-3 text-sm font-semibold"
           >
             Salvar
           </button>
@@ -84,114 +95,45 @@ function AddNodeModal({
   )
 }
 
-function NodeRow({
-  node,
-  allNodes,
-  inspectionId,
-}: {
-  node: LocalNode
-  allNodes: LocalNode[]
-  inspectionId: string
-}) {
-  const [showAdd, setShowAdd] = useState(false)
-  const children = filhosDoNo(node.id, allNodes)
-  const nextLevel = proximoNivel(node.nivel)
-  const points = useLiveQuery(
-    () => db.points.where('node_id').equals(node.id).sortBy('ordem'),
-    [node.id],
-  )
-
-  return (
-    <div className="pl-4 border-l border-slate-700 mt-2">
-      <div className="flex items-center justify-between py-1">
-        <span className="text-sm font-medium">{node.nome}</span>
-        {nextLevel && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="text-xs text-blue-400 flex items-center gap-0.5"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {labelDoTipo(nextLevel)}
-          </button>
-        )}
-      </div>
-
-      {node.nivel === 'componente' && (
-        <div className="space-y-1 mt-1 mb-2">
-          {points?.map((pt) => (
-            <Link
-              key={pt.id}
-              to={`/inspecoes/${inspectionId}/ponto/${pt.id}`}
-              className="block text-xs rounded-lg bg-slate-700 px-3 py-2 text-slate-300 active:bg-slate-600"
-            >
-              {pt.titulo ?? 'Ponto sem título'}
-            </Link>
-          ))}
-          <AddPointButton nodeId={node.id} inspectionId={inspectionId} />
-        </div>
-      )}
-
-      {children.map((child) => (
-        <NodeRow key={child.id} node={child} allNodes={allNodes} inspectionId={inspectionId} />
-      ))}
-
-      {showAdd && (
-        <AddNodeModal
-          inspectionId={inspectionId}
-          parentId={node.id}
-          allNodes={allNodes}
-          onClose={() => setShowAdd(false)}
-        />
-      )}
-    </div>
-  )
-}
-
-function AddPointButton({ nodeId, inspectionId }: { nodeId: string; inspectionId: string }) {
-  const navigate = useNavigate()
-  async function handleAdd() {
-    const id = generateId()
-    const now = new Date().toISOString()
-    const existing = await db.points.where('node_id').equals(nodeId).count()
-    const point = {
-      id,
-      inspection_id: inspectionId,
-      node_id: nodeId,
-      titulo: null,
-      observacoes: null,
-      ordem: existing,
-      created_at: now,
-      updated_at: now,
-      _synced: false,
-    }
-    await db.points.add(point)
-    await enqueue('points', 'insert', point, id)
-    navigate(`/inspecoes/${inspectionId}/ponto/${id}`)
-  }
-
-  return (
-    <button
-      onClick={handleAdd}
-      className="text-xs text-green-400 flex items-center gap-0.5 mt-1"
-    >
-      <Plus className="h-3.5 w-3.5" />
-      Novo ponto
-    </button>
-  )
-}
-
 export default function InspectionDetail() {
   const { id } = useParams<Params>()
   const navigate = useNavigate()
-  const [showAddSetor, setShowAddSetor] = useState(false)
+  // Nível atual persistido por inspeção: ao voltar do PointCapture (remontagem) o usuário
+  // permanece no nível que estava tratando, em vez de cair na raiz (Setores).
+  const [currentNodeId, setCurrentNodeId] = useState<string | null>(() =>
+    id ? sessionStorage.getItem(`campo-node-${id}`) : null,
+  )
+  const [showAddNode, setShowAddNode] = useState(false)
   const [showEditMeta, setShowEditMeta] = useState(false)
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
   const [reopening, setReopening] = useState(false)
+  const [addingPoint, setAddingPoint] = useState(false)
+  const [archiving, setArchiving] = useState(false)
 
   const inspection = useLiveQuery(() => (id ? db.inspections.get(id) : undefined), [id])
   const allNodes = useLiveQuery(
     () => (id ? db.nodes.where('inspection_id').equals(id).toArray() : []),
     [id],
   )
+  const allPoints =
+    useLiveQuery(
+      () => (id ? db.points.where('inspection_id').equals(id).toArray() : []),
+      [id],
+    ) ?? []
+  const allFindings =
+    useLiveQuery(
+      async () => {
+        if (!id) return []
+        const pointIds = (await db.points
+          .where('inspection_id')
+          .equals(id)
+          .primaryKeys()) as string[]
+        if (pointIds.length === 0) return []
+        return db.findings.where('point_id').anyOf(pointIds).toArray()
+      },
+      [id],
+    ) ?? []
+
   const pendingSyncCount = useLiveQuery(
     async () => {
       if (!id) return 0
@@ -213,9 +155,106 @@ export default function InspectionDetail() {
     0,
   )
 
-  const rootNodes = allNodes ? filhosDoNo(null, allNodes) : []
+  const nodes = allNodes ?? []
+  const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
+
+  // Mapa pai → filhos, para varrer descendentes nas contagens agregadas.
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string | null, LocalNode[]>()
+    for (const n of nodes) {
+      const k = n.parent_id ?? null
+      const arr = map.get(k)
+      if (arr) arr.push(n)
+      else map.set(k, [n])
+    }
+    return map
+  }, [nodes])
+
+  const findingsByPoint = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const f of allFindings) m.set(f.point_id, (m.get(f.point_id) ?? 0) + 1)
+    return m
+  }, [allFindings])
+
+  function descendentes(nodeId: string): Set<string> {
+    const out = new Set<string>([nodeId])
+    const fila = [nodeId]
+    while (fila.length) {
+      const cur = fila.pop()!
+      for (const c of childrenByParent.get(cur) ?? []) {
+        if (!out.has(c.id)) {
+          out.add(c.id)
+          fila.push(c.id)
+        }
+      }
+    }
+    return out
+  }
+
+  function contagem(nodeId: string): { pontos: number; achados: number } {
+    const ids = descendentes(nodeId)
+    let pontos = 0
+    let achados = 0
+    for (const p of allPoints) {
+      if (ids.has(p.node_id)) {
+        pontos += 1
+        achados += findingsByPoint.get(p.id) ?? 0
+      }
+    }
+    return { pontos, achados }
+  }
+
+  const path = currentNodeId ? (nodePath(currentNodeId, nodes) as LocalNode[]) : []
+  const currentNode = currentNodeId ? nodeById.get(currentNodeId) ?? null : null
+  const childLevel = proximoNivel(currentNode?.nivel ?? null)
+  const children = filhosDoNo(currentNodeId, nodes)
+  const pontosAqui = allPoints
+    .filter((p) => p.node_id === currentNodeId)
+    .sort((a, b) => a.ordem - b.ordem)
 
   const isReadOnly = inspection?.status !== 'em_andamento'
+  const podeColetar = !!currentNodeId && !isReadOnly
+
+  // Persiste o nível atual para sobreviver à navegação de ida/volta ao PointCapture.
+  useEffect(() => {
+    if (!id) return
+    if (currentNodeId) sessionStorage.setItem(`campo-node-${id}`, currentNodeId)
+    else sessionStorage.removeItem(`campo-node-${id}`)
+  }, [currentNodeId, id])
+
+  // Se o nó persistido não existe mais (ex.: excluído), volta para a raiz.
+  useEffect(() => {
+    if (allNodes === undefined) return
+    if (currentNodeId && !allNodes.some((n) => n.id === currentNodeId)) {
+      setCurrentNodeId(null)
+    }
+  }, [allNodes, currentNodeId])
+
+  async function handleAddPoint() {
+    if (!id || !currentNodeId || addingPoint) return
+    setAddingPoint(true)
+    try {
+      const pointId = generateId()
+      const now = new Date().toISOString()
+      const existing = await db.points.where('node_id').equals(currentNodeId).count()
+      const point = {
+        id: pointId,
+        inspection_id: id,
+        node_id: currentNodeId,
+        titulo: null,
+        observacoes: null,
+        ordem: existing,
+        created_at: now,
+        updated_at: now,
+        _synced: false,
+      }
+      await db.points.add(point)
+      await enqueue('points', 'insert', point, pointId)
+      navigate(`/inspecoes/${id}/ponto/${pointId}`)
+    } finally {
+      setAddingPoint(false)
+    }
+  }
 
   async function handleReopen() {
     if (!inspection || reopening) return
@@ -226,6 +265,22 @@ export default function InspectionDetail() {
       await enqueue('inspections', 'update', updated, inspection.id)
     } finally {
       setReopening(false)
+    }
+  }
+
+  async function handleArchiveInspection() {
+    if (!id || archiving) return
+    setArchiving(true)
+    try {
+      const updated = { ...inspection!, arquivada_campo: true, _synced: false }
+      await db.inspections.put(updated)
+      await enqueue('inspections', 'update', { id, arquivada_campo: true }, id)
+      sessionStorage.removeItem(`campo-node-${id}`)
+      navigate('/inspecoes', { replace: true })
+    } catch (e) {
+      console.error('Falha ao arquivar inspeção:', e)
+      setArchiving(false)
+      setShowArchiveConfirm(false)
     }
   }
 
@@ -247,7 +302,7 @@ export default function InspectionDetail() {
         <button
           type="button"
           onClick={() => navigate('/inspecoes')}
-          className="p-1 rounded-lg hover:bg-slate-800"
+          className="p-2 -m-1 rounded-lg hover:bg-slate-800"
           aria-label="Voltar"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -265,7 +320,7 @@ export default function InspectionDetail() {
             type="button"
             onClick={handleReopen}
             disabled={reopening}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 text-xs font-semibold disabled:opacity-40 shrink-0"
+            className="flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 text-xs font-semibold disabled:opacity-40 shrink-0"
             aria-label="Reabrir inspeção para edição"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -275,12 +330,20 @@ export default function InspectionDetail() {
           <button
             type="button"
             onClick={() => setShowEditMeta(true)}
-            className="p-1.5 rounded-lg hover:bg-slate-800 shrink-0"
+            className="p-2 rounded-lg hover:bg-slate-800 shrink-0"
             aria-label="Editar inspeção"
           >
             <Pencil className="h-4 w-4 text-slate-400" />
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => setShowArchiveConfirm(true)}
+          className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-amber-400 shrink-0"
+          aria-label="Arquivar no campo"
+        >
+          <Archive className="h-4 w-4" />
+        </button>
         {!inspection._synced && (
           <span className="text-xs text-yellow-500 shrink-0">● não sync</span>
         )}
@@ -295,39 +358,157 @@ export default function InspectionDetail() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            Estrutura
-          </p>
-          {!isReadOnly && (
-            <button
-              onClick={() => setShowAddSetor(true)}
-              className="text-xs text-blue-400 flex items-center gap-0.5"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Setor
-            </button>
-          )}
-        </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Breadcrumb — drill up */}
+        <nav className="flex items-center gap-1 text-sm overflow-x-auto whitespace-nowrap pb-1">
+          <button
+            type="button"
+            onClick={() => setCurrentNodeId(null)}
+            className={`inline-flex items-center gap-1 rounded-lg px-2 py-1.5 ${
+              currentNodeId === null
+                ? 'font-semibold text-slate-100 bg-slate-800'
+                : 'text-slate-400 active:bg-slate-800'
+            }`}
+          >
+            <Home className="h-4 w-4" /> Setores
+          </button>
+          {path.map((n, i) => {
+            const ultimo = i === path.length - 1
+            return (
+              <span key={n.id} className="inline-flex items-center gap-1">
+                <ChevronRight className="h-4 w-4 text-slate-600 shrink-0" />
+                <button
+                  type="button"
+                  onClick={() => setCurrentNodeId(n.id)}
+                  className={`rounded-lg px-2 py-1.5 ${
+                    ultimo
+                      ? 'font-semibold text-slate-100 bg-slate-800'
+                      : 'text-slate-400 active:bg-slate-800'
+                  }`}
+                  title={`${labelDoTipo(n.nivel)}: ${n.nome}`}
+                >
+                  {n.nome}
+                </button>
+              </span>
+            )
+          })}
+        </nav>
 
-        {rootNodes.length === 0 && (
-          <p className="text-sm text-slate-500 text-center py-8">
-            Nenhuma estrutura. Adicione um setor para começar.
-          </p>
+        {/* Ação primária — coletar no nó atual */}
+        {!isReadOnly && (
+          <div>
+            {podeColetar ? (
+              <button
+                onClick={handleAddPoint}
+                disabled={addingPoint}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 h-12 text-base font-semibold"
+              >
+                <Camera className="h-5 w-5" />
+                {addingPoint ? 'Criando…' : 'Novo ponto de coleta aqui'}
+              </button>
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-700 bg-slate-800/40 p-3 text-center text-xs text-slate-400">
+                Entre em um <strong className="text-slate-300">Setor</strong> (ou crie um abaixo) para começar a coletar.
+              </div>
+            )}
+          </div>
         )}
 
-        {rootNodes.map((node) => (
-          <NodeRow key={node.id} node={node} allNodes={allNodes} inspectionId={id!} />
-        ))}
+        {/* Filhos do nó atual — drill down */}
+        {childLevel && (
+          <section>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {labelDoTipo(childLevel)}s{children.length > 0 ? ` (${children.length})` : ''}
+              </h2>
+              {!isReadOnly && (
+                <button
+                  onClick={() => setShowAddNode(true)}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-blue-400 active:bg-slate-800"
+                >
+                  <Plus className="h-4 w-4" />
+                  {labelDoTipo(childLevel)}
+                </button>
+              )}
+            </div>
+
+            {children.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-slate-700 bg-slate-800/30 p-4 text-center text-xs text-slate-500">
+                Nenhum {labelDoTipo(childLevel).toLowerCase()} aqui.
+                {!isReadOnly && ' Toque em + para adicionar.'}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {children.map((n) => {
+                  const c = contagem(n.id)
+                  return (
+                    <button
+                      key={n.id}
+                      type="button"
+                      onClick={() => setCurrentNodeId(n.id)}
+                      className="w-full flex items-center gap-3 rounded-xl bg-slate-800 hover:bg-slate-700/70 active:bg-slate-700 p-3 text-left"
+                    >
+                      <FolderTree className="h-5 w-5 text-blue-400 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium leading-tight truncate">{n.nome}</div>
+                        <div className="text-[11px] text-slate-400">
+                          {c.pontos} ponto{c.pontos !== 1 ? 's' : ''} · {c.achados} achado{c.achados !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-slate-500 shrink-0" />
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Pontos coletados no nó atual */}
+        {currentNodeId && (
+          <section>
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
+              Pontos coletados aqui{pontosAqui.length > 0 ? ` (${pontosAqui.length})` : ''}
+            </h2>
+            {pontosAqui.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-slate-700 bg-slate-800/30 p-4 text-center text-xs text-slate-500">
+                Nenhum ponto neste nível ainda.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {pontosAqui.map((pt) => {
+                  const nAchados = findingsByPoint.get(pt.id) ?? 0
+                  return (
+                    <Link
+                      key={pt.id}
+                      to={`/inspecoes/${id}/ponto/${pt.id}`}
+                      className="flex items-center gap-3 rounded-xl bg-slate-700 hover:bg-slate-600/70 active:bg-slate-600 p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium leading-tight truncate">
+                          {pt.titulo ?? `Ponto ${pt.ordem + 1}`}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          {nAchados} achado{nAchados !== 1 ? 's' : ''}
+                          {!pt._synced && <span className="text-yellow-500"> · não sync</span>}
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-slate-500 shrink-0" />
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
-      {showAddSetor && (
+      {showAddNode && (
         <AddNodeModal
           inspectionId={id!}
-          parentId={null}
-          allNodes={allNodes}
-          onClose={() => setShowAddSetor(false)}
+          parentId={currentNodeId}
+          allNodes={nodes}
+          onClose={() => setShowAddNode(false)}
         />
       )}
       {showEditMeta && (
@@ -335,6 +516,39 @@ export default function InspectionDetail() {
           inspection={inspection}
           onClose={() => setShowEditMeta(false)}
         />
+      )}
+      {showArchiveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-8">
+          <div className="w-full max-w-sm rounded-2xl bg-slate-800 p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <Archive className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <h2 className="font-semibold">Arquivar no campo?</h2>
+                <p className="text-sm text-slate-400 mt-1">
+                  <span className="text-slate-200 font-medium">{inspection.titulo}</span>{' '}
+                  vai sair da lista do celular, mas fica salva no servidor.
+                  Dá pra trazer de volta pelo app quando necessário.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowArchiveConfirm(false)}
+                disabled={archiving}
+                className="flex-1 rounded-lg border border-slate-600 py-3 text-sm disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleArchiveInspection}
+                disabled={archiving}
+                className="flex-1 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 py-3 text-sm font-semibold"
+              >
+                {archiving ? 'Arquivando…' : 'Arquivar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

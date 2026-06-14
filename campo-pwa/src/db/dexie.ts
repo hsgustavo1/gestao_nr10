@@ -43,8 +43,8 @@ class CampoDatabase extends Dexie {
 
   constructor() {
     super('campo-nr10')
-    this.version(1).stores({
-      inspections: 'id, _synced, status, responsavel_id',
+    this.version(2).stores({
+      inspections: 'id, _synced, status, responsavel_id, created_at',
       nodes: 'id, inspection_id, parent_id, _synced',
       points: 'id, inspection_id, node_id, _synced',
       findings: 'id, point_id, _synced',
@@ -56,3 +56,14 @@ class CampoDatabase extends Dexie {
 }
 
 export const db = new CampoDatabase()
+
+// If another tab holds the old DB version open and blocks our upgrade, reload to break the deadlock.
+db.on('blocked', () => {
+  window.location.reload()
+})
+
+// If this tab is superseded by a newer DB version opened elsewhere, close our connection so the upgrade can proceed.
+db.on('versionchange', () => {
+  db.close()
+  window.location.reload()
+})

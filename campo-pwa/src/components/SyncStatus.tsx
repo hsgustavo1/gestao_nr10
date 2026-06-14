@@ -3,7 +3,7 @@ import { db } from '@/db/dexie'
 import { processQueue, retryFailed, MAX_SYNC_ATTEMPTS } from '@/sync/engine'
 import { useState } from 'react'
 
-const ZERO = { pending: 0, failed: 0 }
+const ZERO = { pending: 0, failed: 0, sampleError: null as string | null }
 
 export function SyncStatus() {
   // pending = ainda dentro do limite de tentativas (em backoff ou prontos);
@@ -11,10 +11,17 @@ export function SyncStatus() {
   const counts =
     useLiveQuery(async () => {
       const pending = await db.sync_queue.where('attempts').below(MAX_SYNC_ATTEMPTS).count()
-      const failed = await db.sync_queue.where('attempts').aboveOrEqual(MAX_SYNC_ATTEMPTS).count()
-      return { pending, failed }
+      const deadItems = await db.sync_queue
+        .where('attempts')
+        .aboveOrEqual(MAX_SYNC_ATTEMPTS)
+        .toArray()
+      const first = deadItems[0]
+      const sampleError = first
+        ? `${first.table}/${first.operation}: ${first.last_error ?? 'sem detalhe'}`
+        : null
+      return { pending, failed: deadItems.length, sampleError }
     }, []) ?? ZERO
-  const { pending: pendingCount, failed: failedCount } = counts
+  const { pending: pendingCount, failed: failedCount, sampleError } = counts
   const isOnline = navigator.onLine
   const [syncing, setSyncing] = useState(false)
 
@@ -52,16 +59,23 @@ export function SyncStatus() {
 
   if (failedCount > 0) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-900/40 text-orange-300 text-xs">
-        <span className="h-2 w-2 rounded-full bg-orange-400" />
-        {failedCount} {plural(failedCount)} com falha após várias tentativas
-        <button
-          onClick={handleRetry}
-          disabled={syncing}
-          className="ml-auto underline disabled:opacity-50"
-        >
-          {syncing ? 'Tentando...' : 'Tentar novamente'}
-        </button>
+      <div className="px-3 py-1.5 bg-orange-900/40 text-orange-300 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-orange-400 shrink-0" />
+          {failedCount} {plural(failedCount)} com falha após várias tentativas
+          <button
+            onClick={handleRetry}
+            disabled={syncing}
+            className="ml-auto underline disabled:opacity-50 shrink-0"
+          >
+            {syncing ? 'Tentando...' : 'Tentar novamente'}
+          </button>
+        </div>
+        {sampleError && (
+          <p className="mt-0.5 pl-4 text-[10px] text-orange-300/80 break-words">
+            {sampleError}
+          </p>
+        )}
       </div>
     )
   }

@@ -63,6 +63,10 @@ export function useSyncStatus() {
   }, [])
 
   useEffect(() => {
+    sync()
+  }, [sync])
+
+  useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') sync()
     }

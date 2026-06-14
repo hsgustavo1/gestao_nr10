@@ -6,6 +6,10 @@ import path from 'path'
 
 export default defineConfig({
   base: '/campo-pwa/',
+  server: {
+    port: parseInt(process.env.PORT ?? '8082'),
+    host: true,
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -32,6 +36,9 @@ export default defineConfig({
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+      },
+      devOptions: {
+        enabled: false,
       },
       workbox: {
         clientsClaim: true,

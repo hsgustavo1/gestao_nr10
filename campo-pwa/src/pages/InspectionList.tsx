@@ -21,10 +21,22 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function InspectionList() {
   const navigate = useNavigate()
-  const inspections = useLiveQuery(
-    () => db.inspections.orderBy('created_at').reverse().toArray(),
-    [],
-  )
+  // try/catch para que um erro na query (ex.: índice ausente após upgrade de schema)
+  // apareça na tela em vez de travar em "Carregando..." indefinidamente.
+  const inspections = useLiveQuery(async () => {
+    try {
+      // .toArray() (scan por PK) + ordenação em JS: mais robusto que orderBy('created_at'),
+      // cujo cursor de índice pode não resolver em alguns IndexedDB de celular.
+      const arr = (await db.inspections.toArray()).filter((i) => !i.arquivada_campo)
+      arr.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+      return arr
+    } catch (e) {
+      return { __error: e instanceof Error ? e.message : String(e) }
+    }
+  }, [])
+  const queryError =
+    inspections && !Array.isArray(inspections) ? inspections.__error : null
+  const list = Array.isArray(inspections) ? inspections : undefined
   const [showModal, setShowModal] = useState(false)
   const { syncState, lastSyncAt, pendingCount, sync, formatTimeAgo, isOnline } = useSyncStatus()
 
@@ -77,15 +89,28 @@ export default function InspectionList() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {inspections === undefined && (
+        {queryError && (
+          <div className="rounded-xl border border-red-700/50 bg-red-900/30 p-4 text-sm text-red-300 space-y-2">
+            <p className="font-semibold">Erro ao ler o banco local</p>
+            <p className="text-xs break-words text-red-300/90">{queryError}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="text-xs underline"
+            >
+              Recarregar
+            </button>
+          </div>
+        )}
+        {!queryError && list === undefined && (
           <p className="text-slate-400 text-sm text-center pt-8">Carregando...</p>
         )}
-        {inspections?.length === 0 && (
+        {list?.length === 0 && (
           <p className="text-slate-400 text-sm text-center pt-8">
             Nenhuma inspeção. Crie uma nova.
           </p>
         )}
-        {inspections?.map((insp) => (
+        {list?.map((insp) => (
           <Link
             key={insp.id}
             to={`/inspecoes/${insp.id}`}

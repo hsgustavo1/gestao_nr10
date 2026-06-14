@@ -241,6 +241,8 @@ export default function PointCapture() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showFindingForm, setShowFindingForm] = useState(false)
   const [legendaInput, setLegendaInput] = useState('')
+  const [askOrphan, setAskOrphan] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   const point = useLiveQuery(
     () => (nodeId ? db.points.get(nodeId) : undefined),
@@ -281,6 +283,64 @@ export default function PointCapture() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  // Remove o ponto e tudo abaixo (fotos/achados) localmente; descarta inserts ainda
+  // pendentes na fila (evita criar no servidor só pra deletar) e, para o que já foi
+  // sincronizado, enfileira a deleção (a cascata no servidor cobre fotos/achados).
+  async function purgePoint() {
+    if (!nodeId) return
+    const ptPhotos = await db.photos.where('point_id').equals(nodeId).toArray()
+    const ptFindings = await db.findings.where('point_id').equals(nodeId).toArray()
+    const pt = await db.points.get(nodeId)
+
+    await db.findings.where('point_id').equals(nodeId).delete()
+    await db.photos.where('point_id').equals(nodeId).delete()
+    await db.points.delete(nodeId)
+
+    const ids = new Set<string>([
+      nodeId,
+      ...ptPhotos.map((p) => p.id),
+      ...ptFindings.map((f) => f.id),
+    ])
+    const queued = await db.sync_queue.toArray()
+    const removeIds = queued.filter((q) => ids.has(q.local_id)).map((q) => q.id)
+    if (removeIds.length) await db.sync_queue.bulkDelete(removeIds)
+
+    for (const f of ptFindings) {
+      if (f._synced) await enqueue('findings', 'delete', { id: f.id }, f.id)
+    }
+    for (const p of ptPhotos) {
+      if (p._synced) await enqueue('photos', 'delete', { id: p.id }, p.id)
+    }
+    if (pt?._synced) await enqueue('points', 'delete', { id: nodeId }, nodeId)
+  }
+
+  async function handleBack() {
+    if (leaving) return
+    const f = findings ?? []
+    const ph = photos ?? []
+    // Toda foto precisa virar uma não conformidade. Sem nenhum achado, o ponto não pode
+    // persistir com foto solta: ou se adiciona uma NC, ou apaga.
+    if (f.length === 0) {
+      if (ph.length === 0) {
+        // Ponto vazio (sem foto e sem NC) — remove para não acumular pontos sem conteúdo.
+        setLeaving(true)
+        await purgePoint()
+        navigate(`/inspecoes/${id}`)
+        return
+      }
+      setAskOrphan(true)
+      return
+    }
+    navigate(`/inspecoes/${id}`)
+  }
+
+  async function confirmDeleteOrphan() {
+    if (leaving) return
+    setLeaving(true)
+    await purgePoint()
+    navigate(`/inspecoes/${id}`)
+  }
+
   if (point === undefined) return null
 
   if (!point) {
@@ -301,8 +361,9 @@ export default function PointCapture() {
     <div className="flex flex-col min-h-full">
       <header className="flex items-center gap-3 px-4 py-3 border-b border-slate-800">
         <button
-          onClick={() => navigate(`/inspecoes/${id}`)}
-          className="p-1 rounded-lg hover:bg-slate-800"
+          onClick={handleBack}
+          disabled={leaving}
+          className="p-1 rounded-lg hover:bg-slate-800 disabled:opacity-40"
           aria-label="Voltar"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -395,6 +456,43 @@ export default function PointCapture() {
           modos={modos}
           onClose={() => setShowFindingForm(false)}
         />
+      )}
+
+      {askOrphan && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-8">
+          <div className="w-full max-w-sm rounded-2xl bg-slate-800 p-5 space-y-4">
+            <h2 className="font-semibold">Foto sem não conformidade</h2>
+            <p className="text-sm text-slate-300">
+              Toda foto precisa de uma não conformidade. Adicione uma NC ou apague a foto
+              para sair.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setAskOrphan(false)
+                  setShowFindingForm(true)
+                }}
+                className="w-full rounded-lg bg-blue-600 hover:bg-blue-500 py-3 text-sm font-semibold"
+              >
+                Adicionar não conformidade
+              </button>
+              <button
+                onClick={confirmDeleteOrphan}
+                disabled={leaving}
+                className="w-full rounded-lg border border-red-700/60 text-red-300 py-3 text-sm font-semibold disabled:opacity-40"
+              >
+                {leaving ? 'Apagando…' : 'Apagar foto e voltar'}
+              </button>
+              <button
+                onClick={() => setAskOrphan(false)}
+                disabled={leaving}
+                className="w-full rounded-lg border border-slate-600 py-2.5 text-sm disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

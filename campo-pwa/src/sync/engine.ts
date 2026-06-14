@@ -29,10 +29,12 @@ async function downloadModosFalha(): Promise<void> {
 }
 
 async function downloadInspections(): Promise<void> {
-  // RLS handles user filtering — fetch all accessible inspections
+  // RLS handles user filtering. arquivada_campo=true = arquivadas pelo inspetor no campo;
+  // excluídas do download para despoluir o PWA sem apagar dados no servidor.
   const { data: inspections, error } = await supabase
     .from('field_inspections')
     .select('*')
+    .eq('arquivada_campo', false)
     .order('created_at', { ascending: false })
   if (error) throw error
 
@@ -70,23 +72,24 @@ async function downloadInspections(): Promise<void> {
     .filter((i) => i.status === 'em_andamento')
     .map((i) => i.id)
 
-  for (const id of activeIds) {
-    await downloadInspectionData(id)
+  if (activeIds.length > 0) {
+    await downloadInspectionsData(activeIds)
   }
 }
 
-async function downloadInspectionData(inspectionId: string): Promise<void> {
-  // Fetch points first so we can use their IDs for findings/photos
-  const { data: pointsData, error: pointsError } = await supabase
-    .from('field_points')
-    .select('*')
-    .eq('inspection_id', inspectionId)
-  if (pointsError) throw pointsError
+// Busca nodes/points/findings/photos de TODAS as inspeções ativas de uma vez.
+// Reduz de N×2 chamadas sequenciais para 2 chamadas paralelas — crítico em mobile.
+async function downloadInspectionsData(inspectionIds: string[]): Promise<void> {
+  const [pointsRes, nodesRes] = await Promise.all([
+    supabase.from('field_points').select('*').in('inspection_id', inspectionIds),
+    supabase.from('field_nodes').select('*').in('inspection_id', inspectionIds),
+  ])
+  if (pointsRes.error) throw pointsRes.error
+  if (nodesRes.error) throw nodesRes.error
 
-  const pointIds = (pointsData ?? []).map((p: { id: string }) => p.id)
+  const pointIds = (pointsRes.data ?? []).map((p: { id: string }) => p.id)
 
-  const [nodesRes, findingsRes, photosRes] = await Promise.all([
-    supabase.from('field_nodes').select('*').eq('inspection_id', inspectionId),
+  const [findingsRes, photosRes] = await Promise.all([
     pointIds.length > 0
       ? supabase.from('field_findings').select('*').in('point_id', pointIds)
       : Promise.resolve({ data: [] as unknown[], error: null }),
@@ -97,8 +100,6 @@ async function downloadInspectionData(inspectionId: string): Promise<void> {
           .in('point_id', pointIds)
       : Promise.resolve({ data: [] as unknown[], error: null }),
   ])
-
-  if (nodesRes.error) throw nodesRes.error
   if (findingsRes.error) throw findingsRes.error
   if (photosRes.error) throw photosRes.error
 
@@ -108,14 +109,12 @@ async function downloadInspectionData(inspectionId: string): Promise<void> {
   const pd = photosRes.data as any[]
 
   await Promise.all([
-    db.points.bulkPut((pointsData ?? []).map((p) => ({ ...p, _synced: true }))),
-    nodesRes.data
-      ? db.nodes.bulkPut(nodesRes.data.map((n) => ({ ...n, _synced: true })))
-      : Promise.resolve(),
-    fd
+    db.points.bulkPut((pointsRes.data ?? []).map((p) => ({ ...p, _synced: true }))),
+    db.nodes.bulkPut((nodesRes.data ?? []).map((n) => ({ ...n, _synced: true }))),
+    fd.length > 0
       ? db.findings.bulkPut(fd.map((f) => ({ ...f, _synced: true })))
       : Promise.resolve(),
-    pd
+    pd.length > 0
       ? db.photos.bulkPut(pd.map((p) => ({ ...p, blob: null, _synced: true })))
       : Promise.resolve(),
   ])
@@ -176,7 +175,10 @@ export async function processQueue(): Promise<void> {
 
     for (const item of ready) {
       try {
-        if (item.table === 'photos') {
+        // Só INSERT de foto sobe o blob ao Storage. Delete (e qualquer outra op) vai pelo
+        // uploadRecord, que remove a linha em field_photos. Antes, todo item 'photos' caía
+        // no uploadPhoto — então deletar foto estourava "Blob not found" eternamente.
+        if (item.table === 'photos' && item.operation === 'insert') {
           await uploadPhoto(item.local_id)
         } else {
           await uploadRecord(item)
@@ -214,6 +216,24 @@ export async function retryFailed(): Promise<void> {
   await processQueue()
 }
 
+/**
+ * Ao reconectar: se há itens em dead-letter (esgotaram tentativas), rearma-os antes de
+ * processar. Com inserts idempotentes (upsert), itens travados por registro já gravado no
+ * servidor sincronizam e somem; falhas reais re-estouram e continuam visíveis. Sem
+ * dead-letters, é só um processQueue comum.
+ */
+async function flushWithDeadLetterRearm(): Promise<void> {
+  const deadCount = await db.sync_queue
+    .where('attempts')
+    .aboveOrEqual(MAX_SYNC_ATTEMPTS)
+    .count()
+  if (deadCount > 0) {
+    await retryFailed()
+  } else {
+    await processQueue()
+  }
+}
+
 function stripLocalFields(payload: Record<string, unknown>): Record<string, unknown> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _synced: _s, blob: _b, ...rest } = payload
@@ -233,7 +253,10 @@ async function uploadRecord(item: {
   const payload = stripLocalFields(raw)
 
   if (item.operation === 'insert') {
-    const { error } = await supabase.from(supabaseTable).insert(payload)
+    // upsert (não insert): idempotente. Se uma tentativa anterior já gravou o
+    // registro mas a fila não foi limpa (queda de conexão pós-commit), o retry
+    // não falha mais com PK duplicada — evita falso "item com falha".
+    const { error } = await supabase.from(supabaseTable).upsert(payload)
     if (error) throw error
   } else if (item.operation === 'update') {
     const { id, ...rest } = payload
@@ -247,7 +270,11 @@ async function uploadRecord(item: {
 
 async function uploadPhoto(localId: string): Promise<void> {
   const photo = await db.photos.get(localId)
-  if (!photo?.blob) throw new Error(`Blob not found for photo ${localId}`)
+  if (!photo?.blob) {
+    // Foto sem blob: já enviada (e blob descartado) ou deletada localmente antes de
+    // sincronizar. Nada a enviar — retorna em silêncio para o item sair da fila.
+    return
+  }
 
   const ext = photo.blob.type.split('/')[1] ?? 'jpg'
   const remotePath = `campo/${localId}.${ext}`
@@ -257,7 +284,8 @@ async function uploadPhoto(localId: string): Promise<void> {
     .upload(remotePath, photo.blob, { contentType: photo.blob.type, upsert: true })
   if (storageError) throw storageError
 
-  const { error: dbError } = await supabase.from('field_photos').insert({
+  // upsert (não insert): idempotente, igual a uploadRecord. Storage já usa upsert.
+  const { error: dbError } = await supabase.from('field_photos').upsert({
     id: photo.id,
     point_id: photo.point_id,
     file_path: remotePath,
@@ -282,14 +310,18 @@ export function startConnectivityWatcher(): () => void {
   }
   const fullFlush = () => {
     if (navigator.onLine) {
-      processQueue().catch(console.error)
+      // Ao reconectar, rearma dead-letters uma vez. Com inserts agora idempotentes,
+      // itens travados por PK duplicada (registro já no servidor) sincronizam e a fila
+      // esvazia — limpando o falso alarme. Falhas reais voltam a estourar e seguem visíveis.
+      flushWithDeadLetterRearm().catch(console.error)
       downloadAll().catch(console.error)
     }
   }
-  // Initial flush on mount + full download
-  fullFlush()
   window.addEventListener('online', fullFlush)
   const heartbeat = window.setInterval(uploadFlush, SYNC_HEARTBEAT_MS)
+  // Kick inicial: no celular o app abre já online, então o evento 'online' nunca dispara.
+  // Sem isto, dead-letters nunca seriam rearmados e o falso alarme persistiria.
+  if (navigator.onLine) flushWithDeadLetterRearm().catch(console.error)
   return () => {
     window.removeEventListener('online', fullFlush)
     window.clearInterval(heartbeat)

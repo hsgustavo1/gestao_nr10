@@ -39,6 +39,7 @@ export type FieldInspection = {
   report_id: string | null
   notes: string | null
   created_by_name: string | null
+  arquivada_campo: boolean
   created_at: string
   updated_at: string
 }

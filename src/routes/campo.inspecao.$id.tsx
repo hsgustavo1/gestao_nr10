@@ -34,8 +34,9 @@ import {
 import {
   baixarPlanilhaModeloEstrutura, bulkCreateNodes, comporRti, parsePlanilhaEstrutura,
   uploadFieldPhoto, useCriarPontoComColeta, useDeleteFieldNode, useFieldInspection,
-  useFieldNodes, useFieldPoints, useInspectionFindings, useModosFalha, useSetoresHistoricos,
-  useUpsertFieldInspection, useUpsertFieldNode, type AchadoNovo, type FieldPointWithCounts,
+  useFieldNodes, useFieldPoints, useInspectionFindings, useModosFalha, useSetArquivadaCampo,
+  useSetoresHistoricos, useUpsertFieldInspection, useUpsertFieldNode,
+  type AchadoNovo, type FieldPointWithCounts,
 } from "@/lib/campo-queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRtiReports } from "@/lib/rti-queries";
@@ -829,6 +830,7 @@ function ComporRtiDialog({
   const { user } = useAuth();
   const { data: reports = [] } = useRtiReports();
   const upsertInspection = useUpsertFieldInspection();
+  const setArquivada = useSetArquivadaCampo();
 
   const actorName =
     (user?.user_metadata?.display_name as string | undefined) ||
@@ -837,6 +839,7 @@ function ComporRtiDialog({
   const [destino, setDestino] = useState<string>(defaultDestino ?? "novo");
   const [busy, setBusy] = useState(false);
   const [progresso, setProgresso] = useState<{ etapa: string; done: number; total: number } | null>(null);
+  const [dicaReportId, setDicaReportId] = useState<string | null>(null);
 
   async function compor() {
     setBusy(true);
@@ -850,12 +853,57 @@ function ComporRtiDialog({
       });
       await upsertInspection.mutateAsync({ id: inspection.id, titulo: inspection.titulo, status: "importada", report_id: result.reportId });
       toast.success(`RTI composto: ${result.ncsCriadas} NCs e ${result.fotosCopiadas} fotos.`);
-      navigate({ to: "/rti/plano", search: { report: result.reportId } });
+      // Mostra dica para arquivar antes de navegar para o RTI.
+      setProgresso(null);
+      setDicaReportId(result.reportId);
     } catch (err) {
       toast.error("Falha ao compor o RTI: " + (err as Error).message);
       setBusy(false);
       setProgresso(null);
     }
+  }
+
+  async function irParaRti(arquivar: boolean) {
+    if (!dicaReportId) return;
+    if (arquivar) {
+      try {
+        await setArquivada.mutateAsync({ id: inspection.id, arquivada_campo: true });
+      } catch {
+        // não bloqueia a navegação se arquivar falhar
+      }
+    }
+    navigate({ to: "/rti/plano", search: { report: dicaReportId } });
+  }
+
+  if (dicaReportId) {
+    return (
+      <Dialog open onOpenChange={() => irParaRti(false)}>
+        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 leading-tight">
+              <Sparkles className="h-5 w-5 shrink-0 text-primary" /> RTI atualizado!
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Já terminou a inspeção em campo?</p>
+                <p className="text-muted-foreground">
+                  Se sim, arquive para tirar do celular do inspetor.
+                  Se ainda vai continuar amanhã, mantenha no campo.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => irParaRti(false)}>
+              Continuar no campo
+            </Button>
+            <Button onClick={() => irParaRti(true)} disabled={setArquivada.isPending}>
+              {setArquivada.isPending ? "Arquivando..." : "Concluí — arquivar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   return (

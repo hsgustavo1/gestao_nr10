@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
-  AlertTriangle, ClipboardList, HardHat, ListChecks, MapPin, Plus, Trash2, User,
+  AlertTriangle, Archive, ClipboardList, HardHat, ListChecks, MapPin, Plus, RefreshCw, Trash2, User,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageShell } from "@/components/page-shell";
@@ -22,7 +22,7 @@ import {
   type FieldInspection,
 } from "@/lib/campo";
 import {
-  useDeleteFieldInspection, useFieldInspections, useUpsertFieldInspection,
+  useDeleteFieldInspection, useFieldInspections, useSetArquivadaCampo, useUpsertFieldInspection,
 } from "@/lib/campo-queries";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -103,10 +103,22 @@ function CampoIndexPage() {
 
 function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection; canDelete: boolean }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [reexportarOpen, setReexportarOpen] = useState(false);
+  const arquivar = useSetArquivadaCampo();
+
+  async function handleArquivar(e: React.MouseEvent) {
+    e.preventDefault(); e.stopPropagation();
+    try {
+      await arquivar.mutateAsync({ id: inspection.id, arquivada_campo: true });
+      toast.success("Inspeção arquivada do campo.");
+    } catch (err) {
+      toast.error("Falha ao arquivar: " + (err as Error).message);
+    }
+  }
 
   return (
     <>
-      <Card className="transition-colors hover:border-primary/40">
+      <Card className={`transition-colors hover:border-primary/40 ${inspection.arquivada_campo ? "opacity-60" : ""}`}>
         <CardContent className="p-0">
           <Link to="/campo/inspecao/$id" params={{ id: inspection.id }} className="block p-4">
             <div className="flex items-start justify-between gap-3">
@@ -116,6 +128,11 @@ function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection
                   <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${FIELD_INSPECTION_STATUS_BADGE[inspection.status]}`}>
                     {FIELD_INSPECTION_STATUS_LABELS[inspection.status]}
                   </span>
+                  {inspection.arquivada_campo && (
+                    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold border-amber-400/40 bg-amber-400/10 text-amber-600">
+                      <Archive className="h-2.5 w-2.5" /> Arquivada do campo
+                    </span>
+                  )}
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
                   {inspection.cliente && <span className="inline-flex items-center gap-1"><HardHat className="h-3 w-3" />{inspection.cliente}</span>}
@@ -125,13 +142,33 @@ function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection
                 </div>
               </div>
               {canDelete && (
-                <Button
-                  size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteOpen(true); }}
-                  title="Excluir coleta"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  {inspection.arquivada_campo ? (
+                    <Button
+                      size="sm" variant="ghost" className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 gap-1"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReexportarOpen(true); }}
+                      title="Reexportar ao campo"
+                    >
+                      <RefreshCw className="h-3 w-3" /> Reexportar
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-600 shrink-0"
+                      onClick={handleArquivar}
+                      disabled={arquivar.isPending}
+                      title="Arquivar no campo"
+                    >
+                      <Archive className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <Button
+                    size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteOpen(true); }}
+                    title="Excluir coleta"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               )}
             </div>
           </Link>
@@ -140,7 +177,62 @@ function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection
       {deleteOpen && (
         <ExcluirInspecaoDialog inspection={inspection} onOpenChange={(o) => { if (!o) setDeleteOpen(false); }} />
       )}
+      {reexportarOpen && (
+        <ReexportarDialog inspection={inspection} onOpenChange={(o) => { if (!o) setReexportarOpen(false); }} />
+      )}
     </>
+  );
+}
+
+function ReexportarDialog({
+  inspection,
+  onOpenChange,
+}: {
+  inspection: FieldInspection;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const arquivar = useSetArquivadaCampo();
+  const [busy, setBusy] = useState(false);
+
+  async function handleReexportar() {
+    setBusy(true);
+    try {
+      await arquivar.mutateAsync({ id: inspection.id, arquivada_campo: false, status: "em_andamento" });
+      toast.success("Inspeção reexportada ao campo. Sincronize o PWA para vê-la no celular.");
+      onOpenChange(false);
+    } catch (err) {
+      toast.error("Falha ao reexportar: " + (err as Error).message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md w-[calc(100vw-1rem)]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 text-primary shrink-0" /> Reexportar ao campo?
+          </DialogTitle>
+          <DialogDescription asChild>
+            <div className="space-y-2 text-sm">
+              <p>
+                <strong>{inspection.titulo}</strong> vai reaparecer no celular na próxima
+                sincronização do PWA, com status <strong>Em andamento</strong>.
+              </p>
+              <p className="text-muted-foreground">
+                Use quando o inspetor precisar continuar a coleta em campo.
+              </p>
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancelar</Button>
+          <Button onClick={handleReexportar} disabled={busy}>
+            {busy ? "Reexportando..." : "Reexportar ao campo"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

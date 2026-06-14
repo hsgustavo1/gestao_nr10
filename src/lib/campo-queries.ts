@@ -116,6 +116,27 @@ export function useUpsertFieldInspection() {
   });
 }
 
+export function useSetArquivadaCampo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      arquivada_campo,
+      status,
+    }: {
+      id: string
+      arquivada_campo: boolean
+      status?: string
+    }) => {
+      const update: Record<string, unknown> = { arquivada_campo }
+      if (status !== undefined) update.status = status
+      const { error } = await supabase.from("field_inspections").update(update).eq("id", id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["field_inspections"] }),
+  });
+}
+
 export function useDeleteFieldInspection() {
   const qc = useQueryClient();
   return useMutation({

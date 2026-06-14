@@ -23,10 +23,9 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     define,
-    // Servidor de dev: mantém host/porta que o wrapper aplicava.
     server: {
       host: "::",
-      port: 8080,
+      port: parseInt(process.env.PORT ?? '8081'),
     },
     resolve: {
       alias: {

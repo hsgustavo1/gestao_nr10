@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "gestao-nr10 (App Principal)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 8081,
+      "autoPort": true
+    },
+    {
+      "name": "campo-pwa (PWA Mobile)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "campo-pwa",
+      "port": 8082,
+      "autoPort": true
+    }
+  ]
+}
