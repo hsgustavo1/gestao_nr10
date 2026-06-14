@@ -24,7 +24,6 @@ import {
 import {
   useDeleteFieldInspection, useFieldInspections, useUpsertFieldInspection,
 } from "@/lib/campo-queries";
-import { useDeleteRtiReport } from "@/lib/rti-queries";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/campo/")({
@@ -156,11 +155,10 @@ function ExcluirInspecaoDialog({
 }) {
   const qc = useQueryClient();
   const deleteInsp = useDeleteFieldInspection();
-  const deleteRti = useDeleteRtiReport();
   const hasRti = !!inspection.report_id;
 
   const [step, setStep] = useState<"scope" | "confirm">(hasRti ? "scope" : "confirm");
-  const [scope, setScope] = useState<ExcluirScope>("ambos");
+  const [scope, setScope] = useState<ExcluirScope>("campo");
   const [busy, setBusy] = useState(false);
 
   async function handleDelete() {
@@ -168,22 +166,61 @@ function ExcluirInspecaoDialog({
     try {
       const finalScope: ExcluirScope = hasRti ? scope : "campo";
 
-      // RTI must be deleted before campo: rti_ncs.finding_id → field_findings.id
-      // Deleting campo first removes field_findings and PostgreSQL blocks rti_ncs deletion.
       if ((finalScope === "rti" || finalScope === "ambos") && inspection.report_id) {
-        // Clear FK (field_inspections.report_id → rti_reports.id) before deleting the report.
+        // Collect finding IDs that belong to this inspection.
+        const { data: points } = await supabase
+          .from("field_points")
+          .select("id")
+          .eq("inspection_id", inspection.id);
+        const pointIds = (points ?? []).map((p: { id: string }) => p.id);
+
+        if (pointIds.length > 0) {
+          const { data: findings } = await supabase
+            .from("field_findings")
+            .select("id")
+            .in("point_id", pointIds);
+          const findingIds = (findings ?? []).map((f: { id: string }) => f.id);
+
+          if (findingIds.length > 0) {
+            // Identify only the NCs this inspection contributed (via finding_id).
+            const { data: targetNcs } = await supabase
+              .from("rti_ncs")
+              .select("id")
+              .in("finding_id", findingIds)
+              .eq("report_id", inspection.report_id);
+            const ncIds = (targetNcs ?? []).map((n: { id: string }) => n.id);
+
+            if (ncIds.length > 0) {
+              // Remove evidence files from storage before deleting NCs.
+              const { data: evidencias } = await supabase
+                .from("rti_nc_evidencias")
+                .select("file_path")
+                .in("nc_id", ncIds);
+              const paths = (evidencias ?? []).map((e: { file_path: string }) => e.file_path);
+              for (let i = 0; i < paths.length; i += 100) {
+                await supabase.storage.from("rti-evidencias").remove(paths.slice(i, i + 100));
+              }
+
+              // Delete only the NCs contributed by this inspection.
+              for (let i = 0; i < ncIds.length; i += 200) {
+                await supabase.from("rti_ncs").delete().in("id", ncIds.slice(i, i + 200));
+              }
+            }
+          }
+        }
+
+        // Unlink this inspection from the RTI report (keep the report intact).
         await supabase
           .from("field_inspections")
           .update({ report_id: null, status: "em_andamento" })
           .eq("id", inspection.id);
-        await qc.invalidateQueries({ queryKey: ["field_inspections"] });
-        await deleteRti.mutateAsync(inspection.report_id);
       }
 
       if (finalScope === "campo" || finalScope === "ambos") {
         await deleteInsp.mutateAsync(inspection.id);
       }
 
+      await qc.invalidateQueries();
       toast.success("Excluído com sucesso.");
       onOpenChange(false);
     } catch (err) {
@@ -192,10 +229,10 @@ function ExcluirInspecaoDialog({
     }
   }
 
-  const scopeLabel: Record<ExcluirScope, string> = {
-    campo: "a inspeção de campo (fotos e pontos)",
-    rti: "o Plano de Ação RTI e suas não conformidades",
-    ambos: "a inspeção de campo E o Plano de Ação RTI",
+  const scopeConfirmLabel: Record<ExcluirScope, string> = {
+    campo: "a inspeção de campo (pontos, achados e fotos)",
+    rti: "as não conformidades que esta inspeção inseriu no Plano de Ação RTI — o relatório e demais NCs são mantidos",
+    ambos: "a inspeção de campo e as NCs que ela inseriu no Plano de Ação RTI — o relatório e demais NCs são mantidos",
   };
 
   return (
@@ -206,32 +243,32 @@ function ExcluirInspecaoDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Trash2 className="h-4 w-4 text-destructive shrink-0" />
-                Excluir — o que deseja remover?
+                O que deseja remover?
               </DialogTitle>
               <DialogDescription>
-                Selecione o que será excluído para a inspeção <strong>{inspection.titulo}</strong>.
+                Inspeção: <strong>{inspection.titulo}</strong>
               </DialogDescription>
             </DialogHeader>
             <RadioGroup value={scope} onValueChange={(v) => setScope(v as ExcluirScope)} className="space-y-2 pt-1">
               <Label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer hover:bg-muted/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5">
                 <RadioGroupItem value="campo" className="mt-0.5 shrink-0" />
                 <div>
-                  <div className="font-medium text-sm">Excluir somente da Coleta em Campo</div>
-                  <div className="text-xs text-muted-foreground">Remove pontos, achados e fotos. O Plano de Ação RTI é mantido.</div>
+                  <div className="font-medium text-sm">Somente a Coleta em Campo</div>
+                  <div className="text-xs text-muted-foreground">Remove pontos, achados e fotos. O Plano de Ação RTI e todas as suas NCs são mantidos intactos.</div>
                 </div>
               </Label>
               <Label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer hover:bg-muted/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5">
                 <RadioGroupItem value="rti" className="mt-0.5 shrink-0" />
                 <div>
-                  <div className="font-medium text-sm">Excluir somente do Plano de Ação RTI</div>
-                  <div className="text-xs text-muted-foreground">Remove o relatório RTI e suas NCs. A coleta em campo volta ao status em andamento.</div>
+                  <div className="font-medium text-sm">Somente as contribuições no Plano de Ação RTI</div>
+                  <div className="text-xs text-muted-foreground">Remove apenas as NCs que esta inspeção inseriu. O relatório RTI e suas demais NCs (importadas ou manuais) são preservados. A coleta volta ao status em andamento.</div>
                 </div>
               </Label>
               <Label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer hover:bg-muted/50 has-[[data-state=checked]]:border-destructive has-[[data-state=checked]]:bg-destructive/5">
                 <RadioGroupItem value="ambos" className="mt-0.5 shrink-0" />
                 <div>
-                  <div className="font-medium text-sm">Excluir de ambos</div>
-                  <div className="text-xs text-muted-foreground">Remove a coleta de campo e o Plano de Ação RTI completamente.</div>
+                  <div className="font-medium text-sm">Coleta em Campo e contribuições no RTI</div>
+                  <div className="text-xs text-muted-foreground">Remove a coleta e as NCs que ela inseriu no RTI. NCs importadas ou adicionadas manualmente são preservadas.</div>
                 </div>
               </Label>
             </RadioGroup>
@@ -251,7 +288,7 @@ function ExcluirInspecaoDialog({
                 <div className="space-y-2 text-sm">
                   <p>
                     Você está prestes a excluir permanentemente{" "}
-                    <strong>{scopeLabel[hasRti ? scope : "campo"]}</strong>{" "}
+                    <strong>{scopeConfirmLabel[hasRti ? scope : "campo"]}</strong>{" "}
                     referente a <strong>{inspection.titulo}</strong>.
                   </p>
                   <p className="font-medium text-destructive">
