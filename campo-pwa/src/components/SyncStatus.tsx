@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db/dexie'
-import { processQueue, retryFailed, MAX_SYNC_ATTEMPTS } from '@/sync/engine'
+import { processQueue, retryFailed, discardFailed, MAX_SYNC_ATTEMPTS } from '@/sync/engine'
 import { useState } from 'react'
 
 const ZERO = { pending: 0, failed: 0, sampleError: null as string | null }
@@ -43,6 +43,21 @@ export function SyncStatus() {
     }
   }
 
+  async function handleDiscard() {
+    if (
+      !window.confirm(
+        'Descartar os itens com falha? Eles NÃO serão enviados. Os dados já coletados no aparelho permanecem — isto só limpa a fila de envio.',
+      )
+    )
+      return
+    setSyncing(true)
+    try {
+      await discardFailed()
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   function plural(n: number) {
     return n === 1 ? 'item' : 'itens'
   }
@@ -52,7 +67,9 @@ export function SyncStatus() {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-red-900/40 text-red-300 text-xs">
         <span className="h-2 w-2 rounded-full bg-red-400" />
-        Offline — {total} {plural(total)} aguardando envio
+        {total === 0
+          ? 'Offline — pronto para coletar (dados salvos no aparelho)'
+          : `Offline — ${total} ${plural(total)} aguardando envio (salvos no aparelho)`}
       </div>
     )
   }
@@ -69,6 +86,13 @@ export function SyncStatus() {
             className="ml-auto underline disabled:opacity-50 shrink-0"
           >
             {syncing ? 'Tentando...' : 'Tentar novamente'}
+          </button>
+          <button
+            onClick={handleDiscard}
+            disabled={syncing}
+            className="underline disabled:opacity-50 shrink-0 text-orange-300/80"
+          >
+            Descartar
           </button>
         </div>
         {sampleError && (
@@ -99,7 +123,7 @@ export function SyncStatus() {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-green-900/40 text-green-300 text-xs">
       <span className="h-2 w-2 rounded-full bg-green-400" />
-      Online — sincronizado
+      Online — sincronizado · pronto para uso offline
     </div>
   )
 }

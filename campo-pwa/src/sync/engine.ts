@@ -216,6 +216,13 @@ export async function retryFailed(): Promise<void> {
   await processQueue()
 }
 
+/** Descarta os itens em dead-letter (esgotaram MAX_SYNC_ATTEMPTS). Usar quando
+ * o item é irrecuperável (ex.: referencia um registro local já apagado). Remove
+ * apenas da FILA de envio — os dados já coletados no aparelho permanecem. */
+export async function discardFailed(): Promise<void> {
+  await db.sync_queue.where('attempts').aboveOrEqual(MAX_SYNC_ATTEMPTS).delete()
+}
+
 /**
  * Ao reconectar: se há itens em dead-letter (esgotaram tentativas), rearma-os antes de
  * processar. Com inserts idempotentes (upsert), itens travados por registro já gravado no
