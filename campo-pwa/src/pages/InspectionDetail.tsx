@@ -118,16 +118,15 @@ export default function InspectionDetail() {
   const allPoints =
     useLiveQuery(() => (id ? db.points.where("inspection_id").equals(id).toArray() : []), [id]) ??
     [];
-  const allFindings =
-    useLiveQuery(async () => {
-      if (!id) return [];
-      const pointIds = (await db.points
-        .where("inspection_id")
-        .equals(id)
-        .primaryKeys()) as string[];
-      if (pointIds.length === 0) return [];
-      return db.findings.where("point_id").anyOf(pointIds).toArray();
-    }, [id]) ?? [];
+  const allFindingsRaw = useLiveQuery(async () => {
+    if (!id) return [];
+    const pointIds = (await db.points.where("inspection_id").equals(id).primaryKeys()) as string[];
+    if (pointIds.length === 0) return [];
+    return db.findings.where("point_id").anyOf(pointIds).toArray();
+  }, [id]);
+  // Fallback estável: sem o useMemo, `?? []` criaria um array novo a cada render
+  // enquanto a query carrega, recomputando findingsByPoint à toa.
+  const allFindings = useMemo(() => allFindingsRaw ?? [], [allFindingsRaw]);
 
   const pendingSyncCount = useLiveQuery(
     async () => {
@@ -153,7 +152,7 @@ export default function InspectionDetail() {
     0,
   );
 
-  const nodes = allNodes ?? [];
+  const nodes = useMemo(() => allNodes ?? [], [allNodes]);
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
 
   // Mapa pai → filhos, para varrer descendentes nas contagens agregadas.

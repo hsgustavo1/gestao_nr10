@@ -93,6 +93,10 @@ export function PrintLabelDialog({
     return () => {
       cancelled = true;
     };
+    // Deps por-campo intencionais: o efeito só lê id/owner_name/owner_registration
+    // (via photoPathFor). Incluir o objeto `padlock` re-buscaria a foto a cada render
+    // caso o pai recrie a referência do prop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, padlock.id, padlock.owner_name, padlock.owner_registration]);
 
   // Busca todos os cadeados do mesmo Integrante
@@ -119,6 +123,9 @@ export function PrintLabelDialog({
         setSelected(new Set(final.map((p) => p.id)));
         setLoadingSiblings(false);
       });
+    // Deps por-campo intencionais: o efeito só lê owner_registration/id. Incluir o
+    // objeto `padlock` re-rodaria a query a cada novo render do pai.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, padlock.owner_registration, padlock.id]);
 
   const cadeado = {

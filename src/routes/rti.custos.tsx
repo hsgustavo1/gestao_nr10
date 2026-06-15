@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { z } from "zod";
 import {
   Bar,
@@ -82,12 +82,20 @@ function RtiCustosPage() {
     setSearch({ [dim]: search[dim] === value ? "all" : value } as Partial<typeof search>);
   }
 
-  // Predicados de filtro por dimensão
-  const matchSetor = (nc: RtiNc) =>
-    search.setor === "all" || (areaNome.get(nc.area_id) ?? "—") === search.setor;
-  const matchPrioridade = (nc: RtiNc) =>
-    search.prioridade === "all" || String(nc.prioridade) === search.prioridade;
-  const matchTipo = (nc: RtiNc) => search.tipo === "all" || nc.tipo_execucao === search.tipo;
+  // Predicados de filtro por dimensão. useCallback mantém a referência estável para
+  // entrarem nas deps dos useMemo abaixo sem invalidá-los a cada render.
+  const matchSetor = useCallback(
+    (nc: RtiNc) => search.setor === "all" || (areaNome.get(nc.area_id) ?? "—") === search.setor,
+    [search.setor, areaNome],
+  );
+  const matchPrioridade = useCallback(
+    (nc: RtiNc) => search.prioridade === "all" || String(nc.prioridade) === search.prioridade,
+    [search.prioridade],
+  );
+  const matchTipo = useCallback(
+    (nc: RtiNc) => search.tipo === "all" || nc.tipo_execucao === search.tipo,
+    [search.tipo],
+  );
 
   // Cada gráfico reflete os OUTROS filtros (cross-filtering estilo BI), mantendo
   // sua própria dimensão visível por inteiro para permitir trocar a seleção.
@@ -132,7 +140,7 @@ function RtiCustosPage() {
     }));
 
     return { byArea, byPrioridade, byTipo };
-  }, [ncs, areaNome, search.setor, search.prioridade, search.tipo]);
+  }, [ncs, areaNome, matchSetor, matchPrioridade, matchTipo]);
 
   // Cards (resumo) refletem TODOS os filtros ativos simultaneamente.
   const resumo = useMemo(() => {
@@ -154,7 +162,7 @@ function RtiCustosPage() {
       }
     }
     return { ...agg, comCusto, semCusto, custoZero };
-  }, [ncs, areaNome, search.setor, search.prioridade, search.tipo]);
+  }, [ncs, matchSetor, matchPrioridade, matchTipo]);
 
   const hasFilters = search.setor !== "all" || search.prioridade !== "all" || search.tipo !== "all";
 
