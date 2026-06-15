@@ -41,6 +41,12 @@ export default function InspectionList() {
   const { syncState, lastSyncAt, pendingCount, sync, formatTimeAgo, isOnline } = useSyncStatus()
 
   async function handleLogout() {
+    // "Sair" apaga a sessão salva → o próximo login exige internet. Avisar antes,
+    // de forma extra-clara quando o usuário já está offline (logout vira cilada).
+    const msg = isOnline
+      ? 'Sair encerra a sessão neste aparelho. Para entrar de novo você vai precisar de internet. Para usar offline, NÃO saia — apenas feche o app. Deseja sair?'
+      : 'Você está OFFLINE. Se sair agora, NÃO conseguirá entrar de novo sem internet. Para continuar usando offline, NÃO saia — apenas feche o app. Sair mesmo assim?'
+    if (!window.confirm(msg)) return
     await supabase.auth.signOut()
     navigate('/login', { replace: true })
   }
