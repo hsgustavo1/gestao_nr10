@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { db } from '@/db/dexie'
 import { enqueue } from '@/sync/engine'
 import { generateId } from '@/lib/uuid'
+import { getActiveOrgId } from '@/lib/org'
 import { supabase } from '@/lib/supabase'
 import { X } from 'lucide-react'
 
@@ -46,8 +47,12 @@ export function CreateInspectionModal({ onClose }: Props) {
     try {
       const id = generateId()
       const now = new Date().toISOString()
+      // org ativa (cacheada do último sync online). Para usuário single-org pode
+      // vir undefined offline — a trigger fn_default_org_id resolve no servidor.
+      const orgId = getActiveOrgId()
       const inspection = {
         id,
+        ...(orgId ? { org_id: orgId } : {}),
         titulo: titulo.trim(),
         cliente: cliente.trim() || null,
         local: local.trim() || null,

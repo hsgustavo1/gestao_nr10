@@ -89,10 +89,20 @@ camada de revenda entra já no MVP.
   higiene (atualizar Vercel + `.env` + redeploy). `.gitignore` já bloqueia `.env*`.
 
 ### Passos manuais ainda pendentes (do usuário)
-1. (Opcional/baixa prioridade) Rotacionar a Publishable key do Supabase por higiene.
-2. ⏳ Reprocessar/limpar itens "dead-letter" da fila do PWA (agora há botões
+1. ⏳ **Aplicar a migração `20260614010000_org_id_cascade.sql`** no SQL Editor
+   (cascata de org_id + índices). Sem ela, inserts de usuário multi-org (Fase 2)
+   falham por NOT NULL; single-org continua OK via `fn_default_org_id`.
+2. (Opcional/baixa prioridade) Rotacionar a Publishable key do Supabase por higiene.
+3. ⏳ Reprocessar/limpar itens "dead-letter" da fila do PWA (agora há botões
    "Tentar novamente" e "Descartar" no banner de sync).
-3. (Opcional) Migrar o app principal para o Vercel — hoje continua na Cloudflare.
+4. (Opcional) Migrar o app principal para o Vercel — hoje continua na Cloudflare.
+
+### Dívida conhecida (pré-existente, não bloqueia)
+- O repo **não é prettier-clean**: `npm run lint` (`eslint .`) acusa centenas de
+  erros `prettier/prettier` de formatação em arquivos legados (estilo compacto).
+  Logo, o step de lint do CI (Fase 0) fica vermelho por formatação pré-existente,
+  não por bug. Opções: rodar `eslint . --fix` num commit isolado (diff grande) ou
+  remover o plugin prettier do eslint. Typecheck e build estão verdes.
 
 ## Próximas fases (ordem sugerida)
 
@@ -107,14 +117,39 @@ Falta (fazer com a migração já aplicada, para poder verificar rodando o app):
 - `types.ts` (mantido à mão): adicionar as novas tabelas/colunas `org_id` para
   remover o acesso não-tipado (`sb as any`) em `auth-context.tsx`.
 
-### Fase 1.6 — org_id em campo-core e campo-pwa
-- `packages/campo-core`: adicionar `org_id` aos tipos `FieldInspection` etc.
-- `campo-pwa` sync engine (download/enqueue/processQueue): carregar/enviar `org_id`.
-  Hoje o `CreateInspectionModal` cria inspeção sem org — definir a partir da org
-  ativa do usuário (ou deixar o trigger `fn_default_org_id` resolver no insert).
-- `comporRti()` e importação em massa: setar `org_id` do org de destino.
-- Storage: subir fotos no path `{org_id}/…` nos buckets `rti-evidencias` etc.,
-  e aplicar RLS de storage por org.
+### Fase 1.6 — org_id em campo-core e campo-pwa  ✅ feito (2026-06-14)
+**Decisão-chave (base sólida):** filhos da árvore campo→RTI **herdam `org_id` do
+pai** via trigger no banco (`fn_inherit_org_id`), em vez de o cliente carimbar
+`org_id` em cada insert. Cliente só informa a org nas **raízes**
+(`field_inspections`, `rti_reports`). Vantagem: invariante de segurança (filho
+nunca fica em org diferente do pai) + zero churn por insert + funciona para
+usuário multi-org (consultor) sem o trigger single-org `fn_default_org_id`.
+
+Entregue:
+- `packages/campo-core/src/types.ts` **e** `src/lib/campo.ts` (cópia do app, drift
+  conhecido): `org_id?: string` nas 5 tabelas `field_*`. Opcional de propósito —
+  coluna autoritativa do servidor; baixados trazem, locais herdam no insert.
+- Migração [`20260614010000_org_id_cascade.sql`](../../../supabase/migrations/20260614010000_org_id_cascade.sql):
+  `fn_inherit_org_id` + triggers `trg_inherit_org_*` em `field_nodes/points/
+  findings/photos` e `rti_areas/ncs/nc_evidencias/nc_historico`; índices `org_id`
+  em todas as tabelas de domínio. **Passo manual: aplicar no SQL Editor.**
+- PWA: [`campo-pwa/src/lib/org.ts`](../../../campo-pwa/src/lib/org.ts)
+  (`refreshOrgContext`/`getActiveOrgId`/`clearOrgContext`, cache em localStorage);
+  `downloadAll` refresca a org; `CreateInspectionModal` carimba `org_id` na raiz;
+  logout limpa o cache; `uploadPhoto` usa path `{org_id}/campo/…` (fallback ao
+  legado `campo/…` sem regressão).
+- App: `comporRti()` carimba `org_id` na raiz `rti_reports` (NCs/áreas/evidências
+  cascateiam); cópia de evidência usa path `{org_id}/evidencias/…`;
+  `uploadFieldPhoto(file, orgId?)` com path por org.
+- `src/integrations/supabase/types.ts`: `org_id` nas tabelas `field_*` + `rti_reports`
+  (+ corrigido drift de `arquivada_campo` em `field_inspections`). Typecheck app+PWA
+  **verde**; build app+PWA **passa**.
+
+⚠️ **Storage RLS por org foi adiado** de propósito: políticas duras por prefixo
+quebrariam as fotos históricas (paths legados `campo/…`/`evidencias/…`). O
+isolamento real continua no banco (file_path só é descoberto via linha RLS-scoped;
+paths são UUID aleatório). Tightening de storage RLS = fase posterior (junto da
+migração de fotos antigas para o prefixo `{org_id}/`).
 
 ### Fase 2 — MVP: consultor entregando RTI+PWA
 - Seed: org `consultoria` (o consultor) + org `cliente` com

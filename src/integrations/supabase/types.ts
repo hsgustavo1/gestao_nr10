@@ -367,6 +367,7 @@ export type Database = {
       }
       field_findings: {
         Row: {
+          org_id: string
           created_at: string
           descricao: string
           id: string
@@ -379,6 +380,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          org_id?: string
           created_at?: string
           descricao: string
           id?: string
@@ -391,6 +393,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          org_id?: string
           created_at?: string
           descricao?: string
           id?: string
@@ -421,6 +424,7 @@ export type Database = {
       }
       field_inspections: {
         Row: {
+          org_id: string
           cliente: string | null
           created_at: string
           created_by_name: string | null
@@ -430,11 +434,13 @@ export type Database = {
           local: string | null
           notes: string | null
           report_id: string | null
+          arquivada_campo: boolean
           status: string
           titulo: string
           updated_at: string
         }
         Insert: {
+          org_id?: string
           cliente?: string | null
           created_at?: string
           created_by_name?: string | null
@@ -444,11 +450,13 @@ export type Database = {
           local?: string | null
           notes?: string | null
           report_id?: string | null
+          arquivada_campo?: boolean
           status?: string
           titulo: string
           updated_at?: string
         }
         Update: {
+          org_id?: string
           cliente?: string | null
           created_at?: string
           created_by_name?: string | null
@@ -458,6 +466,7 @@ export type Database = {
           local?: string | null
           notes?: string | null
           report_id?: string | null
+          arquivada_campo?: boolean
           status?: string
           titulo?: string
           updated_at?: string
@@ -474,6 +483,7 @@ export type Database = {
       }
       field_nodes: {
         Row: {
+          org_id: string
           created_at: string
           id: string
           inspection_id: string
@@ -484,6 +494,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          org_id?: string
           created_at?: string
           id?: string
           inspection_id: string
@@ -494,6 +505,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          org_id?: string
           created_at?: string
           id?: string
           inspection_id?: string
@@ -522,6 +534,7 @@ export type Database = {
       }
       field_photos: {
         Row: {
+          org_id: string
           created_at: string
           file_name: string
           file_path: string
@@ -531,6 +544,7 @@ export type Database = {
           point_id: string
         }
         Insert: {
+          org_id?: string
           created_at?: string
           file_name: string
           file_path: string
@@ -540,6 +554,7 @@ export type Database = {
           point_id: string
         }
         Update: {
+          org_id?: string
           created_at?: string
           file_name?: string
           file_path?: string
@@ -560,6 +575,7 @@ export type Database = {
       }
       field_points: {
         Row: {
+          org_id: string
           created_at: string
           id: string
           inspection_id: string
@@ -570,6 +586,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          org_id?: string
           created_at?: string
           id?: string
           inspection_id: string
@@ -580,6 +597,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          org_id?: string
           created_at?: string
           id?: string
           inspection_id?: string
@@ -1417,6 +1435,7 @@ export type Database = {
       }
       rti_reports: {
         Row: {
+          org_id: string
           created_at: string
           created_by: string | null
           created_by_name: string | null
@@ -1432,6 +1451,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          org_id?: string
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
@@ -1447,6 +1467,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          org_id?: string
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null

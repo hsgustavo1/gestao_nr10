@@ -1,5 +1,13 @@
 // Domain types shared between campo-pwa and the main app.
 // Field names match the Supabase tables exactly.
+//
+// Multi-tenancy: cada tabela de domínio tem `org_id NOT NULL` no banco. Aqui ele
+// é OPCIONAL de propósito — é uma coluna autoritativa do servidor:
+//  - registros BAIXADOS do servidor sempre trazem org_id;
+//  - registros criados localmente (offline) podem não conhecê-lo ainda. A trigger
+//    de cascata no banco (filho herda org_id do pai) e a fn_default_org_id (raiz,
+//    usuário single-org) preenchem no INSERT. Só as RAÍZES (field_inspections,
+//    rti_reports) precisam informar org_id quando o usuário pertence a 2+ orgs.
 
 // ── RTI modos de falha ────────────────────────────────────────────────────────
 
@@ -30,6 +38,7 @@ export type FieldInspectionStatus = typeof FIELD_INSPECTION_STATUSES[number]
 
 export type FieldInspection = {
   id: string
+  org_id?: string
   titulo: string
   cliente: string | null
   local: string | null
@@ -53,6 +62,7 @@ export type NodeType = NivelArvore
 
 export type FieldNode = {
   id: string
+  org_id?: string
   inspection_id: string
   parent_id: string | null
   nivel: NivelArvore
@@ -66,6 +76,7 @@ export type FieldNode = {
 
 export type FieldPoint = {
   id: string
+  org_id?: string
   inspection_id: string
   node_id: string
   titulo: string | null
@@ -79,6 +90,7 @@ export type FieldPoint = {
 
 export type FieldFinding = {
   id: string
+  org_id?: string
   point_id: string
   modo_falha_id: string | null
   descricao: string
@@ -94,6 +106,7 @@ export type FieldFinding = {
 
 export type FieldPhoto = {
   id: string
+  org_id?: string
   point_id: string
   file_path: string
   file_name: string

@@ -322,6 +322,7 @@ function CampoInspecaoPage() {
       {isStaff && capturaOpen && currentNodeId && (
         <CapturaPontoSheet
           inspectionId={id}
+          orgId={inspection.org_id}
           nodeId={currentNodeId}
           contextoLabel={currentNode ? `${NIVEL_LABEL[currentNode.nivel]}: ${currentNode.nome}` : ""}
           proximaOrdem={pontosAqui.reduce((m, p) => Math.max(m, p.ordem), 0) + 1}
@@ -370,9 +371,10 @@ function DeleteNodeButton({ node }: { node: FieldNode }) {
 // ── Captura foto-primeiro ────────────────────────────────────────────────────
 
 function CapturaPontoSheet({
-  inspectionId, nodeId, contextoLabel, proximaOrdem, onOpenChange,
+  inspectionId, orgId, nodeId, contextoLabel, proximaOrdem, onOpenChange,
 }: {
   inspectionId: string;
+  orgId?: string;
   nodeId: string;
   contextoLabel: string;
   proximaOrdem: number;
@@ -429,7 +431,7 @@ function CapturaPontoSheet({
     try {
       const enviadas: { path: string; name: string }[] = [];
       for (let i = 0; i < fotos.length; i++) {
-        enviadas.push(await uploadFieldPhoto(fotos[i]));
+        enviadas.push(await uploadFieldPhoto(fotos[i], orgId));
         setProgresso({ done: i + 1, total: fotos.length });
       }
       const achados: AchadoNovo[] = [

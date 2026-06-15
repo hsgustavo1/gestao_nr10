@@ -1,5 +1,6 @@
 import { generateId } from '@/lib/uuid'
 import { supabase } from '@/lib/supabase'
+import { refreshOrgContext } from '@/lib/org'
 import { db } from '@/db/dexie'
 import type { SyncOperation, SyncQueueItem } from '@/db/dexie'
 
@@ -15,6 +16,9 @@ const SUPABASE_TABLES: Record<string, string> = {
 // ── Download: Supabase → Dexie ────────────────────────────────────────────────
 
 export async function downloadAll(): Promise<void> {
+  // Atualiza a org ativa primeiro: registros criados a seguir já carimbam org_id
+  // e o path de Storage fica escopado por org. Falha silenciosa se offline.
+  await refreshOrgContext()
   await downloadModosFalha()
   await downloadInspections()
 }
@@ -275,6 +279,15 @@ async function uploadRecord(item: {
   }
 }
 
+/** org_id de uma foto, derivado da inspeção do ponto (foto→ponto→inspeção). */
+async function resolvePhotoOrgId(pointId: string): Promise<string | undefined> {
+  const point = await db.points.get(pointId)
+  if (point?.org_id) return point.org_id
+  if (!point?.inspection_id) return undefined
+  const insp = await db.inspections.get(point.inspection_id)
+  return insp?.org_id
+}
+
 async function uploadPhoto(localId: string): Promise<void> {
   const photo = await db.photos.get(localId)
   if (!photo?.blob) {
@@ -284,7 +297,14 @@ async function uploadPhoto(localId: string): Promise<void> {
   }
 
   const ext = photo.blob.type.split('/')[1] ?? 'jpg'
-  const remotePath = `campo/${localId}.${ext}`
+  // Path escopado por org ({org_id}/campo/…): prepara isolamento e migração futura
+  // p/ storage frio sem retrabalho. Resolve a org pela inspeção do ponto; se não
+  // achar (registro antigo/offline incompleto), cai no path legado `campo/…` —
+  // sem regressão. Fotos antigas continuam no path original gravado em file_path.
+  const orgId = await resolvePhotoOrgId(photo.point_id)
+  const remotePath = orgId
+    ? `${orgId}/campo/${localId}.${ext}`
+    : `campo/${localId}.${ext}`
 
   const { error: storageError } = await supabase.storage
     .from('rti-evidencias')

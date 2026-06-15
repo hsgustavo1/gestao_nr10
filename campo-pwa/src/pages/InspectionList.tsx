@@ -6,6 +6,7 @@ import { Plus, LogOut, RefreshCw, Cloud, CloudOff } from 'lucide-react'
 import { useState } from 'react'
 import { CreateInspectionModal } from '@/components/CreateInspectionModal'
 import { useSyncStatus } from '@/hooks/useSyncStatus'
+import { clearOrgContext } from '@/lib/org'
 
 const STATUS_LABEL: Record<string, string> = {
   em_andamento: 'Em andamento',
@@ -47,6 +48,7 @@ export default function InspectionList() {
       ? 'Sair encerra a sessão neste aparelho. Para entrar de novo você vai precisar de internet. Para usar offline, NÃO saia — apenas feche o app. Deseja sair?'
       : 'Você está OFFLINE. Se sair agora, NÃO conseguirá entrar de novo sem internet. Para continuar usando offline, NÃO saia — apenas feche o app. Sair mesmo assim?'
     if (!window.confirm(msg)) return
+    clearOrgContext()
     await supabase.auth.signOut()
     navigate('/login', { replace: true })
   }

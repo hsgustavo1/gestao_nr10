@@ -40,6 +40,7 @@ export const FIELD_INSPECTION_STATUS_BADGE: Record<FieldInspectionStatus, string
 
 export type FieldInspection = {
   id: string;
+  org_id?: string; // multi-tenancy: coluna autoritativa do servidor (ver campo-core/types.ts)
   titulo: string;
   cliente: string | null;
   local: string | null;
@@ -49,6 +50,7 @@ export type FieldInspection = {
   report_id: string | null;
   notes: string | null;
   created_by_name: string | null;
+  arquivada_campo: boolean; // arquivada no campo (oculta da lista do PWA, sem apagar no servidor)
   created_at: string;
   updated_at: string;
 };
@@ -80,6 +82,7 @@ export function proximoNivel(nivel: NivelArvore | null): NivelArvore | null {
 
 export type FieldNode = {
   id: string;
+  org_id?: string;
   inspection_id: string;
   parent_id: string | null;
   nivel: NivelArvore;
@@ -91,6 +94,7 @@ export type FieldNode = {
 
 export type FieldPoint = {
   id: string;
+  org_id?: string;
   inspection_id: string;
   node_id: string;
   titulo: string | null;
@@ -102,6 +106,7 @@ export type FieldPoint = {
 
 export type FieldFinding = {
   id: string;
+  org_id?: string;
   point_id: string;
   modo_falha_id: string | null; // null = entrada manual do consultor
   descricao: string;
@@ -124,6 +129,7 @@ export type AchadoNovoUI = {
 
 export type FieldPhoto = {
   id: string;
+  org_id?: string;
   point_id: string;
   file_path: string;
   file_name: string;

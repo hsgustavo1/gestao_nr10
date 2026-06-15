@@ -69,7 +69,7 @@ function CampoPontoPage() {
     try {
       let ordem = photos.length;
       for (const f of list) {
-        const { path: fp, name } = await uploadFieldPhoto(f);
+        const { path: fp, name } = await uploadFieldPhoto(f, inspection?.org_id);
         await addPhoto.mutateAsync({ point_id: point.id, file_path: fp, file_name: name, legenda: null, ordem: ordem++ });
       }
       toast.success(`${list.length} foto(s) anexada(s).`);

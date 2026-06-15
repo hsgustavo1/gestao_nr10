@@ -128,7 +128,7 @@ export function useSetArquivadaCampo() {
       arquivada_campo: boolean
       status?: string
     }) => {
-      const update: Record<string, unknown> = { arquivada_campo }
+      const update: { arquivada_campo: boolean; status?: string } = { arquivada_campo }
       if (status !== undefined) update.status = status
       const { error } = await supabase.from("field_inspections").update(update).eq("id", id)
       if (error) throw error
@@ -533,11 +533,15 @@ export function usePointPhotos(pointId?: string) {
   });
 }
 
-/** Redimensiona (~1600px) e sobe a foto para o bucket rti-evidencias (pasta campo/). */
-export async function uploadFieldPhoto(file: File): Promise<{ path: string; name: string }> {
+/** Redimensiona (~1600px) e sobe a foto para o bucket rti-evidencias.
+ * Path escopado por org ({org_id}/campo/…) quando orgId é informado; senão usa o
+ * legado `campo/…` (sem regressão). Prepara isolamento + storage frio futuro. */
+export async function uploadFieldPhoto(file: File, orgId?: string): Promise<{ path: string; name: string }> {
   const resized = await resizeImage(file);
   const ext = resized.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const path = `campo/${crypto.randomUUID()}.${ext}`;
+  const path = orgId
+    ? `${orgId}/campo/${crypto.randomUUID()}.${ext}`
+    : `campo/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from("rti-evidencias").upload(path, resized, {
     cacheControl: "3600",
     upsert: false,
@@ -724,6 +728,9 @@ export async function comporRti({
     const { data: rep, error: rErr } = await supabase
       .from("rti_reports")
       .insert({
+        // Raiz do RTI herda a org da inspeção de origem; as NCs/áreas/evidências
+        // cascateiam o org_id via trigger no banco. Ausente → trigger resolve (single-org).
+        org_id: inspection.org_id ?? undefined,
         titulo: inspection.titulo,
         empresa_auditora: inspection.cliente,
         responsavel_auditoria: inspection.engenheiro,
@@ -843,7 +850,11 @@ export async function comporRti({
         // Fotos do ponto → evidência de constatação em cada NC (cópia independente)
         for (const ph of fotosDoPonto) {
           const ext = ph.file_path.split(".").pop() ?? "jpg";
-          const novoPath = `evidencias/${crypto.randomUUID()}.${ext}`;
+          // Path escopado por org (fallback ao legado `evidencias/…` se a inspeção
+          // não tiver org_id — mantém compatibilidade sem regressão).
+          const novoPath = inspection.org_id
+            ? `${inspection.org_id}/evidencias/${crypto.randomUUID()}.${ext}`
+            : `evidencias/${crypto.randomUUID()}.${ext}`;
           const { error: cpErr } = await supabase.storage.from("rti-evidencias").copy(ph.file_path, novoPath);
           if (cpErr) throw cpErr;
           const { error: evErr } = await supabase.from("rti_nc_evidencias").insert({
