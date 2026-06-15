@@ -138,6 +138,31 @@ Falta (fazer com a migração já aplicada, para poder verificar rodando o app):
   Cloudflare para o preset Vercel (remover/condicionar `@cloudflare/vite-plugin`
   em [`vite.config.ts`](../../../vite.config.ts)); validar SSR no deploy real.
 
+## Sessão, offline e login (comportamento atual + futuro)
+
+**Como funciona hoje (PWA):**
+- 1º login precisa de internet (`signInWithPassword` valida no servidor). A sessão
+  fica salva no aparelho (`persistSession`). `Layout` usa `getSession()` (sem rede)
+  → reabrir o app offline entra direto, sem pedir login.
+- **"Sair" (`signOut`) apaga a sessão salva** → o próximo login exige internet.
+  Por isso, para uso offline, a orientação é: NÃO clicar em Sair, só fechar o app.
+  Já há **confirmação no botão Sair** avisando isso (reforçada quando offline).
+- Dados coletados (Dexie/IndexedDB) **persistem** mesmo após `signOut`; sincronizam
+  quando o mesmo usuário logar de novo (online).
+
+**Item futuro — Login OFFLINE multiusuário (aparelho compartilhado):**
+Necessidade real: vários técnicos num mesmo tablet, sem sinal, cada um entrando
+mesmo após logout, sem internet. Não é comportamento padrão do Supabase. Abordagem
+recomendada (a desenhar/brainstormar antes de implementar):
+1. Após cada login ONLINE, **cachear a sessão do usuário** (access+refresh token)
+   localmente, indexada por e-mail/`user_id` (IndexedDB).
+2. "Entrar offline" para um usuário já conhecido = `supabase.auth.setSession({...})`
+   com os tokens cacheados (não faz rede) em vez de `signInWithPassword`.
+3. **Gate de segurança por PIN local** por usuário (hash local), porque guardar
+   refresh tokens de vários usuários num aparelho compartilhado é sensível.
+4. Tratar expiração do refresh token (offline longo) e revogação.
+Esforço médio; mexe em auth + segurança → passar por brainstorming antes.
+
 ## Riscos conhecidos / pontos de atenção
 - A migração remove leitura pública (`USING(true)`) das tabelas LOTO. Se houver
   página anônima do app LOTO, validar antes de aplicar.
