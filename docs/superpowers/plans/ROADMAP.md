@@ -1,7 +1,30 @@
 # ROADMAP — gestão_nr10 (handoff entre sessões)
 
 > Documento de continuidade. Permite retomar o trabalho numa nova sessão de IA
-> sem o contexto desta. Última atualização: 2026-06-14.
+> sem o contexto desta. Última atualização: 2026-06-15.
+
+## ⏱️ O QUE FALTA FAZER AGORA (checklist ordenado)
+
+Fases 0 → 2 estão com **código/SQL prontos e commitados** na `main`; CI verde
+(lint 0 erros, 85 testes, build app+PWA). Migrações da fundação, da cascata de
+org_id e do seed do consultor **já aplicadas** pelo usuário. Falta só **validar o
+isolamento** (Fase 2) e itens opcionais:
+
+1. **Deploy da edge function** (no terminal, na raiz do projeto):
+   `supabase functions deploy admin-users` — passa a aceitar `org_id`/`org_role`.
+2. **Criar 3 usuários de teste + vínculo de org** (de um destes 2 jeitos):
+   - via a função (recomendado): `create` com `{ email, password, org_id, org_role }`
+     → consultor em `…c0` (`owner`), cliente_a em `…a0` (`member`), cliente_b em
+     `…b0` (`member`); **ou**
+   - pelo dashboard (Auth → Add user) + rodar o `INSERT ... org_memberships` do
+     template no fim de `supabase/migrations/20260614020000_seed_consultor_demo.sql`.
+3. **Rodar o teste de isolamento**: abrir `supabase/tests/fase2_isolation_test.sql`,
+   colar os 4 UUIDs no bloco `VALUES` e executar no SQL Editor → conferir a matriz
+   esperada (consultor lê A mas não B; cada cliente só a própria org; admin tudo).
+4. *(Opcional, prova final)* Logar no app/PWA como cada usuário e confirmar que
+   cada um só vê os dados da própria org.
+
+Itens opcionais/futuros estão em "Passos manuais" e "Fases posteriores" abaixo.
 
 ## Visão de produto (por que existe)
 
@@ -69,11 +92,16 @@ camada de revenda entra já no MVP.
 - RLS reescrita: `USING(true)` → escopo por org; `profiles` restrito a co-membros;
   `fn_audit` agora grava `org_id`; `compliance_snapshots` único por (org, mês).
 
-### Estado de implantação (2026-06-14)
-- ✅ Migração APLICADA no Supabase. Verificada ponta a ponta: PWA no Vercel
-  (`campo-pwa.vercel.app`), login, criação de inspeção, sync campo→nuvem→app
+### Estado de implantação (2026-06-15)
+- ✅ Migração da fundação APLICADA no Supabase. Verificada ponta a ponta: PWA no
+  Vercel (`campo-pwa.vercel.app`), login, criação de inspeção, sync campo→nuvem→app
   principal e **upload de foto** funcionando sob a fundação multi-tenant.
+- ✅ Migração da cascata `20260614010000_org_id_cascade.sql` APLICADA (2026-06-15).
+- ✅ Seed `20260614020000_seed_consultor_demo.sql` APLICADO (orgs Consultoria/A/B +
+  entitlements). Falta criar/vincular os usuários de teste (ver checklist no topo).
 - ✅ Platform admin definido (usuário hsgustavo1).
+- ⏳ Edge function `admin-users` (escopo por org) ainda **não deployada**; teste de
+  isolamento ainda não rodado. Ver checklist no topo do doc.
 - ⚠️ Patch pós-aplicação já no repo (commit `eaf3b86`): `fn_default_org_id` não
   pode usar `min(uuid)` (Postgres não tem esse agregado → erro 42883 quebrava
   todos os inserts `field_*`). Se for reaplicar a migração do zero, o arquivo já
@@ -88,21 +116,29 @@ camada de revenda entra já no MVP.
 - Conclusão: rotação **não é urgente**. Opcional rotacionar a Publishable key por
   higiene (atualizar Vercel + `.env` + redeploy). `.gitignore` já bloqueia `.env*`.
 
-### Passos manuais ainda pendentes (do usuário)
-1. ⏳ **Aplicar a migração `20260614010000_org_id_cascade.sql`** no SQL Editor
-   (cascata de org_id + índices). Sem ela, inserts de usuário multi-org (Fase 2)
-   falham por NOT NULL; single-org continua OK via `fn_default_org_id`.
-2. (Opcional/baixa prioridade) Rotacionar a Publishable key do Supabase por higiene.
-3. ⏳ Reprocessar/limpar itens "dead-letter" da fila do PWA (agora há botões
-   "Tentar novamente" e "Descartar" no banner de sync).
-4. (Opcional) Migrar o app principal para o Vercel — hoje continua na Cloudflare.
+### Passos manuais pendentes (do usuário)
+**Para concluir a Fase 2** (ordem no checklist do topo): deploy de `admin-users`,
+criar/vincular 3 usuários de teste, rodar o teste de isolamento.
 
-### Dívida conhecida (pré-existente, não bloqueia)
-- O repo **não é prettier-clean**: `npm run lint` (`eslint .`) acusa centenas de
-  erros `prettier/prettier` de formatação em arquivos legados (estilo compacto).
-  Logo, o step de lint do CI (Fase 0) fica vermelho por formatação pré-existente,
-  não por bug. Opções: rodar `eslint . --fix` num commit isolado (diff grande) ou
-  remover o plugin prettier do eslint. Typecheck e build estão verdes.
+**Opcionais / baixa prioridade:**
+1. Rotacionar a Publishable key do Supabase por higiene.
+2. Reprocessar/limpar itens "dead-letter" da fila do PWA (já há botões "Tentar
+   novamente" e "Descartar" no banner de sync).
+3. Migrar o app principal para o Vercel — hoje na Cloudflare (sem lock-in;
+   **recomendado como tarefa isolada pós-Fase 2**, ver fases posteriores).
+
+### Higiene de lint/CI — ✅ RESOLVIDO (2026-06-15)
+Commits `7c7d7fb` (reformat prettier do repo + ajuste do eslint) e `5ead464`
+(`.git-blame-ignore-revs`). `eslint .` agora sai com **0 erros** (CI verde);
+restam 42 *warnings* não-bloqueantes (26 `any` rebaixado para warn; 9 react-refresh;
+7 `react-hooks/exhaustive-deps`). Config: passou a ignorar `**/dist/**` (estava
+varrendo o build do PWA) e `no-explicit-any` virou `warn` (usos legítimos: Supabase
+não-tipado, Recharts).
+- ⏳ **A revisar (não bloqueia):** os 7 `exhaustive-deps` em `rti.custos.tsx`,
+  `InspectionDetail.tsx`, `print-label-dialog.tsx` — únicos com risco de bug real
+  (dep faltando em `useMemo`/`useEffect`); analisar caso a caso antes de "corrigir".
+- Para ativar o blame-ignore localmente: `git config blame.ignoreRevsFile .git-blame-ignore-revs`
+  (o GitHub usa automático).
 
 ## Próximas fases (ordem sugerida)
 
