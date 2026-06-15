@@ -24,9 +24,22 @@ type Action =
       org_id?: string;
       org_role?: OrgRole;
     }
-  | { type: "delete"; user_id: string }
-  | { type: "reset_password"; email: string; redirect_to?: string }
-  | { type: "update"; user_id: string; email?: string; display_name?: string; password?: string };
+  // Lista os usuários de uma org (membros + profiles + papéis globais). Privilegiado
+  // porque o RLS de `profiles` (shares_org) esconde usuários de orgs que o caller
+  // gerencia mas não é co-membro (caso do consultor sobre o cliente).
+  | { type: "list"; org_id: string }
+  // org_id opcional em delete/reset/update: quando presente, a autz é por org
+  // (org_role_at_least admin) + verificação de que o alvo pertence à org.
+  | { type: "delete"; user_id: string; org_id?: string }
+  | { type: "reset_password"; email: string; redirect_to?: string; org_id?: string }
+  | {
+      type: "update";
+      user_id: string;
+      email?: string;
+      display_name?: string;
+      password?: string;
+      org_id?: string;
+    };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -66,14 +79,17 @@ Deno.serve(async (req) => {
     //  - criar usuário PARA uma org exige org_role_at_least(admin) naquela org
     //    (cobre consultor que gerencia o cliente, via can_access/org_role_at_least);
     //  - sem org_id, cai no papel global legado (has_role admin) — compat single-tenant.
+    // org_id escopa a autorização em qualquer ação que o aceite.
+    const actionOrgId =
+      "org_id" in action ? (action as { org_id?: string }).org_id : undefined;
+
     const { data: platformAdmin } = await userClient.rpc("is_platform_admin", { _uid: callerId });
     let authorized = platformAdmin === true;
     if (!authorized) {
-      const orgId = action.type === "create" ? action.org_id : undefined;
-      if (orgId) {
+      if (actionOrgId) {
         const { data: orgOk, error: orgErr } = await userClient.rpc("org_role_at_least", {
           _uid: callerId,
-          _org_id: orgId,
+          _org_id: actionOrgId,
           _min: "admin",
         });
         if (orgErr) return json({ error: "Org role check failed: " + orgErr.message }, 500);
@@ -93,6 +109,65 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
     });
+
+    // Quando a autz é por org (não platform admin), o usuário-alvo precisa pertencer
+    // à org — senão um admin de org A poderia mirar um usuário de outra org só passando
+    // o org_id que administra. Platform admin e caminho global legado pulam a checagem.
+    const targetMustBeInOrg = Boolean(actionOrgId) && platformAdmin !== true;
+    async function assertUserInOrg(targetUserId: string): Promise<boolean> {
+      if (!targetMustBeInOrg) return true;
+      const { data } = await admin
+        .from("org_memberships")
+        .select("user_id")
+        .eq("org_id", actionOrgId)
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+      return Boolean(data);
+    }
+
+    if (action.type === "list") {
+      if (!actionOrgId) return json({ error: "org_id é obrigatório" }, 400);
+      const { data: mems, error: memErr } = await admin
+        .from("org_memberships")
+        .select("user_id, org_role")
+        .eq("org_id", actionOrgId);
+      if (memErr) return json({ error: memErr.message }, 500);
+      const ids = (mems ?? []).map((m: { user_id: string }) => m.user_id);
+      if (ids.length === 0) return json({ ok: true, users: [] });
+
+      const [{ data: profs }, { data: gRoles }] = await Promise.all([
+        admin.from("profiles").select("id, email, display_name").in("id", ids),
+        admin.from("user_roles").select("user_id, role").in("user_id", ids),
+      ]);
+
+      const roleMap = new Map<string, string[]>();
+      (gRoles ?? []).forEach((r: { user_id: string; role: string }) => {
+        const arr = roleMap.get(r.user_id) ?? [];
+        arr.push(r.role);
+        roleMap.set(r.user_id, arr);
+      });
+      const orgRoleMap = new Map(
+        (mems ?? []).map((m: { user_id: string; org_role: string }) => [m.user_id, m.org_role]),
+      );
+      const profMap = new Map(
+        (profs ?? []).map((p: { id: string; email: string | null; display_name: string | null }) => [
+          p.id,
+          p,
+        ]),
+      );
+
+      const users = ids.map((id: string) => {
+        const p = profMap.get(id);
+        return {
+          id,
+          email: p?.email ?? null,
+          display_name: p?.display_name ?? null,
+          org_role: orgRoleMap.get(id) ?? null,
+          roles: roleMap.get(id) ?? [],
+        };
+      });
+      return json({ ok: true, users });
+    }
 
     if (action.type === "create") {
       const email = (action.email ?? "").trim().toLowerCase();
@@ -157,17 +232,54 @@ Deno.serve(async (req) => {
       if (action.user_id === userRes.user.id) {
         return json({ error: "Você não pode remover a si mesmo" }, 400);
       }
-      // Remove roles, memberships e profile primeiro (FK não cascateia daqui), depois auth user
+      if (!(await assertUserInOrg(action.user_id))) {
+        return json({ error: "Usuário não pertence a esta organização" }, 403);
+      }
+
+      // Delete escopado por org (consultor/admin de org): remove só o vínculo daquela
+      // org. Só apaga o usuário do auth se ele não sobrar em nenhuma outra org nem
+      // tiver papel global — evita derrubar um usuário multi-org de outro tenant.
+      if (targetMustBeInOrg) {
+        await admin
+          .from("org_memberships")
+          .delete()
+          .eq("user_id", action.user_id)
+          .eq("org_id", actionOrgId);
+        const [{ data: remMems }, { data: remRoles }] = await Promise.all([
+          admin.from("org_memberships").select("org_id").eq("user_id", action.user_id),
+          admin.from("user_roles").select("role").eq("user_id", action.user_id),
+        ]);
+        const orphan = (remMems ?? []).length === 0 && (remRoles ?? []).length === 0;
+        if (orphan) {
+          await admin.from("profiles").delete().eq("id", action.user_id);
+          const { error: delErr } = await admin.auth.admin.deleteUser(action.user_id);
+          if (delErr) return json({ error: delErr.message }, 400);
+        }
+        return json({ ok: true, removed_from_org: true, deleted_user: orphan });
+      }
+
+      // Delete global legado (platform admin / admin global): remove tudo.
       await admin.from("user_roles").delete().eq("user_id", action.user_id);
       await admin.from("org_memberships").delete().eq("user_id", action.user_id);
       await admin.from("profiles").delete().eq("id", action.user_id);
       const { error: delErr } = await admin.auth.admin.deleteUser(action.user_id);
       if (delErr) return json({ error: delErr.message }, 400);
-      return json({ ok: true });
+      return json({ ok: true, deleted_user: true });
     }
 
     if (action.type === "reset_password") {
       if (!action.email) return json({ error: "email é obrigatório" }, 400);
+      // Escopo por org: o alvo (por e-mail) precisa pertencer à org.
+      if (targetMustBeInOrg) {
+        const { data: prof } = await admin
+          .from("profiles")
+          .select("id")
+          .eq("email", action.email.trim().toLowerCase())
+          .maybeSingle();
+        if (!prof || !(await assertUserInOrg(prof.id))) {
+          return json({ error: "Usuário não pertence a esta organização" }, 403);
+        }
+      }
       // Usa o cliente público para DISPARAR o e-mail (generateLink só gera link, não envia)
       const publicClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
         auth: { persistSession: false },
@@ -182,6 +294,9 @@ Deno.serve(async (req) => {
 
     if (action.type === "update") {
       if (!action.user_id) return json({ error: "user_id é obrigatório" }, 400);
+      if (!(await assertUserInOrg(action.user_id))) {
+        return json({ error: "Usuário não pertence a esta organização" }, 403);
+      }
       const updates: {
         email?: string;
         password?: string;

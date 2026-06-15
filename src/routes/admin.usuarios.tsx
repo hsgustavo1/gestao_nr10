@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
   ShieldCheck,
@@ -9,6 +9,8 @@ import {
   Trash2,
   KeyRound,
   Pencil,
+  Building2,
+  Eye,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,40 +51,97 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth, type AppRole } from "@/lib/auth-context";
+import { useAuth, type AppRole, type OrgRole } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/admin/usuarios")({
   component: AdminUsersPage,
   head: () => ({ meta: [{ title: "Controle de acessos — Bloqueio de energias perigosas" }] }),
 });
 
+// Org semente legada (single-tenant). Para ela o painel mantém o comportamento
+// global histórico (papéis "Dono de RAC"/"Apoio"); para orgs-cliente passa a operar
+// por org (níveis Administrador/Visualização) via edge function.
+const PRINCIPAL_ORG_ID = "00000000-0000-0000-0000-000000000001";
+
+// Nível de cliente oferecido na criação por org. Grosso de propósito no MVP; o nível
+// "operador restrito" (edita operação, mas prioridades/NCs travadas) está no ROADMAP.
+type ClientOrgRole = Extract<OrgRole, "admin" | "viewer">;
+
 type Profile = { id: string; email: string | null; display_name: string | null };
-type Row = Profile & { roles: AppRole[] };
+type Row = Profile & { roles: AppRole[]; org_role: OrgRole | null };
+
+function orgRoleLabel(r: OrgRole | null): string {
+  switch (r) {
+    case "owner":
+      return "Dono da empresa";
+    case "admin":
+      return "Administrador";
+    case "member":
+      return "Operador";
+    case "viewer":
+      return "Visualização";
+    default:
+      return "—";
+  }
+}
 
 function AdminUsersPage() {
-  const { isAdmin, loading, user } = useAuth();
+  const { isAdmin, loading, user, currentOrg, currentOrgId, hasOrgRole } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [openInvite, setOpenInvite] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Row | null>(null);
   const [editing, setEditing] = useState<Row | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
-  async function reload() {
-    const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("id,email,display_name").order("created_at"),
-      supabase.from("user_roles").select("user_id,role"),
-    ]);
-    const map = new Map<string, AppRole[]>();
-    (roles ?? []).forEach((r) => {
-      const arr = map.get(r.user_id) ?? [];
-      arr.push(r.role as AppRole);
-      map.set(r.user_id, arr);
+  const isPrincipal = !currentOrgId || currentOrgId === PRINCIPAL_ORG_ID;
+  // Sem tenancy aplicada cai no papel global; com org-cliente exige admin na org
+  // (cobre o consultor que gerencia o cliente via managed_by).
+  const canManage = isPrincipal ? isAdmin : hasOrgRole("admin");
+
+  const reload = useCallback(async () => {
+    const principal = !currentOrgId || currentOrgId === PRINCIPAL_ORG_ID;
+    if (principal) {
+      // Legado: leitura direta (RLS libera a co-membros/platform admin).
+      const [{ data: profiles }, { data: roles }] = await Promise.all([
+        supabase.from("profiles").select("id,email,display_name").order("created_at"),
+        supabase.from("user_roles").select("user_id,role"),
+      ]);
+      const map = new Map<string, AppRole[]>();
+      (roles ?? []).forEach((r) => {
+        const arr = map.get(r.user_id) ?? [];
+        arr.push(r.role as AppRole);
+        map.set(r.user_id, arr);
+      });
+      setRows((profiles ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? [], org_role: null })));
+      return;
+    }
+    // Org-cliente: o RLS de profiles esconde usuários que o consultor gerencia mas não
+    // é co-membro — lista via edge function privilegiada.
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { type: "list", org_id: currentOrgId },
     });
-    setRows((profiles ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? [] })));
-  }
+    if (error || (data as { error?: string } | null)?.error) {
+      const msg =
+        (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao listar usuários";
+      toast.error(msg);
+      setRows([]);
+      return;
+    }
+    const users = ((data as { users?: Row[] } | null)?.users ?? []) as Row[];
+    setRows(
+      users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        display_name: u.display_name,
+        roles: u.roles ?? [],
+        org_role: u.org_role ?? null,
+      })),
+    );
+  }, [currentOrgId]);
+
   useEffect(() => {
     void reload();
-  }, []);
+  }, [reload]);
 
   if (loading)
     return (
@@ -90,14 +149,14 @@ function AdminUsersPage() {
         <div className="text-sm text-muted-foreground">Carregando...</div>
       </PageShell>
     );
-  if (!isAdmin) {
+  if (!canManage) {
     return (
       <PageShell>
         <div className="text-center py-16">
           <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
           <h1 className="mt-3 text-xl font-bold">Acesso restrito</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Apenas Admins podem gerenciar usuários e permissões.
+            Apenas administradores podem gerenciar usuários e permissões.
           </p>
           <Button asChild variant="outline" className="mt-4">
             <Link to="/dashboard">Voltar</Link>
@@ -131,10 +190,13 @@ function AdminUsersPage() {
     reload();
   }
 
+  // org_id escopa a operação no backend quando estamos numa org-cliente.
+  const orgScope = isPrincipal ? {} : { org_id: currentOrgId };
+
   async function deleteUser(row: Row) {
     setBusy(row.id);
     const { data, error } = await supabase.functions.invoke("admin-users", {
-      body: { type: "delete", user_id: row.id },
+      body: { type: "delete", user_id: row.id, ...orgScope },
     });
     setBusy(null);
     setPendingDelete(null);
@@ -152,7 +214,7 @@ function AdminUsersPage() {
     const redirect_to =
       typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined;
     const { data, error } = await supabase.functions.invoke("admin-users", {
-      body: { type: "reset_password", email: row.email, redirect_to },
+      body: { type: "reset_password", email: row.email, redirect_to, ...orgScope },
     });
     setBusy(null);
     if (error || (data && (data as { error?: string }).error)) {
@@ -167,10 +229,17 @@ function AdminUsersPage() {
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">Controle de acessos</h1>
-          <p className="text-sm text-muted-foreground">
-            Cadastre Apoios e Donos de RAC, gerencie permissões, edite dados e envie redefinição de
-            senha.
-          </p>
+          {isPrincipal ? (
+            <p className="text-sm text-muted-foreground">
+              Cadastre Apoios e Donos de RAC, gerencie permissões, edite dados e envie redefinição
+              de senha.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5" />
+              Gerenciando os acessos de <strong>{currentOrg?.nome ?? "—"}</strong>
+            </p>
+          )}
         </div>
         <Button
           onClick={() => setOpenInvite(true)}
@@ -187,7 +256,7 @@ function AdminUsersPage() {
               <TableRow>
                 <TableHead>Usuário</TableHead>
                 <TableHead>E-mail</TableHead>
-                <TableHead>Perfis</TableHead>
+                <TableHead>{isPrincipal ? "Perfis" : "Nível"}</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -211,35 +280,50 @@ function AdminUsersPage() {
                   </TableCell>
                   <TableCell className="text-sm">{u.email}</TableCell>
                   <TableCell>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {u.roles.length === 0 && (
-                        <span className="text-xs text-muted-foreground">Sem perfil</span>
-                      )}
-                      {u.roles.map((r) => (
-                        <span
-                          key={r}
-                          className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent"
-                        >
+                    {isPrincipal ? (
+                      <div className="flex gap-1.5 flex-wrap">
+                        {u.roles.length === 0 && (
+                          <span className="text-xs text-muted-foreground">Sem perfil</span>
+                        )}
+                        {u.roles.map((r) => (
+                          <span
+                            key={r}
+                            className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent"
+                          >
+                            <ShieldCheck className="h-3 w-3" />
+                            {r === "admin" ? "Dono de RAC (Admin)" : "Apoio"}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                        {u.org_role === "viewer" ? (
+                          <Eye className="h-3 w-3" />
+                        ) : (
                           <ShieldCheck className="h-3 w-3" />
-                          {r === "admin" ? "Dono de RAC (Admin)" : "Apoio"}
-                        </span>
-                      ))}
-                    </div>
+                        )}
+                        {orgRoleLabel(u.org_role)}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
-                      <RoleToggle
-                        role="apoio"
-                        active={u.roles.includes("apoio")}
-                        disabled={busy !== null}
-                        onChange={(v) => setRole(u.id, "apoio", v)}
-                      />
-                      <RoleToggle
-                        role="admin"
-                        active={u.roles.includes("admin")}
-                        disabled={busy !== null || u.id === user?.id}
-                        onChange={(v) => setRole(u.id, "admin", v)}
-                      />
+                      {isPrincipal && (
+                        <>
+                          <RoleToggle
+                            role="apoio"
+                            active={u.roles.includes("apoio")}
+                            disabled={busy !== null}
+                            onChange={(v) => setRole(u.id, "apoio", v)}
+                          />
+                          <RoleToggle
+                            role="admin"
+                            active={u.roles.includes("admin")}
+                            disabled={busy !== null || u.id === user?.id}
+                            onChange={(v) => setRole(u.id, "admin", v)}
+                          />
+                        </>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
@@ -277,15 +361,32 @@ function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      <p className="text-xs text-muted-foreground mt-4">
-        Donos de RAC (Admin) têm controle total. Apoios podem cadastrar, transferir e realizar
-        baixas de dispositivos. Você não pode rebaixar nem remover a si mesmo — peça a outro Dono de
-        RAC.
-      </p>
+      {isPrincipal ? (
+        <p className="text-xs text-muted-foreground mt-4">
+          Donos de RAC (Admin) têm controle total. Apoios podem cadastrar, transferir e realizar
+          baixas de dispositivos. Você não pode rebaixar nem remover a si mesmo — peça a outro Dono
+          de RAC.
+        </p>
+      ) : (
+        <p className="text-xs text-muted-foreground mt-4">
+          <strong>Administrador</strong> controla o sistema da própria empresa.{" "}
+          <strong>Visualização</strong> só consulta, sem alterar dados. O nível "operador restrito"
+          (edita a operação, mas mantém prioridades/NCs definidas pelo consultor) está no roadmap.
+        </p>
+      )}
 
-      <InviteUserDialog open={openInvite} onOpenChange={setOpenInvite} onCreated={reload} />
+      <InviteUserDialog
+        open={openInvite}
+        onOpenChange={setOpenInvite}
+        onCreated={reload}
+        isPrincipal={isPrincipal}
+        orgId={currentOrgId}
+        orgName={currentOrg?.nome ?? null}
+      />
       <EditUserDialog
         row={editing}
+        isPrincipal={isPrincipal}
+        orgId={currentOrgId}
         onOpenChange={(o) => !o && setEditing(null)}
         onSaved={() => {
           setEditing(null);
@@ -300,8 +401,9 @@ function AdminUsersPage() {
               Remover {pendingDelete?.display_name ?? pendingDelete?.email}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              O usuário será removido do sistema e perderá imediatamente o acesso. Esta ação é
-              irreversível. Os cadeados criados por ele permanecem.
+              {isPrincipal
+                ? "O usuário será removido do sistema e perderá imediatamente o acesso. Esta ação é irreversível. Os cadeados criados por ele permanecem."
+                : `O usuário perderá o acesso a ${currentOrg?.nome ?? "esta empresa"}. Se não pertencer a nenhuma outra empresa, a conta é removida por completo. Esta ação é irreversível.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -348,15 +450,22 @@ function InviteUserDialog({
   open,
   onOpenChange,
   onCreated,
+  isPrincipal,
+  orgId,
+  orgName,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onCreated: () => void;
+  isPrincipal: boolean;
+  orgId: string | null;
+  orgName: string | null;
 }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<AppRole>("apoio");
+  const [orgRole, setOrgRole] = useState<ClientOrgRole>("admin");
   const [loading, setLoading] = useState(false);
 
   function reset() {
@@ -364,6 +473,7 @@ function InviteUserDialog({
     setName("");
     setPassword("");
     setRole("apoio");
+    setOrgRole("admin");
     setLoading(false);
   }
 
@@ -371,19 +481,31 @@ function InviteUserDialog({
     e.preventDefault();
     if (!email.includes("@")) return toast.error("E-mail inválido");
     if (password.length < 8) return toast.error("Senha deve ter ao menos 8 caracteres");
+    if (!isPrincipal && !orgId) return toast.error("Nenhuma empresa selecionada");
     setLoading(true);
-    const { data, error } = await supabase.functions.invoke("admin-users", {
-      body: { type: "create", email, password, display_name: name || undefined, role },
-    });
+    const body = isPrincipal
+      ? { type: "create", email, password, display_name: name || undefined, role }
+      : {
+          type: "create",
+          email,
+          password,
+          display_name: name || undefined,
+          org_id: orgId,
+          org_role: orgRole,
+        };
+    const { data, error } = await supabase.functions.invoke("admin-users", { body });
     setLoading(false);
     if (error || (data && (data as { error?: string }).error)) {
       const msg =
         (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao cadastrar";
       return toast.error(msg);
     }
-    toast.success(
-      `Usuário ${email} cadastrado como ${role === "admin" ? "Dono de RAC (Admin)" : "Apoio"}`,
-    );
+    const levelLabel = isPrincipal
+      ? role === "admin"
+        ? "Dono de RAC (Admin)"
+        : "Apoio"
+      : orgRoleLabel(orgRole);
+    toast.success(`Usuário ${email} cadastrado como ${levelLabel}`);
     reset();
     onOpenChange(false);
     onCreated();
@@ -401,8 +523,9 @@ function InviteUserDialog({
         <DialogHeader>
           <DialogTitle>Novo Acesso</DialogTitle>
           <DialogDescription>
-            Crie a conta diretamente — o usuário poderá entrar imediatamente com a senha definida e
-            redefini-la depois pelo fluxo de "Esqueci minha senha".
+            {isPrincipal
+              ? "Crie a conta diretamente — o usuário poderá entrar imediatamente com a senha definida e redefini-la depois pelo fluxo de “Esqueci minha senha”."
+              : `O usuário será vinculado a ${orgName ?? "esta empresa"} e poderá entrar imediatamente com a senha definida.`}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
@@ -443,16 +566,28 @@ function InviteUserDialog({
             </p>
           </div>
           <div className="space-y-1.5">
-            <Label>Perfil inicial</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="apoio">Apoio</SelectItem>
-                <SelectItem value="admin">Dono de RAC (Admin)</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>{isPrincipal ? "Perfil inicial" : "Nível de acesso"}</Label>
+            {isPrincipal ? (
+              <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="apoio">Apoio</SelectItem>
+                  <SelectItem value="admin">Dono de RAC (Admin)</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <Select value={orgRole} onValueChange={(v) => setOrgRole(v as ClientOrgRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrador da empresa</SelectItem>
+                  <SelectItem value="viewer">Visualização (somente leitura)</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
@@ -474,10 +609,14 @@ function InviteUserDialog({
 
 function EditUserDialog({
   row,
+  isPrincipal,
+  orgId,
   onOpenChange,
   onSaved,
 }: {
   row: Row | null;
+  isPrincipal: boolean;
+  orgId: string | null;
   onOpenChange: (o: boolean) => void;
   onSaved: () => void;
 }) {
@@ -507,6 +646,7 @@ function EditUserDialog({
         display_name: name,
         email: email || undefined,
         password: password || undefined,
+        ...(isPrincipal ? {} : { org_id: orgId }),
       },
     });
     setLoading(false);

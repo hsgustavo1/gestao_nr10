@@ -17,9 +17,9 @@ admin tudo. `can_access_org`/`org_role_at_least` (a base do RLS) comprovadamente
 isolam os tenants.
 
 Pendências (todas opcionais agora):
-1. **Deploy da edge function** `supabase functions deploy admin-users` — só é
-   preciso quando o app for criar usuários por org (hoje os usuários de teste foram
-   criados via dashboard). Não bloqueia nada.
+1. ✅ **Deploy da edge function `admin-users` — FEITO (2026-06-15, v1, ACTIVE,
+   verify_jwt on)** via Supabase MCP. (Antes nunca tinha sido publicada — era v1.)
+   Inclui a versão multi-tenant: ação `list` + autz org-aware.
 2. **UI:** wire do painel de usuários para criar/listar usuário **na org do cliente
    selecionado** (backend já pronto). É o próximo passo de produto da Fase 2.
 3. *(Opcional, prova final)* Logar no app/PWA como cada usuário de teste e ver só
@@ -138,14 +138,18 @@ restam 42 *warnings* não-bloqueantes (26 `any` rebaixado para warn; 9 react-ref
 7 `react-hooks/exhaustive-deps`). Config: passou a ignorar `**/dist/**` (estava
 varrendo o build do PWA) e `no-explicit-any` virou `warn` (usos legítimos: Supabase
 não-tipado, Recharts).
-- ⏳ **A revisar (não bloqueia) — PRÓXIMA TAREFA SUGERIDA:** os `exhaustive-deps`
-  (dep faltando em `useMemo`/`useEffect`), únicos warnings com risco de bug real.
-  Locais exatos (rodar `npx eslint <arquivo>` para reconfirmar):
-  - `src/routes/rti.custos.tsx:135` e `:157`
-  - `campo-pwa/src/pages/InspectionDetail.tsx:123` e `:158`
-  - `src/components/print-label-dialog.tsx:82` e `:108`
-  Analisar caso a caso: se a dep faltante for estável, ok ignorar com comentário;
-  se mudar entre renders, incluir (cuidado com loop). NÃO aplicar `--fix` cego.
+- ✅ **RESOLVIDO (2026-06-15):** os 7 `react-hooks/exhaustive-deps` foram revisados
+  caso a caso (nenhum era bug de correção latente, mas 2 viraram ganho real de perf):
+  - `src/routes/rti.custos.tsx` — predicados `matchSetor/matchPrioridade/matchTipo`
+    envolvidos em `useCallback` (ref estável entra nas deps dos `useMemo` sem quebrar
+    a memoização).
+  - `campo-pwa/src/pages/InspectionDetail.tsx` — `allFindings`/`nodes` estabilizados
+    com `useMemo` sobre o resultado cru do `useLiveQuery` (elimina recomputação de
+    `findingsByPoint`/`nodeById` durante o carregamento).
+  - `src/components/print-label-dialog.tsx` — `eslint-disable` documentado: incluir o
+    objeto `padlock` seria regressão (re-fetch da foto/re-query a cada render do pai);
+    as deps por-campo já cobrem o que o efeito lê.
+  `eslint` nos 3 arquivos sai com 0 warnings de exhaustive-deps; typecheck app+PWA verde.
 - Para ativar o blame-ignore localmente: `git config blame.ignoreRevsFile .git-blame-ignore-revs`
   (o GitHub usa automático).
 
@@ -207,21 +211,37 @@ Entregue (código/SQL no repo) e **isolamento validado em 2026-06-15**:
   agora aceita `org_id` + `org_role` no `create`, autoriza via
   `is_platform_admin` OU `org_role_at_least(admin)` na org (cobre o consultor),
   insere `org_memberships`, e limpa membership no `delete`. Compat: sem `org_id`
-  cai no papel global legado (`has_role admin`). **Passo manual: `supabase
-  functions deploy admin-users`.**
+  cai no papel global legado (`has_role admin`). Estendida em 2026-06-15 com a ação
+  `list` + autz org-aware em delete/update/reset. ✅ **Deployada (v1, ACTIVE).**
 - Teste de isolamento [`supabase/tests/fase2_isolation_test.sql`](../../../supabase/tests/fase2_isolation_test.sql):
   roda no SQL Editor web; testa direto `can_access_org`/`org_role_at_least` (a base
   do RLS) para os 4 perfis. **RODADO ✅ — matriz esperada bateu 100%** (consultor lê
   A e não B; cada cliente só a própria org; platform admin tudo).
 
 ⏳ Falta (UI — próximo passo de produto da Fase 2):
-- Wire do painel de usuários para criar usuário **na org do cliente selecionado**
-  (passar `org_id`/`org_role` do org ativo do contexto p/ a edge function) e listar
-  usuários por org. Hoje o painel é global (legado) — backend já pronto p/ escopar.
+- 🔨 **EM IMPLEMENTAÇÃO (2026-06-15):** wire do painel de usuários por org. Spec:
+  [`docs/superpowers/specs/2026-06-15-painel-usuarios-por-org-design.md`](../specs/2026-06-15-painel-usuarios-por-org-design.md).
+  Inclui: nova ação `list` na edge function (necessária — RLS de `profiles`/`shares_org`
+  esconde usuários-cliente do consultor, que gerencia mas não é co-membro); autz
+  org-aware em delete/update/reset; criação com `org_id`+`org_role` (níveis
+  Administrador/Visualização); gate por `hasOrgRole('admin')`. Legado (Empresa
+  Principal) inalterado. ✅ **`admin-users` deployada (v1, ACTIVE) em 2026-06-15.**
 - Rodar o pipeline campo→RTI logado como usuário do Cliente A e confirmar que o
-  RTI nasce com `org_id`=A (a fundação 1.6 já garante via cascata).
+  RTI nasce com `org_id`=A (a fundação 1.6 já garante via cascata). **Depende da
+  Fase 1.5** (gates por entitlement) para o cliente-admin operar sem papel global.
 
 ### Fases posteriores (registrar, não construir ainda)
+- **Dois níveis de cliente do consultor** (levantado 2026-06-15): hoje o painel oferece
+  só níveis grossos (`admin` = controla tudo / `viewer` = só lê). Falta o nível
+  **"cliente operador restrito":** edita a operação mas **prioridades/NCs definidas
+  pelo consultor ficam read-only** (o consultor entrega o relatório priorizado e o
+  cliente não deve alterar essa curadoria). É permissão **por campo** no domínio RTI
+  (column/action-level lock), mapeando a um futuro `org_role=member` + travas. O outro
+  nível (cliente-final, consultor só distribui) já é coberto por `admin` hoje.
+- **Gates de feature por entitlement (Fase 1.5):** as telas ainda liberam por papel
+  **global** (`isStaff`/`isAdmin`). Para um cliente-admin operar o app 100% sem receber
+  papel global, falta migrar os gates para `hasEntitlement`/`hasOrgRole`. Pré-requisito
+  real para "cliente do Cliente A roda o próprio pipeline campo→RTI".
 - **Vitrine sem login segura:** função `SECURITY DEFINER` que recebe um
   `org_public_tokens.token` e retorna só os indicadores **conformes** (nunca NCs).
   O "viewer mode" atual é client-side (`sessionStorage`) e **não serve** como
