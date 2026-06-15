@@ -7,24 +7,25 @@
 
 Fases 0 → 2 estão com **código/SQL prontos e commitados** na `main`; CI verde
 (lint 0 erros, 85 testes, build app+PWA). Migrações da fundação, da cascata de
-org_id e do seed do consultor **já aplicadas** pelo usuário. Falta só **validar o
-isolamento** (Fase 2) e itens opcionais:
+org_id e do seed do consultor **aplicadas**. **Isolamento multi-tenant VALIDADO**
+em 2026-06-15 (ver abaixo). Restam só itens opcionais/UI.
 
-1. **Deploy da edge function** (no terminal, na raiz do projeto):
-   `supabase functions deploy admin-users` — passa a aceitar `org_id`/`org_role`.
-2. **Criar 3 usuários de teste + vínculo de org** (de um destes 2 jeitos):
-   - via a função (recomendado): `create` com `{ email, password, org_id, org_role }`
-     → consultor em `…c0` (`owner`), cliente_a em `…a0` (`member`), cliente_b em
-     `…b0` (`member`); **ou**
-   - pelo dashboard (Auth → Add user) + rodar o `INSERT ... org_memberships` do
-     template no fim de `supabase/migrations/20260614020000_seed_consultor_demo.sql`.
-3. **Rodar o teste de isolamento**: abrir `supabase/tests/fase2_isolation_test.sql`,
-   colar os 4 UUIDs no bloco `VALUES` e executar no SQL Editor → conferir a matriz
-   esperada (consultor lê A mas não B; cada cliente só a própria org; admin tudo).
-4. *(Opcional, prova final)* Logar no app/PWA como cada usuário e confirmar que
-   cada um só vê os dados da própria org.
+✅ **Fase 2 — isolamento VALIDADO (2026-06-15):** teste
+`supabase/tests/fase2_isolation_test.sql` rodado com 3 usuários de teste reais.
+Matriz confirmada: consultor lê A e não B; cliente A só A; cliente B só B; platform
+admin tudo. `can_access_org`/`org_role_at_least` (a base do RLS) comprovadamente
+isolam os tenants.
 
-Itens opcionais/futuros estão em "Passos manuais" e "Fases posteriores" abaixo.
+Pendências (todas opcionais agora):
+1. **Deploy da edge function** `supabase functions deploy admin-users` — só é
+   preciso quando o app for criar usuários por org (hoje os usuários de teste foram
+   criados via dashboard). Não bloqueia nada.
+2. **UI:** wire do painel de usuários para criar/listar usuário **na org do cliente
+   selecionado** (backend já pronto). É o próximo passo de produto da Fase 2.
+3. *(Opcional, prova final)* Logar no app/PWA como cada usuário de teste e ver só
+   os dados da própria org.
+
+Outros itens opcionais/futuros estão em "Passos manuais" e "Fases posteriores".
 
 ## Visão de produto (por que existe)
 
@@ -100,8 +101,10 @@ camada de revenda entra já no MVP.
 - ✅ Seed `20260614020000_seed_consultor_demo.sql` APLICADO (orgs Consultoria/A/B +
   entitlements). Falta criar/vincular os usuários de teste (ver checklist no topo).
 - ✅ Platform admin definido (usuário hsgustavo1).
-- ⏳ Edge function `admin-users` (escopo por org) ainda **não deployada**; teste de
-  isolamento ainda não rodado. Ver checklist no topo do doc.
+- ✅ **Isolamento multi-tenant validado (2026-06-15)** via teste com 3 usuários reais
+  (consultor/cliente A/cliente B) — matriz esperada bateu 100%.
+- ⏳ Edge function `admin-users` (escopo por org) ainda **não deployada** — opcional,
+  só necessária quando o app for criar usuários por org. Ver checklist no topo.
 - ⚠️ Patch pós-aplicação já no repo (commit `eaf3b86`): `fn_default_org_id` não
   pode usar `min(uuid)` (Postgres não tem esse agregado → erro 42883 quebrava
   todos os inserts `field_*`). Se for reaplicar a migração do zero, o arquivo já
