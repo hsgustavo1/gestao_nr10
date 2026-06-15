@@ -79,10 +79,19 @@ camada de revenda entra já no MVP.
   todos os inserts `field_*`). Se for reaplicar a migração do zero, o arquivo já
   está corrigido.
 
+### Segurança das chaves — VERIFICADO (2026-06-14)
+- Investigado: o `.env` commitado tinha **só a chave anon** (`role: anon`,
+  baixo risco — pública por design, protegida por RLS). A **`service_role`
+  NUNCA foi commitada** (0 ocorrências no histórico do `.env`; os matches de
+  "SERVICE_ROLE_KEY" são código referenciando o nome da env var + `.env.example`
+  vazio). `campo-pwa/.env.local` nunca esteve no git.
+- Conclusão: rotação **não é urgente**. Opcional rotacionar a Publishable key por
+  higiene (atualizar Vercel + `.env` + redeploy). `.gitignore` já bloqueia `.env*`.
+
 ### Passos manuais ainda pendentes (do usuário)
-1. ⏳ Rotacionar as chaves do Supabase (estiveram no histórico do git).
-2. ⏳ Reprocessar/limpar itens "dead-letter" da fila do PWA que falharam ANTES do
-   patch (a inspeção que "piscou" e fotos antigas). Itens novos sincronizam ok.
+1. (Opcional/baixa prioridade) Rotacionar a Publishable key do Supabase por higiene.
+2. ⏳ Reprocessar/limpar itens "dead-letter" da fila do PWA (agora há botões
+   "Tentar novamente" e "Descartar" no banner de sync).
 3. (Opcional) Migrar o app principal para o Vercel — hoje continua na Cloudflare.
 
 ## Próximas fases (ordem sugerida)
