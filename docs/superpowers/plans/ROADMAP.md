@@ -120,8 +120,9 @@ camada de revenda entra já no MVP.
   higiene (atualizar Vercel + `.env` + redeploy). `.gitignore` já bloqueia `.env*`.
 
 ### Passos manuais pendentes (do usuário)
-**Para concluir a Fase 2** (ordem no checklist do topo): deploy de `admin-users`,
-criar/vincular 3 usuários de teste, rodar o teste de isolamento.
+**Fase 2 — isolamento já validado ✅.** Só sobrou o deploy opcional de
+`admin-users` (necessário quando o app for criar usuários por org; ver checklist
+do topo).
 
 **Opcionais / baixa prioridade:**
 1. Rotacionar a Publishable key do Supabase por higiene.
@@ -137,9 +138,14 @@ restam 42 *warnings* não-bloqueantes (26 `any` rebaixado para warn; 9 react-ref
 7 `react-hooks/exhaustive-deps`). Config: passou a ignorar `**/dist/**` (estava
 varrendo o build do PWA) e `no-explicit-any` virou `warn` (usos legítimos: Supabase
 não-tipado, Recharts).
-- ⏳ **A revisar (não bloqueia):** os 7 `exhaustive-deps` em `rti.custos.tsx`,
-  `InspectionDetail.tsx`, `print-label-dialog.tsx` — únicos com risco de bug real
-  (dep faltando em `useMemo`/`useEffect`); analisar caso a caso antes de "corrigir".
+- ⏳ **A revisar (não bloqueia) — PRÓXIMA TAREFA SUGERIDA:** os `exhaustive-deps`
+  (dep faltando em `useMemo`/`useEffect`), únicos warnings com risco de bug real.
+  Locais exatos (rodar `npx eslint <arquivo>` para reconfirmar):
+  - `src/routes/rti.custos.tsx:135` e `:157`
+  - `campo-pwa/src/pages/InspectionDetail.tsx:123` e `:158`
+  - `src/components/print-label-dialog.tsx:82` e `:108`
+  Analisar caso a caso: se a dep faltante for estável, ok ignorar com comentário;
+  se mudar entre renders, incluir (cuidado com loop). NÃO aplicar `--fix` cego.
 - Para ativar o blame-ignore localmente: `git config blame.ignoreRevsFile .git-blame-ignore-revs`
   (o GitHub usa automático).
 
@@ -190,12 +196,12 @@ isolamento real continua no banco (file_path só é descoberto via linha RLS-sco
 paths são UUID aleatório). Tightening de storage RLS = fase posterior (junto da
 migração de fotos antigas para o prefixo `{org_id}/`).
 
-### Fase 2 — MVP: consultor entregando RTI+PWA  ✅ artefatos prontos / ⏳ validar + UI
-Entregue (código/SQL no repo):
+### Fase 2 — MVP: consultor entregando RTI+PWA  ✅ isolamento validado / ⏳ UI
+Entregue (código/SQL no repo) e **isolamento validado em 2026-06-15**:
 - Seed [`20260614020000_seed_consultor_demo.sql`](../../../supabase/migrations/20260614020000_seed_consultor_demo.sql):
   Consultoria Demo (`…c0`) + Cliente A (`…a0`, `managed_by`=consultoria) + Cliente B
-  (`…b0`, independente, p/ teste negativo) + entitlements `rti_pwa`. Vínculo de
-  usuários = template comentado. **Passo manual: aplicar.**
+  (`…b0`, independente, p/ teste negativo) + entitlements `rti_pwa`. **APLICADO ✅**
+  (usuários de teste criados via dashboard + INSERT do template).
 - Edge function `admin-users` escopada por org:
   [`supabase/functions/admin-users/index.ts`](../../../supabase/functions/admin-users/index.ts)
   agora aceita `org_id` + `org_role` no `create`, autoriza via
@@ -204,11 +210,11 @@ Entregue (código/SQL no repo):
   cai no papel global legado (`has_role admin`). **Passo manual: `supabase
   functions deploy admin-users`.**
 - Teste de isolamento [`supabase/tests/fase2_isolation_test.sql`](../../../supabase/tests/fase2_isolation_test.sql):
-  roda em transação com ROLLBACK, simula 4 perfis via JWT claims + `SET ROLE
-  authenticated`, mede o que cada um enxerga. **Passo manual: preencher 4 UUIDs
-  e rodar; conferir a matriz esperada no cabeçalho.**
+  roda no SQL Editor web; testa direto `can_access_org`/`org_role_at_least` (a base
+  do RLS) para os 4 perfis. **RODADO ✅ — matriz esperada bateu 100%** (consultor lê
+  A e não B; cada cliente só a própria org; platform admin tudo).
 
-⏳ Falta (UI, após validar o isolamento):
+⏳ Falta (UI — próximo passo de produto da Fase 2):
 - Wire do painel de usuários para criar usuário **na org do cliente selecionado**
   (passar `org_id`/`org_role` do org ativo do contexto p/ a edge function) e listar
   usuários por org. Hoje o painel é global (legado) — backend já pronto p/ escopar.
