@@ -10,8 +10,20 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+type OrgRole = "owner" | "admin" | "member" | "viewer";
+
 type Action =
-  | { type: "create"; email: string; password: string; display_name?: string; role: "admin" | "apoio" }
+  | {
+      type: "create";
+      email: string;
+      password: string;
+      display_name?: string;
+      // Papel global legado (single-tenant). Opcional quando org_id é informado.
+      role?: "admin" | "apoio";
+      // Multi-tenancy: vincula o novo usuário a uma org com um papel de org.
+      org_id?: string;
+      org_role?: OrgRole;
+    }
   | { type: "delete"; user_id: string }
   | { type: "reset_password"; email: string; redirect_to?: string }
   | { type: "update"; user_id: string; email?: string; display_name?: string; password?: string };
@@ -45,16 +57,37 @@ Deno.serve(async (req) => {
     });
     const { data: userRes, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userRes.user) return json({ error: "Invalid session" }, 401);
-
-    // Verifica role admin via RPC has_role
-    const { data: isAdmin, error: roleErr } = await userClient.rpc("has_role", {
-      _user_id: userRes.user.id,
-      _role: "admin",
-    });
-    if (roleErr) return json({ error: "Role check failed: " + roleErr.message }, 500);
-    if (!isAdmin) return json({ error: "Forbidden: admin role required" }, 403);
+    const callerId = userRes.user.id;
 
     const action = (await req.json()) as Action;
+
+    // Autorização escopada por org:
+    //  - platform admin pode tudo (cross-tenant);
+    //  - criar usuário PARA uma org exige org_role_at_least(admin) naquela org
+    //    (cobre consultor que gerencia o cliente, via can_access/org_role_at_least);
+    //  - sem org_id, cai no papel global legado (has_role admin) — compat single-tenant.
+    const { data: platformAdmin } = await userClient.rpc("is_platform_admin", { _uid: callerId });
+    let authorized = platformAdmin === true;
+    if (!authorized) {
+      const orgId = action.type === "create" ? action.org_id : undefined;
+      if (orgId) {
+        const { data: orgOk, error: orgErr } = await userClient.rpc("org_role_at_least", {
+          _uid: callerId,
+          _org_id: orgId,
+          _min: "admin",
+        });
+        if (orgErr) return json({ error: "Org role check failed: " + orgErr.message }, 500);
+        authorized = orgOk === true;
+      } else {
+        const { data: isAdmin, error: roleErr } = await userClient.rpc("has_role", {
+          _user_id: callerId,
+          _role: "admin",
+        });
+        if (roleErr) return json({ error: "Role check failed: " + roleErr.message }, 500);
+        authorized = isAdmin === true;
+      }
+    }
+    if (!authorized) return json({ error: "Forbidden: admin role required" }, 403);
 
     // Cliente admin com service role para operações privilegiadas
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -66,9 +99,21 @@ Deno.serve(async (req) => {
       const password = action.password ?? "";
       const displayName = (action.display_name ?? email.split("@")[0]).trim();
       const role = action.role;
+      const orgId = action.org_id;
+      const orgRole = action.org_role ?? "member";
       if (!email || !password) return json({ error: "Email e senha são obrigatórios" }, 400);
       if (password.length < 8) return json({ error: "A senha deve ter pelo menos 8 caracteres" }, 400);
-      if (role !== "admin" && role !== "apoio") return json({ error: "Role inválida" }, 400);
+      // Papel global é opcional agora (multi-tenancy usa org_role). Se vier, valida.
+      if (role !== undefined && role !== "admin" && role !== "apoio") {
+        return json({ error: "Role inválida" }, 400);
+      }
+      if (!orgId && !role) {
+        return json({ error: "Informe org_id (multi-tenant) ou role (global)" }, 400);
+      }
+      const validOrgRoles = ["owner", "admin", "member", "viewer"];
+      if (action.org_role !== undefined && !validOrgRoles.includes(action.org_role)) {
+        return json({ error: "org_role inválido" }, 400);
+      }
 
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email,
@@ -85,10 +130,20 @@ Deno.serve(async (req) => {
         display_name: displayName,
       });
 
-      // Atribui role inicial
-      await admin.from("user_roles").insert({ user_id: created.user.id, role });
+      // Papel global legado (opcional). Mantém compat com o painel single-tenant.
+      if (role) {
+        await admin.from("user_roles").insert({ user_id: created.user.id, role });
+      }
 
-      return json({ ok: true, user: { id: created.user.id, email } });
+      // Multi-tenancy: vincula o novo usuário à org informada.
+      if (orgId) {
+        const { error: memErr } = await admin
+          .from("org_memberships")
+          .insert({ user_id: created.user.id, org_id: orgId, org_role: orgRole });
+        if (memErr) return json({ error: "Usuário criado, mas falhou o vínculo de org: " + memErr.message }, 500);
+      }
+
+      return json({ ok: true, user: { id: created.user.id, email, org_id: orgId ?? null } });
     }
 
     if (action.type === "delete") {
@@ -96,8 +151,9 @@ Deno.serve(async (req) => {
       if (action.user_id === userRes.user.id) {
         return json({ error: "Você não pode remover a si mesmo" }, 400);
       }
-      // Remove roles e profile primeiro (FK não cascateia daqui), depois auth user
+      // Remove roles, memberships e profile primeiro (FK não cascateia daqui), depois auth user
       await admin.from("user_roles").delete().eq("user_id", action.user_id);
+      await admin.from("org_memberships").delete().eq("user_id", action.user_id);
       await admin.from("profiles").delete().eq("id", action.user_id);
       const { error: delErr } = await admin.auth.admin.deleteUser(action.user_id);
       if (delErr) return json({ error: delErr.message }, 400);

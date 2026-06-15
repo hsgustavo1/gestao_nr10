@@ -151,12 +151,30 @@ isolamento real continua no banco (file_path só é descoberto via linha RLS-sco
 paths são UUID aleatório). Tightening de storage RLS = fase posterior (junto da
 migração de fotos antigas para o prefixo `{org_id}/`).
 
-### Fase 2 — MVP: consultor entregando RTI+PWA
-- Seed: org `consultoria` (o consultor) + org `cliente` com
-  `managed_by_org_id` = consultoria; entitlement `rti_pwa` no cliente.
-- Escopar a edge function `admin-users` por org (criar/convidar usuários do cliente).
-- Teste de isolamento (3 perfis): cliente A não lê B; consultor lê seus clientes;
-  platform admin lê tudo.
+### Fase 2 — MVP: consultor entregando RTI+PWA  ✅ artefatos prontos / ⏳ validar + UI
+Entregue (código/SQL no repo):
+- Seed [`20260614020000_seed_consultor_demo.sql`](../../../supabase/migrations/20260614020000_seed_consultor_demo.sql):
+  Consultoria Demo (`…c0`) + Cliente A (`…a0`, `managed_by`=consultoria) + Cliente B
+  (`…b0`, independente, p/ teste negativo) + entitlements `rti_pwa`. Vínculo de
+  usuários = template comentado. **Passo manual: aplicar.**
+- Edge function `admin-users` escopada por org:
+  [`supabase/functions/admin-users/index.ts`](../../../supabase/functions/admin-users/index.ts)
+  agora aceita `org_id` + `org_role` no `create`, autoriza via
+  `is_platform_admin` OU `org_role_at_least(admin)` na org (cobre o consultor),
+  insere `org_memberships`, e limpa membership no `delete`. Compat: sem `org_id`
+  cai no papel global legado (`has_role admin`). **Passo manual: `supabase
+  functions deploy admin-users`.**
+- Teste de isolamento [`supabase/tests/fase2_isolation_test.sql`](../../../supabase/tests/fase2_isolation_test.sql):
+  roda em transação com ROLLBACK, simula 4 perfis via JWT claims + `SET ROLE
+  authenticated`, mede o que cada um enxerga. **Passo manual: preencher 4 UUIDs
+  e rodar; conferir a matriz esperada no cabeçalho.**
+
+⏳ Falta (UI, após validar o isolamento):
+- Wire do painel de usuários para criar usuário **na org do cliente selecionado**
+  (passar `org_id`/`org_role` do org ativo do contexto p/ a edge function) e listar
+  usuários por org. Hoje o painel é global (legado) — backend já pronto p/ escopar.
+- Rodar o pipeline campo→RTI logado como usuário do Cliente A e confirmar que o
+  RTI nasce com `org_id`=A (a fundação 1.6 já garante via cascata).
 
 ### Fases posteriores (registrar, não construir ainda)
 - **Vitrine sem login segura:** função `SECURITY DEFINER` que recebe um
