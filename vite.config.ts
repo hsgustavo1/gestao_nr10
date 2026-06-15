@@ -25,7 +25,7 @@ export default defineConfig(({ command, mode }) => {
     define,
     server: {
       host: "::",
-      port: parseInt(process.env.PORT ?? '8081'),
+      port: parseInt(process.env.PORT ?? "8081"),
     },
     resolve: {
       alias: {
@@ -46,9 +46,7 @@ export default defineConfig(({ command, mode }) => {
       tailwindcss(),
       tsConfigPaths({ projects: ["./tsconfig.json"] }),
       // Cloudflare apenas no build (gera o worker SSR). Mesma opção do wrapper.
-      ...(command === "build"
-        ? [cloudflare({ viteEnvironment: { name: "ssr" } })]
-        : []),
+      ...(command === "build" ? [cloudflare({ viteEnvironment: { name: "ssr" } })] : []),
       tanstackStart({
         // Protege imports server-only de vazarem para o bundle client.
         importProtection: {

@@ -60,12 +60,15 @@ Deno.serve(async (_req) => {
 
   // Colaboradores ativos
   const { data: employees = [] } = await supabase
-    .from("employees").select("id, name, matricula").eq("status", "ativo");
+    .from("employees")
+    .select("id, name, matricula")
+    .eq("status", "ativo");
   const empById = new Map((employees ?? []).map((e) => [e.id, e]));
 
   // 1) Capacitações NR-10 (validade 2 anos sobre a data mais recente por tipo)
   const { data: trainings = [] } = await supabase
-    .from("nr10_trainings").select("employee_id, training_type, training_date");
+    .from("nr10_trainings")
+    .select("employee_id, training_type, training_date");
   const latest = new Map<string, string>();
   for (const t of trainings ?? []) {
     if (!t.training_date) continue;
@@ -76,7 +79,12 @@ Deno.serve(async (_req) => {
     const [empId, type] = key.split("|");
     const emp = empById.get(empId);
     if (!emp) continue;
-    push("Capacitação", TRAINING_LABELS[type] ?? type, `${emp.name} (${emp.matricula})`, addYearsISO(date, 2));
+    push(
+      "Capacitação",
+      TRAINING_LABELS[type] ?? type,
+      `${emp.name} (${emp.matricula})`,
+      addYearsISO(date, 2),
+    );
   }
 
   // 2) ITs (conclusão + validade da instrução)
@@ -92,37 +100,61 @@ Deno.serve(async (_req) => {
     const emp = empById.get(it.employee_id);
     if (!emp) continue;
     const months = it.work_instructions?.validity_months ?? 24;
-    push("IT", `IT ${it.work_instructions?.code ?? ""}`, `${emp.name} (${emp.matricula})`, addMonthsISO(it.conclusao_date, months));
+    push(
+      "IT",
+      `IT ${it.work_instructions?.code ?? ""}`,
+      `${emp.name} (${emp.matricula})`,
+      addMonthsISO(it.conclusao_date, months),
+    );
   }
 
   // 3) Prontuário
   const { data: docs = [] } = await supabase
-    .from("nr10_documents").select("title, category, validity_date").not("validity_date", "is", null);
+    .from("nr10_documents")
+    .select("title, category, validity_date")
+    .not("validity_date", "is", null);
   for (const d of docs ?? []) push("Prontuário", d.title, d.category, d.validity_date);
 
   // 4) Inspeções
   const { data: inspections = [] } = await supabase
-    .from("inspections").select("inspection_type, equipment, sector, validity_date").not("validity_date", "is", null);
+    .from("inspections")
+    .select("inspection_type, equipment, sector, validity_date")
+    .not("validity_date", "is", null);
   for (const i of inspections ?? []) {
-    push("Inspeção", `${i.inspection_type.toUpperCase()} — ${i.equipment}`, i.sector ?? "—", i.validity_date);
+    push(
+      "Inspeção",
+      `${i.inspection_type.toUpperCase()} — ${i.equipment}`,
+      i.sector ?? "—",
+      i.validity_date,
+    );
   }
 
   // 5) Ensaios de EPI (último aprovado + intervalo)
   const { data: epis = [] } = await supabase
-    .from("epis").select("id, epi_type, serial_number, test_interval_months").eq("active", true);
+    .from("epis")
+    .select("id, epi_type, serial_number, test_interval_months")
+    .eq("active", true);
   const { data: tests = [] } = await supabase
-    .from("epi_tests").select("epi_id, test_date, result").order("test_date", { ascending: false });
+    .from("epi_tests")
+    .select("epi_id, test_date, result")
+    .order("test_date", { ascending: false });
   const lastTest = new Map<string, { test_date: string; result: string }>();
   for (const t of tests ?? []) if (!lastTest.has(t.epi_id)) lastTest.set(t.epi_id, t);
   for (const e of epis ?? []) {
     const last = lastTest.get(e.id);
     if (!last || last.result !== "aprovado") continue;
-    push("EPI", `${e.epi_type}${e.serial_number ? ` (${e.serial_number})` : ""}`, "Ensaio dielétrico", addMonthsISO(last.test_date, e.test_interval_months));
+    push(
+      "EPI",
+      `${e.epi_type}${e.serial_number ? ` (${e.serial_number})` : ""}`,
+      "Ensaio dielétrico",
+      addMonthsISO(last.test_date, e.test_interval_months),
+    );
   }
 
   // 6) ASOs (mais recente por colaborador ativo)
   const { data: asos = [] } = await supabase
-    .from("asos").select("employee_id, exam_date, validity_date, tipo");
+    .from("asos")
+    .select("employee_id, exam_date, validity_date, tipo");
   const latestAso = new Map<string, { exam_date: string; validity_date: string; tipo: string }>();
   for (const a of asos ?? []) {
     const cur = latestAso.get(a.employee_id);
@@ -172,19 +204,29 @@ Deno.serve(async (_req) => {
     `<td style="padding:6px 10px;border-bottom:1px solid #eee;color:${i.daysLeft < 0 ? "#dc2626" : "#d97706"};font-weight:600;white-space:nowrap">` +
     `${i.daysLeft < 0 ? `vencido há ${Math.abs(i.daysLeft)} d` : `vence em ${i.daysLeft} d`}</td></tr>`;
 
-  const ncSection = totalNcs === 0 ? "" : `
+  const ncSection =
+    totalNcs === 0
+      ? ""
+      : `
       <h3 style="color:#0A2D48;margin-top:24px">Plano de ação RTI — ${totalNcs} ação(ões) com prazo crítico</h3>
-      ${Array.from(ncsByResp.entries()).map(([resp, ncs]) => `
+      ${Array.from(ncsByResp.entries())
+        .map(
+          ([resp, ncs]) => `
         <p style="margin:10px 0 4px;font-weight:600">${resp} — ${ncs.length} ação(ões)</p>
         <table style="border-collapse:collapse;width:100%;font-size:13px">
-          <tbody>${ncs.map((nc) =>
-            `<tr><td style="padding:4px 10px;border-bottom:1px solid #eee;white-space:nowrap">NC ${nc.numero}</td>` +
-            `<td style="padding:4px 10px;border-bottom:1px solid #eee">${nc.descricao.slice(0, 90)}${nc.descricao.length > 90 ? "…" : ""}</td>` +
-            `<td style="padding:4px 10px;border-bottom:1px solid #eee;white-space:nowrap">${nc.prazo.split("-").reverse().join("/")}</td>` +
-            `<td style="padding:4px 10px;border-bottom:1px solid #eee;color:${nc.daysLeft < 0 ? "#dc2626" : "#d97706"};font-weight:600;white-space:nowrap">` +
-            `${nc.daysLeft < 0 ? `vencida há ${Math.abs(nc.daysLeft)} d` : `vence em ${nc.daysLeft} d`}</td></tr>`,
-          ).join("")}</tbody>
-        </table>`).join("")}`;
+          <tbody>${ncs
+            .map(
+              (nc) =>
+                `<tr><td style="padding:4px 10px;border-bottom:1px solid #eee;white-space:nowrap">NC ${nc.numero}</td>` +
+                `<td style="padding:4px 10px;border-bottom:1px solid #eee">${nc.descricao.slice(0, 90)}${nc.descricao.length > 90 ? "…" : ""}</td>` +
+                `<td style="padding:4px 10px;border-bottom:1px solid #eee;white-space:nowrap">${nc.prazo.split("-").reverse().join("/")}</td>` +
+                `<td style="padding:4px 10px;border-bottom:1px solid #eee;color:${nc.daysLeft < 0 ? "#dc2626" : "#d97706"};font-weight:600;white-space:nowrap">` +
+                `${nc.daysLeft < 0 ? `vencida há ${Math.abs(nc.daysLeft)} d` : `vence em ${nc.daysLeft} d`}</td></tr>`,
+            )
+            .join("")}</tbody>
+        </table>`,
+        )
+        .join("")}`;
 
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:720px">
@@ -192,7 +234,10 @@ Deno.serve(async (_req) => {
       <p><strong style="color:#dc2626">${expired.length} vencido(s)</strong> ·
          <strong style="color:#d97706">${expiring.length} vencendo em ${HORIZON_DAYS} dias</strong>
          ${totalNcs > 0 ? ` · <strong style="color:#0A2D48">${totalNcs} ação(ões) RTI críticas</strong>` : ""}</p>
-      ${items.length === 0 ? "" : `
+      ${
+        items.length === 0
+          ? ""
+          : `
       <table style="border-collapse:collapse;width:100%;font-size:13px">
         <thead><tr style="background:#0A2D48;color:#fff">
           <th style="padding:8px 10px;text-align:left">Tipo</th>
@@ -202,20 +247,31 @@ Deno.serve(async (_req) => {
           <th style="padding:8px 10px;text-align:left">Situação</th>
         </tr></thead>
         <tbody>${items.map(row).join("")}</tbody>
-      </table>`}
+      </table>`
+      }
       ${ncSection}
       <p style="color:#666;font-size:12px">E-mail automático do sistema Gestão NR-10. Acesse a Central de Vencimentos para detalhes.</p>
     </div>`;
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
-  const to = (Deno.env.get("ALERT_EMAILS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const to = (Deno.env.get("ALERT_EMAILS") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const from = Deno.env.get("ALERT_FROM") ?? "Gestão NR-10 <onboarding@resend.dev>";
 
   if (!resendKey || to.length === 0) {
-    return new Response(JSON.stringify({ ok: false, error: "RESEND_API_KEY ou ALERT_EMAILS não configurados", pendencias: items.length }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: "RESEND_API_KEY ou ALERT_EMAILS não configurados",
+        pendencias: items.length,
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 
   const resp = await fetch("https://api.resend.com/emails", {
@@ -230,8 +286,11 @@ Deno.serve(async (_req) => {
   });
 
   const result = await resp.json();
-  return new Response(JSON.stringify({ ok: resp.ok, sent: resp.ok, pendencias: items.length, result }), {
-    status: resp.ok ? 200 : 500,
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({ ok: resp.ok, sent: resp.ok, pendencias: items.length, result }),
+    {
+      status: resp.ok ? 200 : 500,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 });

@@ -3,13 +3,7 @@ import { LogIn, LogOut, Eye, Menu, ChevronDown, BellRing, Building2 } from "luci
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useVencimentosBadge } from "@/lib/vencimentos";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,11 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 /**
  * Topbar Atvos — fundo azul-marinho fixo (#0A2D48), wordmark "atvos."
@@ -36,9 +26,7 @@ export function SiteHeader() {
 
   const cargo = isAdmin ? "Dono de RAC (Admin)" : isStaff ? "Apoio" : "Consulta";
   const displayName =
-    (user?.user_metadata?.display_name as string | undefined) ||
-    user?.email?.split("@")[0] ||
-    "";
+    (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || "";
   const initials = getInitials(displayName);
 
   return (
@@ -65,79 +53,179 @@ export function SiteHeader() {
               </SheetHeader>
               {user && (
                 <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
-                  <span aria-hidden className="atvos-avatar grid h-9 w-9 place-items-center rounded-full text-xs">
+                  <span
+                    aria-hidden
+                    className="atvos-avatar grid h-9 w-9 place-items-center rounded-full text-xs"
+                  >
                     {initials}
                   </span>
                   <div className="leading-tight min-w-0">
                     <div className="text-sm font-semibold truncate">{displayName}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-white/60">{cargo}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-white/60">
+                      {cargo}
+                    </div>
                   </div>
                 </div>
               )}
               <nav className="flex flex-col p-2 gap-0.5">
                 <MobileNavGroup
                   label="RAC — Bloqueio"
-                  prefixes={["/dashboard", "/cadeados", "/violacoes", "/admin/reports", "/admin/carga", "/admin/certificados", "/admin/usuarios"]}
+                  prefixes={[
+                    "/dashboard",
+                    "/cadeados",
+                    "/violacoes",
+                    "/admin/reports",
+                    "/admin/carga",
+                    "/admin/certificados",
+                    "/admin/usuarios",
+                  ]}
                 >
-                  <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
-                  <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>Base de dados</MobileNavLink>
-                  <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>Violações</MobileNavLink>
-                  {isAdmin && <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>Inconsistências</MobileNavLink>}
-                  {isAdmin && <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>Carga</MobileNavLink>}
-                  {isAdmin && <MobileNavLink to="/admin/certificados/importar" onNav={() => setMenuOpen(false)}>Importar Certificados</MobileNavLink>}
-                  {isAdmin && <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>Controle de acessos</MobileNavLink>}
+                  <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>
+                    Dashboard
+                  </MobileNavLink>
+                  <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>
+                    Base de dados
+                  </MobileNavLink>
+                  <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>
+                    Violações
+                  </MobileNavLink>
+                  {isAdmin && (
+                    <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>
+                      Inconsistências
+                    </MobileNavLink>
+                  )}
+                  {isAdmin && (
+                    <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>
+                      Carga
+                    </MobileNavLink>
+                  )}
+                  {isAdmin && (
+                    <MobileNavLink
+                      to="/admin/certificados/importar"
+                      onNav={() => setMenuOpen(false)}
+                    >
+                      Importar Certificados
+                    </MobileNavLink>
+                  )}
+                  {isAdmin && (
+                    <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>
+                      Controle de acessos
+                    </MobileNavLink>
+                  )}
                 </MobileNavGroup>
 
                 <MobileNavGroup
                   label="NR-10"
-                  prefixes={["/nr10", "/relatorio", "/vencimentos", "/incidentes", "/admin/auditoria"]}
+                  prefixes={[
+                    "/nr10",
+                    "/relatorio",
+                    "/vencimentos",
+                    "/incidentes",
+                    "/admin/auditoria",
+                  ]}
                 >
-                  <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>Prontuário (PIE)</MobileNavLink>
-                  <MobileNavLink to="/relatorio" onNav={() => setMenuOpen(false)}>Relatório de Conformidade</MobileNavLink>
-                  <MobileNavLink to="/relatorio/dossie" onNav={() => setMenuOpen(false)}>Dossiê de Fiscalização</MobileNavLink>
-                  <MobileNavLink to="/vencimentos" onNav={() => setMenuOpen(false)}>Central de Vencimentos</MobileNavLink>
-                  <MobileNavLink to="/incidentes" onNav={() => setMenuOpen(false)}>Incidentes Elétricos</MobileNavLink>
-                  {isAdmin && <MobileNavLink to="/admin/auditoria" onNav={() => setMenuOpen(false)}>Auditoria</MobileNavLink>}
+                  <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>
+                    Prontuário (PIE)
+                  </MobileNavLink>
+                  <MobileNavLink to="/relatorio" onNav={() => setMenuOpen(false)}>
+                    Relatório de Conformidade
+                  </MobileNavLink>
+                  <MobileNavLink to="/relatorio/dossie" onNav={() => setMenuOpen(false)}>
+                    Dossiê de Fiscalização
+                  </MobileNavLink>
+                  <MobileNavLink to="/vencimentos" onNav={() => setMenuOpen(false)}>
+                    Central de Vencimentos
+                  </MobileNavLink>
+                  <MobileNavLink to="/incidentes" onNav={() => setMenuOpen(false)}>
+                    Incidentes Elétricos
+                  </MobileNavLink>
+                  {isAdmin && (
+                    <MobileNavLink to="/admin/auditoria" onNav={() => setMenuOpen(false)}>
+                      Auditoria
+                    </MobileNavLink>
+                  )}
                 </MobileNavGroup>
 
-                <MobileNavGroup
-                  label="RTI"
-                  prefixes={["/rti", "/campo"]}
-                >
-                  <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
-                  <MobileNavLink to="/rti/plano" onNav={() => setMenuOpen(false)}>Plano de Ação</MobileNavLink>
-                  <MobileNavLink to="/rti/custos" onNav={() => setMenuOpen(false)}>Análise de Custos</MobileNavLink>
-                  <MobileNavLink to="/campo" onNav={() => setMenuOpen(false)}>Coleta em Campo</MobileNavLink>
-                  <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>Modos de falha</MobileNavLink>
-                  {isStaff && <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>Importar planilha</MobileNavLink>}
-                  {isStaff && <MobileNavLink to="/rti/evidencias" onNav={() => setMenuOpen(false)}>Importar evidências</MobileNavLink>}
-                  {isStaff && <MobileNavLink to="/rti/gestao" onNav={() => setMenuOpen(false)}>Gestão de Relatórios RTI</MobileNavLink>}
+                <MobileNavGroup label="RTI" prefixes={["/rti", "/campo"]}>
+                  <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>
+                    Dashboard
+                  </MobileNavLink>
+                  <MobileNavLink to="/rti/plano" onNav={() => setMenuOpen(false)}>
+                    Plano de Ação
+                  </MobileNavLink>
+                  <MobileNavLink to="/rti/custos" onNav={() => setMenuOpen(false)}>
+                    Análise de Custos
+                  </MobileNavLink>
+                  <MobileNavLink to="/campo" onNav={() => setMenuOpen(false)}>
+                    Coleta em Campo
+                  </MobileNavLink>
+                  <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>
+                    Modos de falha
+                  </MobileNavLink>
+                  {isStaff && (
+                    <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>
+                      Importar planilha
+                    </MobileNavLink>
+                  )}
+                  {isStaff && (
+                    <MobileNavLink to="/rti/evidencias" onNav={() => setMenuOpen(false)}>
+                      Importar evidências
+                    </MobileNavLink>
+                  )}
+                  {isStaff && (
+                    <MobileNavLink to="/rti/gestao" onNav={() => setMenuOpen(false)}>
+                      Gestão de Relatórios RTI
+                    </MobileNavLink>
+                  )}
                 </MobileNavGroup>
 
-                <MobileNavGroup
-                  label="Inspeções"
-                  prefixes={["/termografias", "/cercon", "/spda"]}
-                >
-                  <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>Termografias</MobileNavLink>
-                  <MobileNavLink to="/cercon" onNav={() => setMenuOpen(false)}>Cercon</MobileNavLink>
-                  <MobileNavLink to="/spda" onNav={() => setMenuOpen(false)}>SPDA</MobileNavLink>
+                <MobileNavGroup label="Inspeções" prefixes={["/termografias", "/cercon", "/spda"]}>
+                  <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>
+                    Termografias
+                  </MobileNavLink>
+                  <MobileNavLink to="/cercon" onNav={() => setMenuOpen(false)}>
+                    Cercon
+                  </MobileNavLink>
+                  <MobileNavLink to="/spda" onNav={() => setMenuOpen(false)}>
+                    SPDA
+                  </MobileNavLink>
                 </MobileNavGroup>
 
                 <MobileNavGroup
                   label="Pessoas"
                   prefixes={["/qualificacoes", "/admin/qualificacoes"]}
                 >
-                  <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>Dashboard</MobileNavLink>
-                  <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>Qualificação</MobileNavLink>
-                  <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>Capacitações NR-10</MobileNavLink>
-                  <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>ITs</MobileNavLink>
-                  <MobileNavLink to="/qualificacoes/autorizacoes" onNav={() => setMenuOpen(false)}>Autorizações</MobileNavLink>
-                  <MobileNavLink to="/qualificacoes/asos" onNav={() => setMenuOpen(false)}>ASOs</MobileNavLink>
-                  <MobileNavLink to="/qualificacoes/plh" onNav={() => setMenuOpen(false)}>PLH</MobileNavLink>
-                  {isAdmin && <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>Importar xlsx</MobileNavLink>}
+                  <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>
+                    Dashboard
+                  </MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>
+                    Qualificação
+                  </MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/nr10" onNav={() => setMenuOpen(false)}>
+                    Capacitações NR-10
+                  </MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/instrucoes" onNav={() => setMenuOpen(false)}>
+                    ITs
+                  </MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/autorizacoes" onNav={() => setMenuOpen(false)}>
+                    Autorizações
+                  </MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/asos" onNav={() => setMenuOpen(false)}>
+                    ASOs
+                  </MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/plh" onNav={() => setMenuOpen(false)}>
+                    PLH
+                  </MobileNavLink>
+                  {isAdmin && (
+                    <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>
+                      Importar xlsx
+                    </MobileNavLink>
+                  )}
                 </MobileNavGroup>
 
-                <MobileNavLink to="/epis" onNav={() => setMenuOpen(false)}>EPIs e EPCs</MobileNavLink>
+                <MobileNavLink to="/epis" onNav={() => setMenuOpen(false)}>
+                  EPIs e EPCs
+                </MobileNavLink>
               </nav>
             </SheetContent>
           </Sheet>
@@ -174,9 +262,7 @@ export function SiteHeader() {
                 </span>
                 <div className="leading-tight">
                   <div className="text-xs font-semibold text-white">{displayName}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-white/60">
-                    {cargo}
-                  </div>
+                  <div className="text-[10px] uppercase tracking-wider text-white/60">{cargo}</div>
                 </div>
               </div>
               <button
@@ -273,7 +359,15 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   );
 }
 
-function MobileNavLink({ to, children, onNav }: { to: string; children: React.ReactNode; onNav: () => void }) {
+function MobileNavLink({
+  to,
+  children,
+  onNav,
+}: {
+  to: string;
+  children: React.ReactNode;
+  onNav: () => void;
+}) {
   return (
     <Link
       to={to}
@@ -333,21 +427,31 @@ function NR10Dropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[240px]">
         <DropdownMenuItem asChild>
-          <Link to="/nr10" className="cursor-pointer">Prontuário das Instalações (PIE)</Link>
+          <Link to="/nr10" className="cursor-pointer">
+            Prontuário das Instalações (PIE)
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/relatorio" className="cursor-pointer">Relatório de Conformidade</Link>
+          <Link to="/relatorio" className="cursor-pointer">
+            Relatório de Conformidade
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/relatorio/dossie" className="cursor-pointer">Dossiê de Fiscalização</Link>
+          <Link to="/relatorio/dossie" className="cursor-pointer">
+            Dossiê de Fiscalização
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/vencimentos" className="cursor-pointer">Central de Vencimentos</Link>
+          <Link to="/vencimentos" className="cursor-pointer">
+            Central de Vencimentos
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/incidentes" className="cursor-pointer">Incidentes Elétricos</Link>
+          <Link to="/incidentes" className="cursor-pointer">
+            Incidentes Elétricos
+          </Link>
         </DropdownMenuItem>
         <NR10AdminItems />
       </DropdownMenuContent>
@@ -362,7 +466,9 @@ function NR10AdminItems() {
     <>
       <DropdownMenuSeparator />
       <DropdownMenuItem asChild>
-        <Link to="/admin/auditoria" className="cursor-pointer">Trilha de Auditoria</Link>
+        <Link to="/admin/auditoria" className="cursor-pointer">
+          Trilha de Auditoria
+        </Link>
       </DropdownMenuItem>
     </>
   );
@@ -401,32 +507,48 @@ function RTIDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[220px]">
         <DropdownMenuItem asChild>
-          <Link to="/rti" className="cursor-pointer">Dashboard do Plano de Ação</Link>
+          <Link to="/rti" className="cursor-pointer">
+            Dashboard do Plano de Ação
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/rti/plano" className="cursor-pointer">Plano de Ação (NCs)</Link>
+          <Link to="/rti/plano" className="cursor-pointer">
+            Plano de Ação (NCs)
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/rti/custos" className="cursor-pointer">Análise de Custos</Link>
+          <Link to="/rti/custos" className="cursor-pointer">
+            Análise de Custos
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/campo" className="cursor-pointer">Coleta em Campo</Link>
+          <Link to="/campo" className="cursor-pointer">
+            Coleta em Campo
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/campo/modos" className="cursor-pointer">Base de modos de falha</Link>
+          <Link to="/campo/modos" className="cursor-pointer">
+            Base de modos de falha
+          </Link>
         </DropdownMenuItem>
         {isStaff && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/rti/importar" className="cursor-pointer">Importar planilha / Relatórios</Link>
+              <Link to="/rti/importar" className="cursor-pointer">
+                Importar planilha / Relatórios
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/rti/evidencias" className="cursor-pointer">Importar evidências em massa</Link>
+              <Link to="/rti/evidencias" className="cursor-pointer">
+                Importar evidências em massa
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/rti/gestao" className="cursor-pointer">Gestão de Relatórios RTI</Link>
+              <Link to="/rti/gestao" className="cursor-pointer">
+                Gestão de Relatórios RTI
+              </Link>
             </DropdownMenuItem>
           </>
         )}
@@ -448,13 +570,19 @@ function InspecoesDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[200px]">
         <DropdownMenuItem asChild>
-          <Link to="/termografias" className="cursor-pointer">Termografias</Link>
+          <Link to="/termografias" className="cursor-pointer">
+            Termografias
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/cercon" className="cursor-pointer">Cercon</Link>
+          <Link to="/cercon" className="cursor-pointer">
+            Cercon
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/spda" className="cursor-pointer">SPDA</Link>
+          <Link to="/spda" className="cursor-pointer">
+            SPDA
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -476,29 +604,43 @@ function RACDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[220px]">
         <DropdownMenuItem asChild>
-          <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
+          <Link to="/dashboard" className="cursor-pointer">
+            Dashboard
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/cadeados" className="cursor-pointer">Base de dados</Link>
+          <Link to="/cadeados" className="cursor-pointer">
+            Base de dados
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/violacoes" className="cursor-pointer">Violações de dispositivos</Link>
+          <Link to="/violacoes" className="cursor-pointer">
+            Violações de dispositivos
+          </Link>
         </DropdownMenuItem>
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/admin/reports" className="cursor-pointer">Inconsistências</Link>
+              <Link to="/admin/reports" className="cursor-pointer">
+                Inconsistências
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/admin/carga" className="cursor-pointer">Carga</Link>
+              <Link to="/admin/carga" className="cursor-pointer">
+                Carga
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/admin/certificados/importar" className="cursor-pointer">Importar Certificados</Link>
+              <Link to="/admin/certificados/importar" className="cursor-pointer">
+                Importar Certificados
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/admin/usuarios" className="cursor-pointer">Controle de acessos</Link>
+              <Link to="/admin/usuarios" className="cursor-pointer">
+                Controle de acessos
+              </Link>
             </DropdownMenuItem>
           </>
         )}
@@ -531,19 +673,25 @@ function QualDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[200px]">
         <DropdownMenuItem asChild>
-          <Link to="/qualificacoes" className="cursor-pointer">Dashboard</Link>
+          <Link to="/qualificacoes" className="cursor-pointer">
+            Dashboard
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {items.map((item) => (
           <DropdownMenuItem key={item.to} asChild>
-            <Link to={item.to} className="cursor-pointer">{item.label}</Link>
+            <Link to={item.to} className="cursor-pointer">
+              {item.label}
+            </Link>
           </DropdownMenuItem>
         ))}
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/admin/qualificacoes/carga" className="cursor-pointer">Importar xlsx</Link>
+              <Link to="/admin/qualificacoes/carga" className="cursor-pointer">
+                Importar xlsx
+              </Link>
             </DropdownMenuItem>
           </>
         )}

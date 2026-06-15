@@ -4,39 +4,87 @@ import { z } from "zod";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
-  AlertTriangle, Camera, CheckCheck, ChevronLeft, ChevronRight, ClipboardList,
-  Download, ExternalLink, MessageSquare, Paperclip, Plus, Search, X,
+  AlertTriangle,
+  Camera,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Download,
+  ExternalLink,
+  MessageSquare,
+  Paperclip,
+  Plus,
+  Search,
+  X,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
-  clampPrioridade, formatBRL, ncPrazoBucket, ncPrazoVencido, ncPrazoProximo,
-  RTI_EVIDENCIA_TIPO_LABELS, RTI_NC_STATUSES, RTI_NC_STATUS_BADGE, RTI_NC_STATUS_LABELS,
-  RTI_PRAZO_BUCKET_LABELS, RTI_PRIORIDADES, RTI_PRIORIDADE_BADGE, RTI_PRIORIDADE_LABELS,
-  RTI_TIPO_EXECUCAO_LABELS, RTI_TIPO_EXECUCAO_SHORT,
-  type RtiEvidenciaTipo, type RtiNc, type RtiNcStatus, type RtiPrioridade, type RtiTipoExecucao,
+  clampPrioridade,
+  formatBRL,
+  ncPrazoBucket,
+  ncPrazoVencido,
+  ncPrazoProximo,
+  RTI_EVIDENCIA_TIPO_LABELS,
+  RTI_NC_STATUSES,
+  RTI_NC_STATUS_BADGE,
+  RTI_NC_STATUS_LABELS,
+  RTI_PRAZO_BUCKET_LABELS,
+  RTI_PRIORIDADES,
+  RTI_PRIORIDADE_BADGE,
+  RTI_PRIORIDADE_LABELS,
+  RTI_TIPO_EXECUCAO_LABELS,
+  RTI_TIPO_EXECUCAO_SHORT,
+  type RtiEvidenciaTipo,
+  type RtiNc,
+  type RtiNcStatus,
+  type RtiPrioridade,
+  type RtiTipoExecucao,
 } from "@/lib/rti";
 import {
-  bulkAttachRtiEvidencias, logBulkHistorico, useBulkUpdateRtiNcs, useCreateRtiArea,
-  useCreateRtiNc, useRtiAreas, useRtiEvidenciaIndex, useRtiNcs, useRtiReports, useUpdateRtiNc,
+  bulkAttachRtiEvidencias,
+  logBulkHistorico,
+  useBulkUpdateRtiNcs,
+  useCreateRtiArea,
+  useCreateRtiNc,
+  useRtiAreas,
+  useRtiEvidenciaIndex,
+  useRtiNcs,
+  useRtiReports,
+  useUpdateRtiNc,
 } from "@/lib/rti-queries";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -80,8 +128,7 @@ function RtiPlanoPage() {
   const [novaNcOpen, setNovaNcOpen] = useState(false);
 
   const actorName =
-    (user?.user_metadata?.display_name as string | undefined) ||
-    user?.email?.split("@")[0] || null;
+    (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || null;
 
   const areaNome = useMemo(() => new Map(areas.map((a) => [a.id, a.nome])), [areas]);
 
@@ -139,7 +186,9 @@ function RtiPlanoPage() {
         list.sort((a, b) => dir(a.prazo, b.prazo) || a.numero - b.numero);
         break;
       case "custo":
-        list.sort((a, b) => Number(b.custo_planejado) - Number(a.custo_planejado) || a.numero - b.numero);
+        list.sort(
+          (a, b) => Number(b.custo_planejado) - Number(a.custo_planejado) || a.numero - b.numero,
+        );
         break;
       default:
         list.sort((a, b) => a.numero - b.numero);
@@ -152,7 +201,10 @@ function RtiPlanoPage() {
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const resumo = useMemo(() => {
-    let pend = 0, and = 0, conc = 0, custo = 0;
+    let pend = 0,
+      and = 0,
+      conc = 0,
+      custo = 0;
     for (const nc of filtered) {
       if (nc.status === "pendente") pend++;
       else if (nc.status === "em_andamento") and++;
@@ -163,8 +215,12 @@ function RtiPlanoPage() {
   }, [filtered]);
 
   const hasFilters =
-    search.q !== "" || search.area !== "todas" || search.prioridade !== "all" ||
-    search.status !== "all" || search.tipo !== "all" || search.prazo !== "all" ||
+    search.q !== "" ||
+    search.area !== "todas" ||
+    search.prioridade !== "all" ||
+    search.status !== "all" ||
+    search.tipo !== "all" ||
+    search.prazo !== "all" ||
     search.evidencia !== "all";
 
   async function quickStatus(nc: RtiNc, status: RtiNcStatus) {
@@ -189,16 +245,16 @@ function RtiPlanoPage() {
 
   function exportXlsx() {
     const rows = filtered.map((nc) => ({
-      "NC": nc.numero,
-      "Área": areaNome.get(nc.area_id) ?? "",
+      NC: nc.numero,
+      Área: areaNome.get(nc.area_id) ?? "",
       "Não Conformidade": nc.descricao,
-      "Recomendação": nc.recomendacao ?? "",
-      "Prioridade": `P${nc.prioridade}`,
-      "Responsável": nc.responsavel ?? "",
-      "Status": RTI_NC_STATUS_LABELS[nc.status],
+      Recomendação: nc.recomendacao ?? "",
+      Prioridade: `P${nc.prioridade}`,
+      Responsável: nc.responsavel ?? "",
+      Status: RTI_NC_STATUS_LABELS[nc.status],
       "% Conclusão": nc.progresso,
-      "Prazo": nc.prazo ? formatDatePtBR(nc.prazo) : "",
-      "Tipo": RTI_TIPO_EXECUCAO_LABELS[nc.tipo_execucao],
+      Prazo: nc.prazo ? formatDatePtBR(nc.prazo) : "",
+      Tipo: RTI_TIPO_EXECUCAO_LABELS[nc.tipo_execucao],
       "Nº OS": nc.os_numero ?? "",
       "Custo Planejado": nc.custo_planejado ?? "",
       "Custo Realizado": nc.custo_realizado ?? "",
@@ -234,18 +290,28 @@ function RtiPlanoPage() {
             Plano de Ação — RTI
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {activeReport ? activeReport.titulo : "Não conformidades do Relatório Técnico das Inspeções."}
+            {activeReport
+              ? activeReport.titulo
+              : "Não conformidades do Relatório Técnico das Inspeções."}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {reports.length > 1 && (
             <Select
               value={activeReport?.id ?? ""}
-              onValueChange={(v) => navigate({ to: "/rti/plano", search: { report: v }, replace: true })}
+              onValueChange={(v) =>
+                navigate({ to: "/rti/plano", search: { report: v }, replace: true })
+              }
             >
-              <SelectTrigger className="w-52"><SelectValue placeholder="Relatório" /></SelectTrigger>
+              <SelectTrigger className="w-52">
+                <SelectValue placeholder="Relatório" />
+              </SelectTrigger>
               <SelectContent>
-                {reports.map((r) => <SelectItem key={r.id} value={r.id}>{r.titulo}</SelectItem>)}
+                {reports.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.titulo}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           )}
@@ -253,7 +319,10 @@ function RtiPlanoPage() {
             <Download className="h-4 w-4" /> Exportar
           </Button>
           {isStaff && activeReport && (
-            <Button onClick={() => setNovaNcOpen(true)} className="bg-brand-gradient text-white shadow-brand">
+            <Button
+              onClick={() => setNovaNcOpen(true)}
+              className="bg-brand-gradient text-white shadow-brand"
+            >
               <Plus className="h-4 w-4" /> Nova NC
             </Button>
           )}
@@ -272,30 +341,48 @@ function RtiPlanoPage() {
           />
         </div>
         <Select value={search.area} onValueChange={(v) => setSearch({ area: v })}>
-          <SelectTrigger className="w-full sm:w-60"><SelectValue placeholder="Área" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-60">
+            <SelectValue placeholder="Área" />
+          </SelectTrigger>
           <SelectContent className="max-h-72">
             <SelectItem value="todas">Todas as áreas</SelectItem>
-            {areas.map((a) => <SelectItem key={a.id} value={a.nome}>{a.nome}</SelectItem>)}
+            {areas.map((a) => (
+              <SelectItem key={a.id} value={a.nome}>
+                {a.nome}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={search.prioridade} onValueChange={(v) => setSearch({ prioridade: v })}>
-          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40">
+            <SelectValue placeholder="Prioridade" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Prioridade: todas</SelectItem>
             {RTI_PRIORIDADES.map((p) => (
-              <SelectItem key={p} value={String(p)}>{RTI_PRIORIDADE_LABELS[p]}</SelectItem>
+              <SelectItem key={p} value={String(p)}>
+                {RTI_PRIORIDADE_LABELS[p]}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={search.status} onValueChange={(v) => setSearch({ status: v })}>
-          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Status: todos</SelectItem>
-            {RTI_NC_STATUSES.map((s) => <SelectItem key={s} value={s}>{RTI_NC_STATUS_LABELS[s]}</SelectItem>)}
+            {RTI_NC_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {RTI_NC_STATUS_LABELS[s]}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={search.tipo} onValueChange={(v) => setSearch({ tipo: v })}>
-          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tipo: todos</SelectItem>
             <SelectItem value="os">OS (manutenção)</SelectItem>
@@ -303,7 +390,9 @@ function RtiPlanoPage() {
           </SelectContent>
         </Select>
         <Select value={search.prazo} onValueChange={(v) => setSearch({ prazo: v })}>
-          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-52"><SelectValue placeholder="Prazo" /></SelectTrigger>
+          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-52">
+            <SelectValue placeholder="Prazo" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Prazo: todos</SelectItem>
             <SelectItem value="vencido">{RTI_PRAZO_BUCKET_LABELS.vencido}</SelectItem>
@@ -315,7 +404,9 @@ function RtiPlanoPage() {
           </SelectContent>
         </Select>
         <Select value={search.evidencia} onValueChange={(v) => setSearch({ evidencia: v })}>
-          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-48"><SelectValue placeholder="Evidência" /></SelectTrigger>
+          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-48">
+            <SelectValue placeholder="Evidência" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Evidência: todas</SelectItem>
             <SelectItem value="com_correcao">Com evidência de correção</SelectItem>
@@ -323,7 +414,9 @@ function RtiPlanoPage() {
           </SelectContent>
         </Select>
         <Select value={search.ordem} onValueChange={(v) => setSearch({ ordem: v })}>
-          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-44"><SelectValue placeholder="Ordenar" /></SelectTrigger>
+          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-44">
+            <SelectValue placeholder="Ordenar" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="numero">Ordenar: nº da NC</SelectItem>
             <SelectItem value="prioridade">Ordenar: prioridade</SelectItem>
@@ -333,8 +426,20 @@ function RtiPlanoPage() {
         </Select>
         {hasFilters && (
           <Button
-            variant="ghost" size="sm" className="text-muted-foreground"
-            onClick={() => setSearch({ q: "", area: "todas", prioridade: "all", status: "all", tipo: "all", prazo: "all", evidencia: "all" })}
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() =>
+              setSearch({
+                q: "",
+                area: "todas",
+                prioridade: "all",
+                status: "all",
+                tipo: "all",
+                prazo: "all",
+                evidencia: "all",
+              })
+            }
           >
             <X className="h-3.5 w-3.5" /> Limpar
           </Button>
@@ -343,13 +448,22 @@ function RtiPlanoPage() {
 
       {/* Resumo da seleção de filtros */}
       <div className="mt-3 text-xs text-muted-foreground">
-        {isLoading ? "Carregando..." : (
+        {isLoading ? (
+          "Carregando..."
+        ) : (
           <>
             <strong className="text-foreground">{filtered.length}</strong> de {ncs.length} NCs
-            {" · "}<span className="text-red-600">{resumo.pend} pendentes</span>
-            {" · "}<span className="text-amber-600">{resumo.and} em andamento</span>
-            {" · "}<span className="text-emerald-600">{resumo.conc} concluídas</span>
-            {resumo.custo > 0 && <>{" · "}custo planejado {formatBRL(resumo.custo)}</>}
+            {" · "}
+            <span className="text-red-600">{resumo.pend} pendentes</span>
+            {" · "}
+            <span className="text-amber-600">{resumo.and} em andamento</span>
+            {" · "}
+            <span className="text-emerald-600">{resumo.conc} concluídas</span>
+            {resumo.custo > 0 && (
+              <>
+                {" · "}custo planejado {formatBRL(resumo.custo)}
+              </>
+            )}
           </>
         )}
       </div>
@@ -359,20 +473,36 @@ function RtiPlanoPage() {
         <BulkBar
           count={selected.size}
           onClear={() => setSelected(new Set())}
-          onApply={async ({ patch, descricaoLog, observacao, files, tipoEvidencia, onProgress }) => {
+          onApply={async ({
+            patch,
+            descricaoLog,
+            observacao,
+            files,
+            tipoEvidencia,
+            onProgress,
+          }) => {
             const ids = [...selected];
             try {
               if (Object.keys(patch).length > 0) {
                 await bulkUpdate.mutateAsync({ ids, patch });
-                await logBulkHistorico(ids, `Atualização em massa: ${descricaoLog}`, actorName, "alteracao");
+                await logBulkHistorico(
+                  ids,
+                  `Atualização em massa: ${descricaoLog}`,
+                  actorName,
+                  "alteracao",
+                );
               }
               if (observacao.trim()) {
                 await logBulkHistorico(ids, observacao.trim(), actorName, "comentario");
               }
               if (files.length > 0) {
                 await bulkAttachRtiEvidencias({
-                  ncIds: ids, files, tipo: tipoEvidencia,
-                  descricao: observacao.trim() || null, autorNome: actorName, onProgress,
+                  ncIds: ids,
+                  files,
+                  tipo: tipoEvidencia,
+                  descricao: observacao.trim() || null,
+                  autorNome: actorName,
+                  onProgress,
                 });
                 qc.invalidateQueries({ queryKey: ["rti_nc_evidencias_index"] });
                 qc.invalidateQueries({ queryKey: ["rti_nc_evidencias_files"] });
@@ -395,15 +525,28 @@ function RtiPlanoPage() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-5 space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-10" />)}
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-10" />
+              ))}
             </div>
           ) : !activeReport ? (
             <div className="p-8 text-center text-sm text-muted-foreground">
-              Nenhum relatório cadastrado. {isStaff && <>Importe a planilha em <Link to="/rti/importar" className="underline">Importar</Link>.</>}
+              Nenhum relatório cadastrado.{" "}
+              {isStaff && (
+                <>
+                  Importe a planilha em{" "}
+                  <Link to="/rti/importar" className="underline">
+                    Importar
+                  </Link>
+                  .
+                </>
+              )}
             </div>
           ) : pageRows.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground">
-              {ncs.length === 0 ? "Nenhuma NC cadastrada neste relatório." : "Nenhuma NC corresponde aos filtros."}
+              {ncs.length === 0
+                ? "Nenhuma NC cadastrada neste relatório."
+                : "Nenhuma NC corresponde aos filtros."}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -412,7 +555,11 @@ function RtiPlanoPage() {
                   <TableRow>
                     {isStaff && (
                       <TableHead className="w-10">
-                        <Checkbox checked={allPageSelected} onCheckedChange={togglePageSelection} aria-label="Selecionar página" />
+                        <Checkbox
+                          checked={allPageSelected}
+                          onCheckedChange={togglePageSelection}
+                          aria-label="Selecionar página"
+                        />
                       </TableHead>
                     )}
                     <TableHead className="w-14">Nº</TableHead>
@@ -438,7 +585,8 @@ function RtiPlanoPage() {
                               onCheckedChange={(c) => {
                                 setSelected((prev) => {
                                   const next = new Set(prev);
-                                  if (c) next.add(nc.id); else next.delete(nc.id);
+                                  if (c) next.add(nc.id);
+                                  else next.delete(nc.id);
                                   return next;
                                 });
                               }}
@@ -446,10 +594,13 @@ function RtiPlanoPage() {
                             />
                           </TableCell>
                         )}
-                        <TableCell className="font-mono font-semibold tabular-nums">{nc.numero}</TableCell>
+                        <TableCell className="font-mono font-semibold tabular-nums">
+                          {nc.numero}
+                        </TableCell>
                         <TableCell className="max-w-[380px]">
                           <Link
-                            to="/rti/nc/$ncId" params={{ ncId: nc.id }}
+                            to="/rti/nc/$ncId"
+                            params={{ ncId: nc.id }}
                             className="block hover:underline"
                             title={nc.descricao}
                           >
@@ -459,7 +610,8 @@ function RtiPlanoPage() {
                             {areaNome.get(nc.area_id) ?? "—"}
                             {nc.responsavel && <> · {nc.responsavel}</>}
                             {nc.os_numero && <> · OS {nc.os_numero}</>}
-                            {" · "}{RTI_TIPO_EXECUCAO_SHORT[nc.tipo_execucao]}
+                            {" · "}
+                            {RTI_TIPO_EXECUCAO_SHORT[nc.tipo_execucao]}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -472,22 +624,37 @@ function RtiPlanoPage() {
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {nc.prazo ? (
-                            <span className={vencido ? "text-red-600 font-semibold inline-flex items-center gap-1" : ""}>
+                            <span
+                              className={
+                                vencido
+                                  ? "text-red-600 font-semibold inline-flex items-center gap-1"
+                                  : ""
+                              }
+                            >
                               {vencido && <AlertTriangle className="h-3.5 w-3.5" />}
                               {formatDatePtBR(nc.prazo)}
                             </span>
-                          ) : <span className="text-muted-foreground">—</span>}
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           {isStaff ? (
                             <div className="space-y-1">
-                              <Select value={nc.status} onValueChange={(v) => quickStatus(nc, v as RtiNcStatus)}>
-                                <SelectTrigger className={`h-7 w-36 text-xs border rounded-full px-2.5 ${RTI_NC_STATUS_BADGE[nc.status]}`}>
+                              <Select
+                                value={nc.status}
+                                onValueChange={(v) => quickStatus(nc, v as RtiNcStatus)}
+                              >
+                                <SelectTrigger
+                                  className={`h-7 w-36 text-xs border rounded-full px-2.5 ${RTI_NC_STATUS_BADGE[nc.status]}`}
+                                >
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {RTI_NC_STATUSES.map((s) => (
-                                    <SelectItem key={s} value={s}>{RTI_NC_STATUS_LABELS[s]}</SelectItem>
+                                    <SelectItem key={s} value={s}>
+                                      {RTI_NC_STATUS_LABELS[s]}
+                                    </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
@@ -496,37 +663,61 @@ function RtiPlanoPage() {
                               )}
                             </div>
                           ) : (
-                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${RTI_NC_STATUS_BADGE[nc.status]}`}>
-                              {RTI_NC_STATUS_LABELS[nc.status]}{nc.status === "em_andamento" ? ` ${nc.progresso}%` : ""}
+                            <span
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${RTI_NC_STATUS_BADGE[nc.status]}`}
+                            >
+                              {RTI_NC_STATUS_LABELS[nc.status]}
+                              {nc.status === "em_andamento" ? ` ${nc.progresso}%` : ""}
                             </span>
                           )}
                         </TableCell>
                         <TableCell className="text-right whitespace-nowrap tabular-nums">
-                          {nc.custo_planejado != null
-                            ? formatBRL(nc.custo_planejado)
-                            : <span className="text-muted-foreground" title="Custo não informado">—</span>}
+                          {nc.custo_planejado != null ? (
+                            formatBRL(nc.custo_planejado)
+                          ) : (
+                            <span className="text-muted-foreground" title="Custo não informado">
+                              —
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
                             {(ev?.constatacao ?? 0) > 0 && (
-                              <span className="inline-flex items-center gap-0.5" title={`${ev!.constatacao} evidência(s) da constatação`}>
-                                <Camera className="h-3.5 w-3.5" />{ev!.constatacao}
+                              <span
+                                className="inline-flex items-center gap-0.5"
+                                title={`${ev!.constatacao} evidência(s) da constatação`}
+                              >
+                                <Camera className="h-3.5 w-3.5" />
+                                {ev!.constatacao}
                               </span>
                             )}
                             {(ev?.correcao ?? 0) > 0 && (
-                              <span className="inline-flex items-center gap-0.5 text-emerald-600" title={`${ev!.correcao} evidência(s) de correção`}>
-                                <CheckCheck className="h-3.5 w-3.5" />{ev!.correcao}
+                              <span
+                                className="inline-flex items-center gap-0.5 text-emerald-600"
+                                title={`${ev!.correcao} evidência(s) de correção`}
+                              >
+                                <CheckCheck className="h-3.5 w-3.5" />
+                                {ev!.correcao}
                               </span>
                             )}
                             {!ev && nc.status === "concluida" && (
-                              <span className="text-amber-600" title="Concluída sem evidência de correção anexada">
+                              <span
+                                className="text-amber-600"
+                                title="Concluída sem evidência de correção anexada"
+                              >
                                 <AlertTriangle className="h-3.5 w-3.5" />
                               </span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button asChild size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-60 group-hover:opacity-100" title="Abrir NC">
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 opacity-60 group-hover:opacity-100"
+                            title="Abrir NC"
+                          >
                             <Link to="/rti/nc/$ncId" params={{ ncId: nc.id }}>
                               <ExternalLink className="h-3.5 w-3.5" />
                             </Link>
@@ -545,12 +736,24 @@ function RtiPlanoPage() {
       {/* Paginação */}
       {!isLoading && totalPages > 1 && (
         <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-          <span>Página {page} de {totalPages}</span>
+          <span>
+            Página {page} de {totalPages}
+          </span>
           <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setSearch({ page: page - 1 })}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setSearch({ page: page - 1 })}
+            >
               <ChevronLeft className="h-4 w-4" /> Anterior
             </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setSearch({ page: page + 1 })}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setSearch({ page: page + 1 })}
+            >
               Próxima <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -562,7 +765,9 @@ function RtiPlanoPage() {
           reportId={activeReport.id}
           proximoNumero={ncs.reduce((max, nc) => Math.max(max, nc.numero), 0) + 1}
           numerosExistentes={new Set(ncs.map((nc) => nc.numero))}
-          onOpenChange={(o) => { if (!o) setNovaNcOpen(false); }}
+          onOpenChange={(o) => {
+            if (!o) setNovaNcOpen(false);
+          }}
           actorName={actorName}
         />
       )}
@@ -582,7 +787,9 @@ type BulkApplyArgs = {
 };
 
 function BulkBar({
-  count, onClear, onApply,
+  count,
+  onClear,
+  onApply,
 }: {
   count: number;
   onClear: () => void;
@@ -603,10 +810,16 @@ function BulkBar({
   const [progresso, setProgresso] = useState<{ done: number; total: number } | null>(null);
 
   function resetCampos() {
-    setStatus("keep"); setResponsavel(""); setPrazo("");
-    setObservacao(""); setFiles([]); setTipoEvidencia("correcao");
-    setCustoPlanMode("keep"); setCustoPlanValor("");
-    setCustoRealMode("keep"); setCustoRealValor("");
+    setStatus("keep");
+    setResponsavel("");
+    setPrazo("");
+    setObservacao("");
+    setFiles([]);
+    setTipoEvidencia("correcao");
+    setCustoPlanMode("keep");
+    setCustoPlanValor("");
+    setCustoRealMode("keep");
+    setCustoRealValor("");
   }
 
   async function apply() {
@@ -680,19 +893,31 @@ function BulkBar({
             {count} selecionada{count > 1 ? "s" : ""}:
           </span>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-40 text-xs">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="keep">Status: manter</SelectItem>
-              {RTI_NC_STATUSES.map((s) => <SelectItem key={s} value={s}>{RTI_NC_STATUS_LABELS[s]}</SelectItem>)}
+              {RTI_NC_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {RTI_NC_STATUS_LABELS[s]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Input
-            placeholder="Responsável (opcional)" className="h-8 w-48 text-xs"
-            value={responsavel} onChange={(e) => setResponsavel(e.target.value)} maxLength={150}
+            placeholder="Responsável (opcional)"
+            className="h-8 w-48 text-xs"
+            value={responsavel}
+            onChange={(e) => setResponsavel(e.target.value)}
+            maxLength={150}
           />
           <Input
-            type="date" className="h-8 w-40 text-xs" title="Prazo (opcional)"
-            value={prazo} onChange={(e) => setPrazo(e.target.value)}
+            type="date"
+            className="h-8 w-40 text-xs"
+            title="Prazo (opcional)"
+            value={prazo}
+            onChange={(e) => setPrazo(e.target.value)}
           />
         </div>
 
@@ -700,13 +925,17 @@ function BulkBar({
         <div className="flex flex-wrap items-center gap-2">
           <BulkCustoControl
             label="Custo planejado"
-            mode={custoPlanMode} onModeChange={setCustoPlanMode}
-            valor={custoPlanValor} onValorChange={setCustoPlanValor}
+            mode={custoPlanMode}
+            onModeChange={setCustoPlanMode}
+            valor={custoPlanValor}
+            onValorChange={setCustoPlanValor}
           />
           <BulkCustoControl
             label="Custo realizado"
-            mode={custoRealMode} onModeChange={setCustoRealMode}
-            valor={custoRealValor} onValorChange={setCustoRealValor}
+            mode={custoRealMode}
+            onModeChange={setCustoRealMode}
+            valor={custoRealValor}
+            onValorChange={setCustoRealValor}
           />
         </div>
 
@@ -714,27 +943,37 @@ function BulkBar({
         <div className="grid gap-2 lg:grid-cols-[1fr_auto] items-start">
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-muted-foreground inline-flex items-center gap-1">
-              <MessageSquare className="h-3.5 w-3.5" /> Observação (registrada no histórico de cada NC)
+              <MessageSquare className="h-3.5 w-3.5" /> Observação (registrada no histórico de cada
+              NC)
             </label>
             <Textarea
               placeholder="Ex.: correção executada conforme OS; verificar na próxima inspeção."
               className="text-xs min-h-[60px]"
-              value={observacao} onChange={(e) => setObservacao(e.target.value)} maxLength={2000}
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+              maxLength={2000}
             />
           </div>
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-muted-foreground inline-flex items-center gap-1">
               <Paperclip className="h-3.5 w-3.5" /> Anexar evidência a todas
             </label>
-            <Select value={tipoEvidencia} onValueChange={(v) => setTipoEvidencia(v as RtiEvidenciaTipo)}>
-              <SelectTrigger className="h-8 w-full lg:w-56 text-xs"><SelectValue /></SelectTrigger>
+            <Select
+              value={tipoEvidencia}
+              onValueChange={(v) => setTipoEvidencia(v as RtiEvidenciaTipo)}
+            >
+              <SelectTrigger className="h-8 w-full lg:w-56 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="correcao">{RTI_EVIDENCIA_TIPO_LABELS.correcao}</SelectItem>
                 <SelectItem value="constatacao">{RTI_EVIDENCIA_TIPO_LABELS.constatacao}</SelectItem>
               </SelectContent>
             </Select>
             <Input
-              type="file" multiple accept="image/*,application/pdf"
+              type="file"
+              multiple
+              accept="image/*,application/pdf"
               className="h-8 w-full lg:w-56 text-xs file:text-xs file:mr-2"
               onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
             />
@@ -749,7 +988,10 @@ function BulkBar({
         {/* Progresso de upload */}
         {progresso && progresso.total > 0 && (
           <div className="space-y-1">
-            <Progress value={Math.round((progresso.done / progresso.total) * 100)} className="h-1.5" />
+            <Progress
+              value={Math.round((progresso.done / progresso.total) * 100)}
+              className="h-1.5"
+            />
             <p className="text-[11px] text-muted-foreground">
               Enviando anexos… {progresso.done}/{progresso.total}
             </p>
@@ -758,10 +1000,21 @@ function BulkBar({
 
         {/* Ações */}
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" className="h-8 bg-brand-gradient text-white shadow-brand" onClick={apply} disabled={busy}>
+          <Button
+            size="sm"
+            className="h-8 bg-brand-gradient text-white shadow-brand"
+            onClick={apply}
+            disabled={busy}
+          >
             {busy ? "Aplicando..." : "Aplicar a todas"}
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 text-muted-foreground" onClick={onClear} disabled={busy}>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-muted-foreground"
+            onClick={onClear}
+            disabled={busy}
+          >
             <X className="h-3.5 w-3.5" /> Limpar seleção
           </Button>
         </div>
@@ -771,7 +1024,11 @@ function BulkBar({
 }
 
 function BulkCustoControl({
-  label, mode, onModeChange, valor, onValorChange,
+  label,
+  mode,
+  onModeChange,
+  valor,
+  onValorChange,
 }: {
   label: string;
   mode: "keep" | "valor" | "naoinformado";
@@ -783,7 +1040,9 @@ function BulkCustoControl({
     <div className="inline-flex items-center gap-1.5">
       <span className="text-[11px] text-muted-foreground whitespace-nowrap">{label}:</span>
       <Select value={mode} onValueChange={(v) => onModeChange(v as typeof mode)}>
-        <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-8 w-36 text-xs">
+          <SelectValue />
+        </SelectTrigger>
         <SelectContent>
           <SelectItem value="keep">Manter</SelectItem>
           <SelectItem value="valor">Definir valor</SelectItem>
@@ -792,9 +1051,13 @@ function BulkCustoControl({
       </Select>
       {mode === "valor" && (
         <Input
-          type="number" min={0} step="0.01" placeholder="R$ 0,00"
+          type="number"
+          min={0}
+          step="0.01"
+          placeholder="R$ 0,00"
           className="h-8 w-28 text-xs"
-          value={valor} onChange={(e) => onValorChange(e.target.value)}
+          value={valor}
+          onChange={(e) => onValorChange(e.target.value)}
         />
       )}
     </div>
@@ -804,7 +1067,11 @@ function BulkCustoControl({
 // ── Nova NC ──────────────────────────────────────────────────────────────────
 
 function NovaNcDialog({
-  reportId, proximoNumero, numerosExistentes, onOpenChange, actorName,
+  reportId,
+  proximoNumero,
+  numerosExistentes,
+  onOpenChange,
+  actorName,
 }: {
   reportId: string;
   proximoNumero: number;
@@ -896,7 +1163,8 @@ function NovaNcDialog({
             <Plus className="h-5 w-5 shrink-0 text-primary" /> Nova não conformidade
           </DialogTitle>
           <DialogDescription>
-            Registre uma NC identificada fora da planilha importada (ex.: nova constatação em campo).
+            Registre uma NC identificada fora da planilha importada (ex.: nova constatação em
+            campo).
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
@@ -904,9 +1172,15 @@ function NovaNcDialog({
             <div className="space-y-1.5">
               <Label>Área</Label>
               <Select value={areaId} onValueChange={setAreaId}>
-                <SelectTrigger><SelectValue placeholder="Selecione a área" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a área" />
+                </SelectTrigger>
                 <SelectContent className="max-h-72">
-                  {areas.map((a) => <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>)}
+                  {areas.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.nome}
+                    </SelectItem>
+                  ))}
                   <SelectItem value="__nova__">+ Nova área...</SelectItem>
                 </SelectContent>
               </Select>
@@ -914,8 +1188,12 @@ function NovaNcDialog({
             <div className="space-y-1.5">
               <Label htmlFor="nc-numero">Nº da NC</Label>
               <Input
-                id="nc-numero" type="number" min={1} value={numero}
-                onChange={(e) => setNumero(Number(e.target.value))} required
+                id="nc-numero"
+                type="number"
+                min={1}
+                value={numero}
+                onChange={(e) => setNumero(Number(e.target.value))}
+                required
                 aria-invalid={numeroDuplicado}
                 className={numeroDuplicado ? "border-red-400 focus-visible:ring-red-400" : ""}
               />
@@ -924,8 +1202,8 @@ function NovaNcDialog({
           {numeroDuplicado && (
             <div className="flex items-center justify-between gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
               <span className="inline-flex items-center gap-1.5">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                A NC nº {numero} já existe neste relatório.
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />A NC nº {numero} já existe neste
+                relatório.
               </span>
               <button
                 type="button"
@@ -939,25 +1217,47 @@ function NovaNcDialog({
           {(areaId === "__nova__" || (areaId === "" && areas.length === 0)) && (
             <div className="space-y-1.5">
               <Label htmlFor="nc-nova-area">Nome da nova área</Label>
-              <Input id="nc-nova-area" value={novaArea} onChange={(e) => setNovaArea(e.target.value)} maxLength={150} />
+              <Input
+                id="nc-nova-area"
+                value={novaArea}
+                onChange={(e) => setNovaArea(e.target.value)}
+                maxLength={150}
+              />
             </div>
           )}
           <div className="space-y-1.5">
             <Label htmlFor="nc-desc">Não conformidade</Label>
-            <Textarea id="nc-desc" value={descricao} onChange={(e) => setDescricao(e.target.value)} rows={3} maxLength={2000} required />
+            <Textarea
+              id="nc-desc"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              rows={3}
+              maxLength={2000}
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="nc-rec">Recomendação (opcional)</Label>
-            <Textarea id="nc-rec" value={recomendacao} onChange={(e) => setRecomendacao(e.target.value)} rows={2} maxLength={3000} />
+            <Textarea
+              id="nc-rec"
+              value={recomendacao}
+              onChange={(e) => setRecomendacao(e.target.value)}
+              rows={2}
+              maxLength={3000}
+            />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
               <Select value={prioridade} onValueChange={setPrioridade}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {RTI_PRIORIDADES.map((p) => (
-                    <SelectItem key={p} value={String(p)}>{RTI_PRIORIDADE_LABELS[p]}</SelectItem>
+                    <SelectItem key={p} value={String(p)}>
+                      {RTI_PRIORIDADE_LABELS[p]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -965,7 +1265,9 @@ function NovaNcDialog({
             <div className="space-y-1.5">
               <Label>Tipo de execução</Label>
               <Select value={tipo} onValueChange={(v) => setTipo(v as RtiTipoExecucao)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="os">OS (manutenção)</SelectItem>
                   <SelectItem value="investimento">Investimento</SelectItem>
@@ -976,23 +1278,49 @@ function NovaNcDialog({
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="space-y-1.5 sm:col-span-1">
               <Label htmlFor="nc-resp">Responsável</Label>
-              <Input id="nc-resp" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} maxLength={150} />
+              <Input
+                id="nc-resp"
+                value={responsavel}
+                onChange={(e) => setResponsavel(e.target.value)}
+                maxLength={150}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="nc-prazo">Prazo</Label>
-              <Input id="nc-prazo" type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
+              <Input
+                id="nc-prazo"
+                type="date"
+                value={prazo}
+                onChange={(e) => setPrazo(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="nc-custo">Custo planejado (R$)</Label>
               <Input
-                id="nc-custo" type="number" min={0} step="0.01" value={custoPlanejado}
-                onChange={(e) => setCustoPlanejado(e.target.value)} placeholder="Não informado"
+                id="nc-custo"
+                type="number"
+                min={0}
+                step="0.01"
+                value={custoPlanejado}
+                onChange={(e) => setCustoPlanejado(e.target.value)}
+                placeholder="Não informado"
               />
             </div>
           </div>
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancelar</Button>
-            <Button type="submit" disabled={busy || numeroDuplicado} className="bg-brand-gradient text-white shadow-brand">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={busy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={busy || numeroDuplicado}
+              className="bg-brand-gradient text-white shadow-brand"
+            >
               {busy ? "Salvando..." : "Registrar NC"}
             </Button>
           </DialogFooter>

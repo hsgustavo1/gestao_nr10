@@ -3,8 +3,16 @@ import { useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  AlertTriangle, Camera, CheckCheck, CheckCircle2, FolderOpen, ImagePlus, Images,
-  Trash2, Upload, X,
+  AlertTriangle,
+  Camera,
+  CheckCheck,
+  CheckCircle2,
+  FolderOpen,
+  ImagePlus,
+  Images,
+  Trash2,
+  Upload,
+  X,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
@@ -14,19 +22,28 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { RTI_EVIDENCIA_TIPO_LABELS, type RtiEvidenciaTipo, type RtiNc } from "@/lib/rti";
 import {
-  RTI_EVIDENCIA_TIPO_LABELS,
-  type RtiEvidenciaTipo, type RtiNc,
-} from "@/lib/rti";
-import {
-  uploadRtiFile, useRtiEvidenciaFileIndex, useRtiNcs, useRtiReports,
+  uploadRtiFile,
+  useRtiEvidenciaFileIndex,
+  useRtiNcs,
+  useRtiReports,
 } from "@/lib/rti-queries";
 
 export const Route = createFileRoute("/rti/evidencias")({
@@ -94,8 +111,7 @@ function RtiEvidenciasMassaPage() {
   const folderRef = useRef<HTMLInputElement>(null);
 
   const actorName =
-    (user?.user_metadata?.display_name as string | undefined) ||
-    user?.email?.split("@")[0] || null;
+    (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || null;
 
   const ncByNumero = useMemo(() => new Map(ncs.map((nc) => [nc.numero, nc])), [ncs]);
 
@@ -103,11 +119,13 @@ function RtiEvidenciasMassaPage() {
 
   function rowStatus(row: FileRow): { status: RowStatus; nc: RtiNc | null } {
     const okTipo = row.file.type.startsWith("image/") || row.file.type === "application/pdf";
-    if (!okTipo || row.file.size > 15 * 1024 * 1024) return { status: "arquivo_invalido", nc: null };
+    if (!okTipo || row.file.size > 15 * 1024 * 1024)
+      return { status: "arquivo_invalido", nc: null };
     if (row.numero == null) return { status: "sem_numero", nc: null };
     const nc = ncByNumero.get(row.numero) ?? null;
     if (!nc) return { status: "nc_inexistente", nc: null };
-    if (fileIndex?.has(`${nc.id}|${tipo}|${fileRelName(row.file)}`)) return { status: "ja_importada", nc };
+    if (fileIndex?.has(`${nc.id}|${tipo}|${fileRelName(row.file)}`))
+      return { status: "ja_importada", nc };
     return { status: "ok", nc };
   }
 
@@ -118,7 +136,12 @@ function RtiEvidenciasMassaPage() {
       out,
       ok,
       ncsDistintas: new Set(ok.map((r) => r.nc!.id)).size,
-      problemas: out.filter((r) => r.status === "sem_numero" || r.status === "nc_inexistente" || r.status === "arquivo_invalido").length,
+      problemas: out.filter(
+        (r) =>
+          r.status === "sem_numero" ||
+          r.status === "nc_inexistente" ||
+          r.status === "arquivo_invalido",
+      ).length,
       jaImportadas: out.filter((r) => r.status === "ja_importada").length,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,7 +238,10 @@ function RtiEvidenciasMassaPage() {
     sem_numero: { cls: "border-amber-300 bg-amber-50 text-amber-700", label: "Sem nº de NC" },
     nc_inexistente: { cls: "border-red-300 bg-red-50 text-red-700", label: "NC não existe" },
     ja_importada: { cls: "border-slate-300 bg-slate-50 text-slate-600", label: "Já importada" },
-    arquivo_invalido: { cls: "border-red-300 bg-red-50 text-red-700", label: "Inválido (>15MB ou tipo)" },
+    arquivo_invalido: {
+      cls: "border-red-300 bg-red-50 text-red-700",
+      label: "Inválido (>15MB ou tipo)",
+    },
   };
 
   return (
@@ -226,26 +252,41 @@ function RtiEvidenciasMassaPage() {
           RTI — Importar Evidências em Massa
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground">
-          Selecione uma pasta inteira — o sistema identifica a NC pelo nome da <strong>subpasta</strong>{" "}
-          (ex.: <code className="text-[11px] bg-muted px-1 rounded">NC 123/foto 1.jpg</code>,{" "}
+          Selecione uma pasta inteira — o sistema identifica a NC pelo nome da{" "}
+          <strong>subpasta</strong> (ex.:{" "}
+          <code className="text-[11px] bg-muted px-1 rounded">NC 123/foto 1.jpg</code>,{" "}
           <code className="text-[11px] bg-muted px-1 rounded">Evidências/045/IMG_001.jpg</code>) ou,
-          se não houver pasta numerada, pelo nome do arquivo
-          (<code className="text-[11px] bg-muted px-1 rounded">NC 123.jpg</code>,{" "}
+          se não houver pasta numerada, pelo nome do arquivo (
+          <code className="text-[11px] bg-muted px-1 rounded">NC 123.jpg</code>,{" "}
           <code className="text-[11px] bg-muted px-1 rounded">123-2.png</code>).
         </p>
       </div>
 
       {/* Configuração */}
       <Card className="mt-5">
-        <CardHeader className="pb-2"><CardTitle className="text-sm">1. Destino das evidências</CardTitle></CardHeader>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">1. Destino das evidências</CardTitle>
+        </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-4">
           {reports.length > 1 && (
             <div className="space-y-1.5">
               <Label>Relatório</Label>
-              <Select value={activeReport?.id ?? ""} onValueChange={(v) => { setReportId(v); setRows([]); }}>
-                <SelectTrigger className="w-64"><SelectValue placeholder="Relatório" /></SelectTrigger>
+              <Select
+                value={activeReport?.id ?? ""}
+                onValueChange={(v) => {
+                  setReportId(v);
+                  setRows([]);
+                }}
+              >
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Relatório" />
+                </SelectTrigger>
                 <SelectContent>
-                  {reports.map((r) => <SelectItem key={r.id} value={r.id}>{r.titulo}</SelectItem>)}
+                  {reports.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.titulo}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -272,40 +313,67 @@ function RtiEvidenciasMassaPage() {
 
       {/* Seleção de arquivos */}
       <Card className="mt-4">
-        <CardHeader className="pb-2"><CardTitle className="text-sm">2. Arquivos</CardTitle></CardHeader>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">2. Arquivos</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <input
-              ref={filesRef} type="file" multiple accept="image/*,application/pdf"
-              className="hidden" onChange={(e) => addFiles(e.target.files)}
+              ref={filesRef}
+              type="file"
+              multiple
+              accept="image/*,application/pdf"
+              className="hidden"
+              onChange={(e) => addFiles(e.target.files)}
             />
             <input
-              ref={folderRef} type="file" className="hidden"
+              ref={folderRef}
+              type="file"
+              className="hidden"
               onChange={(e) => addFiles(e.target.files)}
               {...({ webkitdirectory: "" } as object)}
             />
-            <Button variant="outline" onClick={() => filesRef.current?.click()} disabled={importing || !activeReport}>
+            <Button
+              variant="outline"
+              onClick={() => filesRef.current?.click()}
+              disabled={importing || !activeReport}
+            >
               <ImagePlus className="h-4 w-4" /> Selecionar arquivos
             </Button>
-            <Button variant="outline" onClick={() => folderRef.current?.click()} disabled={importing || !activeReport}>
+            <Button
+              variant="outline"
+              onClick={() => folderRef.current?.click()}
+              disabled={importing || !activeReport}
+            >
               <FolderOpen className="h-4 w-4" /> Selecionar pasta inteira
             </Button>
             {rows.length > 0 && (
-              <Button variant="ghost" className="text-muted-foreground" onClick={() => setRows([])} disabled={importing}>
+              <Button
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={() => setRows([])}
+                disabled={importing}
+              >
                 <X className="h-4 w-4" /> Limpar lista
               </Button>
             )}
           </div>
 
           {!activeReport && (
-            <p className="text-xs text-muted-foreground">Cadastre um relatório primeiro (RTI → Importar planilha).</p>
+            <p className="text-xs text-muted-foreground">
+              Cadastre um relatório primeiro (RTI → Importar planilha).
+            </p>
           )}
 
           {resultado && (
             <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               {resultado.ok} evidências importadas em {resultado.ncsAfetadas} NCs.{" "}
-              <Link to="/rti/plano" search={{ report: activeReport?.id }} className="underline font-medium">
+              <Link
+                to="/rti/plano"
+                search={{ report: activeReport?.id }}
+                className="underline font-medium"
+              >
                 Ver plano de ação
               </Link>
             </div>
@@ -316,11 +384,13 @@ function RtiEvidenciasMassaPage() {
               {/* Resumo */}
               <div className="flex flex-wrap gap-2 text-xs">
                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 px-2.5 py-1 font-semibold">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> {analise.ok.length} prontas → {analise.ncsDistintas} NCs
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {analise.ok.length} prontas →{" "}
+                  {analise.ncsDistintas} NCs
                 </span>
                 {analise.problemas > 0 && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 text-amber-700 px-2.5 py-1 font-semibold">
-                    <AlertTriangle className="h-3.5 w-3.5" /> {analise.problemas} com problema (corrija o nº abaixo)
+                    <AlertTriangle className="h-3.5 w-3.5" /> {analise.problemas} com problema
+                    (corrija o nº abaixo)
                   </span>
                 )}
                 {analise.jaImportadas > 0 && (
@@ -346,8 +416,13 @@ function RtiEvidenciasMassaPage() {
                     {analise.out.map(({ row, status, nc }) => (
                       <TableRow key={row.key}>
                         <TableCell className="max-w-[260px]">
-                          <div className="truncate text-sm" title={fileRelName(row.file)}>{row.file.name}</div>
-                          <div className="truncate text-[10px] text-muted-foreground" title={fileRelName(row.file)}>
+                          <div className="truncate text-sm" title={fileRelName(row.file)}>
+                            {row.file.name}
+                          </div>
+                          <div
+                            className="truncate text-[10px] text-muted-foreground"
+                            title={fileRelName(row.file)}
+                          >
                             {row.file.webkitRelativePath
                               ? row.file.webkitRelativePath.split("/").slice(0, -1).join(" / ")
                               : `${(row.file.size / 1024).toFixed(0)} KB`}
@@ -355,15 +430,25 @@ function RtiEvidenciasMassaPage() {
                         </TableCell>
                         <TableCell>
                           <Input
-                            type="number" min={1} className="h-7 w-20 text-xs tabular-nums"
+                            type="number"
+                            min={1}
+                            className="h-7 w-20 text-xs tabular-nums"
                             value={row.numero ?? ""}
-                            onChange={(e) => setNumero(row.key, e.target.value === "" ? null : Number(e.target.value))}
+                            onChange={(e) =>
+                              setNumero(
+                                row.key,
+                                e.target.value === "" ? null : Number(e.target.value),
+                              )
+                            }
                             disabled={importing}
                           />
                         </TableCell>
                         <TableCell className="max-w-[300px]">
                           {nc ? (
-                            <div className="text-xs leading-snug line-clamp-2 text-muted-foreground" title={nc.descricao}>
+                            <div
+                              className="text-xs leading-snug line-clamp-2 text-muted-foreground"
+                              title={nc.descricao}
+                            >
                               {nc.descricao}
                             </div>
                           ) : (
@@ -371,15 +456,20 @@ function RtiEvidenciasMassaPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap ${statusBadge[status].cls}`}>
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap ${statusBadge[status].cls}`}
+                          >
                             {statusBadge[status].label}
                           </span>
                         </TableCell>
                         <TableCell>
                           <Button
-                            size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground"
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-muted-foreground"
                             onClick={() => setRows((prev) => prev.filter((r) => r.key !== row.key))}
-                            disabled={importing} title="Remover da lista"
+                            disabled={importing}
+                            title="Remover da lista"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>

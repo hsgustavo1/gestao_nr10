@@ -2,7 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
-  BookOpenCheck, CheckCircle2, CircleAlert, Download, FileText, Pencil, Plus, Search, Trash2, Users,
+  BookOpenCheck,
+  CheckCircle2,
+  CircleAlert,
+  Download,
+  FileText,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Users,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,24 +23,50 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth-context";
 import {
-  PIE_CATEGORIES, PIE_CATEGORY_LABELS, PIE_CATEGORY_NORM_REF, PIE_INTEGRATED_CATEGORY,
-  PIE_REQUIRED_CATEGORIES, DOC_STATUS_LABELS, docExpiryStatus, prontuarioCompleteness,
-  type NR10Document, type PIECategory, type DocExpiryStatus,
+  PIE_CATEGORIES,
+  PIE_CATEGORY_LABELS,
+  PIE_CATEGORY_NORM_REF,
+  PIE_INTEGRATED_CATEGORY,
+  PIE_REQUIRED_CATEGORIES,
+  DOC_STATUS_LABELS,
+  docExpiryStatus,
+  prontuarioCompleteness,
+  type NR10Document,
+  type PIECategory,
+  type DocExpiryStatus,
 } from "@/lib/prontuario";
 import {
-  useNR10Documents, useUpsertNR10Document, useDeleteNR10Document,
-  uploadProntuarioFile, prontuarioFileUrl,
-  archiveDocumentVersion, useDocumentVersions,
+  useNR10Documents,
+  useUpsertNR10Document,
+  useDeleteNR10Document,
+  uploadProntuarioFile,
+  prontuarioFileUrl,
+  archiveDocumentVersion,
+  useDocumentVersions,
 } from "@/lib/prontuario-queries";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 
@@ -40,7 +75,11 @@ export const Route = createFileRoute("/nr10/")({
   head: () => ({
     meta: [
       { title: "Prontuário das Instalações Elétricas — Gestão NR-10" },
-      { name: "description", content: "Prontuário das Instalações Elétricas (NR-10 itens 10.2.3 e 10.2.4): documentos, validades e conformidade." },
+      {
+        name: "description",
+        content:
+          "Prontuário das Instalações Elétricas (NR-10 itens 10.2.3 e 10.2.4): documentos, validades e conformidade.",
+      },
     ],
   }),
 });
@@ -53,7 +92,9 @@ function statusBadge(status: DocExpiryStatus) {
     perennial: "border-slate-300 bg-slate-50 text-slate-600",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[status]}`}>
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[status]}`}
+    >
       {DOC_STATUS_LABELS[status]}
     </span>
   );
@@ -96,7 +137,8 @@ function ProntuarioPage() {
   }
 
   async function handleDelete(doc: NR10Document) {
-    if (!window.confirm(`Excluir o documento "${doc.title}"? Esta ação não pode ser desfeita.`)) return;
+    if (!window.confirm(`Excluir o documento "${doc.title}"? Esta ação não pode ser desfeita.`))
+      return;
     try {
       await deleteDoc.mutateAsync({ id: doc.id, file_path: doc.file_path });
       toast.success("Documento excluído.");
@@ -114,11 +156,17 @@ function ProntuarioPage() {
             Prontuário das Instalações Elétricas
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            NR-10 itens 10.2.3 e 10.2.4 · {isLoading ? "Carregando..." : `${docs.length} ${docs.length === 1 ? "documento" : "documentos"}`}
+            NR-10 itens 10.2.3 e 10.2.4 ·{" "}
+            {isLoading
+              ? "Carregando..."
+              : `${docs.length} ${docs.length === 1 ? "documento" : "documentos"}`}
           </p>
         </div>
         {isStaff && (
-          <Button onClick={() => openCreate()} className="bg-brand-gradient text-white shadow-brand">
+          <Button
+            onClick={() => openCreate()}
+            className="bg-brand-gradient text-white shadow-brand"
+          >
             <Plus className="h-4 w-4" /> Novo documento
           </Button>
         )}
@@ -129,7 +177,9 @@ function ProntuarioPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
             <span>Completude do prontuário</span>
-            <span className="text-2xl font-bold tabular-nums">{isLoading ? "—" : `${completeness.percent}%`}</span>
+            <span className="text-2xl font-bold tabular-nums">
+              {isLoading ? "—" : `${completeness.percent}%`}
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -148,10 +198,15 @@ function ProntuarioPage() {
                   <div className="min-w-0 text-sm">
                     <div className="font-medium leading-tight">
                       {PIE_CATEGORY_LABELS[cat]}
-                      <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">({PIE_CATEGORY_NORM_REF[cat]})</span>
+                      <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">
+                        ({PIE_CATEGORY_NORM_REF[cat]})
+                      </span>
                     </div>
                     {integrated ? (
-                      <Link to="/qualificacoes" className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
+                      <Link
+                        to="/qualificacoes"
+                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                      >
                         <Users className="h-3 w-3" /> Integrado ao módulo Pessoas
                       </Link>
                     ) : !covered ? (
@@ -164,7 +219,9 @@ function ProntuarioPage() {
                           Adicionar documento
                         </button>
                       ) : (
-                        <span className="text-[11px] text-muted-foreground">Nenhum documento válido</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          Nenhum documento válido
+                        </span>
                       )
                     ) : null}
                   </div>
@@ -187,16 +244,22 @@ function ProntuarioPage() {
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-64"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-64">
+            <SelectValue placeholder="Categoria" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as categorias</SelectItem>
             {PIE_CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>{PIE_CATEGORY_LABELS[c]}</SelectItem>
+              <SelectItem key={c} value={c}>
+                {PIE_CATEGORY_LABELS[c]}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="ok">Válido</SelectItem>
@@ -212,7 +275,9 @@ function ProntuarioPage() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-5 space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10" />)}
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-10" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground">
@@ -240,9 +305,16 @@ function ProntuarioPage() {
                     return (
                       <TableRow key={d.id}>
                         <TableCell className="max-w-[260px]">
-                          <div className="font-medium leading-tight truncate" title={d.title}>{d.title}</div>
+                          <div className="font-medium leading-tight truncate" title={d.title}>
+                            {d.title}
+                          </div>
                           {d.description && (
-                            <div className="text-[11px] text-muted-foreground truncate" title={d.description}>{d.description}</div>
+                            <div
+                              className="text-[11px] text-muted-foreground truncate"
+                              title={d.description}
+                            >
+                              {d.description}
+                            </div>
                           )}
                         </TableCell>
                         <TableCell>
@@ -250,29 +322,56 @@ function ProntuarioPage() {
                             {PIE_CATEGORY_LABELS[d.category]}
                           </Badge>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDatePtBR(d.document_date)}</TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDatePtBR(d.validity_date)}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatDatePtBR(d.document_date)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatDatePtBR(d.validity_date)}
+                        </TableCell>
                         <TableCell>{statusBadge(status)}</TableCell>
                         <TableCell className="max-w-[180px]">
                           <div className="text-sm truncate">{d.responsavel || "—"}</div>
-                          {d.art && <div className="text-[11px] text-muted-foreground truncate">ART {d.art}</div>}
+                          {d.art && (
+                            <div className="text-[11px] text-muted-foreground truncate">
+                              ART {d.art}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="inline-flex gap-1">
                             {d.file_path && (
                               <Button asChild size="sm" variant="outline">
-                                <a href={prontuarioFileUrl(d.file_path)} target="_blank" rel="noreferrer" title="Baixar PDF">
+                                <a
+                                  href={prontuarioFileUrl(d.file_path)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="Baixar PDF"
+                                >
                                   <Download className="h-4 w-4" />
                                 </a>
                               </Button>
                             )}
                             {isStaff && (
-                              <Button size="sm" variant="outline" onClick={() => { setEditing(d); setDialogOpen(true); }} title="Editar">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditing(d);
+                                  setDialogOpen(true);
+                                }}
+                                title="Editar"
+                              >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             )}
                             {isAdmin && (
-                              <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleDelete(d)} title="Excluir">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive"
+                                onClick={() => handleDelete(d)}
+                                title="Excluir"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             )}
@@ -291,7 +390,13 @@ function ProntuarioPage() {
       {isStaff && dialogOpen && (
         <DocumentDialog
           open={dialogOpen}
-          onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditing(null); setPresetCategory(null); } }}
+          onOpenChange={(o) => {
+            setDialogOpen(o);
+            if (!o) {
+              setEditing(null);
+              setPresetCategory(null);
+            }
+          }}
           existing={editing}
           presetCategory={presetCategory}
           actorId={user?.id ?? null}
@@ -307,7 +412,12 @@ function ProntuarioPage() {
 }
 
 function DocumentDialog({
-  open, onOpenChange, existing, presetCategory, actorId, actorName,
+  open,
+  onOpenChange,
+  existing,
+  presetCategory,
+  actorId,
+  actorName,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -334,7 +444,8 @@ function DocumentDialog({
     e.preventDefault();
     if (!category) return toast.error("Selecione a categoria do documento.");
     if (!title.trim()) return toast.error("Informe o título do documento.");
-    if (file && file.type !== "application/pdf") return toast.error("O anexo deve ser um arquivo PDF.");
+    if (file && file.type !== "application/pdf")
+      return toast.error("O anexo deve ser um arquivo PDF.");
     if (file && file.size > 20 * 1024 * 1024) return toast.error("PDF excede 20 MB.");
 
     setBusy(true);
@@ -390,18 +501,22 @@ function DocumentDialog({
             {isEdit ? "Editar documento do prontuário" : "Novo documento do prontuário"}
           </DialogTitle>
           <DialogDescription>
-            Documentos sem data de validade são tratados como perenes. {isEdit ? "Anexar um novo PDF substitui o anterior." : ""}
+            Documentos sem data de validade são tratados como perenes.{" "}
+            {isEdit ? "Anexar um novo PDF substitui o anterior." : ""}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="pd-category">Categoria (item da norma)</Label>
             <Select value={category || undefined} onValueChange={setCategory} required>
-              <SelectTrigger id="pd-category"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+              <SelectTrigger id="pd-category">
+                <SelectValue placeholder="Selecione a categoria" />
+              </SelectTrigger>
               <SelectContent>
                 {PIE_CATEGORIES.map((c) => (
                   <SelectItem key={c} value={c}>
-                    {PIE_CATEGORY_LABELS[c]}{PIE_CATEGORY_NORM_REF[c] !== "—" ? ` (${PIE_CATEGORY_NORM_REF[c]})` : ""}
+                    {PIE_CATEGORY_LABELS[c]}
+                    {PIE_CATEGORY_NORM_REF[c] !== "—" ? ` (${PIE_CATEGORY_NORM_REF[c]})` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -409,34 +524,69 @@ function DocumentDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="pd-title">Título</Label>
-            <Input id="pd-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="Ex.: Esquema unifilar — Subestação principal" required />
+            <Input
+              id="pd-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={200}
+              placeholder="Ex.: Esquema unifilar — Subestação principal"
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="pd-description">Descrição (opcional)</Label>
-            <Textarea id="pd-description" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} maxLength={500} />
+            <Textarea
+              id="pd-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              maxLength={500}
+            />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="pd-date">Data de emissão</Label>
-              <Input id="pd-date" type="date" value={documentDate} onChange={(e) => setDocumentDate(e.target.value)} />
+              <Input
+                id="pd-date"
+                type="date"
+                value={documentDate}
+                onChange={(e) => setDocumentDate(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pd-validity">Validade (opcional)</Label>
-              <Input id="pd-validity" type="date" value={validityDate} onChange={(e) => setValidityDate(e.target.value)} />
+              <Input
+                id="pd-validity"
+                type="date"
+                value={validityDate}
+                onChange={(e) => setValidityDate(e.target.value)}
+              />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="pd-resp">Responsável técnico (opcional)</Label>
-              <Input id="pd-resp" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} maxLength={150} />
+              <Input
+                id="pd-resp"
+                value={responsavel}
+                onChange={(e) => setResponsavel(e.target.value)}
+                maxLength={150}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pd-art">ART (opcional)</Label>
-              <Input id="pd-art" value={art} onChange={(e) => setArt(e.target.value)} maxLength={80} />
+              <Input
+                id="pd-art"
+                value={art}
+                onChange={(e) => setArt(e.target.value)}
+                maxLength={80}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pd-file">Arquivo PDF{isEdit ? " — opcional (substitui o atual)" : " (opcional)"}</Label>
+            <Label htmlFor="pd-file">
+              Arquivo PDF{isEdit ? " — opcional (substitui o atual)" : " (opcional)"}
+            </Label>
             <Input
               id="pd-file"
               ref={fileRef}
@@ -479,11 +629,20 @@ function DocumentDialog({
             </div>
           )}
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={busy}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={busy} className="bg-brand-gradient text-white shadow-brand">
-              {busy ? "Salvando..." : (isEdit ? "Salvar alterações" : "Cadastrar documento")}
+            <Button
+              type="submit"
+              disabled={busy}
+              className="bg-brand-gradient text-white shadow-brand"
+            >
+              {busy ? "Salvando..." : isEdit ? "Salvar alterações" : "Cadastrar documento"}
             </Button>
           </DialogFooter>
         </form>

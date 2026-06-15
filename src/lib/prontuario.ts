@@ -14,7 +14,7 @@ export const PIE_CATEGORIES = [
   "outros",
 ] as const;
 
-export type PIECategory = typeof PIE_CATEGORIES[number];
+export type PIECategory = (typeof PIE_CATEGORIES)[number];
 
 export const PIE_CATEGORY_LABELS: Record<PIECategory, string> = {
   esquema_unifilar: "Esquema unifilar atualizado",

@@ -4,24 +4,36 @@ import { FolderCheck, Printer } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useEmployees, useNR10Trainings, useWorkAuthorizations,
-} from "@/lib/qualificacoes-queries";
+import { useEmployees, useNR10Trainings, useWorkAuthorizations } from "@/lib/qualificacoes-queries";
 import { useNR10Documents } from "@/lib/prontuario-queries";
 import { useInspections } from "@/lib/inspecoes-queries";
 import { useEPIs, useEPITests } from "@/lib/epis-queries";
 import { useASOs } from "@/lib/asos-queries";
 import { useAllRtiNcs } from "@/lib/rti-queries";
 import {
-  TRAINING_LABELS, TRAINING_TYPES, formatDatePtBR, trainingExpiryStatus,
-  type NR10Training, type TrainingType, type WorkAuthorization,
+  TRAINING_LABELS,
+  TRAINING_TYPES,
+  formatDatePtBR,
+  trainingExpiryStatus,
+  type NR10Training,
+  type TrainingType,
+  type WorkAuthorization,
 } from "@/lib/qualificacoes";
 import {
-  PIE_CATEGORY_LABELS, PIE_CATEGORY_NORM_REF, PIE_REQUIRED_CATEGORIES,
-  docExpiryStatus, DOC_STATUS_LABELS,
+  PIE_CATEGORY_LABELS,
+  PIE_CATEGORY_NORM_REF,
+  PIE_REQUIRED_CATEGORIES,
+  docExpiryStatus,
+  DOC_STATUS_LABELS,
 } from "@/lib/prontuario";
 import { INSPECTION_TYPES, INSPECTION_TYPE_SHORT } from "@/lib/inspecoes";
-import { EPI_TYPE_LABELS, epiTestStatus, EPI_STATUS_LABELS, lastTestByEpi, nextTestDate } from "@/lib/epis";
+import {
+  EPI_TYPE_LABELS,
+  epiTestStatus,
+  EPI_STATUS_LABELS,
+  lastTestByEpi,
+  nextTestDate,
+} from "@/lib/epis";
 import { asoStatus, latestASOByEmployee, ASO_STATUS_LABELS } from "@/lib/asos";
 import { computeAptidao } from "@/lib/aptidao";
 import { useComplianceReport } from "@/lib/conformidade";
@@ -32,12 +44,24 @@ export const Route = createFileRoute("/relatorio/dossie")({
   head: () => ({
     meta: [
       { title: "Dossiê de Fiscalização — Gestão NR-10" },
-      { name: "description", content: "Dossiê consolidado para apresentação à fiscalização do trabalho: prontuário, autorizados, laudos, EPIs e plano de ação." },
+      {
+        name: "description",
+        content:
+          "Dossiê consolidado para apresentação à fiscalização do trabalho: prontuário, autorizados, laudos, EPIs e plano de ação.",
+      },
     ],
   }),
 });
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mt-6 break-inside-avoid">
       <h2 className="text-base font-bold border-b pb-1 mb-2">{title}</h2>
@@ -63,7 +87,8 @@ function DossiePage() {
 
   const authByEmployee = useMemo(() => {
     const map = new Map<string, WorkAuthorization>();
-    for (const a of authorizations) map.set((a as any).employee_id, a as unknown as WorkAuthorization);
+    for (const a of authorizations)
+      map.set((a as any).employee_id, a as unknown as WorkAuthorization);
     return map;
   }, [authorizations]);
 
@@ -149,27 +174,39 @@ function DossiePage() {
             Documento consolidado para apresentação à fiscalização do trabalho.
           </p>
         </div>
-        <Button onClick={() => window.print()} className="bg-brand-gradient text-white shadow-brand">
+        <Button
+          onClick={() => window.print()}
+          className="bg-brand-gradient text-white shadow-brand"
+        >
           <Printer className="h-4 w-4" /> Imprimir / PDF
         </Button>
       </div>
 
       {isLoading || !report ? (
         <div className="mt-5 space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
         </div>
       ) : (
         <div className="mt-4 text-sm">
           {/* Capa */}
           <div className="text-center border rounded-md p-6 print:border-0">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Gestão NR-10 — Segurança em Instalações e Serviços em Eletricidade</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">
+              Gestão NR-10 — Segurança em Instalações e Serviços em Eletricidade
+            </p>
             <h1 className="text-2xl font-bold mt-1">DOSSIÊ DE FISCALIZAÇÃO</h1>
             <p className="text-xs text-muted-foreground mt-1">
-              Emitido em {hoje.toLocaleDateString("pt-BR")} às {hoje.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              Emitido em {hoje.toLocaleDateString("pt-BR")} às{" "}
+              {hoje.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
             </p>
             <div className="mt-4 inline-flex items-baseline gap-2">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">Índice global de conformidade</span>
-              <span className={`text-3xl font-bold tabular-nums ${report.overall >= 90 ? "text-emerald-600" : report.overall >= 70 ? "text-amber-600" : "text-red-600"}`}>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                Índice global de conformidade
+              </span>
+              <span
+                className={`text-3xl font-bold tabular-nums ${report.overall >= 90 ? "text-emerald-600" : report.overall >= 70 ? "text-amber-600" : "text-red-600"}`}
+              >
                 {report.overall}%
               </span>
             </div>
@@ -198,15 +235,22 @@ function DossiePage() {
                       <tr key={cat} className="border-b">
                         <td className="py-1.5 pr-3">
                           {PIE_CATEGORY_LABELS[cat]}
-                          <span className="text-muted-foreground"> ({PIE_CATEGORY_NORM_REF[cat]})</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            ({PIE_CATEGORY_NORM_REF[cat]})
+                          </span>
                         </td>
                         <td className="py-1.5 pr-3 text-muted-foreground" colSpan={3}>
-                          {cat === "qualificacao_trabalhadores" ? "Gerenciado no módulo Pessoas (seção 2)" : "—"}
+                          {cat === "qualificacao_trabalhadores"
+                            ? "Gerenciado no módulo Pessoas (seção 2)"
+                            : "—"}
                         </td>
                         <td className="py-1.5">
-                          {cat === "qualificacao_trabalhadores"
-                            ? <span className="text-emerald-600 font-semibold">Atendida</span>
-                            : <span className="text-red-600 font-semibold">Pendente</span>}
+                          {cat === "qualificacao_trabalhadores" ? (
+                            <span className="text-emerald-600 font-semibold">Atendida</span>
+                          ) : (
+                            <span className="text-red-600 font-semibold">Pendente</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -219,16 +263,24 @@ function DossiePage() {
                           {idx === 0 && (
                             <>
                               {PIE_CATEGORY_LABELS[cat]}
-                              <span className="text-muted-foreground"> ({PIE_CATEGORY_NORM_REF[cat]})</span>
+                              <span className="text-muted-foreground">
+                                {" "}
+                                ({PIE_CATEGORY_NORM_REF[cat]})
+                              </span>
                             </>
                           )}
                         </td>
                         <td className="py-1.5 pr-3">{d.title}</td>
                         <td className="py-1.5 pr-3 text-muted-foreground">
-                          {d.responsavel ?? "—"}{d.art ? ` · ART ${d.art}` : ""}
+                          {d.responsavel ?? "—"}
+                          {d.art ? ` · ART ${d.art}` : ""}
                         </td>
-                        <td className="py-1.5 pr-3">{d.validity_date ? formatDatePtBR(d.validity_date) : "Permanente"}</td>
-                        <td className={`py-1.5 font-semibold ${st === "expired" ? "text-red-600" : st === "expiring" ? "text-amber-600" : "text-emerald-600"}`}>
+                        <td className="py-1.5 pr-3">
+                          {d.validity_date ? formatDatePtBR(d.validity_date) : "Permanente"}
+                        </td>
+                        <td
+                          className={`py-1.5 font-semibold ${st === "expired" ? "text-red-600" : st === "expiring" ? "text-amber-600" : "text-emerald-600"}`}
+                        >
                           {DOC_STATUS_LABELS[st]}
                         </td>
                       </tr>
@@ -250,7 +302,9 @@ function DossiePage() {
                   <th className="py-1.5 pr-3 font-medium">Colaborador</th>
                   <th className="py-1.5 pr-3 font-medium">Nível</th>
                   {TRAINING_TYPES.map((t) => (
-                    <th key={t} className="py-1.5 pr-3 font-medium">{TRAINING_LABELS[t]}</th>
+                    <th key={t} className="py-1.5 pr-3 font-medium">
+                      {TRAINING_LABELS[t]}
+                    </th>
                   ))}
                   <th className="py-1.5 pr-3 font-medium">ASO</th>
                   <th className="py-1.5 font-medium">Aptidão</th>
@@ -261,7 +315,11 @@ function DossiePage() {
                   <tr key={emp.id} className="border-b">
                     <td className="py-1.5 pr-3">
                       <span className="font-medium">{emp.name}</span>
-                      <span className="text-muted-foreground"> · Mat. {emp.matricula}{emp.setor ? ` · ${emp.setor}` : ""}</span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · Mat. {emp.matricula}
+                        {emp.setor ? ` · ${emp.setor}` : ""}
+                      </span>
                     </td>
                     <td className="py-1.5 pr-3 font-semibold">{auth.level}</td>
                     {TRAINING_TYPES.map((type) => {
@@ -270,10 +328,20 @@ function DossiePage() {
                       return (
                         <td key={type} className="py-1.5 pr-3 whitespace-nowrap">
                           {date ? (
-                            <span className={st === "expired" ? "text-red-600" : st === "expiring" ? "text-amber-600" : "text-emerald-700"}>
+                            <span
+                              className={
+                                st === "expired"
+                                  ? "text-red-600"
+                                  : st === "expiring"
+                                    ? "text-amber-600"
+                                    : "text-emerald-700"
+                              }
+                            >
                               {formatDatePtBR(date)}
                             </span>
-                          ) : "—"}
+                          ) : (
+                            "—"
+                          )}
                         </td>
                       );
                     })}
@@ -281,18 +349,32 @@ function DossiePage() {
                       {(() => {
                         const st = asoStatus(aso);
                         return (
-                          <span className={st === "ok" ? "text-emerald-700" : st === "expiring" ? "text-amber-600" : "text-red-600"}>
-                            {ASO_STATUS_LABELS[st]}{aso ? ` (${formatDatePtBR(aso.validity_date)})` : ""}
+                          <span
+                            className={
+                              st === "ok"
+                                ? "text-emerald-700"
+                                : st === "expiring"
+                                  ? "text-amber-600"
+                                  : "text-red-600"
+                            }
+                          >
+                            {ASO_STATUS_LABELS[st]}
+                            {aso ? ` (${formatDatePtBR(aso.validity_date)})` : ""}
                           </span>
                         );
                       })()}
                     </td>
                     <td className="py-1.5">
-                      {aptidao.apto
-                        ? <span className="font-semibold text-emerald-600">Apto</span>
-                        : <span className="font-semibold text-red-600" title={aptidao.bloqueantes.map((b) => b.label).join(" · ")}>
-                            Bloqueado
-                          </span>}
+                      {aptidao.apto ? (
+                        <span className="font-semibold text-emerald-600">Apto</span>
+                      ) : (
+                        <span
+                          className="font-semibold text-red-600"
+                          title={aptidao.bloqueantes.map((b) => b.label).join(" · ")}
+                        >
+                          Bloqueado
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -302,10 +384,15 @@ function DossiePage() {
 
           {/* 3. Laudos */}
           <Section title="3. Laudos e inspeções (10.2.4 b/g)">
-            {laudosByType.length === 0 && <p className="text-xs text-muted-foreground">Nenhum laudo registrado.</p>}
+            {laudosByType.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum laudo registrado.</p>
+            )}
             {laudosByType.map(({ type, items }) => (
               <div key={type} className="mb-3">
-                <h3 className="text-sm font-semibold mb-1">{INSPECTION_TYPE_SHORT[type]} — {items.length} {items.length === 1 ? "laudo" : "laudos"}</h3>
+                <h3 className="text-sm font-semibold mb-1">
+                  {INSPECTION_TYPE_SHORT[type]} — {items.length}{" "}
+                  {items.length === 1 ? "laudo" : "laudos"}
+                </h3>
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b text-muted-foreground text-left">
@@ -321,15 +408,29 @@ function DossiePage() {
                       const st = docExpiryStatus(i.validity_date);
                       return (
                         <tr key={i.id} className="border-b">
-                          <td className="py-1 pr-3">{i.equipment}{i.sector ? ` · ${i.sector}` : ""}</td>
+                          <td className="py-1 pr-3">
+                            {i.equipment}
+                            {i.sector ? ` · ${i.sector}` : ""}
+                          </td>
                           <td className="py-1 pr-3">{formatDatePtBR(i.inspection_date)}</td>
-                          <td className={`py-1 pr-3 ${st === "expired" ? "text-red-600 font-semibold" : st === "expiring" ? "text-amber-600" : ""}`}>
+                          <td
+                            className={`py-1 pr-3 ${st === "expired" ? "text-red-600 font-semibold" : st === "expiring" ? "text-amber-600" : ""}`}
+                          >
                             {i.validity_date ? formatDatePtBR(i.validity_date) : "—"}
                           </td>
-                          <td className={`py-1 pr-3 ${i.result === "nao_conforme" ? "text-red-600 font-semibold" : ""}`}>
-                            {i.result === "conforme" ? "Conforme" : i.result === "conforme_com_ressalvas" ? "Conforme c/ ressalvas" : "Não conforme"}
+                          <td
+                            className={`py-1 pr-3 ${i.result === "nao_conforme" ? "text-red-600 font-semibold" : ""}`}
+                          >
+                            {i.result === "conforme"
+                              ? "Conforme"
+                              : i.result === "conforme_com_ressalvas"
+                                ? "Conforme c/ ressalvas"
+                                : "Não conforme"}
                           </td>
-                          <td className="py-1 text-muted-foreground">{i.responsavel ?? "—"}{i.art ? ` · ART ${i.art}` : ""}</td>
+                          <td className="py-1 text-muted-foreground">
+                            {i.responsavel ?? "—"}
+                            {i.art ? ` · ART ${i.art}` : ""}
+                          </td>
                         </tr>
                       );
                     })}
@@ -362,12 +463,22 @@ function DossiePage() {
                   const next = last && last.result === "aprovado" ? nextTestDate(e, last) : null;
                   return (
                     <tr key={e.id} className="border-b">
-                      <td className="py-1.5 pr-3">{EPI_TYPE_LABELS[e.epi_type]}{e.epi_class ? ` classe ${e.epi_class}` : ""}</td>
-                      <td className="py-1.5 pr-3">{e.serial_number ?? "—"}{e.ca ? ` · CA ${e.ca}` : ""}</td>
-                      <td className="py-1.5 pr-3">{e.employees?.name ?? (e.sector ? `Setor ${e.sector}` : "Uso coletivo")}</td>
+                      <td className="py-1.5 pr-3">
+                        {EPI_TYPE_LABELS[e.epi_type]}
+                        {e.epi_class ? ` classe ${e.epi_class}` : ""}
+                      </td>
+                      <td className="py-1.5 pr-3">
+                        {e.serial_number ?? "—"}
+                        {e.ca ? ` · CA ${e.ca}` : ""}
+                      </td>
+                      <td className="py-1.5 pr-3">
+                        {e.employees?.name ?? (e.sector ? `Setor ${e.sector}` : "Uso coletivo")}
+                      </td>
                       <td className="py-1.5 pr-3">{last ? formatDatePtBR(last.test_date) : "—"}</td>
                       <td className="py-1.5 pr-3">{next ? formatDatePtBR(next) : "—"}</td>
-                      <td className={`py-1.5 font-semibold ${st === "ok" ? "text-emerald-600" : st === "expiring" ? "text-amber-600" : "text-red-600"}`}>
+                      <td
+                        className={`py-1.5 font-semibold ${st === "ok" ? "text-emerald-600" : st === "expiring" ? "text-amber-600" : "text-red-600"}`}
+                      >
                         {EPI_STATUS_LABELS[st]}
                       </td>
                     </tr>
@@ -386,10 +497,15 @@ function DossiePage() {
               <p className="text-xs text-muted-foreground">Nenhuma não conformidade registrada.</p>
             ) : (
               <div className="flex gap-6 text-sm flex-wrap">
-                <div><span className="text-2xl font-bold tabular-nums">{rtiResumo.total}</span> <span className="text-muted-foreground text-xs">NCs no total</span></div>
+                <div>
+                  <span className="text-2xl font-bold tabular-nums">{rtiResumo.total}</span>{" "}
+                  <span className="text-muted-foreground text-xs">NCs no total</span>
+                </div>
                 {(Object.keys(rtiResumo.byStatus) as RtiNcStatus[]).map((s) => (
                   <div key={s}>
-                    <span className={`text-2xl font-bold tabular-nums ${s === "concluida" ? "text-emerald-600" : s === "em_andamento" ? "text-amber-600" : "text-red-600"}`}>
+                    <span
+                      className={`text-2xl font-bold tabular-nums ${s === "concluida" ? "text-emerald-600" : s === "em_andamento" ? "text-amber-600" : "text-red-600"}`}
+                    >
                       {rtiResumo.byStatus[s]}
                     </span>{" "}
                     <span className="text-muted-foreground text-xs">{RTI_NC_STATUS_LABELS[s]}</span>
@@ -406,8 +522,9 @@ function DossiePage() {
           </Section>
 
           <div className="mt-8 text-[10px] text-muted-foreground text-center border-t pt-3">
-            Dossiê gerado automaticamente pelo sistema Gestão NR-10 em {hoje.toLocaleDateString("pt-BR")}.
-            Os documentos digitalizados (certificados, laudos, ASOs, ensaios) estão arquivados no sistema e disponíveis para apresentação.
+            Dossiê gerado automaticamente pelo sistema Gestão NR-10 em{" "}
+            {hoje.toLocaleDateString("pt-BR")}. Os documentos digitalizados (certificados, laudos,
+            ASOs, ensaios) estão arquivados no sistema e disponíveis para apresentação.
           </div>
         </div>
       )}

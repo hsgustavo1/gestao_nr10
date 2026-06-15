@@ -2,14 +2,35 @@ import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { ArrowLeftRight } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { logEvent, PADLOCK_COLORS, colorLabel, colorSwatch, formatPhoneBR, type Padlock, type PadlockColor } from "@/lib/padlocks";
+import {
+  logEvent,
+  PADLOCK_COLORS,
+  colorLabel,
+  colorSwatch,
+  formatPhoneBR,
+  type Padlock,
+  type PadlockColor,
+} from "@/lib/padlocks";
 import { SectorSelect } from "@/components/sector-select";
 
 const baseSchema = z.object({
@@ -22,7 +43,15 @@ const baseSchema = z.object({
   owner_phone: z.string().trim().max(30).optional().or(z.literal("")),
 });
 
-export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpenChange: (o: boolean) => void; onCreated: () => void }) {
+export function NewPadlockDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onCreated: () => void;
+}) {
   const { user } = useAuth();
   const [color, setColor] = useState<PadlockColor>("azul");
   const [number, setNumber] = useState("");
@@ -32,24 +61,36 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
   const [ownerSector, setOwnerSector] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
   const [loading, setLoading] = useState(false);
-  const [conflict, setConflict] = useState<{ kind: "number" | "registration"; existing: Padlock } | null>(null);
+  const [conflict, setConflict] = useState<{
+    kind: "number" | "registration";
+    existing: Padlock;
+  } | null>(null);
 
   const isRed = color === "vermelho";
   const isBrass = color === "latao";
   const useSectorSelect = !isBrass; // azul, amarelo, vermelho usam menu suspenso
 
   function reset() {
-    setColor("azul"); setNumber(""); setOwnerName(""); setOwnerReg("");
-    setOwnerRole(""); setOwnerSector(""); setOwnerPhone("");
+    setColor("azul");
+    setNumber("");
+    setOwnerName("");
+    setOwnerReg("");
+    setOwnerRole("");
+    setOwnerSector("");
+    setOwnerPhone("");
     setConflict(null);
   }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     const parsed = baseSchema.safeParse({
-      color, number, owner_sector: ownerSector,
-      owner_name: ownerName, owner_registration: ownerReg,
-      owner_role: ownerRole, owner_phone: ownerPhone,
+      color,
+      number,
+      owner_sector: ownerSector,
+      owner_name: ownerName,
+      owner_registration: ownerReg,
+      owner_role: ownerRole,
+      owner_phone: ownerPhone,
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
 
@@ -67,7 +108,8 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
     // 1) Pré-check de conflitos para oferecer transferência ao invés de erro cru
     //    (a) cor+numero ativo
     const { data: byNumber } = await supabase
-      .from("padlocks").select("*")
+      .from("padlocks")
+      .select("*")
       .eq("color", parsed.data.color)
       .eq("number", parsed.data.number)
       .eq("cancelled", false)
@@ -78,9 +120,14 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
       return;
     }
     //    (b) matrícula azul/latão ativo
-    if (!isRed && (parsed.data.color === "azul" || parsed.data.color === "latao") && parsed.data.owner_registration) {
+    if (
+      !isRed &&
+      (parsed.data.color === "azul" || parsed.data.color === "latao") &&
+      parsed.data.owner_registration
+    ) {
       const { data: byReg } = await supabase
-        .from("padlocks").select("*")
+        .from("padlocks")
+        .select("*")
         .eq("color", parsed.data.color)
         .eq("owner_registration", parsed.data.owner_registration)
         .eq("cancelled", false)
@@ -114,8 +161,11 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
       return toast.error(translateError(error?.message ?? "Erro ao cadastrar"));
     }
     await logEvent({
-      padlock_id: data.id, padlock_code: data.code, action: "created",
-      actor_id: user?.id ?? null, actor_name: user?.email ?? null,
+      padlock_id: data.id,
+      padlock_code: data.code,
+      action: "created",
+      actor_id: user?.id ?? null,
+      actor_name: user?.email ?? null,
       new_data: data,
     });
     toast.success("Dispositivo cadastrado");
@@ -148,11 +198,16 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
       return toast.error(translateError(error?.message ?? "Erro ao transferir"));
     }
     await logEvent({
-      padlock_id: previous.id, padlock_code: previous.code, action: "transferred",
-      actor_id: user?.id ?? null, actor_name: user?.email ?? null,
+      padlock_id: previous.id,
+      padlock_code: previous.code,
+      action: "transferred",
+      actor_id: user?.id ?? null,
+      actor_name: user?.email ?? null,
       previous_data: {
-        owner_name: previous.owner_name, owner_registration: previous.owner_registration,
-        owner_role: previous.owner_role, owner_sector: previous.owner_sector,
+        owner_name: previous.owner_name,
+        owner_registration: previous.owner_registration,
+        owner_role: previous.owner_role,
+        owner_sector: previous.owner_sector,
         owner_phone: previous.owner_phone,
       },
       new_data: newOwner,
@@ -166,11 +221,20 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) reset();
+        onOpenChange(o);
+      }}
+    >
       <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Novo Dispositivo</DialogTitle>
-          <DialogDescription>Cadastre cor, número e dados do dono. Dispositivos de empréstimo exigem apenas número e setor / empresa.</DialogDescription>
+          <DialogDescription>
+            Cadastre cor, número e dados do dono. Dispositivos de empréstimo exigem apenas número e
+            setor / empresa.
+          </DialogDescription>
         </DialogHeader>
 
         {conflict ? (
@@ -182,78 +246,122 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
             onTransfer={transferToCurrentForm}
           />
         ) : (
-        <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Cor</Label>
-              <Select value={color} onValueChange={(v) => setColor(v as PadlockColor)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PADLOCK_COLORS.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      <span className="inline-flex items-center gap-2">
-                        <span className={`h-3 w-3 rounded-full border ${colorSwatch[c]}`} />
-                        {colorLabel[c]}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <form onSubmit={submit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Cor</Label>
+                <Select value={color} onValueChange={(v) => setColor(v as PadlockColor)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PADLOCK_COLORS.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        <span className="inline-flex items-center gap-2">
+                          <span className={`h-3 w-3 rounded-full border ${colorSwatch[c]}`} />
+                          {colorLabel[c]}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="num">Nº</Label>
+                <Input
+                  id="num"
+                  type="number"
+                  min={0}
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="num">Nº</Label>
-              <Input id="num" type="number" min={0} value={number} onChange={(e) => setNumber(e.target.value)} required />
-            </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="sector">Setor / Empresa {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}</Label>
-            {useSectorSelect ? (
-              <SectorSelect value={ownerSector} onChange={setOwnerSector} required />
-            ) : (
-              <Input
-                id="sector"
-                value={ownerSector}
-                onChange={(e) => setOwnerSector(e.target.value.toUpperCase())}
-                maxLength={100}
-                required
-                placeholder="Setor ou empresa parceira"
-              />
+            <div className="space-y-1.5">
+              <Label htmlFor="sector">
+                Setor / Empresa{" "}
+                {isRed && <span className="text-xs text-muted-foreground">(obrigatório)</span>}
+              </Label>
+              {useSectorSelect ? (
+                <SectorSelect value={ownerSector} onChange={setOwnerSector} required />
+              ) : (
+                <Input
+                  id="sector"
+                  value={ownerSector}
+                  onChange={(e) => setOwnerSector(e.target.value.toUpperCase())}
+                  maxLength={100}
+                  required
+                  placeholder="Setor ou empresa parceira"
+                />
+              )}
+            </div>
+
+            {!isRed && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="oname">Dono</Label>
+                    <Input
+                      id="oname"
+                      value={ownerName}
+                      onChange={(e) => setOwnerName(e.target.value.toUpperCase())}
+                      maxLength={120}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="oreg">Matrícula</Label>
+                    <Input
+                      id="oreg"
+                      value={ownerReg}
+                      onChange={(e) => setOwnerReg(e.target.value.toUpperCase())}
+                      maxLength={40}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="orole">Função</Label>
+                    <Input
+                      id="orole"
+                      value={ownerRole}
+                      onChange={(e) => setOwnerRole(e.target.value.toUpperCase())}
+                      maxLength={80}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ophone">Telefone</Label>
+                    <Input
+                      id="ophone"
+                      value={ownerPhone}
+                      onChange={(e) => setOwnerPhone(formatPhoneBR(e.target.value))}
+                      inputMode="tel"
+                      placeholder="(XX) XXXXX-XXXX"
+                      maxLength={16}
+                      required
+                    />
+                  </div>
+                </div>
+              </>
             )}
-          </div>
 
-          {!isRed && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="oname">Dono</Label>
-                  <Input id="oname" value={ownerName} onChange={(e) => setOwnerName(e.target.value.toUpperCase())} maxLength={120} required />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="oreg">Matrícula</Label>
-                  <Input id="oreg" value={ownerReg} onChange={(e) => setOwnerReg(e.target.value.toUpperCase())} maxLength={40} required />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="orole">Função</Label>
-                  <Input id="orole" value={ownerRole} onChange={(e) => setOwnerRole(e.target.value.toUpperCase())} maxLength={80} required />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="ophone">Telefone</Label>
-                  <Input id="ophone" value={ownerPhone} onChange={(e) => setOwnerPhone(formatPhoneBR(e.target.value))} inputMode="tel" placeholder="(XX) XXXXX-XXXX" maxLength={16} required />
-                </div>
-              </div>
-            </>
-          )}
-
-          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              {loading ? "Salvando..." : "Cadastrar Novo Dispositivo"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+              >
+                {loading ? "Salvando..." : "Cadastrar Novo Dispositivo"}
+              </Button>
+            </DialogFooter>
+          </form>
         )}
       </DialogContent>
     </Dialog>
@@ -261,7 +369,11 @@ export function NewPadlockDialog({ open, onOpenChange, onCreated }: { open: bool
 }
 
 function ConflictPanel({
-  conflict, isRed, loading, onBack, onTransfer,
+  conflict,
+  isRed,
+  loading,
+  onBack,
+  onTransfer,
 }: {
   conflict: { kind: "number" | "registration"; existing: Padlock };
   isRed: boolean;
@@ -270,13 +382,16 @@ function ConflictPanel({
   onTransfer: () => void;
 }) {
   const p = conflict.existing;
-  const reason = conflict.kind === "number"
-    ? `Já existe um dispositivo em uso ${colorLabel[p.color]} #${p.number}.`
-    : `A matrícula ${p.owner_registration} já possui um dispositivo ${colorLabel[p.color]} em uso (#${p.number}).`;
+  const reason =
+    conflict.kind === "number"
+      ? `Já existe um dispositivo em uso ${colorLabel[p.color]} #${p.number}.`
+      : `A matrícula ${p.owner_registration} já possui um dispositivo ${colorLabel[p.color]} em uso (#${p.number}).`;
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
-        <div className="font-semibold text-amber-700 dark:text-amber-300 mb-1">Conflito detectado</div>
+        <div className="font-semibold text-amber-700 dark:text-amber-300 mb-1">
+          Conflito detectado
+        </div>
         <p className="text-foreground">{reason}</p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
           <Info label="Dono atual" value={p.owner_name ?? "—"} />
@@ -293,18 +408,26 @@ function ConflictPanel({
       ) : (
         <p className="text-sm text-muted-foreground">
           Você pode <strong>transferir o cadeado existente</strong> para o novo dono que digitou
-          acima — isso preserva o número e mantém a auditoria na linha do tempo. Ou volte e ajuste os dados.
+          acima — isso preserva o número e mantém a auditoria na linha do tempo. Ou volte e ajuste
+          os dados.
         </p>
       )}
       <DialogFooter>
-        <Button type="button" variant="ghost" onClick={onBack}>Voltar e ajustar</Button>
+        <Button type="button" variant="ghost" onClick={onBack}>
+          Voltar e ajustar
+        </Button>
         {!isRed && (
-          <Button type="button" disabled={loading} onClick={onTransfer} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-            <ArrowLeftRight className="h-4 w-4" /> {loading ? "Transferindo..." : "Transferir cadeado"}
+          <Button
+            type="button"
+            disabled={loading}
+            onClick={onTransfer}
+            className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+          >
+            <ArrowLeftRight className="h-4 w-4" />{" "}
+            {loading ? "Transferindo..." : "Transferir cadeado"}
           </Button>
         )}
       </DialogFooter>
-
     </div>
   );
 }

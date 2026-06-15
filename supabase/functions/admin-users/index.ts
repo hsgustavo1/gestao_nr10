@@ -102,7 +102,8 @@ Deno.serve(async (req) => {
       const orgId = action.org_id;
       const orgRole = action.org_role ?? "member";
       if (!email || !password) return json({ error: "Email e senha são obrigatórios" }, 400);
-      if (password.length < 8) return json({ error: "A senha deve ter pelo menos 8 caracteres" }, 400);
+      if (password.length < 8)
+        return json({ error: "A senha deve ter pelo menos 8 caracteres" }, 400);
       // Papel global é opcional agora (multi-tenancy usa org_role). Se vier, valida.
       if (role !== undefined && role !== "admin" && role !== "apoio") {
         return json({ error: "Role inválida" }, 400);
@@ -121,7 +122,8 @@ Deno.serve(async (req) => {
         email_confirm: true,
         user_metadata: { display_name: displayName },
       });
-      if (createErr || !created.user) return json({ error: createErr?.message ?? "Erro ao criar" }, 400);
+      if (createErr || !created.user)
+        return json({ error: createErr?.message ?? "Erro ao criar" }, 400);
 
       // Garante profile (trigger handle_new_user já cuida, mas reforçamos display_name)
       await admin.from("profiles").upsert({
@@ -140,7 +142,11 @@ Deno.serve(async (req) => {
         const { error: memErr } = await admin
           .from("org_memberships")
           .insert({ user_id: created.user.id, org_id: orgId, org_role: orgRole });
-        if (memErr) return json({ error: "Usuário criado, mas falhou o vínculo de org: " + memErr.message }, 500);
+        if (memErr)
+          return json(
+            { error: "Usuário criado, mas falhou o vínculo de org: " + memErr.message },
+            500,
+          );
       }
 
       return json({ ok: true, user: { id: created.user.id, email, org_id: orgId ?? null } });
@@ -176,12 +182,17 @@ Deno.serve(async (req) => {
 
     if (action.type === "update") {
       if (!action.user_id) return json({ error: "user_id é obrigatório" }, 400);
-      const updates: { email?: string; password?: string; user_metadata?: Record<string, unknown> } = {};
+      const updates: {
+        email?: string;
+        password?: string;
+        user_metadata?: Record<string, unknown>;
+      } = {};
       const newEmail = action.email?.trim().toLowerCase();
       const newName = action.display_name?.trim();
       if (newEmail) updates.email = newEmail;
       if (action.password) {
-        if (action.password.length < 8) return json({ error: "Senha deve ter pelo menos 8 caracteres" }, 400);
+        if (action.password.length < 8)
+          return json({ error: "Senha deve ter pelo menos 8 caracteres" }, 400);
         updates.password = action.password;
       }
       if (newName !== undefined) updates.user_metadata = { display_name: newName };

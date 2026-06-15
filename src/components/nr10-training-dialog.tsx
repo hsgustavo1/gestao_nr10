@@ -2,18 +2,48 @@ import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useState } from "react";
 import { ExternalLink, Paperclip, Trash2, Loader2 } from "lucide-react";
-import { useUpsertNR10Training, useCertificates, useInsertCertificate, useDeleteCertificate, uploadCertificateFile } from "@/lib/qualificacoes-queries";
-import { TRAINING_TYPES, TRAINING_LABELS, type TrainingType, type NR10Training } from "@/lib/qualificacoes";
+import {
+  useUpsertNR10Training,
+  useCertificates,
+  useInsertCertificate,
+  useDeleteCertificate,
+  uploadCertificateFile,
+} from "@/lib/qualificacoes-queries";
+import {
+  TRAINING_TYPES,
+  TRAINING_LABELS,
+  type TrainingType,
+  type NR10Training,
+} from "@/lib/qualificacoes";
 
 const schema = z.object({
   employee_id: z.string().uuid(),
@@ -40,7 +70,15 @@ type Props = {
   defaultCategory?: "formacao" | "reciclagem";
 };
 
-export function NR10TrainingDialog({ open, onOpenChange, employeeId, employeeName, training, defaultType, defaultCategory }: Props) {
+export function NR10TrainingDialog({
+  open,
+  onOpenChange,
+  employeeId,
+  employeeName,
+  training,
+  defaultType,
+  defaultCategory,
+}: Props) {
   const upsert = useUpsertNR10Training();
   const { data: certificates = [] } = useCertificates(employeeId, training?.id);
   const insertCert = useInsertCertificate();
@@ -120,81 +158,145 @@ export function NR10TrainingDialog({ open, onOpenChange, employeeId, employeeNam
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="training_type" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {TRAINING_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>{TRAINING_LABELS[t]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="category" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoria</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="formacao">Formação</SelectItem>
-                      <SelectItem value="reciclagem">Reciclagem</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="training_date" render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Data do treinamento</FormLabel>
-                  <FormControl><Input type="date" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="art" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>ART</FormLabel>
-                  <FormControl><Input placeholder="Nº ART" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="responsavel_tecnico" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Responsável técnico</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="carga_horaria" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Carga horária (h)</FormLabel>
-                  <FormControl><Input type="number" min={1} placeholder="Ex.: 40" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="entidade" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Entidade / instituição</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="instrutor" render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Instrutor</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="conteudo_programatico" render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Conteúdo programático (resumo)</FormLabel>
-                  <FormControl><Input placeholder="Tópicos abordados no treinamento" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="valid" render={({ field }) => (
-                <FormItem className="flex items-center gap-3 col-span-2">
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <FormLabel className="!mt-0">Treinamento válido</FormLabel>
-                </FormItem>
-              )} />
+              <FormField
+                control={form.control}
+                name="training_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TRAINING_TYPES.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {TRAINING_LABELS[t]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoria</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="formacao">Formação</SelectItem>
+                        <SelectItem value="reciclagem">Reciclagem</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="training_date"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Data do treinamento</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="art"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ART</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nº ART" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="responsavel_tecnico"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsável técnico</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="carga_horaria"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Carga horária (h)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} placeholder="Ex.: 40" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="entidade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Entidade / instituição</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="instrutor"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Instrutor</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="conteudo_programatico"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Conteúdo programático (resumo)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Tópicos abordados no treinamento" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="valid"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-3 col-span-2">
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className="!mt-0">Treinamento válido</FormLabel>
+                  </FormItem>
+                )}
+              />
             </div>
 
             {/* Certificados — only show when editing an existing training */}
@@ -221,7 +323,11 @@ export function NR10TrainingDialog({ open, onOpenChange, employeeId, employeeNam
                       disabled={uploading}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
+                      {uploading ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Paperclip className="h-3 w-3" />
+                      )}
                       {uploading ? "Enviando..." : "Anexar"}
                     </Button>
                   </div>
@@ -232,7 +338,10 @@ export function NR10TrainingDialog({ open, onOpenChange, employeeId, employeeNam
                 ) : (
                   <ul className="space-y-1.5">
                     {certificates.map((cert) => (
-                      <li key={cert.id} className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs">
+                      <li
+                        key={cert.id}
+                        className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs"
+                      >
                         <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
                         <span className="flex-1 truncate text-muted-foreground">
                           {cert.file_name ?? "certificado"}
@@ -267,7 +376,9 @@ export function NR10TrainingDialog({ open, onOpenChange, employeeId, employeeNam
             )}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
               <Button type="submit" disabled={upsert.isPending}>
                 {upsert.isPending ? "Salvando..." : "Salvar"}
               </Button>

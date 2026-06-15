@@ -59,14 +59,30 @@ describe("ncPrazoBucket", () => {
 
 describe("epiTestStatus", () => {
   const epi = (interval = 6): EPI => ({
-    id: "e1", epi_type: "luva_isolante", description: null, epi_class: null,
-    serial_number: null, ca: null, employee_id: null, sector: null,
-    acquisition_date: null, test_interval_months: interval, active: true,
-    notes: null, created_at: "", updated_at: "",
+    id: "e1",
+    epi_type: "luva_isolante",
+    description: null,
+    epi_class: null,
+    serial_number: null,
+    ca: null,
+    employee_id: null,
+    sector: null,
+    acquisition_date: null,
+    test_interval_months: interval,
+    active: true,
+    notes: null,
+    created_at: "",
+    updated_at: "",
   });
   const test = (date: string, result: "aprovado" | "reprovado" = "aprovado"): EPITest => ({
-    id: "t1", epi_id: "e1", test_date: date, result, laboratory: null,
-    certificate_path: null, notes: null, created_at: "",
+    id: "t1",
+    epi_id: "e1",
+    test_date: date,
+    result,
+    laboratory: null,
+    certificate_path: null,
+    notes: null,
+    created_at: "",
   });
 
   it("sem ensaio → none", () => {
@@ -91,10 +107,19 @@ describe("epiTestStatus", () => {
 
 describe("prontuarioCompleteness", () => {
   const doc = (category: string, validity: string | null): NR10Document => ({
-    id: crypto.randomUUID(), category: category as NR10Document["category"],
-    title: "Doc", description: null, document_date: null, validity_date: validity,
-    file_path: null, responsavel: null, art: null, created_by: null,
-    created_by_name: null, created_at: "", updated_at: "",
+    id: crypto.randomUUID(),
+    category: category as NR10Document["category"],
+    title: "Doc",
+    description: null,
+    document_date: null,
+    validity_date: validity,
+    file_path: null,
+    responsavel: null,
+    art: null,
+    created_by: null,
+    created_by_name: null,
+    created_at: "",
+    updated_at: "",
   });
 
   it("sem documentos: só a categoria integrada (Pessoas) conta", () => {
@@ -115,7 +140,9 @@ describe("prontuarioCompleteness", () => {
 
 // ── ASO: status ──────────────────────────────────────────────────────────────
 
-const asoBase = (over: Partial<ASO>): Pick<ASO, "validity_date" | "resultado" | "apto_eletricidade"> => ({
+const asoBase = (
+  over: Partial<ASO>,
+): Pick<ASO, "validity_date" | "resultado" | "apto_eletricidade"> => ({
   validity_date: iso(addDays(hoje, 180)),
   resultado: "apto",
   apto_eletricidade: true,
@@ -149,7 +176,13 @@ describe("asoStatus", () => {
 describe("computeAptidao", () => {
   const base = () => ({
     employee: { status: "ativo" as const, reciclagem_requerida: false, reciclagem_motivo: null },
-    trainings: [{ training_type: "nr10_basico" as const, category: "formacao" as const, training_date: iso(addDays(hoje, -100)) }],
+    trainings: [
+      {
+        training_type: "nr10_basico" as const,
+        category: "formacao" as const,
+        training_date: iso(addDays(hoje, -100)),
+      },
+    ],
     authorization: { valid: true },
     aso: { ...asoBase({}), exam_date: iso(addDays(hoje, -10)) },
   });
@@ -179,7 +212,13 @@ describe("computeAptidao", () => {
   it("NR-10 Básico vencido → bloqueado", () => {
     const r = computeAptidao({
       ...base(),
-      trainings: [{ training_type: "nr10_basico", category: "formacao", training_date: iso(addDays(addYears(hoje, -2), -30)) }],
+      trainings: [
+        {
+          training_type: "nr10_basico",
+          category: "formacao",
+          training_date: iso(addDays(addYears(hoje, -2), -30)),
+        },
+      ],
     });
     expect(r.bloqueantes.map((b) => b.code)).toContain("nr10_basico_vencido");
   });
@@ -188,8 +227,16 @@ describe("computeAptidao", () => {
     const r = computeAptidao({
       ...base(),
       trainings: [
-        { training_type: "nr10_basico", category: "formacao", training_date: iso(addYears(hoje, -5)) },
-        { training_type: "nr10_basico", category: "reciclagem", training_date: iso(addDays(hoje, -60)) },
+        {
+          training_type: "nr10_basico",
+          category: "formacao",
+          training_date: iso(addYears(hoje, -5)),
+        },
+        {
+          training_type: "nr10_basico",
+          category: "reciclagem",
+          training_date: iso(addDays(hoje, -60)),
+        },
       ],
     });
     expect(r.apto).toBe(true);
@@ -203,7 +250,10 @@ describe("computeAptidao", () => {
   it("ASO vencido → bloqueado", () => {
     const r = computeAptidao({
       ...base(),
-      aso: { ...asoBase({ validity_date: iso(addDays(hoje, -5)) }), exam_date: iso(addYears(hoje, -2)) },
+      aso: {
+        ...asoBase({ validity_date: iso(addDays(hoje, -5)) }),
+        exam_date: iso(addYears(hoje, -2)),
+      },
     });
     expect(r.bloqueantes.map((b) => b.code)).toContain("aso_vencido");
   });
@@ -219,7 +269,11 @@ describe("computeAptidao", () => {
   it("reciclagem extraordinária pendente → bloqueado com motivo", () => {
     const r = computeAptidao({
       ...base(),
-      employee: { status: "ativo", reciclagem_requerida: true, reciclagem_motivo: "Mudança de função" },
+      employee: {
+        status: "ativo",
+        reciclagem_requerida: true,
+        reciclagem_motivo: "Mudança de função",
+      },
     });
     const b = r.bloqueantes.find((x) => x.code === "reciclagem_requerida");
     expect(b).toBeDefined();
@@ -256,14 +310,20 @@ describe("latestBasicoDate", () => {
   });
   it("ignora registros sem data", () => {
     expect(
-      latestBasicoDate([{ training_type: "nr10_basico", category: "formacao", training_date: null }]),
+      latestBasicoDate([
+        { training_type: "nr10_basico", category: "formacao", training_date: null },
+      ]),
     ).toBeNull();
   });
   it("retorna a data mais recente entre formação e reciclagem", () => {
     const recente = iso(addDays(hoje, -10));
     expect(
       latestBasicoDate([
-        { training_type: "nr10_basico", category: "formacao", training_date: iso(addYears(hoje, -3)) },
+        {
+          training_type: "nr10_basico",
+          category: "formacao",
+          training_date: iso(addYears(hoje, -3)),
+        },
         { training_type: "nr10_basico", category: "reciclagem", training_date: recente },
       ]),
     ).toBe(recente);
@@ -289,10 +349,20 @@ describe("formatDatePtBR", () => {
 
 describe("latestASOByEmployee", () => {
   const aso = (employee_id: string, exam_date: string): ASO => ({
-    id: crypto.randomUUID(), employee_id, exam_date, validity_date: exam_date,
-    tipo: "periodico", resultado: "apto", apto_eletricidade: true, restricoes: null,
-    medico: null, file_path: null, notes: null, created_by_name: null,
-    created_at: "", updated_at: "",
+    id: crypto.randomUUID(),
+    employee_id,
+    exam_date,
+    validity_date: exam_date,
+    tipo: "periodico",
+    resultado: "apto",
+    apto_eletricidade: true,
+    restricoes: null,
+    medico: null,
+    file_path: null,
+    notes: null,
+    created_by_name: null,
+    created_at: "",
+    updated_at: "",
   });
 
   it("lista vazia → mapa vazio", () => {
@@ -314,8 +384,14 @@ describe("latestASOByEmployee", () => {
 
 describe("lastTestByEpi", () => {
   const ensaio = (epi_id: string, test_date: string): EPITest => ({
-    id: crypto.randomUUID(), epi_id, test_date, result: "aprovado",
-    laboratory: null, certificate_path: null, notes: null, created_at: "",
+    id: crypto.randomUUID(),
+    epi_id,
+    test_date,
+    result: "aprovado",
+    laboratory: null,
+    certificate_path: null,
+    notes: null,
+    created_at: "",
   });
 
   it("seleciona o ensaio mais recente por EPI", () => {

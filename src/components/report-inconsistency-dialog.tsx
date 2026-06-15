@@ -2,7 +2,12 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,9 +27,7 @@ interface Props {
 export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlocks }: Props) {
   const { user } = useAuth();
   const defaultName =
-    (user?.user_metadata?.display_name as string | undefined) ||
-    user?.email?.split("@")[0] ||
-    "";
+    (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || "";
   const [name, setName] = useState(defaultName);
   const [contact, setContact] = useState(user?.email ?? "");
   const [message, setMessage] = useState("");
@@ -50,8 +53,7 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlock
         (p.owner_sector ?? "").toLowerCase().includes(term),
     );
   }, [sortedPadlocks, search]);
-  const targetPadlock =
-    padlock ?? sortedPadlocks.find((p) => p.code === selectedCode) ?? null;
+  const targetPadlock = padlock ?? sortedPadlocks.find((p) => p.code === selectedCode) ?? null;
 
   const submit = async () => {
     if (!targetPadlock) {
@@ -111,7 +113,9 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlock
           </DialogTitle>
           <DialogDescription>
             {targetPadlock ? (
-              <>Dispositivo <strong>{targetPadlock.code}</strong>. </>
+              <>
+                Dispositivo <strong>{targetPadlock.code}</strong>.{" "}
+              </>
             ) : (
               <>Selecione o dispositivo com inconsistência. </>
             )}
@@ -137,7 +141,9 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlock
                 size={Math.min(6, Math.max(3, filteredPadlocks.length))}
               >
                 {filteredPadlocks.length === 0 && (
-                  <option value="" disabled>Nenhum dispositivo encontrado</option>
+                  <option value="" disabled>
+                    Nenhum dispositivo encontrado
+                  </option>
                 )}
                 {filteredPadlocks.map((p) => (
                   <option key={p.id} value={p.code}>
@@ -152,11 +158,21 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlock
           )}
           <div>
             <Label htmlFor="rep-name">Seu nome (opcional)</Label>
-            <Input id="rep-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
+            <Input
+              id="rep-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={100}
+            />
           </div>
           <div>
             <Label htmlFor="rep-contact">Contato — e-mail ou telefone (opcional)</Label>
-            <Input id="rep-contact" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={120} />
+            <Input
+              id="rep-contact"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              maxLength={120}
+            />
           </div>
           <div>
             <Label htmlFor="rep-msg">Descrição da inconsistência *</Label>
@@ -175,7 +191,11 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlock
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={loading} className="bg-brand-gradient text-white shadow-brand">
+          <Button
+            onClick={submit}
+            disabled={loading}
+            className="bg-brand-gradient text-white shadow-brand"
+          >
             {loading ? "Enviando..." : "Enviar report"}
           </Button>
         </DialogFooter>

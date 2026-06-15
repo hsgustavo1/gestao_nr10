@@ -81,9 +81,7 @@ export function useDashboardData() {
   const violationsQ = useQuery({
     queryKey: ["padlock_violations"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("padlock_violations")
-        .select("reason");
+      const { data, error } = await supabase.from("padlock_violations").select("reason");
       if (error) throw error;
       return (data ?? []) as { reason: string }[];
     },

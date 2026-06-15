@@ -9,8 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  TRAINING_LABELS, TRAINING_TYPES, formatDatePtBR, trainingExpiryStatus,
-  type Employee, type NR10Training, type TrainingType, type WorkAuthorization,
+  TRAINING_LABELS,
+  TRAINING_TYPES,
+  formatDatePtBR,
+  trainingExpiryStatus,
+  type Employee,
+  type NR10Training,
+  type TrainingType,
+  type WorkAuthorization,
 } from "@/lib/qualificacoes";
 import { asoStatus, type ASO } from "@/lib/asos";
 import { computeAptidao } from "@/lib/aptidao";
@@ -20,7 +26,10 @@ export const Route = createFileRoute("/carteirinha/$matricula")({
   head: () => ({
     meta: [
       { title: "Carteirinha Digital — Gestão NR-10" },
-      { name: "description", content: "Verificação pública de autorização e capacitações NR-10 do eletricista." },
+      {
+        name: "description",
+        content: "Verificação pública de autorização e capacitações NR-10 do eletricista.",
+      },
     ],
   }),
 });
@@ -51,10 +60,7 @@ function useCarteirinha(matricula: string) {
           .eq("employee_id", employee.id)
           .eq("is_current", true)
           .maybeSingle(),
-        supabase
-          .from("nr10_trainings")
-          .select("*")
-          .eq("employee_id", employee.id),
+        supabase.from("nr10_trainings").select("*").eq("employee_id", employee.id),
         supabase
           .from("asos")
           .select("*")
@@ -118,21 +124,25 @@ function CarteirinhaPage() {
     <PageShell>
       <div className="mx-auto max-w-md">
         {isLoading && (
-          <Card><CardContent className="p-6 space-y-3">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-24" />
-            <Skeleton className="h-32" />
-          </CardContent></Card>
+          <Card>
+            <CardContent className="p-6 space-y-3">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-32" />
+            </CardContent>
+          </Card>
         )}
 
         {!isLoading && !data && (
-          <Card><CardContent className="p-8 text-center space-y-2">
-            <ShieldX className="h-10 w-10 mx-auto text-destructive" />
-            <h1 className="text-lg font-bold">Matrícula não encontrada</h1>
-            <p className="text-sm text-muted-foreground">
-              Não há colaborador cadastrado com a matrícula <strong>{matricula}</strong>.
-            </p>
-          </CardContent></Card>
+          <Card>
+            <CardContent className="p-8 text-center space-y-2">
+              <ShieldX className="h-10 w-10 mx-auto text-destructive" />
+              <h1 className="text-lg font-bold">Matrícula não encontrada</h1>
+              <p className="text-sm text-muted-foreground">
+                Não há colaborador cadastrado com a matrícula <strong>{matricula}</strong>.
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {!isLoading && data && summary && (
@@ -148,8 +158,14 @@ function CarteirinhaPage() {
 
             <Card className="overflow-hidden">
               {/* Banner de situação (motor de aptidão) */}
-              <div className={`px-5 py-3 flex items-center gap-2 text-white ${summary.aptidao.apto ? "bg-emerald-600" : "bg-red-600"}`}>
-                {summary.aptidao.apto ? <BadgeCheck className="h-6 w-6" /> : <CircleAlert className="h-6 w-6" />}
+              <div
+                className={`px-5 py-3 flex items-center gap-2 text-white ${summary.aptidao.apto ? "bg-emerald-600" : "bg-red-600"}`}
+              >
+                {summary.aptidao.apto ? (
+                  <BadgeCheck className="h-6 w-6" />
+                ) : (
+                  <CircleAlert className="h-6 w-6" />
+                )}
                 <div className="leading-tight">
                   <div className="font-bold text-base">
                     {summary.aptidao.apto ? "APTO" : "NÃO APTO PARA TRABALHO EM ELETRICIDADE"}
@@ -176,7 +192,11 @@ function CarteirinhaPage() {
                     )}
                   </div>
                   {qrDataUrl && (
-                    <img src={qrDataUrl} alt="QR code da carteirinha" className="h-20 w-20 shrink-0" />
+                    <img
+                      src={qrDataUrl}
+                      alt="QR code da carteirinha"
+                      className="h-20 w-20 shrink-0"
+                    />
                   )}
                 </div>
 
@@ -190,11 +210,15 @@ function CarteirinhaPage() {
                       <div>
                         <span className="text-2xl font-bold">{data.authorization.level}</span>
                         {data.authorization.funcao && (
-                          <span className="ml-2 text-sm text-muted-foreground">{data.authorization.funcao}</span>
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            {data.authorization.funcao}
+                          </span>
                         )}
                       </div>
                       <div className="text-right">
-                        <div className={`text-sm font-semibold ${data.authorization.valid ? "text-emerald-600" : "text-red-600"}`}>
+                        <div
+                          className={`text-sm font-semibold ${data.authorization.valid ? "text-emerald-600" : "text-red-600"}`}
+                        >
                           {data.authorization.valid ? "VÁLIDA" : "INVÁLIDA"}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
@@ -203,7 +227,9 @@ function CarteirinhaPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-1 text-sm text-red-600 font-semibold">Sem autorização cadastrada</div>
+                    <div className="mt-1 text-sm text-red-600 font-semibold">
+                      Sem autorização cadastrada
+                    </div>
                   )}
                 </div>
 
@@ -217,18 +243,29 @@ function CarteirinhaPage() {
                     if (!date && type !== "nr10_basico") return null;
                     const status = trainingExpiryStatus(date);
                     const cls =
-                      status === "ok" ? "text-emerald-600" :
-                      status === "expiring" ? "text-amber-600" : "text-red-600";
+                      status === "ok"
+                        ? "text-emerald-600"
+                        : status === "expiring"
+                          ? "text-amber-600"
+                          : "text-red-600";
                     const label =
-                      status === "ok" ? "Em dia" :
-                      status === "expiring" ? "Vencendo" :
-                      status === "expired" ? "Vencido" : "Não realizado";
+                      status === "ok"
+                        ? "Em dia"
+                        : status === "expiring"
+                          ? "Vencendo"
+                          : status === "expired"
+                            ? "Vencido"
+                            : "Não realizado";
                     return (
                       <div key={type} className="flex items-center justify-between gap-2 text-sm">
                         <span>{TRAINING_LABELS[type]}</span>
                         <span className="text-right whitespace-nowrap">
                           <span className={`font-semibold ${cls}`}>{label}</span>
-                          {date && <span className="ml-2 text-[11px] text-muted-foreground">{formatDatePtBR(date)}</span>}
+                          {date && (
+                            <span className="ml-2 text-[11px] text-muted-foreground">
+                              {formatDatePtBR(date)}
+                            </span>
+                          )}
                         </span>
                       </div>
                     );
@@ -241,14 +278,24 @@ function CarteirinhaPage() {
                     ASO — Saúde Ocupacional (NR-10 10.8.7)
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2 text-sm">
-                    <span className={`font-semibold ${
-                      summary.asoSt === "ok" ? "text-emerald-600" :
-                      summary.asoSt === "expiring" ? "text-amber-600" : "text-red-600"
-                    }`}>
-                      {summary.asoSt === "ok" ? "Em dia" :
-                       summary.asoSt === "expiring" ? "Vencendo" :
-                       summary.asoSt === "expired" ? "Vencido" :
-                       summary.asoSt === "inapto" ? "Inapto" : "Sem ASO registrado"}
+                    <span
+                      className={`font-semibold ${
+                        summary.asoSt === "ok"
+                          ? "text-emerald-600"
+                          : summary.asoSt === "expiring"
+                            ? "text-amber-600"
+                            : "text-red-600"
+                      }`}
+                    >
+                      {summary.asoSt === "ok"
+                        ? "Em dia"
+                        : summary.asoSt === "expiring"
+                          ? "Vencendo"
+                          : summary.asoSt === "expired"
+                            ? "Vencido"
+                            : summary.asoSt === "inapto"
+                              ? "Inapto"
+                              : "Sem ASO registrado"}
                     </span>
                     {data.aso && (
                       <span className="text-[11px] text-muted-foreground">
@@ -259,7 +306,8 @@ function CarteirinhaPage() {
                 </div>
 
                 <div className="text-[10px] text-muted-foreground text-center">
-                  Verificação pública em tempo real · Gestão NR-10 · {new Date().toLocaleDateString("pt-BR")}
+                  Verificação pública em tempo real · Gestão NR-10 ·{" "}
+                  {new Date().toLocaleDateString("pt-BR")}
                 </div>
               </CardContent>
             </Card>

@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Employee, NR10Training, WorkAuthorization, WorkInstruction, ITTraining, TrainingCertificate } from "./qualificacoes";
+import type {
+  Employee,
+  NR10Training,
+  WorkAuthorization,
+  WorkInstruction,
+  ITTraining,
+  TrainingCertificate,
+} from "./qualificacoes";
 
 // ── Query Keys ───────────────────────────────────────────────────────────────
 export const qualKeys = {
@@ -75,7 +82,9 @@ export function useNR10Trainings(employeeId?: string) {
 export function useUpsertNR10Training() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Omit<NR10Training, "id" | "created_at" | "updated_at"> & { id?: string }) => {
+    mutationFn: async (
+      payload: Omit<NR10Training, "id" | "created_at" | "updated_at"> & { id?: string },
+    ) => {
       const { data, error } = await supabase
         .from("nr10_trainings")
         .upsert(payload, { onConflict: "employee_id,training_type,category" })
@@ -140,9 +149,7 @@ export function useWorkAuthorizations() {
   return useQuery({
     queryKey: qualKeys.authorizations,
     queryFn: async () => {
-      const q = supabase
-        .from("work_authorizations")
-        .select("*, employees(name, matricula, setor)");
+      const q = supabase.from("work_authorizations").select("*, employees(name, matricula, setor)");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (q as any).eq("is_current", true);
       if (error) throw error;
@@ -154,7 +161,11 @@ export function useWorkAuthorizations() {
 export function useUpsertAuthorization() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Omit<WorkAuthorization, "id" | "created_at" | "updated_at" | "is_current"> & { id?: string }) => {
+    mutationFn: async (
+      payload: Omit<WorkAuthorization, "id" | "created_at" | "updated_at" | "is_current"> & {
+        id?: string;
+      },
+    ) => {
       const wa = supabase.from("work_authorizations");
 
       // Archive the current authorization for this employee
@@ -182,12 +193,11 @@ export function useAuthorizationHistory(employeeId: string) {
   return useQuery({
     queryKey: ["authorization_history", employeeId],
     queryFn: async () => {
-      const q = supabase
-        .from("work_authorizations")
-        .select("*")
-        .eq("employee_id", employeeId);
+      const q = supabase.from("work_authorizations").select("*").eq("employee_id", employeeId);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (q as any).eq("is_current", false).order("created_at", { ascending: false });
+      const { data, error } = await (q as any)
+        .eq("is_current", false)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data as WorkAuthorization[];
     },
@@ -240,7 +250,9 @@ export function useITTrainings(employeeId?: string) {
 export function useUpsertITTraining() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Omit<ITTraining, "id" | "created_at" | "updated_at"> & { id?: string }) => {
+    mutationFn: async (
+      payload: Omit<ITTraining, "id" | "created_at" | "updated_at"> & { id?: string },
+    ) => {
       const { data, error } = await supabase
         .from("it_trainings")
         .upsert(payload, { onConflict: "employee_id,instruction_id" })
@@ -261,10 +273,21 @@ export async function batchImportQualificacoes(payload: {
   // employee_id vem do mapeamento por matrícula; is_current é definido no insert;
   // status usa o default do banco ('ativo') preservando afastados/desligados em reimportações.
   employees: Omit<Employee, "id" | "created_at" | "updated_at" | "status">[];
-  nr10Trainings: Array<Omit<NR10Training, "id" | "created_at" | "updated_at" | "employee_id"> & { matricula: string }>;
-  authorizations: Array<Omit<WorkAuthorization, "id" | "created_at" | "updated_at" | "employee_id" | "is_current"> & { matricula: string }>;
+  nr10Trainings: Array<
+    Omit<NR10Training, "id" | "created_at" | "updated_at" | "employee_id"> & { matricula: string }
+  >;
+  authorizations: Array<
+    Omit<WorkAuthorization, "id" | "created_at" | "updated_at" | "employee_id" | "is_current"> & {
+      matricula: string;
+    }
+  >;
   instructions: Omit<WorkInstruction, "id" | "created_at" | "updated_at">[];
-  itTrainings: { matricula: string; instructionCode: string; status: string; conclusao_date: string | null }[];
+  itTrainings: {
+    matricula: string;
+    instructionCode: string;
+    status: string;
+    conclusao_date: string | null;
+  }[];
 }) {
   // Step 1: upsert employees, get back IDs mapped by matricula
   const { data: empData, error: empErr } = await supabase
@@ -274,7 +297,7 @@ export async function batchImportQualificacoes(payload: {
   if (empErr) throw empErr;
 
   const matriculaToId = Object.fromEntries(
-    (empData as { id: string; matricula: string }[]).map((e) => [e.matricula, e.id])
+    (empData as { id: string; matricula: string }[]).map((e) => [e.matricula, e.id]),
   );
 
   // Step 2: upsert work_instructions
@@ -311,8 +334,10 @@ export async function batchImportQualificacoes(payload: {
         .in("employee_id", employeeIds)
         .eq("is_current", true);
       // Insert new authorizations as current
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from("work_authorizations").insert(rows.map((r) => ({ ...r, is_current: true })) as any) as any);
+
+      const { error } = await (supabase
+        .from("work_authorizations")
+        .insert(rows.map((r) => ({ ...r, is_current: true })) as any) as any);
       if (error) throw error;
     }
   }
@@ -320,7 +345,7 @@ export async function batchImportQualificacoes(payload: {
   // Step 5: fetch instruction codes → IDs
   const { data: instrData } = await supabase.from("work_instructions").select("id, code");
   const codeToId = Object.fromEntries(
-    ((instrData ?? []) as { id: string; code: string }[]).map((i) => [i.code, i.id])
+    ((instrData ?? []) as { id: string; code: string }[]).map((i) => [i.code, i.id]),
   );
 
   // Step 6: upsert it_trainings
@@ -348,7 +373,10 @@ export function useCertificates(employeeId?: string, trainingId?: string) {
   return useQuery({
     queryKey: ["training_certificates", employeeId, trainingId],
     queryFn: async () => {
-      let q = supabase.from("training_certificates").select("*").order("uploaded_at", { ascending: false });
+      let q = supabase
+        .from("training_certificates")
+        .select("*")
+        .order("uploaded_at", { ascending: false });
       if (employeeId) q = q.eq("employee_id", employeeId);
       if (trainingId) q = q.eq("nr10_training_id", trainingId);
       const { data, error } = await q;
@@ -393,7 +421,7 @@ export function useDeleteCertificate() {
 export async function uploadCertificateFile(
   employeeId: string,
   file: File,
-  suffix?: string
+  suffix?: string,
 ): Promise<string> {
   const ext = file.name.split(".").pop() ?? "pdf";
   const path = `${employeeId}/${Date.now()}${suffix ? `_${suffix}` : ""}.${ext}`;

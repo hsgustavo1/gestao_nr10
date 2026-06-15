@@ -1,12 +1,23 @@
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { logEvent, colorLabel, type Padlock } from "@/lib/padlocks";
@@ -21,7 +32,10 @@ const REASONS = [
 ] as const;
 
 export function CancelPadlockDialog({
-  open, onOpenChange, padlock, onDone,
+  open,
+  onOpenChange,
+  padlock,
+  onDone,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -34,7 +48,9 @@ export function CancelPadlockDialog({
   const [loading, setLoading] = useState(false);
 
   function reset() {
-    setReason(""); setDetail(""); setLoading(false);
+    setReason("");
+    setDetail("");
+    setLoading(false);
   }
 
   async function submit(e: FormEvent) {
@@ -77,30 +93,45 @@ export function CancelPadlockDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) reset();
+        onOpenChange(o);
+      }}
+    >
       <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Baixa de Etiqueta — {colorLabel[padlock.color]} #{padlock.number}</DialogTitle>
+          <DialogTitle>
+            Baixa de Etiqueta — {colorLabel[padlock.color]} #{padlock.number}
+          </DialogTitle>
           <DialogDescription>
-            O dispositivo fica marcado como <strong>baixado</strong>, libera o número/matrícula
-            para reuso e permanece na linha do tempo para auditoria.
+            O dispositivo fica marcado como <strong>baixado</strong>, libera o número/matrícula para
+            reuso e permanece na linha do tempo para auditoria.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1.5">
             <Label>Motivo da baixa</Label>
             <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger><SelectValue placeholder="Selecione um motivo" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um motivo" />
+              </SelectTrigger>
               <SelectContent>
                 {REASONS.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label>
-              Detalhes {reason === "Outro" && <span className="text-xs text-muted-foreground">(obrigatório)</span>}
+              Detalhes{" "}
+              {reason === "Outro" && (
+                <span className="text-xs text-muted-foreground">(obrigatório)</span>
+              )}
             </Label>
             <Textarea
               value={detail}
@@ -111,7 +142,9 @@ export function CancelPadlockDialog({
             />
           </div>
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Voltar</Button>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Voltar
+            </Button>
             <Button type="submit" disabled={loading} variant="destructive">
               {loading ? "Processando..." : "Confirmar baixa"}
             </Button>

@@ -2,10 +2,29 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -32,7 +51,13 @@ type Props = {
   authorization?: WorkAuthorization;
 };
 
-export function AuthorizationDialog({ open, onOpenChange, employeeId, employeeName, authorization }: Props) {
+export function AuthorizationDialog({
+  open,
+  onOpenChange,
+  employeeId,
+  employeeName,
+  authorization,
+}: Props) {
   const upsert = useUpsertAuthorization();
 
   const form = useForm<FormValues>({
@@ -87,68 +112,90 @@ export function AuthorizationDialog({ open, onOpenChange, employeeId, employeeNa
             {/* Hidden employee_id field */}
             <input type="hidden" {...form.register("employee_id")} />
 
-            <FormField control={form.control} name="level" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nível de autorização</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+            <FormField
+              control={form.control}
+              name="level"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nível de autorização</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o nível" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {AUTHORIZATION_LEVELS.map((lvl) => (
+                        <SelectItem key={lvl} value={lvl}>
+                          {lvl}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="funcao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Função</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o nível" />
-                    </SelectTrigger>
+                    <Textarea placeholder="Descreva a função..." {...field} />
                   </FormControl>
-                  <SelectContent>
-                    {AUTHORIZATION_LEVELS.map((lvl) => (
-                      <SelectItem key={lvl} value={lvl}>{lvl}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <FormField control={form.control} name="funcao" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Função</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Descreva a função..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="abrangencia"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Abrangência</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Descreva a abrangência..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <FormField control={form.control} name="abrangencia" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Abrangência</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Descreva a abrangência..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="authorization_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de autorização</FormLabel>
+                  <FormControl>
+                    <input
+                      type="date"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <FormField control={form.control} name="authorization_date" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data de autorização</FormLabel>
-                <FormControl>
-                  <input
-                    type="date"
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-
-            <FormField control={form.control} name="valid" render={({ field }) => (
-              <FormItem className="flex items-center gap-3">
-                <FormLabel className="mt-0">Autorização válida</FormLabel>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="valid"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3">
+                  <FormLabel className="mt-0">Autorização válida</FormLabel>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

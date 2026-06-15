@@ -1,58 +1,58 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 // Evento de instalação do PWA (não tipado na lib.dom padrão).
 interface InstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
 export default function Login() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null)
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
 
   // Captura o convite de instalação do navegador (o "download" que aparece).
   useEffect(() => {
     const handler = (e: Event) => {
-      e.preventDefault()
-      setInstallPrompt(e as InstallPromptEvent)
-    }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
+      e.preventDefault();
+      setInstallPrompt(e as InstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
 
   async function handleInstall() {
-    if (!installPrompt) return
-    await installPrompt.prompt()
-    await installPrompt.userChoice
-    setInstallPrompt(null)
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-      if (authError) throw authError
-      navigate('/', { replace: true })
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
+      navigate("/", { replace: true });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao fazer login'
+      const msg = err instanceof Error ? err.message : "Erro ao fazer login";
       // Falha de rede no primeiro login: mensagem clara em vez de "Failed to fetch".
       if (!navigator.onLine || /fetch|network|networkerror/i.test(msg)) {
         setError(
-          'Sem conexão. O primeiro login neste aparelho precisa de internet — conecte-se e tente de novo. Depois disso, o app funciona offline.',
-        )
+          "Sem conexão. O primeiro login neste aparelho precisa de internet — conecte-se e tente de novo. Depois disso, o app funciona offline.",
+        );
       } else {
-        setError(msg)
+        setError(msg);
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -100,7 +100,7 @@ export default function Login() {
             disabled={loading}
             className="w-full rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 px-4 py-3 text-sm font-semibold transition-colors"
           >
-            {loading ? 'Entrando...' : 'Entrar'}
+            {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
 
@@ -126,5 +126,5 @@ export default function Login() {
         </p>
       </div>
     </div>
-  )
+  );
 }

@@ -72,11 +72,7 @@ export function useInsertEPITest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Omit<EPITest, "id" | "created_at">) => {
-      const { data, error } = await supabase
-        .from("epi_tests")
-        .insert(payload)
-        .select()
-        .single();
+      const { data, error } = await supabase.from("epi_tests").insert(payload).select().single();
       if (error) throw error;
       return data as EPITest;
     },

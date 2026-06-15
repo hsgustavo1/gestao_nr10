@@ -84,7 +84,9 @@ export function useDocumentVersions(documentId?: string) {
   });
 }
 
-export async function archiveDocumentVersion(version: Omit<NR10DocumentVersion, "id" | "created_at">) {
+export async function archiveDocumentVersion(
+  version: Omit<NR10DocumentVersion, "id" | "created_at">,
+) {
   const { error } = await supabase.from("nr10_document_versions").insert(version);
   if (error) throw error;
 }

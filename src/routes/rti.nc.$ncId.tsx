@@ -2,19 +2,31 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Camera, CheckCheck, ChevronLeft, ChevronRight, Download, FileText,
-  History, ImagePlus, MessageSquarePlus, Save, Trash2,
+  ArrowLeft,
+  Camera,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileText,
+  History,
+  ImagePlus,
+  MessageSquarePlus,
+  Save,
+  Trash2,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
@@ -22,16 +34,37 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
-  clampPrioridade, formatBRL, ncPrazoVencido,
-  RTI_NC_STATUSES, RTI_NC_STATUS_BADGE, RTI_NC_STATUS_LABELS,
-  RTI_PRIORIDADES, RTI_PRIORIDADE_BADGE, RTI_PRIORIDADE_LABELS,
+  clampPrioridade,
+  formatBRL,
+  ncPrazoVencido,
+  RTI_NC_STATUSES,
+  RTI_NC_STATUS_BADGE,
+  RTI_NC_STATUS_LABELS,
+  RTI_PRIORIDADES,
+  RTI_PRIORIDADE_BADGE,
+  RTI_PRIORIDADE_LABELS,
   RTI_TIPO_EXECUCAO_LABELS,
-  type RtiEvidenciaTipo, type RtiNc, type RtiNcEvidencia, type RtiNcStatus, type RtiTipoExecucao,
+  type RtiEvidenciaTipo,
+  type RtiNc,
+  type RtiNcEvidencia,
+  type RtiNcStatus,
+  type RtiTipoExecucao,
 } from "@/lib/rti";
 import {
-  logBulkHistorico, rtiFileUrl, uploadRtiFile,
-  useAddRtiEvidencia, useAddRtiHistorico, useDeleteRtiEvidencia, useDeleteRtiNc,
-  useRtiAreas, useRtiEvidencias, useRtiHistorico, useRtiNc, useRtiNcs, useUpdateRtiEvidencia, useUpdateRtiNc,
+  logBulkHistorico,
+  rtiFileUrl,
+  uploadRtiFile,
+  useAddRtiEvidencia,
+  useAddRtiHistorico,
+  useDeleteRtiEvidencia,
+  useDeleteRtiNc,
+  useRtiAreas,
+  useRtiEvidencias,
+  useRtiHistorico,
+  useRtiNc,
+  useRtiNcs,
+  useUpdateRtiEvidencia,
+  useUpdateRtiNc,
 } from "@/lib/rti-queries";
 
 export const Route = createFileRoute("/rti/nc/$ncId")({
@@ -50,13 +83,9 @@ function RtiNcDetailPage() {
   const deleteNc = useDeleteRtiNc();
 
   const actorName =
-    (user?.user_metadata?.display_name as string | undefined) ||
-    user?.email?.split("@")[0] || null;
+    (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || null;
 
-  const areaNome = useMemo(
-    () => areas.find((a) => a.id === nc?.area_id)?.nome ?? "—",
-    [areas, nc],
-  );
+  const areaNome = useMemo(() => areas.find((a) => a.id === nc?.area_id)?.nome ?? "—", [areas, nc]);
 
   const { anterior, proxima } = useMemo(() => {
     if (!nc || siblings.length === 0) return { anterior: null, proxima: null };
@@ -69,7 +98,10 @@ function RtiNcDetailPage() {
 
   async function handleDelete() {
     if (!nc) return;
-    if (!window.confirm(`Excluir a NC ${nc.numero}? As evidências anexadas também serão excluídas.`)) return;
+    if (
+      !window.confirm(`Excluir a NC ${nc.numero}? As evidências anexadas também serão excluídas.`)
+    )
+      return;
     try {
       await deleteNc.mutateAsync(nc.id);
       toast.success(`NC ${nc.numero} excluída.`);
@@ -103,22 +135,38 @@ function RtiNcDetailPage() {
           </Link>
         </Button>
         <div className="flex items-center gap-1">
-          <Button asChild={!!anterior} variant="outline" size="sm" disabled={!anterior} title={anterior ? `NC ${anterior.numero}` : undefined}>
+          <Button
+            asChild={!!anterior}
+            variant="outline"
+            size="sm"
+            disabled={!anterior}
+            title={anterior ? `NC ${anterior.numero}` : undefined}
+          >
             {anterior ? (
               <Link to="/rti/nc/$ncId" params={{ ncId: anterior.id }}>
                 <ChevronLeft className="h-4 w-4" /> NC {anterior.numero}
               </Link>
             ) : (
-              <span><ChevronLeft className="h-4 w-4" /> Anterior</span>
+              <span>
+                <ChevronLeft className="h-4 w-4" /> Anterior
+              </span>
             )}
           </Button>
-          <Button asChild={!!proxima} variant="outline" size="sm" disabled={!proxima} title={proxima ? `NC ${proxima.numero}` : undefined}>
+          <Button
+            asChild={!!proxima}
+            variant="outline"
+            size="sm"
+            disabled={!proxima}
+            title={proxima ? `NC ${proxima.numero}` : undefined}
+          >
             {proxima ? (
               <Link to="/rti/nc/$ncId" params={{ ncId: proxima.id }}>
                 NC {proxima.numero} <ChevronRight className="h-4 w-4" />
               </Link>
             ) : (
-              <span>Próxima <ChevronRight className="h-4 w-4" /></span>
+              <span>
+                Próxima <ChevronRight className="h-4 w-4" />
+              </span>
             )}
           </Button>
         </div>
@@ -131,11 +179,16 @@ function RtiNcDetailPage() {
             NC {nc.numero} <span className="font-normal text-muted-foreground">— {areaNome}</span>
           </h1>
           <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold ${RTI_PRIORIDADE_BADGE[clampPrioridade(nc.prioridade)]}`}>
+            <span
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold ${RTI_PRIORIDADE_BADGE[clampPrioridade(nc.prioridade)]}`}
+            >
               {RTI_PRIORIDADE_LABELS[clampPrioridade(nc.prioridade)]}
             </span>
-            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${RTI_NC_STATUS_BADGE[nc.status]}`}>
-              {RTI_NC_STATUS_LABELS[nc.status]}{nc.status === "em_andamento" ? ` · ${nc.progresso}%` : ""}
+            <span
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${RTI_NC_STATUS_BADGE[nc.status]}`}
+            >
+              {RTI_NC_STATUS_LABELS[nc.status]}
+              {nc.status === "em_andamento" ? ` · ${nc.progresso}%` : ""}
             </span>
             <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
               {RTI_TIPO_EXECUCAO_LABELS[nc.tipo_execucao]}
@@ -158,7 +211,9 @@ function RtiNcDetailPage() {
         {/* Coluna principal */}
         <div className="space-y-4 min-w-0">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Não conformidade constatada</CardTitle></CardHeader>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Não conformidade constatada</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm whitespace-pre-wrap leading-relaxed">{nc.descricao}</p>
               {nc.recomendacao && (
@@ -173,13 +228,19 @@ function RtiNcDetailPage() {
           </Card>
 
           <EvidenceSection
-            nc={nc} tipo="constatacao" canEdit={isStaff} actorName={actorName}
+            nc={nc}
+            tipo="constatacao"
+            canEdit={isStaff}
+            actorName={actorName}
             titulo="Registro da não conformidade"
             descricao="Fotos e documentos que evidenciam o problema constatado na inspeção."
             icon={<Camera className="h-4 w-4 text-primary" />}
           />
           <EvidenceSection
-            nc={nc} tipo="correcao" canEdit={isStaff} actorName={actorName}
+            nc={nc}
+            tipo="correcao"
+            canEdit={isStaff}
+            actorName={actorName}
             titulo="Evidências da correção"
             descricao="Comprovação da ação corretiva executada (fotos do depois, OS encerrada, laudos...)."
             icon={<CheckCheck className="h-4 w-4 text-emerald-600" />}
@@ -206,7 +267,15 @@ function parseCusto(s: string): number | null {
   return isFinite(n) ? n : null;
 }
 
-function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; actorName: string | null }) {
+function GestaoCard({
+  nc,
+  canEdit,
+  actorName,
+}: {
+  nc: RtiNc;
+  canEdit: boolean;
+  actorName: string | null;
+}) {
   const updateNc = useUpdateRtiNc();
 
   const hoje = () => new Date().toISOString().slice(0, 10);
@@ -218,8 +287,12 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
   const [tipo, setTipo] = useState<RtiTipoExecucao>(nc.tipo_execucao);
   const [osNumero, setOsNumero] = useState(nc.os_numero ?? "");
   const [prioridade, setPrioridade] = useState(String(nc.prioridade));
-  const [custoPlanejado, setCustoPlanejado] = useState(nc.custo_planejado == null ? "" : String(nc.custo_planejado));
-  const [custoRealizado, setCustoRealizado] = useState(nc.custo_realizado == null ? "" : String(nc.custo_realizado));
+  const [custoPlanejado, setCustoPlanejado] = useState(
+    nc.custo_planejado == null ? "" : String(nc.custo_planejado),
+  );
+  const [custoRealizado, setCustoRealizado] = useState(
+    nc.custo_realizado == null ? "" : String(nc.custo_realizado),
+  );
   const [situacao, setSituacao] = useState(nc.situacao_atual ?? "");
   const [concluidaEm, setConcluidaEm] = useState(nc.concluida_em ?? "");
   const [busy, setBusy] = useState(false);
@@ -269,7 +342,7 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
     e.preventDefault();
     setBusy(true);
     try {
-      const concluidaEmFinal = status === "concluida" ? (concluidaEm || hoje()) : null;
+      const concluidaEmFinal = status === "concluida" ? concluidaEm || hoje() : null;
       const patch: Partial<RtiNc> & { id: string } = {
         id: nc.id,
         status,
@@ -289,19 +362,27 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
       const mudancas: string[] = [];
       if (status !== nc.status) mudancas.push(`status → ${RTI_NC_STATUS_LABELS[status]}`);
       if (progresso !== nc.progresso) mudancas.push(`progresso → ${progresso}%`);
-      if ((responsavel.trim() || null) !== nc.responsavel) mudancas.push(`responsável → ${responsavel.trim() || "—"}`);
-      if ((prazo || null) !== nc.prazo) mudancas.push(`prazo → ${prazo ? formatDatePtBR(prazo) : "—"}`);
+      if ((responsavel.trim() || null) !== nc.responsavel)
+        mudancas.push(`responsável → ${responsavel.trim() || "—"}`);
+      if ((prazo || null) !== nc.prazo)
+        mudancas.push(`prazo → ${prazo ? formatDatePtBR(prazo) : "—"}`);
       if (tipo !== nc.tipo_execucao) mudancas.push(`tipo → ${RTI_TIPO_EXECUCAO_LABELS[tipo]}`);
-      if ((osNumero.trim() || null) !== nc.os_numero) mudancas.push(`OS → ${osNumero.trim() || "—"}`);
+      if ((osNumero.trim() || null) !== nc.os_numero)
+        mudancas.push(`OS → ${osNumero.trim() || "—"}`);
       if (Number(prioridade) !== nc.prioridade) mudancas.push(`prioridade → P${prioridade}`);
       const cpNovo = parseCusto(custoPlanejado);
       const crNovo = parseCusto(custoRealizado);
-      if (cpNovo !== nc.custo_planejado) mudancas.push(`custo planejado → ${cpNovo == null ? "não informado" : formatBRL(cpNovo)}`);
-      if (crNovo !== nc.custo_realizado) mudancas.push(`custo realizado → ${crNovo == null ? "não informado" : formatBRL(crNovo)}`);
+      if (cpNovo !== nc.custo_planejado)
+        mudancas.push(`custo planejado → ${cpNovo == null ? "não informado" : formatBRL(cpNovo)}`);
+      if (crNovo !== nc.custo_realizado)
+        mudancas.push(`custo realizado → ${crNovo == null ? "não informado" : formatBRL(crNovo)}`);
       if (concluidaEmFinal !== nc.concluida_em) {
-        mudancas.push(`data de conclusão → ${concluidaEmFinal ? formatDatePtBR(concluidaEmFinal) : "—"}`);
+        mudancas.push(
+          `data de conclusão → ${concluidaEmFinal ? formatDatePtBR(concluidaEmFinal) : "—"}`,
+        );
       }
-      if ((situacao.trim() || null) !== nc.situacao_atual) mudancas.push("situação atual atualizada");
+      if ((situacao.trim() || null) !== nc.situacao_atual)
+        mudancas.push("situação atual atualizada");
 
       if (mudancas.length === 0) {
         toast.info("Nenhuma alteração para salvar.");
@@ -321,17 +402,29 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
   if (!canEdit) {
     return (
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">Tratativa</CardTitle></CardHeader>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Tratativa</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <InfoRow label="Responsável" value={nc.responsavel ?? "—"} />
           <InfoRow label="Prazo" value={nc.prazo ? formatDatePtBR(nc.prazo) : "—"} />
           <InfoRow label="Nº OS" value={nc.os_numero ?? "—"} />
-          <InfoRow label="Custo planejado" value={nc.custo_planejado == null ? "Não informado" : formatBRL(nc.custo_planejado)} />
-          <InfoRow label="Custo realizado" value={nc.custo_realizado == null ? "Não informado" : formatBRL(nc.custo_realizado)} />
-          {nc.concluida_em && <InfoRow label="Concluída em" value={formatDatePtBR(nc.concluida_em)} />}
+          <InfoRow
+            label="Custo planejado"
+            value={nc.custo_planejado == null ? "Não informado" : formatBRL(nc.custo_planejado)}
+          />
+          <InfoRow
+            label="Custo realizado"
+            value={nc.custo_realizado == null ? "Não informado" : formatBRL(nc.custo_realizado)}
+          />
+          {nc.concluida_em && (
+            <InfoRow label="Concluída em" value={formatDatePtBR(nc.concluida_em)} />
+          )}
           {nc.situacao_atual && (
             <div className="pt-1">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Situação atual</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Situação atual
+              </div>
               <p className="mt-1 whitespace-pre-wrap">{nc.situacao_atual}</p>
             </div>
           )}
@@ -341,14 +434,20 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
   }
 
   const saveButton = (
-    <Button type="submit" disabled={busy} className="w-full bg-brand-gradient text-white shadow-brand">
+    <Button
+      type="submit"
+      disabled={busy}
+      className="w-full bg-brand-gradient text-white shadow-brand"
+    >
       <Save className="h-4 w-4" /> {busy ? "Salvando..." : "Salvar tratativa"}
     </Button>
   );
 
   return (
     <Card>
-      <CardHeader className="pb-2"><CardTitle className="text-sm">Tratativa</CardTitle></CardHeader>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Tratativa</CardTitle>
+      </CardHeader>
       <CardContent>
         <form onSubmit={salvar} className="space-y-3">
           {/* Salvar (topo) — evita perder alterações em telas pequenas */}
@@ -358,18 +457,30 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
             <div className="space-y-1.5">
               <Label>Status</Label>
               <Select value={status} onValueChange={(v) => onStatusChange(v as RtiNcStatus)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {RTI_NC_STATUSES.map((s) => <SelectItem key={s} value={s}>{RTI_NC_STATUS_LABELS[s]}</SelectItem>)}
+                  {RTI_NC_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {RTI_NC_STATUS_LABELS[s]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
               <Select value={prioridade} onValueChange={setPrioridade}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {RTI_PRIORIDADES.map((p) => <SelectItem key={p} value={String(p)}>{RTI_PRIORIDADE_LABELS[p]}</SelectItem>)}
+                  {RTI_PRIORIDADES.map((p) => (
+                    <SelectItem key={p} value={String(p)}>
+                      {RTI_PRIORIDADE_LABELS[p]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -379,7 +490,11 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
               <Label htmlFor="g-prog">Progresso</Label>
               <div className="flex items-center gap-1">
                 <Input
-                  id="g-prog" type="number" min={0} max={100} step={5}
+                  id="g-prog"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={5}
                   value={progresso}
                   onChange={(e) => onProgressoChange(Number(e.target.value))}
                   className="h-7 w-16 text-xs text-right tabular-nums"
@@ -388,7 +503,10 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
               </div>
             </div>
             <Slider
-              value={[progresso]} min={0} max={100} step={5}
+              value={[progresso]}
+              min={0}
+              max={100}
+              step={5}
               onValueChange={(v) => onProgressoChange(v[0] ?? 0)}
             />
             <p className="text-[10px] text-muted-foreground">
@@ -398,18 +516,30 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="g-resp">Responsável</Label>
-              <Input id="g-resp" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} maxLength={150} />
+              <Input
+                id="g-resp"
+                value={responsavel}
+                onChange={(e) => setResponsavel(e.target.value)}
+                maxLength={150}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="g-prazo">Prazo</Label>
-              <Input id="g-prazo" type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
+              <Input
+                id="g-prazo"
+                type="date"
+                value={prazo}
+                onChange={(e) => setPrazo(e.target.value)}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Tipo de execução</Label>
               <Select value={tipo} onValueChange={(v) => setTipo(v as RtiTipoExecucao)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="os">OS (manutenção)</SelectItem>
                   <SelectItem value="investimento">Investimento</SelectItem>
@@ -418,13 +548,21 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="g-os">Nº da OS</Label>
-              <Input id="g-os" value={osNumero} onChange={(e) => setOsNumero(e.target.value)} maxLength={60} placeholder="—" />
+              <Input
+                id="g-os"
+                value={osNumero}
+                onChange={(e) => setOsNumero(e.target.value)}
+                maxLength={60}
+                placeholder="—"
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="g-concl">Data de conclusão</Label>
             <Input
-              id="g-concl" type="date" value={concluidaEm}
+              id="g-concl"
+              type="date"
+              value={concluidaEm}
               onChange={(e) => setConcluidaEm(e.target.value)}
               disabled={status !== "concluida"}
             />
@@ -437,21 +575,41 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="g-cp">Custo planejado (R$)</Label>
-              <Input id="g-cp" type="number" min={0} step="0.01" value={custoPlanejado} onChange={(e) => setCustoPlanejado(e.target.value)} placeholder="Não informado" />
+              <Input
+                id="g-cp"
+                type="number"
+                min={0}
+                step="0.01"
+                value={custoPlanejado}
+                onChange={(e) => setCustoPlanejado(e.target.value)}
+                placeholder="Não informado"
+              />
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Deixe vazio = não informado<br />
-                0 = sem custo p/ executar
+                Deixe vazio = não informado
+                <br />0 = sem custo p/ executar
               </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="g-cr">Custo realizado (R$)</Label>
-              <Input id="g-cr" type="number" min={0} step="0.01" value={custoRealizado} onChange={(e) => setCustoRealizado(e.target.value)} placeholder="Não informado" />
+              <Input
+                id="g-cr"
+                type="number"
+                min={0}
+                step="0.01"
+                value={custoRealizado}
+                onChange={(e) => setCustoRealizado(e.target.value)}
+                placeholder="Não informado"
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="g-sit">Situação atual / observações</Label>
             <Textarea
-              id="g-sit" value={situacao} onChange={(e) => setSituacao(e.target.value)} rows={3} maxLength={2000}
+              id="g-sit"
+              value={situacao}
+              onChange={(e) => setSituacao(e.target.value)}
+              rows={3}
+              maxLength={2000}
               placeholder="Ex.: OS aberta em 10/06, aguardando material. Previsão de execução na parada de safra."
             />
           </div>
@@ -465,7 +623,9 @@ function GestaoCard({ nc, canEdit, actorName }: { nc: RtiNc; canEdit: boolean; a
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
       <span className="text-sm text-right">{value}</span>
     </div>
   );
@@ -474,7 +634,13 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 // ── Evidências ───────────────────────────────────────────────────────────────
 
 function EvidenceSection({
-  nc, tipo, canEdit, actorName, titulo, descricao, icon,
+  nc,
+  tipo,
+  canEdit,
+  actorName,
+  titulo,
+  descricao,
+  icon,
 }: {
   nc: RtiNc;
   tipo: RtiEvidenciaTipo;
@@ -505,7 +671,9 @@ function EvidenceSection({
       if (!okTipo) return toast.error(`"${f.name}": apenas imagens ou PDF.`);
       if (f.size > 15 * 1024 * 1024) return toast.error(`"${f.name}" excede 15 MB.`);
       if (existentes.has(f.name))
-        return toast.error(`"${f.name}" já foi anexado a esta NC em "${titulo}". Renomeie o arquivo se for uma versão diferente.`);
+        return toast.error(
+          `"${f.name}" já foi anexado a esta NC em "${titulo}". Renomeie o arquivo se for uma versão diferente.`,
+        );
     }
     // Bloqueia também duplicados dentro da mesma seleção
     const naSelecao = new Set<string>();
@@ -535,7 +703,9 @@ function EvidenceSection({
       });
       setCaption("");
       if (fileRef.current) fileRef.current.value = "";
-      toast.success(`${list.length} ${list.length === 1 ? "evidência anexada" : "evidências anexadas"}.`);
+      toast.success(
+        `${list.length} ${list.length === 1 ? "evidência anexada" : "evidências anexadas"}.`,
+      );
     } catch (e) {
       toast.error("Falha no upload: " + (e as Error).message);
     } finally {
@@ -569,12 +739,18 @@ function EvidenceSection({
           <Skeleton className="h-24" />
         ) : evidencias.length === 0 ? (
           <div className="rounded-md border border-dashed bg-muted/20 p-5 text-center text-xs text-muted-foreground">
-            Nenhuma evidência anexada{tipo === "correcao" && nc.status === "concluida" ? " — anexe a comprovação da correção para defesa em auditoria." : "."}
+            Nenhuma evidência anexada
+            {tipo === "correcao" && nc.status === "concluida"
+              ? " — anexe a comprovação da correção para defesa em auditoria."
+              : "."}
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {evidencias.map((ev) => (
-              <div key={ev.id} className="group relative rounded-md border overflow-hidden bg-muted/20">
+              <div
+                key={ev.id}
+                className="group relative rounded-md border overflow-hidden bg-muted/20"
+              >
                 {isImage(ev) ? (
                   <button
                     type="button"
@@ -597,7 +773,9 @@ function EvidenceSection({
                     title={ev.descricao ?? ev.file_name}
                   >
                     <FileText className="h-7 w-7 text-muted-foreground" />
-                    <span className="text-[10px] text-muted-foreground line-clamp-2 break-all">{ev.descricao ?? ev.file_name}</span>
+                    <span className="text-[10px] text-muted-foreground line-clamp-2 break-all">
+                      {ev.descricao ?? ev.file_name}
+                    </span>
                   </button>
                 )}
                 {canEdit && (
@@ -619,16 +797,27 @@ function EvidenceSection({
           <div className="rounded-md border bg-muted/20 p-2.5 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <Input
-                placeholder="Legenda (opcional)" className="h-8 flex-1 min-w-[140px] text-xs"
-                value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={300}
+                placeholder="Legenda (opcional)"
+                className="h-8 flex-1 min-w-[140px] text-xs"
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                maxLength={300}
               />
               <input
-                ref={fileRef} type="file" multiple accept="image/*,application/pdf"
-                className="hidden" id={`ev-file-${tipo}-${nc.id}`}
+                ref={fileRef}
+                type="file"
+                multiple
+                accept="image/*,application/pdf"
+                className="hidden"
+                id={`ev-file-${tipo}-${nc.id}`}
                 onChange={(e) => onFiles(e.target.files)}
               />
               <Button
-                type="button" size="sm" variant="outline" className="h-8" disabled={busy}
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8"
+                disabled={busy}
                 onClick={() => fileRef.current?.click()}
               >
                 <ImagePlus className="h-4 w-4" /> {busy ? "Enviando..." : "Anexar fotos / PDF"}
@@ -655,7 +844,10 @@ function EvidenceSection({
 }
 
 function EvidenceLightbox({
-  ev, canEdit, actorName, onClose,
+  ev,
+  canEdit,
+  actorName,
+  onClose,
 }: {
   ev: RtiNcEvidencia;
   canEdit: boolean;
@@ -689,7 +881,12 @@ function EvidenceLightbox({
   }
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent className="max-w-3xl w-[calc(100vw-1rem)] p-3">
         <DialogHeader className="pr-8">
           <DialogTitle className="text-sm leading-tight truncate">{ev.file_name}</DialogTitle>
@@ -702,7 +899,9 @@ function EvidenceLightbox({
           />
         ) : (
           <a
-            href={rtiFileUrl(ev.file_path)} target="_blank" rel="noreferrer"
+            href={rtiFileUrl(ev.file_path)}
+            target="_blank"
+            rel="noreferrer"
             className="flex flex-col items-center justify-center gap-2 rounded border border-dashed bg-muted/20 py-10 text-sm text-muted-foreground"
           >
             <FileText className="h-10 w-10" /> Abrir documento
@@ -712,16 +911,24 @@ function EvidenceLightbox({
         {/* Legenda editável */}
         {canEdit ? (
           <div className="space-y-1.5">
-            <Label htmlFor="ev-caption" className="text-[11px] text-muted-foreground">Legenda</Label>
+            <Label htmlFor="ev-caption" className="text-[11px] text-muted-foreground">
+              Legenda
+            </Label>
             <div className="flex items-center gap-2">
               <Input
-                id="ev-caption" className="h-8 text-sm"
+                id="ev-caption"
+                className="h-8 text-sm"
                 placeholder="Legenda (opcional)"
-                value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={300}
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                maxLength={300}
               />
               <Button
-                type="button" size="sm" className="h-8 bg-brand-gradient text-white shadow-brand"
-                disabled={busy || !dirty} onClick={salvarLegenda}
+                type="button"
+                size="sm"
+                className="h-8 bg-brand-gradient text-white shadow-brand"
+                disabled={busy || !dirty}
+                onClick={salvarLegenda}
               >
                 <Save className="h-3.5 w-3.5" /> {busy ? "Salvando..." : "Salvar"}
               </Button>
@@ -737,7 +944,9 @@ function EvidenceLightbox({
             {formatDatePtBR(ev.created_at.slice(0, 10))}
           </span>
           <a
-            href={rtiFileUrl(ev.file_path)} target="_blank" rel="noreferrer"
+            href={rtiFileUrl(ev.file_path)}
+            target="_blank"
+            rel="noreferrer"
             className="inline-flex items-center gap-1 underline"
           >
             <Download className="h-3 w-3" /> Abrir original
@@ -750,7 +959,15 @@ function EvidenceLightbox({
 
 // ── Histórico ────────────────────────────────────────────────────────────────
 
-function HistoricoCard({ ncId, canComment, actorName }: { ncId: string; canComment: boolean; actorName: string | null }) {
+function HistoricoCard({
+  ncId,
+  canComment,
+  actorName,
+}: {
+  ncId: string;
+  canComment: boolean;
+  actorName: string | null;
+}) {
   const { data: historico = [], isLoading } = useRtiHistorico(ncId);
   const addHistorico = useAddRtiHistorico();
   const [comentario, setComentario] = useState("");
@@ -786,11 +1003,20 @@ function HistoricoCard({ ncId, canComment, actorName }: { ncId: string; canComme
         {canComment && (
           <form onSubmit={comentar} className="flex items-start gap-2">
             <Textarea
-              value={comentario} onChange={(e) => setComentario(e.target.value)}
-              rows={2} maxLength={1000} placeholder="Adicionar comentário..."
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              rows={2}
+              maxLength={1000}
+              placeholder="Adicionar comentário..."
               className="text-sm"
             />
-            <Button type="submit" size="sm" variant="outline" disabled={busy || !comentario.trim()} title="Comentar">
+            <Button
+              type="submit"
+              size="sm"
+              variant="outline"
+              disabled={busy || !comentario.trim()}
+              title="Comentar"
+            >
               <MessageSquarePlus className="h-4 w-4" />
             </Button>
           </form>
@@ -809,7 +1035,10 @@ function HistoricoCard({ ncId, canComment, actorName }: { ncId: string; canComme
                 <p className="text-xs whitespace-pre-wrap leading-relaxed">{h.texto}</p>
                 <p className="mt-0.5 text-[10px] text-muted-foreground">
                   {h.autor_nome && <>{h.autor_nome} · </>}
-                  {new Date(h.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  {new Date(h.created_at).toLocaleString("pt-BR", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}
                 </p>
               </li>
             ))}

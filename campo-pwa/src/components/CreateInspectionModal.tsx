@@ -1,55 +1,57 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { db } from '@/db/dexie'
-import { enqueue } from '@/sync/engine'
-import { generateId } from '@/lib/uuid'
-import { getActiveOrgId } from '@/lib/org'
-import { supabase } from '@/lib/supabase'
-import { X } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { db } from "@/db/dexie";
+import { enqueue } from "@/sync/engine";
+import { generateId } from "@/lib/uuid";
+import { getActiveOrgId } from "@/lib/org";
+import { supabase } from "@/lib/supabase";
+import { X } from "lucide-react";
 
-type Props = { onClose: () => void }
+type Props = { onClose: () => void };
 
 export function CreateInspectionModal({ onClose }: Props) {
-  const navigate = useNavigate()
-  const [titulo, setTitulo] = useState(
-    () => `Inspeção ${new Date().toISOString().slice(0, 10)}`
-  )
-  const [cliente, setCliente] = useState('')
-  const [local, setLocal] = useState('')
-  const [engenheiro, setEngenheiro] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate();
+  const [titulo, setTitulo] = useState(() => `Inspeção ${new Date().toISOString().slice(0, 10)}`);
+  const [cliente, setCliente] = useState("");
+  const [local, setLocal] = useState("");
+  const [engenheiro, setEngenheiro] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
+    let cancelled = false;
+    (async () => {
       try {
-        const { data } = await supabase.auth.getUser()
-        if (cancelled) return
-        setEngenheiro(data.user?.user_metadata?.full_name ?? data.user?.email ?? '')
+        const { data } = await supabase.auth.getUser();
+        if (cancelled) return;
+        setEngenheiro(data.user?.user_metadata?.full_name ?? data.user?.email ?? "");
       } catch {
         // Offline or unauthenticated — silently degrade; engenheiro stays ''
       }
-    })()
-    return () => { cancelled = true }
-  }, [])
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   async function handleCreate() {
-    if (!titulo.trim() || saving) return
-    setSaving(true)
-    setError(null)
+    if (!titulo.trim() || saving) return;
+    setSaving(true);
+    setError(null);
     try {
-      const id = generateId()
-      const now = new Date().toISOString()
+      const id = generateId();
+      const now = new Date().toISOString();
       // org ativa (cacheada do último sync online). Para usuário single-org pode
       // vir undefined offline — a trigger fn_default_org_id resolve no servidor.
-      const orgId = getActiveOrgId()
+      const orgId = getActiveOrgId();
       const inspection = {
         id,
         ...(orgId ? { org_id: orgId } : {}),
@@ -58,7 +60,7 @@ export function CreateInspectionModal({ onClose }: Props) {
         local: local.trim() || null,
         engenheiro: engenheiro || null,
         data_inspecao: now,
-        status: 'em_andamento' as const,
+        status: "em_andamento" as const,
         report_id: null,
         notes: null,
         arquivada_campo: false,
@@ -66,14 +68,14 @@ export function CreateInspectionModal({ onClose }: Props) {
         created_at: now,
         updated_at: now,
         _synced: false,
-      }
-      await db.inspections.add(inspection)
-      await enqueue('inspections', 'insert', inspection, id)
-      navigate(`/inspecoes/${id}`)
+      };
+      await db.inspections.add(inspection);
+      await enqueue("inspections", "insert", inspection, id);
+      navigate(`/inspecoes/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar inspeção')
+      setError(err instanceof Error ? err.message : "Erro ao criar inspeção");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
@@ -87,8 +89,15 @@ export function CreateInspectionModal({ onClose }: Props) {
         className="relative w-full bg-slate-900 rounded-t-2xl p-6 space-y-4"
       >
         <div className="flex items-center justify-between">
-          <h2 id="create-insp-title" className="font-semibold text-lg">Nova inspeção</h2>
-          <button type="button" aria-label="Fechar" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-800">
+          <h2 id="create-insp-title" className="font-semibold text-lg">
+            Nova inspeção
+          </h2>
+          <button
+            type="button"
+            aria-label="Fechar"
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-slate-800"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -100,7 +109,7 @@ export function CreateInspectionModal({ onClose }: Props) {
               autoFocus
               type="text"
               value={titulo}
-              onChange={e => setTitulo(e.target.value)}
+              onChange={(e) => setTitulo(e.target.value)}
               className="mt-1 w-full rounded-lg bg-slate-800 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </label>
@@ -109,7 +118,7 @@ export function CreateInspectionModal({ onClose }: Props) {
             <input
               type="text"
               value={cliente}
-              onChange={e => setCliente(e.target.value)}
+              onChange={(e) => setCliente(e.target.value)}
               className="mt-1 w-full rounded-lg bg-slate-800 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </label>
@@ -118,7 +127,7 @@ export function CreateInspectionModal({ onClose }: Props) {
             <input
               type="text"
               value={local}
-              onChange={e => setLocal(e.target.value)}
+              onChange={(e) => setLocal(e.target.value)}
               className="mt-1 w-full rounded-lg bg-slate-800 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </label>
@@ -141,9 +150,9 @@ export function CreateInspectionModal({ onClose }: Props) {
           disabled={!titulo.trim() || saving}
           className="w-full flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-60 px-4 py-3.5 font-semibold transition-colors"
         >
-          {saving ? 'Criando...' : 'Criar inspeção'}
+          {saving ? "Criando..." : "Criar inspeção"}
         </button>
       </div>
     </div>
-  )
+  );
 }

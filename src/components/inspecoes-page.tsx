@@ -1,7 +1,14 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
-  ClipboardCheck, ClipboardList, Download, FileText, Pencil, Plus, Search, Trash2,
+  ClipboardCheck,
+  ClipboardList,
+  Download,
+  FileText,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { SectorSelect } from "@/components/sector-select";
@@ -13,24 +20,52 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth-context";
 import {
-  ACTION_STATUSES, ACTION_STATUS_LABELS, INSPECTION_RESULTS, INSPECTION_RESULT_LABELS,
-  INSPECTION_TYPE_LABELS, INSPECTION_TYPE_SHORT,
-  type ActionStatus, type Inspection, type InspectionAction, type InspectionResult, type InspectionType,
+  ACTION_STATUSES,
+  ACTION_STATUS_LABELS,
+  INSPECTION_RESULTS,
+  INSPECTION_RESULT_LABELS,
+  INSPECTION_TYPE_LABELS,
+  INSPECTION_TYPE_SHORT,
+  type ActionStatus,
+  type Inspection,
+  type InspectionAction,
+  type InspectionResult,
+  type InspectionType,
 } from "@/lib/inspecoes";
 import {
-  inspectionReportUrl, uploadInspectionReport,
-  useDeleteInspection, useDeleteInspectionAction, useInspectionActions, useInspections,
-  useOpenActions, useUpsertInspection, useUpsertInspectionAction,
+  inspectionReportUrl,
+  uploadInspectionReport,
+  useDeleteInspection,
+  useDeleteInspectionAction,
+  useInspectionActions,
+  useInspections,
+  useOpenActions,
+  useUpsertInspection,
+  useUpsertInspectionAction,
 } from "@/lib/inspecoes-queries";
 import { DOC_STATUS_LABELS, docExpiryStatus, type DocExpiryStatus } from "@/lib/prontuario";
 import { formatDatePtBR } from "@/lib/qualificacoes";
@@ -43,7 +78,9 @@ function validityBadge(status: DocExpiryStatus) {
     perennial: "border-slate-300 bg-slate-50 text-slate-600",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[status]}`}>
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[status]}`}
+    >
       {DOC_STATUS_LABELS[status]}
     </span>
   );
@@ -56,7 +93,9 @@ function resultBadge(result: InspectionResult) {
     nao_conforme: "border-red-300 bg-red-50 text-red-700",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[result]}`}>
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[result]}`}
+    >
       {INSPECTION_RESULT_LABELS[result]}
     </span>
   );
@@ -78,8 +117,12 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
   const stats = useMemo(() => {
     const total = inspections.length;
     const naoConformes = inspections.filter((i) => i.result === "nao_conforme").length;
-    const vencidos = inspections.filter((i) => docExpiryStatus(i.validity_date) === "expired").length;
-    const vencendo = inspections.filter((i) => docExpiryStatus(i.validity_date) === "expiring").length;
+    const vencidos = inspections.filter(
+      (i) => docExpiryStatus(i.validity_date) === "expired",
+    ).length;
+    const vencendo = inspections.filter(
+      (i) => docExpiryStatus(i.validity_date) === "expiring",
+    ).length;
     return { total, naoConformes, vencidos, vencendo, acoesAbertas: openActions.length };
   }, [inspections, openActions]);
 
@@ -87,7 +130,8 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
     const t = search.trim().toLowerCase();
     return inspections.filter((i) => {
       if (resultFilter !== "all" && i.result !== resultFilter) return false;
-      if (validityFilter !== "all" && docExpiryStatus(i.validity_date) !== validityFilter) return false;
+      if (validityFilter !== "all" && docExpiryStatus(i.validity_date) !== validityFilter)
+        return false;
       if (!t) return true;
       return (
         i.equipment.toLowerCase().includes(t) ||
@@ -100,7 +144,12 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
   }, [inspections, search, resultFilter, validityFilter]);
 
   async function handleDelete(insp: Inspection) {
-    if (!window.confirm(`Excluir a inspeção de "${insp.equipment}"? O plano de ação vinculado também será excluído.`)) return;
+    if (
+      !window.confirm(
+        `Excluir a inspeção de "${insp.equipment}"? O plano de ação vinculado também será excluído.`,
+      )
+    )
+      return;
     try {
       await deleteInspection.mutateAsync({ id: insp.id, report_path: insp.report_path });
       toast.success("Inspeção excluída.");
@@ -118,11 +167,19 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
             {INSPECTION_TYPE_LABELS[type]}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {isLoading ? "Carregando..." : `${inspections.length} ${inspections.length === 1 ? "laudo registrado" : "laudos registrados"}`}
+            {isLoading
+              ? "Carregando..."
+              : `${inspections.length} ${inspections.length === 1 ? "laudo registrado" : "laudos registrados"}`}
           </p>
         </div>
         {isStaff && (
-          <Button onClick={() => { setEditing(null); setDialogOpen(true); }} className="bg-brand-gradient text-white shadow-brand">
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setDialogOpen(true);
+            }}
+            className="bg-brand-gradient text-white shadow-brand"
+          >
             <Plus className="h-4 w-4" /> Nova inspeção
           </Button>
         )}
@@ -131,10 +188,26 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
       {/* Stats */}
       <div className="mt-5 grid grid-cols-2 sm:grid-cols-5 gap-3">
         <StatCard label="Laudos" value={stats.total} />
-        <StatCard label="Vencendo" value={stats.vencendo} tone={stats.vencendo > 0 ? "amber" : "default"} />
-        <StatCard label="Vencidos" value={stats.vencidos} tone={stats.vencidos > 0 ? "red" : "default"} />
-        <StatCard label="Não conformes" value={stats.naoConformes} tone={stats.naoConformes > 0 ? "red" : "default"} />
-        <StatCard label="Ações abertas" value={stats.acoesAbertas} tone={stats.acoesAbertas > 0 ? "amber" : "default"} />
+        <StatCard
+          label="Vencendo"
+          value={stats.vencendo}
+          tone={stats.vencendo > 0 ? "amber" : "default"}
+        />
+        <StatCard
+          label="Vencidos"
+          value={stats.vencidos}
+          tone={stats.vencidos > 0 ? "red" : "default"}
+        />
+        <StatCard
+          label="Não conformes"
+          value={stats.naoConformes}
+          tone={stats.naoConformes > 0 ? "red" : "default"}
+        />
+        <StatCard
+          label="Ações abertas"
+          value={stats.acoesAbertas}
+          tone={stats.acoesAbertas > 0 ? "amber" : "default"}
+        />
       </div>
 
       {/* Filtros */}
@@ -149,16 +222,22 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
           />
         </div>
         <Select value={resultFilter} onValueChange={setResultFilter}>
-          <SelectTrigger className="w-full sm:w-56"><SelectValue placeholder="Resultado" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-56">
+            <SelectValue placeholder="Resultado" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os resultados</SelectItem>
             {INSPECTION_RESULTS.map((r) => (
-              <SelectItem key={r} value={r}>{INSPECTION_RESULT_LABELS[r]}</SelectItem>
+              <SelectItem key={r} value={r}>
+                {INSPECTION_RESULT_LABELS[r]}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={validityFilter} onValueChange={setValidityFilter}>
-          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Validade" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue placeholder="Validade" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as validades</SelectItem>
             <SelectItem value="ok">Válido</SelectItem>
@@ -174,7 +253,9 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-5 space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10" />)}
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-10" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground">
@@ -204,19 +285,34 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
                     return (
                       <TableRow key={i.id}>
                         <TableCell className="max-w-[220px]">
-                          <div className="font-medium leading-tight truncate" title={i.equipment}>{i.equipment}</div>
+                          <div className="font-medium leading-tight truncate" title={i.equipment}>
+                            {i.equipment}
+                          </div>
                           {i.notes && (
-                            <div className="text-[11px] text-muted-foreground truncate" title={i.notes}>{i.notes}</div>
+                            <div
+                              className="text-[11px] text-muted-foreground truncate"
+                              title={i.notes}
+                            >
+                              {i.notes}
+                            </div>
                           )}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">{i.sector || "—"}</TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDatePtBR(i.inspection_date)}</TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDatePtBR(i.validity_date)}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatDatePtBR(i.inspection_date)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatDatePtBR(i.validity_date)}
+                        </TableCell>
                         <TableCell>{validityBadge(status)}</TableCell>
                         <TableCell>{resultBadge(i.result)}</TableCell>
                         <TableCell className="max-w-[170px]">
                           <div className="text-sm truncate">{i.responsavel || "—"}</div>
-                          {i.art && <div className="text-[11px] text-muted-foreground truncate">ART {i.art}</div>}
+                          {i.art && (
+                            <div className="text-[11px] text-muted-foreground truncate">
+                              ART {i.art}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="inline-flex gap-1">
@@ -225,25 +321,48 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
                               variant={openCount > 0 ? "default" : "outline"}
                               onClick={() => setActionsFor(i)}
                               title="Plano de ação"
-                              className={openCount > 0 ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}
+                              className={
+                                openCount > 0 ? "bg-amber-500 hover:bg-amber-600 text-white" : ""
+                              }
                             >
                               <ClipboardList className="h-4 w-4" />
-                              {openCount > 0 && <span className="ml-1 text-[11px] font-bold">{openCount}</span>}
+                              {openCount > 0 && (
+                                <span className="ml-1 text-[11px] font-bold">{openCount}</span>
+                              )}
                             </Button>
                             {i.report_path && (
                               <Button asChild size="sm" variant="outline">
-                                <a href={inspectionReportUrl(i.report_path)} target="_blank" rel="noreferrer" title="Baixar laudo (PDF)">
+                                <a
+                                  href={inspectionReportUrl(i.report_path)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="Baixar laudo (PDF)"
+                                >
                                   <Download className="h-4 w-4" />
                                 </a>
                               </Button>
                             )}
                             {isStaff && (
-                              <Button size="sm" variant="outline" onClick={() => { setEditing(i); setDialogOpen(true); }} title="Editar">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditing(i);
+                                  setDialogOpen(true);
+                                }}
+                                title="Editar"
+                              >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             )}
                             {isAdmin && (
-                              <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleDelete(i)} title="Excluir">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive"
+                                onClick={() => handleDelete(i)}
+                                title="Excluir"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             )}
@@ -262,7 +381,10 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
       {isStaff && dialogOpen && (
         <InspectionDialog
           open={dialogOpen}
-          onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditing(null); }}
+          onOpenChange={(o) => {
+            setDialogOpen(o);
+            if (!o) setEditing(null);
+          }}
           type={type}
           existing={editing}
           actorId={user?.id ?? null}
@@ -277,7 +399,9 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
       {actionsFor && (
         <ActionPlanDialog
           inspection={actionsFor}
-          onOpenChange={(o) => { if (!o) setActionsFor(null); }}
+          onOpenChange={(o) => {
+            if (!o) setActionsFor(null);
+          }}
           canEdit={isStaff}
           canDelete={isAdmin}
         />
@@ -286,7 +410,15 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
   );
 }
 
-function StatCard({ label, value, tone = "default" }: { label: string; value: number; tone?: "default" | "amber" | "red" }) {
+function StatCard({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: number;
+  tone?: "default" | "amber" | "red";
+}) {
   const valueCls = tone === "red" ? "text-red-600" : tone === "amber" ? "text-amber-600" : "";
   return (
     <Card>
@@ -299,7 +431,12 @@ function StatCard({ label, value, tone = "default" }: { label: string; value: nu
 }
 
 function InspectionDialog({
-  open, onOpenChange, type, existing, actorId, actorName,
+  open,
+  onOpenChange,
+  type,
+  existing,
+  actorId,
+  actorName,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -312,7 +449,9 @@ function InspectionDialog({
   const upsert = useUpsertInspection();
   const [equipment, setEquipment] = useState(existing?.equipment ?? "");
   const [sector, setSector] = useState(existing?.sector ?? "");
-  const [inspectionDate, setInspectionDate] = useState(existing?.inspection_date ?? new Date().toISOString().slice(0, 10));
+  const [inspectionDate, setInspectionDate] = useState(
+    existing?.inspection_date ?? new Date().toISOString().slice(0, 10),
+  );
   const [validityDate, setValidityDate] = useState(existing?.validity_date ?? "");
   const [result, setResult] = useState<string>(existing?.result ?? "conforme");
   const [responsavel, setResponsavel] = useState(existing?.responsavel ?? "");
@@ -326,7 +465,8 @@ function InspectionDialog({
     e.preventDefault();
     if (!equipment.trim()) return toast.error("Informe o equipamento ou local inspecionado.");
     if (!inspectionDate) return toast.error("Informe a data da inspeção.");
-    if (file && file.type !== "application/pdf") return toast.error("O laudo deve ser um arquivo PDF.");
+    if (file && file.type !== "application/pdf")
+      return toast.error("O laudo deve ser um arquivo PDF.");
     if (file && file.size > 20 * 1024 * 1024) return toast.error("PDF excede 20 MB.");
 
     setBusy(true);
@@ -369,13 +509,21 @@ function InspectionDialog({
             {isEdit ? "Editar inspeção" : `Nova inspeção — ${INSPECTION_TYPE_SHORT[type]}`}
           </DialogTitle>
           <DialogDescription>
-            Registre o laudo e sua validade. Resultados não conformes podem receber um plano de ação.
+            Registre o laudo e sua validade. Resultados não conformes podem receber um plano de
+            ação.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="in-equipment">Equipamento / Local</Label>
-            <Input id="in-equipment" value={equipment} onChange={(e) => setEquipment(e.target.value)} maxLength={200} placeholder="Ex.: Subestação 01 — Transformador T1" required />
+            <Input
+              id="in-equipment"
+              value={equipment}
+              onChange={(e) => setEquipment(e.target.value)}
+              maxLength={200}
+              placeholder="Ex.: Subestação 01 — Transformador T1"
+              required
+            />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -385,10 +533,14 @@ function InspectionDialog({
             <div className="space-y-1.5">
               <Label htmlFor="in-result">Resultado</Label>
               <Select value={result} onValueChange={setResult}>
-                <SelectTrigger id="in-result"><SelectValue /></SelectTrigger>
+                <SelectTrigger id="in-result">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {INSPECTION_RESULTS.map((r) => (
-                    <SelectItem key={r} value={r}>{INSPECTION_RESULT_LABELS[r]}</SelectItem>
+                    <SelectItem key={r} value={r}>
+                      {INSPECTION_RESULT_LABELS[r]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -397,29 +549,59 @@ function InspectionDialog({
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="in-date">Data da inspeção</Label>
-              <Input id="in-date" type="date" value={inspectionDate} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setInspectionDate(e.target.value)} required />
+              <Input
+                id="in-date"
+                type="date"
+                value={inspectionDate}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setInspectionDate(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="in-validity">Validade do laudo (opcional)</Label>
-              <Input id="in-validity" type="date" value={validityDate} onChange={(e) => setValidityDate(e.target.value)} />
+              <Input
+                id="in-validity"
+                type="date"
+                value={validityDate}
+                onChange={(e) => setValidityDate(e.target.value)}
+              />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="in-resp">Responsável técnico (opcional)</Label>
-              <Input id="in-resp" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} maxLength={150} />
+              <Input
+                id="in-resp"
+                value={responsavel}
+                onChange={(e) => setResponsavel(e.target.value)}
+                maxLength={150}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="in-art">ART (opcional)</Label>
-              <Input id="in-art" value={art} onChange={(e) => setArt(e.target.value)} maxLength={80} />
+              <Input
+                id="in-art"
+                value={art}
+                onChange={(e) => setArt(e.target.value)}
+                maxLength={80}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="in-notes">Observações (opcional)</Label>
-            <Textarea id="in-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} />
+            <Textarea
+              id="in-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              maxLength={500}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="in-file">Laudo (PDF){isEdit ? " — opcional (substitui o atual)" : " (opcional)"}</Label>
+            <Label htmlFor="in-file">
+              Laudo (PDF){isEdit ? " — opcional (substitui o atual)" : " (opcional)"}
+            </Label>
             <Input
               id="in-file"
               ref={fileRef}
@@ -437,11 +619,20 @@ function InspectionDialog({
             )}
           </div>
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={busy}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={busy} className="bg-brand-gradient text-white shadow-brand">
-              {busy ? "Salvando..." : (isEdit ? "Salvar alterações" : "Registrar inspeção")}
+            <Button
+              type="submit"
+              disabled={busy}
+              className="bg-brand-gradient text-white shadow-brand"
+            >
+              {busy ? "Salvando..." : isEdit ? "Salvar alterações" : "Registrar inspeção"}
             </Button>
           </DialogFooter>
         </form>
@@ -451,7 +642,10 @@ function InspectionDialog({
 }
 
 function ActionPlanDialog({
-  inspection, onOpenChange, canEdit, canDelete,
+  inspection,
+  onOpenChange,
+  canEdit,
+  canDelete,
 }: {
   inspection: Inspection;
   onOpenChange: (o: boolean) => void;
@@ -520,7 +714,9 @@ function ActionPlanDialog({
       concluida: "border-emerald-300 bg-emerald-50 text-emerald-700",
     };
     return (
-      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[status]}`}>
+      <span
+        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[status]}`}
+      >
         {ACTION_STATUS_LABELS[status]}
       </span>
     );
@@ -535,7 +731,8 @@ function ActionPlanDialog({
             Plano de ação — {inspection.equipment}
           </DialogTitle>
           <DialogDescription>
-            Ações corretivas para as não-conformidades apontadas no laudo de {formatDatePtBR(inspection.inspection_date)}.
+            Ações corretivas para as não-conformidades apontadas no laudo de{" "}
+            {formatDatePtBR(inspection.inspection_date)}.
           </DialogDescription>
         </DialogHeader>
 
@@ -554,22 +751,37 @@ function ActionPlanDialog({
               </div>
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="text-[11px] text-muted-foreground">
-                  {a.responsible && <>Responsável: <strong className="text-foreground">{a.responsible}</strong> · </>}
+                  {a.responsible && (
+                    <>
+                      Responsável: <strong className="text-foreground">{a.responsible}</strong>{" "}
+                      ·{" "}
+                    </>
+                  )}
                   Prazo: <strong className="text-foreground">{formatDatePtBR(a.due_date)}</strong>
                   {a.completed_at && <> · Concluída em {formatDatePtBR(a.completed_at)}</>}
                 </div>
                 {canEdit && (
                   <div className="flex items-center gap-1.5">
                     <Select value={a.status} onValueChange={(v) => setStatus(a, v as ActionStatus)}>
-                      <SelectTrigger className="h-7 w-36 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-7 w-36 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         {ACTION_STATUSES.map((s) => (
-                          <SelectItem key={s} value={s}>{ACTION_STATUS_LABELS[s]}</SelectItem>
+                          <SelectItem key={s} value={s}>
+                            {ACTION_STATUS_LABELS[s]}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {canDelete && (
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => remove(a)} title="Excluir ação">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-destructive"
+                        onClick={() => remove(a)}
+                        title="Excluir ação"
+                      >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     )}
@@ -582,23 +794,47 @@ function ActionPlanDialog({
 
         {canEdit && (
           <form onSubmit={addAction} className="space-y-3 rounded-md border bg-muted/20 p-3">
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nova ação corretiva</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Nova ação corretiva
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="ap-desc">Descrição</Label>
-              <Textarea id="ap-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} maxLength={500} required />
+              <Textarea
+                id="ap-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+                maxLength={500}
+                required
+              />
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="ap-resp">Responsável (opcional)</Label>
-                <Input id="ap-resp" value={responsible} onChange={(e) => setResponsible(e.target.value)} maxLength={150} />
+                <Input
+                  id="ap-resp"
+                  value={responsible}
+                  onChange={(e) => setResponsible(e.target.value)}
+                  maxLength={150}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="ap-due">Prazo (opcional)</Label>
-                <Input id="ap-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                <Input
+                  id="ap-due"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
               </div>
             </div>
             <div className="flex justify-end">
-              <Button type="submit" size="sm" disabled={busy} className="bg-brand-gradient text-white shadow-brand">
+              <Button
+                type="submit"
+                size="sm"
+                disabled={busy}
+                className="bg-brand-gradient text-white shadow-brand"
+              >
                 <Plus className="h-4 w-4" /> {busy ? "Salvando..." : "Adicionar ação"}
               </Button>
             </div>
@@ -606,7 +842,9 @@ function ActionPlanDialog({
         )}
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Fechar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

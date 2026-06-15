@@ -2,7 +2,15 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { z } from "zod";
 import {
-  Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { ClipboardList, ExternalLink, Wallet, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
@@ -10,12 +18,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
   formatBRL,
-  RTI_PRIORIDADE_LABELS, RTI_TIPO_EXECUCAO_LABELS,
-  type RtiNc, type RtiPrioridade, type RtiTipoExecucao,
+  RTI_PRIORIDADE_LABELS,
+  RTI_TIPO_EXECUCAO_LABELS,
+  type RtiNc,
+  type RtiPrioridade,
+  type RtiTipoExecucao,
 } from "@/lib/rti";
 import { useRtiAreas, useRtiNcs, useRtiReports } from "@/lib/rti-queries";
 
@@ -72,8 +87,7 @@ function RtiCustosPage() {
     search.setor === "all" || (areaNome.get(nc.area_id) ?? "—") === search.setor;
   const matchPrioridade = (nc: RtiNc) =>
     search.prioridade === "all" || String(nc.prioridade) === search.prioridade;
-  const matchTipo = (nc: RtiNc) =>
-    search.tipo === "all" || nc.tipo_execucao === search.tipo;
+  const matchTipo = (nc: RtiNc) => search.tipo === "all" || nc.tipo_execucao === search.tipo;
 
   // Cada gráfico reflete os OUTROS filtros (cross-filtering estilo BI), mantendo
   // sua própria dimensão visível por inteiro para permitir trocar a seleção.
@@ -92,7 +106,7 @@ function RtiCustosPage() {
       }
       // prioridade: filtrado por setor + tipo
       if (matchSetor(nc) && matchTipo(nc)) {
-        add(prioMap[(nc.prioridade as RtiPrioridade) ?? 1] ?? (prioMap[1]), nc);
+        add(prioMap[(nc.prioridade as RtiPrioridade) ?? 1] ?? prioMap[1], nc);
       }
       // tipo: filtrado por setor + prioridade
       if (matchSetor(nc) && matchPrioridade(nc)) {
@@ -106,11 +120,15 @@ function RtiCustosPage() {
       .sort((a, b) => b.planejado - a.planejado);
 
     const byPrioridade = ([1, 2, 3, 4] as RtiPrioridade[]).map((p) => ({
-      name: `P${p}`, prioridade: p, ...prioMap[p],
+      name: `P${p}`,
+      prioridade: p,
+      ...prioMap[p],
     }));
 
     const byTipo = (["os", "investimento"] as RtiTipoExecucao[]).map((t) => ({
-      name: RTI_TIPO_EXECUCAO_LABELS[t], tipo: t, ...tipoMap[t],
+      name: RTI_TIPO_EXECUCAO_LABELS[t],
+      tipo: t,
+      ...tipoMap[t],
     }));
 
     return { byArea, byPrioridade, byTipo };
@@ -119,7 +137,9 @@ function RtiCustosPage() {
   // Cards (resumo) refletem TODOS os filtros ativos simultaneamente.
   const resumo = useMemo(() => {
     const agg = zero();
-    let comCusto = 0, semCusto = 0, custoZero = 0;
+    let comCusto = 0,
+      semCusto = 0,
+      custoZero = 0;
     for (const nc of ncs) {
       if (matchSetor(nc) && matchPrioridade(nc) && matchTipo(nc)) {
         add(agg, nc);
@@ -141,9 +161,15 @@ function RtiCustosPage() {
   const filterChips: { dim: "setor" | "prioridade" | "tipo"; label: string }[] = [];
   if (search.setor !== "all") filterChips.push({ dim: "setor", label: `Setor: ${search.setor}` });
   if (search.prioridade !== "all")
-    filterChips.push({ dim: "prioridade", label: RTI_PRIORIDADE_LABELS[Number(search.prioridade) as RtiPrioridade] });
+    filterChips.push({
+      dim: "prioridade",
+      label: RTI_PRIORIDADE_LABELS[Number(search.prioridade) as RtiPrioridade],
+    });
   if (search.tipo !== "all")
-    filterChips.push({ dim: "tipo", label: RTI_TIPO_EXECUCAO_LABELS[search.tipo as RtiTipoExecucao] });
+    filterChips.push({
+      dim: "tipo",
+      label: RTI_TIPO_EXECUCAO_LABELS[search.tipo as RtiTipoExecucao],
+    });
 
   const areaChartHeight = Math.max(220, charts.byArea.length * 34 + 56);
   const isLoading = loadingReports || (activeReport && loadingNcs);
@@ -164,19 +190,27 @@ function RtiCustosPage() {
             Análise de Custos — RTI
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {activeReport ? activeReport.titulo : "Custos do plano de ação das não conformidades."}
-            {" "}Clique nos gráficos para filtrar; os cards reagem ao filtro escolhido.
+            {activeReport ? activeReport.titulo : "Custos do plano de ação das não conformidades."}{" "}
+            Clique nos gráficos para filtrar; os cards reagem ao filtro escolhido.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {reports.length > 1 && (
             <Select
               value={activeReport?.id ?? ""}
-              onValueChange={(v) => navigate({ to: "/rti/custos", search: { report: v }, replace: true })}
+              onValueChange={(v) =>
+                navigate({ to: "/rti/custos", search: { report: v }, replace: true })
+              }
             >
-              <SelectTrigger className="w-52"><SelectValue placeholder="Relatório" /></SelectTrigger>
+              <SelectTrigger className="w-52">
+                <SelectValue placeholder="Relatório" />
+              </SelectTrigger>
               <SelectContent>
-                {reports.map((r) => <SelectItem key={r.id} value={r.id}>{r.titulo}</SelectItem>)}
+                {reports.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.titulo}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           )}
@@ -204,7 +238,9 @@ function RtiCustosPage() {
             </button>
           ))}
           <Button
-            variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground"
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs text-muted-foreground"
             onClick={() => setSearch({ setor: "all", prioridade: "all", tipo: "all" })}
           >
             Limpar tudo
@@ -215,7 +251,9 @@ function RtiCustosPage() {
       {isLoading ? (
         <div className="mt-6 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-20" />
+            ))}
           </div>
           <Skeleton className="h-72" />
         </div>
@@ -229,23 +267,36 @@ function RtiCustosPage() {
         <>
           {/* Cards de resumo (reagem ao filtro) */}
           <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <ResumoCard label="Custo planejado" value={formatBRL(resumo.planejado)} sub={`${resumo.comCusto} NC(s) informada(s)`} />
+            <ResumoCard
+              label="Custo planejado"
+              value={formatBRL(resumo.planejado)}
+              sub={`${resumo.comCusto} NC(s) informada(s)`}
+            />
             <ResumoCard label="Custo realizado" value={formatBRL(resumo.realizado)} />
             <ResumoCard
               label="Execução do orçamento"
-              value={resumo.planejado > 0 ? `${Math.round((resumo.realizado / resumo.planejado) * 100)}%` : "—"}
-              sub={resumo.planejado > 0
-                ? `${formatBRL(Math.max(0, resumo.planejado - resumo.realizado))} restante`
-                : "Sem custo planejado"}
+              value={
+                resumo.planejado > 0
+                  ? `${Math.round((resumo.realizado / resumo.planejado) * 100)}%`
+                  : "—"
+              }
+              sub={
+                resumo.planejado > 0
+                  ? `${formatBRL(Math.max(0, resumo.planejado - resumo.realizado))} restante`
+                  : "Sem custo planejado"
+              }
             />
             <Card>
               <CardContent className="p-4">
-                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">NCs no recorte</div>
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  NCs no recorte
+                </div>
                 <div className="mt-1 text-xl font-bold tabular-nums">{resumo.qtd}</div>
                 <div className="mt-2 space-y-1 text-[11px]">
                   <div className="flex items-center justify-between gap-2">
                     <span className="inline-flex items-center gap-1 text-emerald-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Com custo informado
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Com custo
+                      informado
                     </span>
                     <span className="font-semibold tabular-nums">{resumo.comCusto}</span>
                   </div>
@@ -255,9 +306,13 @@ function RtiCustosPage() {
                     </span>
                     <span className="font-semibold tabular-nums">{resumo.semCusto}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2" title="Custo planejado igual a zero — sem barreira financeira para executar">
+                  <div
+                    className="flex items-center justify-between gap-2"
+                    title="Custo planejado igual a zero — sem barreira financeira para executar"
+                  >
                     <span className="inline-flex items-center gap-1 text-sky-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-sky-500" /> Custo zero (executável)
+                      <span className="h-1.5 w-1.5 rounded-full bg-sky-500" /> Custo zero
+                      (executável)
                     </span>
                     <span className="font-semibold tabular-nums">{resumo.custoZero}</span>
                   </div>
@@ -269,8 +324,9 @@ function RtiCustosPage() {
           {resumo.comCusto === 0 && (
             <Card className="mt-3">
               <CardContent className="p-6 text-center text-sm text-muted-foreground">
-                Nenhuma NC com custo informado neste recorte. Edite cada NC (ou use a ação em massa no Plano) para
-                preencher os valores — deixe vazio para "não informado" ou use 0 para indicar que não há custo de execução.
+                Nenhuma NC com custo informado neste recorte. Edite cada NC (ou use a ação em massa
+                no Plano) para preencher os valores — deixe vazio para "não informado" ou use 0 para
+                indicar que não há custo de execução.
               </CardContent>
             </Card>
           )}
@@ -286,34 +342,50 @@ function RtiCustosPage() {
               </CardHeader>
               <CardContent className="px-2" style={{ height: areaChartHeight }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={charts.byArea} layout="vertical" margin={{ top: 4, right: 20, left: 8, bottom: 0 }}>
+                  <BarChart
+                    data={charts.byArea}
+                    layout="vertical"
+                    margin={{ top: 4, right: 20, left: 8, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                     <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={kfmt} />
                     <YAxis
-                      type="category" dataKey="nome" width={210}
+                      type="category"
+                      dataKey="nome"
+                      width={210}
                       tick={{ fontSize: 11 }}
                       tickFormatter={(v: string) => (v.length > 30 ? v.slice(0, 29) + "…" : v)}
                     />
                     <Tooltip formatter={costTooltipFmt} />
                     <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     <Bar
-                      dataKey="planejado" name="Planejado" fill={PLANEJADO_COLOR} radius={[0, 3, 3, 0]} className="cursor-pointer"
+                      dataKey="planejado"
+                      name="Planejado"
+                      fill={PLANEJADO_COLOR}
+                      radius={[0, 3, 3, 0]}
+                      className="cursor-pointer"
                       onClick={(d: { nome?: string }) => d.nome && toggle("setor", d.nome)}
                     >
                       {charts.byArea.map((d) => (
                         <Cell
-                          key={d.nome} fill={PLANEJADO_COLOR}
+                          key={d.nome}
+                          fill={PLANEJADO_COLOR}
                           fillOpacity={search.setor === "all" || search.setor === d.nome ? 1 : 0.3}
                         />
                       ))}
                     </Bar>
                     <Bar
-                      dataKey="realizado" name="Realizado" fill={REALIZADO_COLOR} radius={[0, 3, 3, 0]} className="cursor-pointer"
+                      dataKey="realizado"
+                      name="Realizado"
+                      fill={REALIZADO_COLOR}
+                      radius={[0, 3, 3, 0]}
+                      className="cursor-pointer"
                       onClick={(d: { nome?: string }) => d.nome && toggle("setor", d.nome)}
                     >
                       {charts.byArea.map((d) => (
                         <Cell
-                          key={d.nome} fill={REALIZADO_COLOR}
+                          key={d.nome}
+                          fill={REALIZADO_COLOR}
                           fillOpacity={search.setor === "all" || search.setor === d.nome ? 1 : 0.3}
                         />
                       ))}
@@ -335,31 +407,58 @@ function RtiCustosPage() {
               </CardHeader>
               <CardContent style={{ height: 260 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={charts.byPrioridade} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+                  <BarChart
+                    data={charts.byPrioridade}
+                    margin={{ top: 4, right: 8, left: -8, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 10 }} tickFormatter={kfmt} />
                     <Tooltip formatter={costTooltipFmt} />
                     <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     <Bar
-                      dataKey="planejado" name="Planejado" fill={PLANEJADO_COLOR} radius={[4, 4, 0, 0]} className="cursor-pointer"
-                      onClick={(d: { prioridade?: RtiPrioridade }) => d.prioridade && toggle("prioridade", String(d.prioridade))}
+                      dataKey="planejado"
+                      name="Planejado"
+                      fill={PLANEJADO_COLOR}
+                      radius={[4, 4, 0, 0]}
+                      className="cursor-pointer"
+                      onClick={(d: { prioridade?: RtiPrioridade }) =>
+                        d.prioridade && toggle("prioridade", String(d.prioridade))
+                      }
                     >
                       {charts.byPrioridade.map((d) => (
                         <Cell
-                          key={d.prioridade} fill={PLANEJADO_COLOR}
-                          fillOpacity={search.prioridade === "all" || search.prioridade === String(d.prioridade) ? 1 : 0.3}
+                          key={d.prioridade}
+                          fill={PLANEJADO_COLOR}
+                          fillOpacity={
+                            search.prioridade === "all" ||
+                            search.prioridade === String(d.prioridade)
+                              ? 1
+                              : 0.3
+                          }
                         />
                       ))}
                     </Bar>
                     <Bar
-                      dataKey="realizado" name="Realizado" fill={REALIZADO_COLOR} radius={[4, 4, 0, 0]} className="cursor-pointer"
-                      onClick={(d: { prioridade?: RtiPrioridade }) => d.prioridade && toggle("prioridade", String(d.prioridade))}
+                      dataKey="realizado"
+                      name="Realizado"
+                      fill={REALIZADO_COLOR}
+                      radius={[4, 4, 0, 0]}
+                      className="cursor-pointer"
+                      onClick={(d: { prioridade?: RtiPrioridade }) =>
+                        d.prioridade && toggle("prioridade", String(d.prioridade))
+                      }
                     >
                       {charts.byPrioridade.map((d) => (
                         <Cell
-                          key={d.prioridade} fill={REALIZADO_COLOR}
-                          fillOpacity={search.prioridade === "all" || search.prioridade === String(d.prioridade) ? 1 : 0.3}
+                          key={d.prioridade}
+                          fill={REALIZADO_COLOR}
+                          fillOpacity={
+                            search.prioridade === "all" ||
+                            search.prioridade === String(d.prioridade)
+                              ? 1
+                              : 0.3
+                          }
                         />
                       ))}
                     </Bar>
@@ -385,23 +484,33 @@ function RtiCustosPage() {
                     <Tooltip formatter={costTooltipFmt} />
                     <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     <Bar
-                      dataKey="planejado" name="Planejado" fill={PLANEJADO_COLOR} radius={[4, 4, 0, 0]} className="cursor-pointer"
+                      dataKey="planejado"
+                      name="Planejado"
+                      fill={PLANEJADO_COLOR}
+                      radius={[4, 4, 0, 0]}
+                      className="cursor-pointer"
                       onClick={(d: { tipo?: RtiTipoExecucao }) => d.tipo && toggle("tipo", d.tipo)}
                     >
                       {charts.byTipo.map((d) => (
                         <Cell
-                          key={d.tipo} fill={PLANEJADO_COLOR}
+                          key={d.tipo}
+                          fill={PLANEJADO_COLOR}
                           fillOpacity={search.tipo === "all" || search.tipo === d.tipo ? 1 : 0.3}
                         />
                       ))}
                     </Bar>
                     <Bar
-                      dataKey="realizado" name="Realizado" fill={REALIZADO_COLOR} radius={[4, 4, 0, 0]} className="cursor-pointer"
+                      dataKey="realizado"
+                      name="Realizado"
+                      fill={REALIZADO_COLOR}
+                      radius={[4, 4, 0, 0]}
+                      className="cursor-pointer"
                       onClick={(d: { tipo?: RtiTipoExecucao }) => d.tipo && toggle("tipo", d.tipo)}
                     >
                       {charts.byTipo.map((d) => (
                         <Cell
-                          key={d.tipo} fill={REALIZADO_COLOR}
+                          key={d.tipo}
+                          fill={REALIZADO_COLOR}
                           fillOpacity={search.tipo === "all" || search.tipo === d.tipo ? 1 : 0.3}
                         />
                       ))}

@@ -2,7 +2,16 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
-  AlertTriangle, Archive, ClipboardList, HardHat, ListChecks, MapPin, Plus, RefreshCw, Trash2, User,
+  AlertTriangle,
+  Archive,
+  ClipboardList,
+  HardHat,
+  ListChecks,
+  MapPin,
+  Plus,
+  RefreshCw,
+  Trash2,
+  User,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageShell } from "@/components/page-shell";
@@ -13,16 +22,25 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
-  FIELD_INSPECTION_STATUS_BADGE, FIELD_INSPECTION_STATUS_LABELS,
+  FIELD_INSPECTION_STATUS_BADGE,
+  FIELD_INSPECTION_STATUS_LABELS,
   type FieldInspection,
 } from "@/lib/campo";
 import {
-  useDeleteFieldInspection, useFieldInspections, useSetArquivadaCampo, useUpsertFieldInspection,
+  useDeleteFieldInspection,
+  useFieldInspections,
+  useSetArquivadaCampo,
+  useUpsertFieldInspection,
 } from "@/lib/campo-queries";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -31,7 +49,11 @@ export const Route = createFileRoute("/campo/")({
   head: () => ({
     meta: [
       { title: "Coleta em Campo — RTI — Gestão NR-10" },
-      { name: "description", content: "Inspeção RTI em campo: o consultor coleta fotos e modos de falha e o sistema compõe o RTI." },
+      {
+        name: "description",
+        content:
+          "Inspeção RTI em campo: o consultor coleta fotos e modos de falha e o sistema compõe o RTI.",
+      },
     ],
   }),
 });
@@ -50,7 +72,8 @@ function CampoIndexPage() {
             Coleta em Campo — RTI
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            O consultor inspeciona em campo (fotos + modos de falha) e o sistema compõe o Plano de Ação RTI.
+            O consultor inspeciona em campo (fotos + modos de falha) e o sistema compõe o Plano de
+            Ação RTI.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -60,7 +83,10 @@ function CampoIndexPage() {
             </Link>
           </Button>
           {isStaff && (
-            <Button onClick={() => setNovaOpen(true)} className="bg-brand-gradient text-white shadow-brand">
+            <Button
+              onClick={() => setNovaOpen(true)}
+              className="bg-brand-gradient text-white shadow-brand"
+            >
               <Plus className="h-4 w-4" /> Nova inspeção
             </Button>
           )}
@@ -69,7 +95,9 @@ function CampoIndexPage() {
 
       {isLoading ? (
         <div className="mt-5 space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
         </div>
       ) : inspections.length === 0 ? (
         <Card className="mt-6">
@@ -80,7 +108,10 @@ function CampoIndexPage() {
               {isStaff ? " Crie uma inspeção para começar a registrar os pontos." : ""}
             </p>
             {isStaff && (
-              <Button onClick={() => setNovaOpen(true)} className="bg-brand-gradient text-white shadow-brand">
+              <Button
+                onClick={() => setNovaOpen(true)}
+                className="bg-brand-gradient text-white shadow-brand"
+              >
                 <Plus className="h-4 w-4" /> Nova inspeção
               </Button>
             )}
@@ -95,19 +126,30 @@ function CampoIndexPage() {
       )}
 
       {isStaff && novaOpen && (
-        <NovaInspecaoDialog onOpenChange={(o) => { if (!o) setNovaOpen(false); }} />
+        <NovaInspecaoDialog
+          onOpenChange={(o) => {
+            if (!o) setNovaOpen(false);
+          }}
+        />
       )}
     </PageShell>
   );
 }
 
-function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection; canDelete: boolean }) {
+function InspectionCard({
+  inspection,
+  canDelete,
+}: {
+  inspection: FieldInspection;
+  canDelete: boolean;
+}) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reexportarOpen, setReexportarOpen] = useState(false);
   const arquivar = useSetArquivadaCampo();
 
   async function handleArquivar(e: React.MouseEvent) {
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
     try {
       await arquivar.mutateAsync({ id: inspection.id, arquivada_campo: true });
       toast.success("Inspeção arquivada do campo.");
@@ -118,14 +160,18 @@ function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection
 
   return (
     <>
-      <Card className={`transition-colors hover:border-primary/40 ${inspection.arquivada_campo ? "opacity-60" : ""}`}>
+      <Card
+        className={`transition-colors hover:border-primary/40 ${inspection.arquivada_campo ? "opacity-60" : ""}`}
+      >
         <CardContent className="p-0">
           <Link to="/campo/inspecao/$id" params={{ id: inspection.id }} className="block p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold leading-tight">{inspection.titulo}</span>
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${FIELD_INSPECTION_STATUS_BADGE[inspection.status]}`}>
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${FIELD_INSPECTION_STATUS_BADGE[inspection.status]}`}
+                  >
                     {FIELD_INSPECTION_STATUS_LABELS[inspection.status]}
                   </span>
                   {inspection.arquivada_campo && (
@@ -135,9 +181,24 @@ function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection
                   )}
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
-                  {inspection.cliente && <span className="inline-flex items-center gap-1"><HardHat className="h-3 w-3" />{inspection.cliente}</span>}
-                  {inspection.local && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{inspection.local}</span>}
-                  {inspection.engenheiro && <span className="inline-flex items-center gap-1"><User className="h-3 w-3" />{inspection.engenheiro}</span>}
+                  {inspection.cliente && (
+                    <span className="inline-flex items-center gap-1">
+                      <HardHat className="h-3 w-3" />
+                      {inspection.cliente}
+                    </span>
+                  )}
+                  {inspection.local && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {inspection.local}
+                    </span>
+                  )}
+                  {inspection.engenheiro && (
+                    <span className="inline-flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {inspection.engenheiro}
+                    </span>
+                  )}
                   <span>{formatDatePtBR(inspection.data_inspecao)}</span>
                 </div>
               </div>
@@ -145,15 +206,23 @@ function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection
                 <div className="flex items-center gap-1 shrink-0">
                   {inspection.arquivada_campo ? (
                     <Button
-                      size="sm" variant="ghost" className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 gap-1"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReexportarOpen(true); }}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 gap-1"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setReexportarOpen(true);
+                      }}
                       title="Reexportar ao campo"
                     >
                       <RefreshCw className="h-3 w-3" /> Reexportar
                     </Button>
                   ) : (
                     <Button
-                      size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-600 shrink-0"
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-600 shrink-0"
                       onClick={handleArquivar}
                       disabled={arquivar.isPending}
                       title="Arquivar no campo"
@@ -162,8 +231,14 @@ function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection
                     </Button>
                   )}
                   <Button
-                    size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteOpen(true); }}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDeleteOpen(true);
+                    }}
                     title="Excluir coleta"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -175,10 +250,20 @@ function InspectionCard({ inspection, canDelete }: { inspection: FieldInspection
         </CardContent>
       </Card>
       {deleteOpen && (
-        <ExcluirInspecaoDialog inspection={inspection} onOpenChange={(o) => { if (!o) setDeleteOpen(false); }} />
+        <ExcluirInspecaoDialog
+          inspection={inspection}
+          onOpenChange={(o) => {
+            if (!o) setDeleteOpen(false);
+          }}
+        />
       )}
       {reexportarOpen && (
-        <ReexportarDialog inspection={inspection} onOpenChange={(o) => { if (!o) setReexportarOpen(false); }} />
+        <ReexportarDialog
+          inspection={inspection}
+          onOpenChange={(o) => {
+            if (!o) setReexportarOpen(false);
+          }}
+        />
       )}
     </>
   );
@@ -197,7 +282,11 @@ function ReexportarDialog({
   async function handleReexportar() {
     setBusy(true);
     try {
-      await arquivar.mutateAsync({ id: inspection.id, arquivada_campo: false, status: "em_andamento" });
+      await arquivar.mutateAsync({
+        id: inspection.id,
+        arquivada_campo: false,
+        status: "em_andamento",
+      });
       toast.success("Inspeção reexportada ao campo. Sincronize o PWA para vê-la no celular.");
       onOpenChange(false);
     } catch (err) {
@@ -226,7 +315,9 @@ function ReexportarDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancelar
+          </Button>
           <Button onClick={handleReexportar} disabled={busy}>
             {busy ? "Reexportando..." : "Reexportar ao campo"}
           </Button>
@@ -295,7 +386,10 @@ function ExcluirInspecaoDialog({
 
               // Delete only the NCs contributed by this inspection.
               for (let i = 0; i < ncIds.length; i += 200) {
-                await supabase.from("rti_ncs").delete().in("id", ncIds.slice(i, i + 200));
+                await supabase
+                  .from("rti_ncs")
+                  .delete()
+                  .in("id", ncIds.slice(i, i + 200));
               }
             }
           }
@@ -324,7 +418,8 @@ function ExcluirInspecaoDialog({
   const scopeConfirmLabel: Record<ExcluirScope, string> = {
     campo: "a inspeção de campo (pontos, achados e fotos)",
     rti: "as não conformidades que esta inspeção inseriu no Plano de Ação RTI — o relatório e demais NCs são mantidos",
-    ambos: "a inspeção de campo e as NCs que ela inseriu no Plano de Ação RTI — o relatório e demais NCs são mantidos",
+    ambos:
+      "a inspeção de campo e as NCs que ela inseriu no Plano de Ação RTI — o relatório e demais NCs são mantidos",
   };
 
   return (
@@ -334,38 +429,55 @@ function ExcluirInspecaoDialog({
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Trash2 className="h-4 w-4 text-destructive shrink-0" />
-                O que deseja remover?
+                <Trash2 className="h-4 w-4 text-destructive shrink-0" />O que deseja remover?
               </DialogTitle>
               <DialogDescription>
                 Inspeção: <strong>{inspection.titulo}</strong>
               </DialogDescription>
             </DialogHeader>
-            <RadioGroup value={scope} onValueChange={(v) => setScope(v as ExcluirScope)} className="space-y-2 pt-1">
+            <RadioGroup
+              value={scope}
+              onValueChange={(v) => setScope(v as ExcluirScope)}
+              className="space-y-2 pt-1"
+            >
               <Label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer hover:bg-muted/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5">
                 <RadioGroupItem value="campo" className="mt-0.5 shrink-0" />
                 <div>
                   <div className="font-medium text-sm">Somente a Coleta em Campo</div>
-                  <div className="text-xs text-muted-foreground">Remove pontos, achados e fotos. O Plano de Ação RTI e todas as suas NCs são mantidos intactos.</div>
+                  <div className="text-xs text-muted-foreground">
+                    Remove pontos, achados e fotos. O Plano de Ação RTI e todas as suas NCs são
+                    mantidos intactos.
+                  </div>
                 </div>
               </Label>
               <Label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer hover:bg-muted/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5">
                 <RadioGroupItem value="rti" className="mt-0.5 shrink-0" />
                 <div>
-                  <div className="font-medium text-sm">Somente as contribuições no Plano de Ação RTI</div>
-                  <div className="text-xs text-muted-foreground">Remove apenas as NCs que esta inspeção inseriu. O relatório RTI e suas demais NCs (importadas ou manuais) são preservados. A coleta volta ao status em andamento.</div>
+                  <div className="font-medium text-sm">
+                    Somente as contribuições no Plano de Ação RTI
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Remove apenas as NCs que esta inspeção inseriu. O relatório RTI e suas demais
+                    NCs (importadas ou manuais) são preservados. A coleta volta ao status em
+                    andamento.
+                  </div>
                 </div>
               </Label>
               <Label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer hover:bg-muted/50 has-[[data-state=checked]]:border-destructive has-[[data-state=checked]]:bg-destructive/5">
                 <RadioGroupItem value="ambos" className="mt-0.5 shrink-0" />
                 <div>
                   <div className="font-medium text-sm">Coleta em Campo e contribuições no RTI</div>
-                  <div className="text-xs text-muted-foreground">Remove a coleta e as NCs que ela inseriu no RTI. NCs importadas ou adicionadas manualmente são preservadas.</div>
+                  <div className="text-xs text-muted-foreground">
+                    Remove a coleta e as NCs que ela inseriu no RTI. NCs importadas ou adicionadas
+                    manualmente são preservadas.
+                  </div>
                 </div>
               </Label>
             </RadioGroup>
             <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
               <Button onClick={() => setStep("confirm")}>Continuar</Button>
             </DialogFooter>
           </>
@@ -380,8 +492,8 @@ function ExcluirInspecaoDialog({
                 <div className="space-y-2 text-sm">
                   <p>
                     Você está prestes a excluir permanentemente{" "}
-                    <strong>{scopeConfirmLabel[hasRti ? scope : "campo"]}</strong>{" "}
-                    referente a <strong>{inspection.titulo}</strong>.
+                    <strong>{scopeConfirmLabel[hasRti ? scope : "campo"]}</strong> referente a{" "}
+                    <strong>{inspection.titulo}</strong>.
                   </p>
                   <p className="font-medium text-destructive">
                     Esta ação não pode ser desfeita e os dados não poderão ser recuperados.
@@ -390,7 +502,11 @@ function ExcluirInspecaoDialog({
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => hasRti ? setStep("scope") : onOpenChange(false)} disabled={busy}>
+              <Button
+                variant="outline"
+                onClick={() => (hasRti ? setStep("scope") : onOpenChange(false))}
+                disabled={busy}
+              >
                 {hasRti ? "Voltar" : "Cancelar"}
               </Button>
               <Button variant="destructive" onClick={handleDelete} disabled={busy}>
@@ -410,8 +526,7 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
   const upsert = useUpsertFieldInspection();
 
   const actorName =
-    (user?.user_metadata?.display_name as string | undefined) ||
-    user?.email?.split("@")[0] || null;
+    (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || null;
 
   const [titulo, setTitulo] = useState("");
   const [cliente, setCliente] = useState("");
@@ -456,31 +571,69 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="fi-titulo">Título</Label>
-            <Input id="fi-titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={150} placeholder="Ex.: RTI Usina Água Emendada — Safra 2026" required />
+            <Input
+              id="fi-titulo"
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              maxLength={150}
+              placeholder="Ex.: RTI Usina Água Emendada — Safra 2026"
+              required
+            />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="fi-cliente">Cliente / unidade</Label>
-              <Input id="fi-cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} maxLength={150} />
+              <Input
+                id="fi-cliente"
+                value={cliente}
+                onChange={(e) => setCliente(e.target.value)}
+                maxLength={150}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="fi-local">Local</Label>
-              <Input id="fi-local" value={local} onChange={(e) => setLocal(e.target.value)} maxLength={150} />
+              <Input
+                id="fi-local"
+                value={local}
+                onChange={(e) => setLocal(e.target.value)}
+                maxLength={150}
+              />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="fi-eng">Engenheiro responsável</Label>
-              <Input id="fi-eng" value={engenheiro} onChange={(e) => setEngenheiro(e.target.value)} maxLength={150} />
+              <Input
+                id="fi-eng"
+                value={engenheiro}
+                onChange={(e) => setEngenheiro(e.target.value)}
+                maxLength={150}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="fi-data">Data</Label>
-              <Input id="fi-data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+              <Input
+                id="fi-data"
+                type="date"
+                value={data}
+                onChange={(e) => setData(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancelar</Button>
-            <Button type="submit" disabled={busy} className="bg-brand-gradient text-white shadow-brand">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={busy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={busy}
+              className="bg-brand-gradient text-white shadow-brand"
+            >
               {busy ? "Criando..." : "Criar e adicionar pontos"}
             </Button>
           </DialogFooter>

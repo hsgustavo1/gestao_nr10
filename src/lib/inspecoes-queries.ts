@@ -72,15 +72,21 @@ export function useOpenActions(type?: InspectionType) {
   return useQuery({
     queryKey: ["inspection_actions_open", type ?? "all"],
     queryFn: async () => {
-      let q = supabase
+      const q = supabase
         .from("inspection_actions")
         .select("*, inspections(inspection_type, equipment, sector)")
         .neq("status", "concluida");
       const { data, error } = await q.order("due_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
-      const rows = data as Array<InspectionAction & {
-        inspections: { inspection_type: InspectionType; equipment: string; sector: string | null } | null;
-      }>;
+      const rows = data as Array<
+        InspectionAction & {
+          inspections: {
+            inspection_type: InspectionType;
+            equipment: string;
+            sector: string | null;
+          } | null;
+        }
+      >;
       return type ? rows.filter((r) => r.inspections?.inspection_type === type) : rows;
     },
   });

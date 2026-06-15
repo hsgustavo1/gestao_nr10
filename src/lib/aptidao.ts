@@ -1,4 +1,9 @@
-import { trainingExpiryStatus, type Employee, type NR10Training, type WorkAuthorization } from "./qualificacoes";
+import {
+  trainingExpiryStatus,
+  type Employee,
+  type NR10Training,
+  type WorkAuthorization,
+} from "./qualificacoes";
 import { asoStatus, type ASO } from "./asos";
 
 // ── Motor de aptidão (NR-10 10.8) ────────────────────────────────────────────
@@ -19,7 +24,7 @@ export const BLOQUEANTE_CODES = [
   "colaborador_inativo",
 ] as const;
 
-export type BloqueanteCode = typeof BLOQUEANTE_CODES[number];
+export type BloqueanteCode = (typeof BLOQUEANTE_CODES)[number];
 
 export const BLOQUEANTE_LABELS: Record<BloqueanteCode, string> = {
   sem_autorizacao: "Sem autorização vigente",
@@ -45,7 +50,8 @@ export type Aptidao = {
 };
 
 export type AptidaoInput = {
-  employee: Pick<Employee, "status"> & Partial<Pick<Employee, "reciclagem_requerida" | "reciclagem_motivo">>;
+  employee: Pick<Employee, "status"> &
+    Partial<Pick<Employee, "reciclagem_requerida" | "reciclagem_motivo">>;
   /** Treinamentos NR-10 do colaborador (qualquer tipo/categoria). */
   trainings: Pick<NR10Training, "training_type" | "category" | "training_date">[];
   /** Autorização vigente (is_current = true) ou null. */
@@ -56,9 +62,7 @@ export type AptidaoInput = {
 };
 
 /** Data do treinamento NR-10 Básico mais recente (formação ou reciclagem). */
-export function latestBasicoDate(
-  trainings: AptidaoInput["trainings"],
-): string | null {
+export function latestBasicoDate(trainings: AptidaoInput["trainings"]): string | null {
   let latest: string | null = null;
   for (const t of trainings) {
     if (t.training_type !== "nr10_basico" || !t.training_date) continue;

@@ -1,12 +1,15 @@
 import { useMemo } from "react";
-import {
-  useEmployees, useNR10Trainings, useWorkAuthorizations,
-} from "./qualificacoes-queries";
+import { useEmployees, useNR10Trainings, useWorkAuthorizations } from "./qualificacoes-queries";
 import { useNR10Documents } from "./prontuario-queries";
 import { useInspections, useOpenActions } from "./inspecoes-queries";
 import { useEPIs, useEPITests } from "./epis-queries";
 import { useASOs } from "./asos-queries";
-import { trainingExpiryStatus, TRAINING_LABELS, TRAINING_TYPES, type TrainingType } from "./qualificacoes";
+import {
+  trainingExpiryStatus,
+  TRAINING_LABELS,
+  TRAINING_TYPES,
+  type TrainingType,
+} from "./qualificacoes";
 import { prontuarioCompleteness, docExpiryStatus } from "./prontuario";
 import { INSPECTION_TYPES, INSPECTION_TYPE_SHORT, type InspectionType } from "./inspecoes";
 import { epiTestStatus, lastTestByEpi } from "./epis";
@@ -24,11 +27,24 @@ export function pct(part: number, total: number): number {
 export type ComplianceReport = {
   overall: number;
   employees: number;
-  trainingRows: { type: TrainingType; label: string; valid: number; universe: number; percent: number }[];
+  trainingRows: {
+    type: TrainingType;
+    label: string;
+    valid: number;
+    universe: number;
+    percent: number;
+  }[];
   validAuth: number;
   authPercent: number;
   prontuario: ReturnType<typeof prontuarioCompleteness>;
-  inspectionRows: { type: InspectionType; label: string; total: number; valid: number; naoConformes: number; percent: number }[];
+  inspectionRows: {
+    type: InspectionType;
+    label: string;
+    total: number;
+    valid: number;
+    naoConformes: number;
+    percent: number;
+  }[];
   inspPercent: number | null;
   openActions: number;
   epis: number;
@@ -60,7 +76,8 @@ export function useComplianceReport() {
     const trainingRows = TRAINING_TYPES.map((type) => {
       const latestByEmp = new Map<string, string>();
       for (const t of trainings) {
-        if (t.training_type !== type || !t.training_date || !employeeIds.has(t.employee_id)) continue;
+        if (t.training_type !== type || !t.training_date || !employeeIds.has(t.employee_id))
+          continue;
         const cur = latestByEmp.get(t.employee_id);
         if (!cur || t.training_date > cur) latestByEmp.set(t.employee_id, t.training_date);
       }
@@ -96,9 +113,10 @@ export function useComplianceReport() {
         percent: pct(valid, of.length),
       };
     }).filter((r) => r.total > 0);
-    const inspPercent = inspectionRows.length > 0
-      ? Math.round(inspectionRows.reduce((s, r) => s + r.percent, 0) / inspectionRows.length)
-      : null;
+    const inspPercent =
+      inspectionRows.length > 0
+        ? Math.round(inspectionRows.reduce((s, r) => s + r.percent, 0) / inspectionRows.length)
+        : null;
 
     // EPIs: % em dia (ok/vencendo) entre ativos
     const lastTests = lastTestByEpi(epiTests);
@@ -129,7 +147,8 @@ export function useComplianceReport() {
     parts.push(prontuario.percent);
     if (inspPercent !== null) parts.push(inspPercent);
     if (epiPercent !== null) parts.push(epiPercent);
-    const overall = parts.length > 0 ? Math.round(parts.reduce((s, p) => s + p, 0) / parts.length) : 0;
+    const overall =
+      parts.length > 0 ? Math.round(parts.reduce((s, p) => s + p, 0) / parts.length) : 0;
 
     return {
       overall,
@@ -147,7 +166,18 @@ export function useComplianceReport() {
       asoOk,
       asoPercent,
     };
-  }, [isLoading, employees, trainings, authorizations, documents, inspections, openActions, epis, epiTests, asos]);
+  }, [
+    isLoading,
+    employees,
+    trainings,
+    authorizations,
+    documents,
+    inspections,
+    openActions,
+    epis,
+    epiTests,
+    asos,
+  ]);
 
   return { report, isLoading };
 }

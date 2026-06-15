@@ -6,7 +6,14 @@ import { Upload, FileSpreadsheet, ShieldAlert, CheckCircle2, AlertTriangle, X } 
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PADLOCK_COLORS, colorLabel, logEvent, type PadlockColor } from "@/lib/padlocks";
@@ -154,7 +161,11 @@ function AdminCargaPage() {
   const [parsed, setParsed] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState<string>("");
   const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{ inserted: number; skipped: number; errors: string[] } | null>(null);
+  const [result, setResult] = useState<{
+    inserted: number;
+    skipped: number;
+    errors: string[];
+  } | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const summary = useMemo(() => {
@@ -165,7 +176,11 @@ function AdminCargaPage() {
   }, [parsed]);
 
   if (loading) {
-    return <PageShell><div className="text-sm text-muted-foreground">Carregando...</div></PageShell>;
+    return (
+      <PageShell>
+        <div className="text-sm text-muted-foreground">Carregando...</div>
+      </PageShell>
+    );
   }
   if (!isAdmin) {
     return (
@@ -173,8 +188,12 @@ function AdminCargaPage() {
         <div className="text-center py-16">
           <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
           <h1 className="mt-3 text-xl font-bold">Acesso restrito</h1>
-          <p className="text-sm text-muted-foreground mt-1">Apenas Admins podem importar histórico de cadeados.</p>
-          <Button asChild variant="outline" className="mt-4"><Link to="/dashboard">Voltar</Link></Button>
+          <p className="text-sm text-muted-foreground mt-1">
+            Apenas Admins podem importar histórico de cadeados.
+          </p>
+          <Button asChild variant="outline" className="mt-4">
+            <Link to="/dashboard">Voltar</Link>
+          </Button>
         </div>
       </PageShell>
     );
@@ -185,7 +204,10 @@ function AdminCargaPage() {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array", cellDates: true });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "", raw: false });
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+        defval: "",
+        raw: false,
+      });
       const out = parseSheet(rows);
       setParsed(out);
       setFileName(file.name);
@@ -280,7 +302,8 @@ function AdminCargaPage() {
         <div>
           <h1 className="text-2xl font-bold">Carga — Histórico de cadeados</h1>
           <p className="text-sm text-muted-foreground">
-            Importe um arquivo Excel (.xlsx) com as mesmas colunas do exportado: Nº, Cor, Status, Dono, Matrícula, Função, Setor / Empresa, Telefone, Motivo cancelamento e Data registro.
+            Importe um arquivo Excel (.xlsx) com as mesmas colunas do exportado: Nº, Cor, Status,
+            Dono, Matrícula, Função, Setor / Empresa, Telefone, Motivo cancelamento e Data registro.
           </p>
         </div>
         <div className="flex gap-2">
@@ -337,9 +360,14 @@ function AdminCargaPage() {
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Linhas com avisos são importadas se tiverem <strong>Nº</strong> e <strong>Cor</strong> válidos. Os demais campos
-            entram como estão — o Admin pode revisar e editar manualmente em <Link to="/cadeados" className="underline">Base de dados</Link>.
-            A importação faz <em>upsert</em> por código (ex.: <code>azul-001</code>): se já existir, os dados são atualizados.
+            Linhas com avisos são importadas se tiverem <strong>Nº</strong> e <strong>Cor</strong>{" "}
+            válidos. Os demais campos entram como estão — o Admin pode revisar e editar manualmente
+            em{" "}
+            <Link to="/cadeados" className="underline">
+              Base de dados
+            </Link>
+            . A importação faz <em>upsert</em> por código (ex.: <code>azul-001</code>): se já
+            existir, os dados são atualizados.
           </p>
         </CardContent>
       </Card>
@@ -352,11 +380,20 @@ function AdminCargaPage() {
               Resultado da importação
             </div>
             <ul className="mt-1 list-disc pl-5 text-xs text-muted-foreground">
-              <li>Inseridos / atualizados: <strong>{result.inserted}</strong></li>
-              <li>Ignorados (sem Nº ou Cor): <strong>{result.skipped}</strong></li>
+              <li>
+                Inseridos / atualizados: <strong>{result.inserted}</strong>
+              </li>
+              <li>
+                Ignorados (sem Nº ou Cor): <strong>{result.skipped}</strong>
+              </li>
               {result.errors.length > 0 && (
                 <li className="text-destructive">
-                  Erros: {result.errors.map((e, i) => <span key={i} className="block">• {e}</span>)}
+                  Erros:{" "}
+                  {result.errors.map((e, i) => (
+                    <span key={i} className="block">
+                      • {e}
+                    </span>
+                  ))}
                 </li>
               )}
             </ul>
@@ -384,13 +421,34 @@ function AdminCargaPage() {
                 {parsed.map((p) => {
                   const importable = p.number != null && p.color != null;
                   return (
-                    <TableRow key={p.rowIndex} className={!importable ? "bg-destructive/5" : p.warnings.length > 0 ? "bg-amber-500/5" : ""}>
-                      <TableCell className="text-xs text-muted-foreground tabular-nums">{p.rowIndex}</TableCell>
+                    <TableRow
+                      key={p.rowIndex}
+                      className={
+                        !importable
+                          ? "bg-destructive/5"
+                          : p.warnings.length > 0
+                            ? "bg-amber-500/5"
+                            : ""
+                      }
+                    >
+                      <TableCell className="text-xs text-muted-foreground tabular-nums">
+                        {p.rowIndex}
+                      </TableCell>
                       <TableCell className="font-mono">{p.number ?? "—"}</TableCell>
-                      <TableCell className="text-xs">{p.color ? colorLabel[p.color] : <span className="text-destructive">—</span>}</TableCell>
-                      <TableCell className="text-xs">{p.cancelled ? "Cancelado" : "Ativo"}</TableCell>
+                      <TableCell className="text-xs">
+                        {p.color ? (
+                          colorLabel[p.color]
+                        ) : (
+                          <span className="text-destructive">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {p.cancelled ? "Cancelado" : "Ativo"}
+                      </TableCell>
                       <TableCell className="text-xs">{p.owner_name ?? "—"}</TableCell>
-                      <TableCell className="text-xs font-mono">{p.owner_registration ?? "—"}</TableCell>
+                      <TableCell className="text-xs font-mono">
+                        {p.owner_registration ?? "—"}
+                      </TableCell>
                       <TableCell className="text-xs">{p.owner_sector ?? "—"}</TableCell>
                       <TableCell className="text-xs">
                         {p.warnings.length === 0 ? (

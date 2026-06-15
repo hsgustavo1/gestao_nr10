@@ -9,10 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +34,11 @@ export const Route = createFileRoute("/violacoes")({
   head: () => ({
     meta: [
       { title: "Registros de violação de dispositivos — RAC" },
-      { name: "description", content: "Histórico de violações de cadeado em campo, com termo anexo e responsável pelo registro." },
+      {
+        name: "description",
+        content:
+          "Histórico de violações de cadeado em campo, com termo anexo e responsável pelo registro.",
+      },
     ],
   }),
 });
@@ -46,7 +59,9 @@ function ViolacoesPage() {
         try {
           const arr = JSON.parse(data.valor) as string[];
           return arr.sort((a, b) => a.localeCompare(b, "pt-BR"));
-        } catch { return []; }
+        } catch {
+          return [];
+        }
       }
       return [];
     },
@@ -62,11 +77,12 @@ function ViolacoesPage() {
   const filtered = useMemo(() => {
     const t = search.trim().toLowerCase();
     if (!t) return items;
-    return items.filter((v) =>
-      v.reason.toLowerCase().includes(t) ||
-      v.requester.toLowerCase().includes(t) ||
-      v.sector.toLowerCase().includes(t) ||
-      (v.created_by_name ?? "").toLowerCase().includes(t),
+    return items.filter(
+      (v) =>
+        v.reason.toLowerCase().includes(t) ||
+        v.requester.toLowerCase().includes(t) ||
+        v.sector.toLowerCase().includes(t) ||
+        (v.created_by_name ?? "").toLowerCase().includes(t),
     );
   }, [items, search]);
 
@@ -84,7 +100,9 @@ function ViolacoesPage() {
             Registros de violação de dispositivos
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {isLoading ? "Carregando..." : `${items.length} ${items.length === 1 ? "registro" : "registros"} · Termo de violação anexo em PDF`}
+            {isLoading
+              ? "Carregando..."
+              : `${items.length} ${items.length === 1 ? "registro" : "registros"} · Termo de violação anexo em PDF`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -98,7 +116,10 @@ function ViolacoesPage() {
             />
           </div>
           {isStaff && (
-            <Button onClick={() => setOpen(true)} className="bg-brand-gradient text-white shadow-brand w-full sm:w-auto">
+            <Button
+              onClick={() => setOpen(true)}
+              className="bg-brand-gradient text-white shadow-brand w-full sm:w-auto"
+            >
               <Plus className="h-4 w-4" /> Novo registro
             </Button>
           )}
@@ -106,61 +127,67 @@ function ViolacoesPage() {
       </div>
 
       <div className="mt-5 grid gap-3">
-        {isLoading && (
+        {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}><CardContent className="p-5 space-y-3">
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-16 rounded-md" />
-              <Skeleton className="h-3 w-56" />
-            </CardContent></Card>
-          ))
-        )}
+            <Card key={i}>
+              <CardContent className="p-5 space-y-3">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-16 rounded-md" />
+                <Skeleton className="h-3 w-56" />
+              </CardContent>
+            </Card>
+          ))}
         {!isLoading && filtered.length === 0 && (
-          <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">
-            Nenhum registro de violação encontrado.
-          </CardContent></Card>
-        )}
-        {!isLoading && filtered.map((v) => (
-          <Card key={v.id}>
-            <CardContent className="p-4 sm:p-5 space-y-3">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive whitespace-nowrap">
-                      <ShieldAlert className="h-3 w-3" /> Violação de dispositivo
-                    </span>
-                    <span className="text-sm font-semibold">
-                      {formatDate(v.violation_date)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">· Setor: <strong className="text-foreground">{v.sector}</strong></span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Solicitante: <strong className="text-foreground">{v.requester}</strong>
-                  </div>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Button asChild size="sm" variant="outline">
-                    <a href={publicUrl(v.document_path)} target="_blank" rel="noreferrer">
-                      <Download className="h-4 w-4" /> Termo (PDF)
-                    </a>
-                  </Button>
-                  {isAdmin && (
-                    <Button size="sm" variant="outline" onClick={() => setEditing(v)}>
-                      <Pencil className="h-4 w-4" /> Editar
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <div className="rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap">
-                {v.reason}
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                Registrado por <strong className="text-foreground">{v.created_by_name || "—"}</strong> em {formatDateTime(v.created_at)}
-              </div>
+          <Card>
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">
+              Nenhum registro de violação encontrado.
             </CardContent>
           </Card>
-        ))}
+        )}
+        {!isLoading &&
+          filtered.map((v) => (
+            <Card key={v.id}>
+              <CardContent className="p-4 sm:p-5 space-y-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive whitespace-nowrap">
+                        <ShieldAlert className="h-3 w-3" /> Violação de dispositivo
+                      </span>
+                      <span className="text-sm font-semibold">{formatDate(v.violation_date)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        · Setor: <strong className="text-foreground">{v.sector}</strong>
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Solicitante: <strong className="text-foreground">{v.requester}</strong>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button asChild size="sm" variant="outline">
+                      <a href={publicUrl(v.document_path)} target="_blank" rel="noreferrer">
+                        <Download className="h-4 w-4" /> Termo (PDF)
+                      </a>
+                    </Button>
+                    {isAdmin && (
+                      <Button size="sm" variant="outline" onClick={() => setEditing(v)}>
+                        <Pencil className="h-4 w-4" /> Editar
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap">
+                  {v.reason}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Registrado por{" "}
+                  <strong className="text-foreground">{v.created_by_name || "—"}</strong> em{" "}
+                  {formatDateTime(v.created_at)}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
       </div>
 
       {isStaff && (
@@ -174,13 +201,18 @@ function ViolacoesPage() {
             user?.email?.split("@")[0] ||
             "Usuário"
           }
-          onSaved={() => { setOpen(false); invalidate(); }}
+          onSaved={() => {
+            setOpen(false);
+            invalidate();
+          }}
         />
       )}
       {isAdmin && editing && (
         <ViolationDialog
           open={!!editing}
-          onOpenChange={(o) => { if (!o) setEditing(null); }}
+          onOpenChange={(o) => {
+            if (!o) setEditing(null);
+          }}
           sectors={sectors}
           actorId={user?.id ?? null}
           actorName={
@@ -189,7 +221,10 @@ function ViolacoesPage() {
             "Usuário"
           }
           existing={editing}
-          onSaved={() => { setEditing(null); invalidate(); }}
+          onSaved={() => {
+            setEditing(null);
+            invalidate();
+          }}
         />
       )}
     </PageShell>
@@ -205,7 +240,13 @@ function formatDate(d: string): string {
 const REASON_OPTIONS = ["EXTRAVIO DA CHAVE", "INTEGRANTE AUSENTE"] as const;
 
 function ViolationDialog({
-  open, onOpenChange, sectors, actorId, actorName, existing, onSaved,
+  open,
+  onOpenChange,
+  sectors,
+  actorId,
+  actorName,
+  existing,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -216,7 +257,9 @@ function ViolationDialog({
   onSaved: () => void;
 }) {
   const isEdit = !!existing;
-  const [date, setDate] = useState<string>(existing?.violation_date ?? new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState<string>(
+    existing?.violation_date ?? new Date().toISOString().slice(0, 10),
+  );
   const [reason, setReason] = useState<string>(existing?.reason ?? "");
   const [requester, setRequester] = useState<string>((existing?.requester ?? "").toUpperCase());
   const [sector, setSector] = useState<string>(existing?.sector ?? "");
@@ -241,7 +284,8 @@ function ViolationDialog({
     if (!requester.trim()) return toast.error("Informe o solicitante.");
     if (!sector) return toast.error("Selecione o setor.");
     if (!isEdit && !file) return toast.error("Anexe o Termo de violação em PDF.");
-    if (file && file.type !== "application/pdf") return toast.error("O anexo deve ser um arquivo PDF.");
+    if (file && file.type !== "application/pdf")
+      return toast.error("O anexo deve ser um arquivo PDF.");
     if (file && file.size > 10 * 1024 * 1024) return toast.error("PDF excede 10 MB.");
 
     setBusy(true);
@@ -250,7 +294,7 @@ function ViolationDialog({
     let oldPathToRemove: string | null = null;
 
     if (file) {
-      const id = isEdit ? (existing!.id) : crypto.randomUUID();
+      const id = isEdit ? existing!.id : crypto.randomUUID();
       const path = `${id}-${Date.now()}.pdf`;
       const { error: upErr } = await supabase.storage
         .from("violation-docs")
@@ -279,7 +323,8 @@ function ViolationDialog({
         .eq("id", existing!.id);
       if (error) {
         setBusy(false);
-        if (file && documentPath) await supabase.storage.from("violation-docs").remove([documentPath]);
+        if (file && documentPath)
+          await supabase.storage.from("violation-docs").remove([documentPath]);
         toast.error("Falha ao atualizar registro: " + error.message);
         return;
       }
@@ -310,7 +355,13 @@ function ViolationDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) reset();
+        onOpenChange(o);
+      }}
+    >
       <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 leading-tight">
@@ -318,7 +369,10 @@ function ViolationDialog({
             {isEdit ? "Editar registro de violação" : "Novo registro de violação de dispositivos"}
           </DialogTitle>
           <DialogDescription>
-            Todos os campos são obrigatórios. {isEdit ? "Anexar um novo PDF substitui o anterior." : "O Termo de violação deve ser anexado em PDF."}
+            Todos os campos são obrigatórios.{" "}
+            {isEdit
+              ? "Anexar um novo PDF substitui o anterior."
+              : "O Termo de violação deve ser anexado em PDF."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
@@ -337,13 +391,19 @@ function ViolationDialog({
             <div className="space-y-1.5">
               <Label htmlFor="vd-sector">Setor da violação</Label>
               <Select value={sector || undefined} onValueChange={setSector} required>
-                <SelectTrigger id="vd-sector"><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
+                <SelectTrigger id="vd-sector">
+                  <SelectValue placeholder="Selecione o setor" />
+                </SelectTrigger>
                 <SelectContent>
                   {sectors.length === 0 && (
-                    <div className="px-3 py-2 text-xs text-muted-foreground">Nenhum setor cadastrado.</div>
+                    <div className="px-3 py-2 text-xs text-muted-foreground">
+                      Nenhum setor cadastrado.
+                    </div>
                   )}
                   {sectors.map((s) => (
-                    <SelectItem key={s} value={s}>{s.toUpperCase()}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {s.toUpperCase()}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -364,16 +424,22 @@ function ViolationDialog({
           <div className="space-y-1.5">
             <Label htmlFor="vd-reason">Motivo da violação</Label>
             <Select value={reason || undefined} onValueChange={setReason} required>
-              <SelectTrigger id="vd-reason"><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+              <SelectTrigger id="vd-reason">
+                <SelectValue placeholder="Selecione o motivo" />
+              </SelectTrigger>
               <SelectContent>
                 {REASON_OPTIONS.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="vd-file">Termo de violação (PDF){isEdit && " — opcional (substitui o atual)"}</Label>
+            <Label htmlFor="vd-file">
+              Termo de violação (PDF){isEdit && " — opcional (substitui o atual)"}
+            </Label>
             <Input
               id="vd-file"
               ref={fileRef}
@@ -392,11 +458,20 @@ function ViolationDialog({
             )}
           </div>
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={busy}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={busy} className="bg-brand-gradient text-white shadow-brand">
-              {busy ? "Salvando..." : (isEdit ? "Salvar alterações" : "Salvar registro")}
+            <Button
+              type="submit"
+              disabled={busy}
+              className="bg-brand-gradient text-white shadow-brand"
+            >
+              {busy ? "Salvando..." : isEdit ? "Salvar alterações" : "Salvar registro"}
             </Button>
           </DialogFooter>
         </form>

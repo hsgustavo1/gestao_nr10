@@ -4,7 +4,7 @@ import { ptBR } from "date-fns/locale";
 // ── Constantes ──────────────────────────────────────────────────────────────
 
 export const TRAINING_TYPES = ["nr10_basico", "nr10_areas_classificadas", "sep"] as const;
-export type TrainingType = typeof TRAINING_TYPES[number];
+export type TrainingType = (typeof TRAINING_TYPES)[number];
 
 export const TRAINING_LABELS: Record<TrainingType, string> = {
   nr10_basico: "NR-10 Básico",
@@ -13,10 +13,10 @@ export const TRAINING_LABELS: Record<TrainingType, string> = {
 };
 
 export const AUTHORIZATION_LEVELS = ["A0", "A1", "A2", "A3", "A4"] as const;
-export type AuthorizationLevel = typeof AUTHORIZATION_LEVELS[number];
+export type AuthorizationLevel = (typeof AUTHORIZATION_LEVELS)[number];
 
 export const IT_STATUS_VALUES = ["ok", "pendente", "vencido"] as const;
-export type ITStatus = typeof IT_STATUS_VALUES[number];
+export type ITStatus = (typeof IT_STATUS_VALUES)[number];
 
 export const IT_STATUS_LABELS: Record<ITStatus, string> = {
   ok: "OK",
@@ -61,7 +61,9 @@ export const EMPLOYEE_STATUS_LABELS: Record<string, string> = {
   desligado: "Desligado",
 };
 
-export function employeeStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+export function employeeStatusVariant(
+  status: string,
+): "default" | "secondary" | "destructive" | "outline" {
   if (status === "ativo") return "default";
   if (status === "afastado") return "secondary";
   return "destructive"; // desligado
@@ -137,7 +139,9 @@ export function formatDatePtBR(iso: string | null | undefined): string {
 }
 
 /** Retorna o status de expiração de um treinamento com validade de 2 anos. */
-export function trainingExpiryStatus(trainingDate: string | null): "ok" | "expiring" | "expired" | "none" {
+export function trainingExpiryStatus(
+  trainingDate: string | null,
+): "ok" | "expiring" | "expired" | "none" {
   if (!trainingDate) return "none";
   const expiry = addYears(new Date(trainingDate + "T12:00:00"), 2);
   const daysLeft = differenceInDays(expiry, new Date());

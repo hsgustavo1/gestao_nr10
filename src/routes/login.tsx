@@ -85,26 +85,20 @@ function LoginPage() {
       <aside className="relative hidden lg:flex flex-col justify-between bg-brand-blue text-white p-12 overflow-hidden">
         <div className="absolute inset-y-0 right-0 w-1.5 bg-brand-gradient" />
         <Link to="/" className="flex items-center gap-0">
-          <span className="text-[14px] font-bold uppercase tracking-[0.05em] text-white">
-            
-          </span>
+          <span className="text-[14px] font-bold uppercase tracking-[0.05em] text-white"></span>
         </Link>
 
         <div className="relative z-10 max-w-md">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wider">
-            <ShieldCheck className="h-3.5 w-3.5" /> 
+            <ShieldCheck className="h-3.5 w-3.5" />
           </span>
           <h1 className="mt-4 text-4xl font-bold leading-tight">
             Bloqueio de energias perigosas <span className="text-brand-gradient">salva vidas.</span>
           </h1>
-          <p className="mt-4 text-white/75 text-sm leading-relaxed">
-            
-          </p>
+          <p className="mt-4 text-white/75 text-sm leading-relaxed"></p>
         </div>
 
-        <div className="text-[11px] uppercase tracking-wider text-white/45">
-          
-        </div>
+        <div className="text-[11px] uppercase tracking-wider text-white/45"></div>
       </aside>
 
       {/* Formulário */}
@@ -112,21 +106,23 @@ function LoginPage() {
         <div className="mx-auto w-full max-w-md">
           {/* Brand mobile */}
           <Link to="/" className="lg:hidden flex items-center gap-0 mb-8">
-             <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#0A2D48]">
-              
-            </span>
+            <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#0A2D48]"></span>
           </Link>
 
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-foreground">
-              {mode === "forgot" ? "Recuperar senha" : mode === "signup" ? "Criar conta" : "Entrar no sistema"}
+              {mode === "forgot"
+                ? "Recuperar senha"
+                : mode === "signup"
+                  ? "Criar conta"
+                  : "Entrar no sistema"}
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
               {mode === "forgot"
                 ? "Informe seu e-mail e enviaremos um link para redefinir a senha."
                 : mode === "signup"
-                ? "Após o cadastro, um Admin precisa aprovar seu perfil."
-                : "Acesso para Dono de RAC e Apoios. A consulta é aberta para todos os Integrantes."}
+                  ? "Após o cadastro, um Admin precisa aprovar seu perfil."
+                  : "Acesso para Dono de RAC e Apoios. A consulta é aberta para todos os Integrantes."}
             </p>
           </div>
 
@@ -153,12 +149,24 @@ function LoginPage() {
             {mode === "signup" && (
               <div className="space-y-1.5">
                 <Label htmlFor="name">Nome de exibição</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={120}
+                />
               </div>
             )}
             <div className="space-y-1.5">
               <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
             {mode !== "forgot" && (
               <div className="space-y-1.5">
@@ -174,17 +182,28 @@ function LoginPage() {
                     </button>
                   )}
                 </div>
-                <Input id="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </div>
             )}
-            <Button type="submit" disabled={loading} className="w-full bg-brand-gradient text-white shadow-brand hover:opacity-95">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-brand-gradient text-white shadow-brand hover:opacity-95"
+            >
               {loading
                 ? "Aguarde..."
                 : mode === "forgot"
-                ? "Enviar link de redefinição"
-                : mode === "signin"
-                ? "Entrar"
-                : "Criar conta"}
+                  ? "Enviar link de redefinição"
+                  : mode === "signin"
+                    ? "Entrar"
+                    : "Criar conta"}
               {!loading && <ArrowRight className="ml-1 h-4 w-4" />}
             </Button>
 
@@ -207,20 +226,19 @@ function LoginPage() {
           </div>
 
           {/* Modo visualização */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onViewer}
-            className="w-full border-2"
-          >
+          <Button type="button" variant="outline" onClick={onViewer} className="w-full border-2">
             <Eye className="h-4 w-4" /> Acesso somente consulta
           </Button>
           <p className="mt-2 text-[11px] text-center text-muted-foreground">
-            Sem login, você pode consultar dispositivos e o dashboard, além de imprimir etiquetas, mas não pode cadastrar novos dispositivos.
+            Sem login, você pode consultar dispositivos e o dashboard, além de imprimir etiquetas,
+            mas não pode cadastrar novos dispositivos.
           </p>
 
           <div className="mt-8 text-center">
-            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+            <Link
+              to="/"
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
               <Lock className="h-3 w-3" /> Voltar à página inicial
             </Link>
           </div>

@@ -180,12 +180,8 @@ export function EtiquetaLOTO({ cadeado, fotoSrc, scale }: EtiquetaLOTOProps) {
             <div style={{ fontSize: px(7.5, scale), color: "#222" }}>
               Matrícula: {ouTraco(dono.matricula)}
             </div>
-            <div style={{ fontSize: px(7.5, scale), color: "#222" }}>
-              Setor: {setorExibido}
-            </div>
-            <div style={{ fontSize: px(7.5, scale), color: "#222" }}>
-              Tel: {telefoneFormatado}
-            </div>
+            <div style={{ fontSize: px(7.5, scale), color: "#222" }}>Setor: {setorExibido}</div>
+            <div style={{ fontSize: px(7.5, scale), color: "#222" }}>Tel: {telefoneFormatado}</div>
           </div>
         </div>
 

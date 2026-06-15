@@ -12,7 +12,7 @@ export const EPI_TYPES = [
   "outros",
 ] as const;
 
-export type EPIType = typeof EPI_TYPES[number];
+export type EPIType = (typeof EPI_TYPES)[number];
 
 export const EPI_TYPE_LABELS: Record<EPIType, string> = {
   luva_isolante: "Luva isolante",
@@ -67,7 +67,10 @@ export const EPI_STATUS_LABELS: Record<EPITestStatus, string> = {
 /** Data do próximo ensaio: último ensaio aprovado + intervalo. */
 export function nextTestDate(epi: EPI, lastApprovedTest: EPITest | null): string | null {
   if (!lastApprovedTest) return null;
-  const next = addMonths(new Date(lastApprovedTest.test_date + "T12:00:00"), epi.test_interval_months);
+  const next = addMonths(
+    new Date(lastApprovedTest.test_date + "T12:00:00"),
+    epi.test_interval_months,
+  );
   return format(next, "yyyy-MM-dd");
 }
 

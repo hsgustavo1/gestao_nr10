@@ -79,14 +79,16 @@ function ResetPasswordPage() {
             </div>
             <div>
               <h2 className="text-lg font-bold text-foreground">Definir nova senha</h2>
-              <p className="text-xs text-muted-foreground">Escolha uma senha forte (mín. 8 caracteres).</p>
+              <p className="text-xs text-muted-foreground">
+                Escolha uma senha forte (mín. 8 caracteres).
+              </p>
             </div>
           </div>
 
           {!ready ? (
             <p className="text-sm text-muted-foreground">
-              Validando seu link de redefinição... Se isso demorar, verifique se você abriu o link mais
-              recente recebido por e-mail.
+              Validando seu link de redefinição... Se isso demorar, verifique se você abriu o link
+              mais recente recebido por e-mail.
             </p>
           ) : (
             <form onSubmit={onSubmit} className="space-y-4">

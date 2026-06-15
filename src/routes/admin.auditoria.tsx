@@ -8,10 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -116,14 +125,25 @@ function AdminAuditoriaPage() {
   const total = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  if (loading) return <PageShell><div className="text-sm text-muted-foreground">Carregando...</div></PageShell>;
+  if (loading)
+    return (
+      <PageShell>
+        <div className="text-sm text-muted-foreground">Carregando...</div>
+      </PageShell>
+    );
   if (!isAdmin) {
     return (
       <PageShell>
         <div className="text-center py-16">
           <h1 className="text-xl font-bold">Acesso restrito</h1>
-          <p className="text-sm text-muted-foreground mt-2">Apenas administradores podem acessar a trilha de auditoria.</p>
-          <Button asChild variant="outline" className="mt-4"><Link to="/"><ArrowLeft className="h-4 w-4" /> Voltar</Link></Button>
+          <p className="text-sm text-muted-foreground mt-2">
+            Apenas administradores podem acessar a trilha de auditoria.
+          </p>
+          <Button asChild variant="outline" className="mt-4">
+            <Link to="/">
+              <ArrowLeft className="h-4 w-4" /> Voltar
+            </Link>
+          </Button>
         </div>
       </PageShell>
     );
@@ -144,17 +164,35 @@ function AdminAuditoriaPage() {
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <Select value={tableFilter} onValueChange={(v) => { setTableFilter(v); setPage(0); }}>
-          <SelectTrigger className="w-full sm:w-52"><SelectValue placeholder="Tabela" /></SelectTrigger>
+        <Select
+          value={tableFilter}
+          onValueChange={(v) => {
+            setTableFilter(v);
+            setPage(0);
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-52">
+            <SelectValue placeholder="Tabela" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as tabelas</SelectItem>
             {Object.entries(TABLE_LABELS).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+              <SelectItem key={k} value={k}>
+                {v}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(0); }}>
-          <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Ação" /></SelectTrigger>
+        <Select
+          value={actionFilter}
+          onValueChange={(v) => {
+            setActionFilter(v);
+            setPage(0);
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Ação" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as ações</SelectItem>
             <SelectItem value="INSERT">Criação</SelectItem>
@@ -171,11 +209,14 @@ function AdminAuditoriaPage() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-5 space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-10" />)}
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-10" />
+              ))}
             </div>
           ) : entries.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground">
-              Nenhum registro de auditoria ainda. Os registros começam após a aplicação da migration de auditoria.
+              Nenhum registro de auditoria ainda. Os registros começam após a aplicação da migration
+              de auditoria.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -196,20 +237,42 @@ function AdminAuditoriaPage() {
                     return (
                       <TableRow key={e.id}>
                         <TableCell className="whitespace-nowrap text-sm">
-                          {new Date(e.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                          {new Date(e.created_at).toLocaleString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap text-sm">{TABLE_LABELS[e.table_name] ?? e.table_name}</TableCell>
+                        <TableCell className="whitespace-nowrap text-sm">
+                          {TABLE_LABELS[e.table_name] ?? e.table_name}
+                        </TableCell>
                         <TableCell className="max-w-[220px]">
-                          <div className="text-sm truncate" title={recordLabel(e)}>{recordLabel(e)}</div>
+                          <div className="text-sm truncate" title={recordLabel(e)}>
+                            {recordLabel(e)}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={e.action === "DELETE" ? "destructive" : e.action === "INSERT" ? "default" : "secondary"} className="text-[10px]">
+                          <Badge
+                            variant={
+                              e.action === "DELETE"
+                                ? "destructive"
+                                : e.action === "INSERT"
+                                  ? "default"
+                                  : "secondary"
+                            }
+                            className="text-[10px]"
+                          >
                             {ACTION_LABELS[e.action]}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-[260px]">
                           {e.action === "UPDATE" ? (
-                            <span className="text-xs text-muted-foreground truncate block" title={fields.join(", ")}>
+                            <span
+                              className="text-xs text-muted-foreground truncate block"
+                              title={fields.join(", ")}
+                            >
                               {fields.length > 0 ? fields.join(", ") : "—"}
                             </span>
                           ) : (
@@ -217,7 +280,9 @@ function AdminAuditoriaPage() {
                           )}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-sm">
-                          {e.actor_id ? (profileById.get(e.actor_id) ?? e.actor_id.slice(0, 8)) : "Sistema"}
+                          {e.actor_id
+                            ? (profileById.get(e.actor_id) ?? e.actor_id.slice(0, 8))
+                            : "Sistema"}
                         </TableCell>
                       </TableRow>
                     );
@@ -231,11 +296,23 @@ function AdminAuditoriaPage() {
 
       {totalPages > 1 && (
         <div className="mt-3 flex items-center justify-end gap-2 text-xs">
-          <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+          >
             Anterior
           </Button>
-          <span className="text-muted-foreground">Página {page + 1} de {totalPages}</span>
-          <Button size="sm" variant="outline" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>
+          <span className="text-muted-foreground">
+            Página {page + 1} de {totalPages}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page + 1 >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
             Próxima
           </Button>
         </div>

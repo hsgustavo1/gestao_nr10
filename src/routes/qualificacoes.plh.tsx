@@ -15,9 +15,7 @@ function PLHPage() {
           <BookMarked className="h-8 w-8 text-muted-foreground" />
         </div>
         <h1 className="text-2xl font-bold">PLH</h1>
-        <p className="text-muted-foreground max-w-sm">
-          Módulo em construção.
-        </p>
+        <p className="text-muted-foreground max-w-sm">Módulo em construção.</p>
       </div>
     </PageShell>
   );

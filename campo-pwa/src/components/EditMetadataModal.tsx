@@ -1,31 +1,33 @@
-import { useState, useEffect } from 'react'
-import { db } from '@/db/dexie'
-import type { LocalInspection } from '@/db/dexie'
-import { enqueue } from '@/sync/engine'
-import { X } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { db } from "@/db/dexie";
+import type { LocalInspection } from "@/db/dexie";
+import { enqueue } from "@/sync/engine";
+import { X } from "lucide-react";
 
 type Props = {
-  inspection: LocalInspection
-  onClose: () => void
-}
+  inspection: LocalInspection;
+  onClose: () => void;
+};
 
 export function EditMetadataModal({ inspection, onClose }: Props) {
-  const [titulo, setTitulo] = useState(inspection.titulo)
-  const [cliente, setCliente] = useState(inspection.cliente ?? '')
-  const [local, setLocal] = useState(inspection.local ?? '')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [titulo, setTitulo] = useState(inspection.titulo);
+  const [cliente, setCliente] = useState(inspection.cliente ?? "");
+  const [local, setLocal] = useState(inspection.local ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   async function handleSave() {
-    if (!titulo.trim() || saving) return
-    setSaving(true)
-    setError(null)
+    if (!titulo.trim() || saving) return;
+    setSaving(true);
+    setError(null);
     try {
       const updated = {
         titulo: titulo.trim(),
@@ -33,14 +35,14 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
         local: local.trim() || null,
         updated_at: new Date().toISOString(),
         _synced: false,
-      }
-      await db.inspections.update(inspection.id, updated)
-      await enqueue('inspections', 'update', { id: inspection.id, ...updated }, inspection.id)
-      onClose()
+      };
+      await db.inspections.update(inspection.id, updated);
+      await enqueue("inspections", "update", { id: inspection.id, ...updated }, inspection.id);
+      onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar')
+      setError(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
@@ -54,8 +56,15 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
         className="relative w-full bg-slate-900 rounded-t-2xl p-6 space-y-4"
       >
         <div className="flex items-center justify-between">
-          <h2 id="edit-meta-title" className="font-semibold text-lg">Editar inspeção</h2>
-          <button type="button" aria-label="Fechar" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-800">
+          <h2 id="edit-meta-title" className="font-semibold text-lg">
+            Editar inspeção
+          </h2>
+          <button
+            type="button"
+            aria-label="Fechar"
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-slate-800"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -67,7 +76,7 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
               autoFocus
               type="text"
               value={titulo}
-              onChange={e => setTitulo(e.target.value)}
+              onChange={(e) => setTitulo(e.target.value)}
               className="mt-1 w-full rounded-lg bg-slate-800 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </label>
@@ -76,7 +85,7 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
             <input
               type="text"
               value={cliente}
-              onChange={e => setCliente(e.target.value)}
+              onChange={(e) => setCliente(e.target.value)}
               className="mt-1 w-full rounded-lg bg-slate-800 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </label>
@@ -85,7 +94,7 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
             <input
               type="text"
               value={local}
-              onChange={e => setLocal(e.target.value)}
+              onChange={(e) => setLocal(e.target.value)}
               className="mt-1 w-full rounded-lg bg-slate-800 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </label>
@@ -99,9 +108,9 @@ export function EditMetadataModal({ inspection, onClose }: Props) {
           disabled={!titulo.trim() || saving}
           className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-60 px-4 py-3.5 font-semibold transition-colors"
         >
-          {saving ? 'Salvando...' : 'Salvar'}
+          {saving ? "Salvando..." : "Salvar"}
         </button>
       </div>
     </div>
-  )
+  );
 }

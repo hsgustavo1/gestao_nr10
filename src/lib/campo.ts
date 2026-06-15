@@ -24,7 +24,7 @@ export type RtiModoFalha = {
 };
 
 export const FIELD_INSPECTION_STATUSES = ["em_andamento", "finalizada", "importada"] as const;
-export type FieldInspectionStatus = typeof FIELD_INSPECTION_STATUSES[number];
+export type FieldInspectionStatus = (typeof FIELD_INSPECTION_STATUSES)[number];
 
 export const FIELD_INSPECTION_STATUS_LABELS: Record<FieldInspectionStatus, string> = {
   em_andamento: "Em andamento",
@@ -58,7 +58,7 @@ export type FieldInspection = {
 // ── Árvore Setor → Ativo → Componente ────────────────────────────────────────
 
 export const NIVEIS_ARVORE = ["setor", "ativo", "componente"] as const;
-export type NivelArvore = typeof NIVEIS_ARVORE[number];
+export type NivelArvore = (typeof NIVEIS_ARVORE)[number];
 
 export const NIVEL_LABEL: Record<NivelArvore, string> = {
   setor: "Setor",
@@ -161,7 +161,10 @@ export function setorDoNo(nodeId: string, byId: Map<string, FieldNode>): FieldNo
 /** Nomes abaixo do setor (ativo › componente) — usado como prefixo da NC. */
 export function caminhoAbaixoDoSetor(nodeId: string, byId: Map<string, FieldNode>): string {
   const path = nodePath(nodeId, byId);
-  return path.slice(1).map((n) => n.nome).join(" › ");
+  return path
+    .slice(1)
+    .map((n) => n.nome)
+    .join(" › ");
 }
 
 /** Filhos diretos de um nó (parentId null = setores na raiz). */
@@ -203,7 +206,7 @@ export function normalizarEstrutura(linhas: EstruturaLinha[]): EstruturaLinha[] 
     const setor = l.setor?.trim();
     if (!setor) continue;
     const ativo = l.ativo?.trim() || null;
-    const componente = ativo ? (l.componente?.trim() || null) : null; // componente exige ativo
+    const componente = ativo ? l.componente?.trim() || null : null; // componente exige ativo
     const key = `${setor}|${ativo ?? ""}|${componente ?? ""}`;
     if (seen.has(key)) continue;
     seen.add(key);

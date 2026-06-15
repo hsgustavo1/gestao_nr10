@@ -8,7 +8,7 @@ export const INCIDENT_TIPOS = [
   "outro",
 ] as const;
 
-export type IncidentTipo = typeof INCIDENT_TIPOS[number];
+export type IncidentTipo = (typeof INCIDENT_TIPOS)[number];
 
 export const INCIDENT_TIPO_LABELS: Record<IncidentTipo, string> = {
   choque: "Choque elétrico",
@@ -18,15 +18,9 @@ export const INCIDENT_TIPO_LABELS: Record<IncidentTipo, string> = {
   outro: "Outro",
 };
 
-export const INCIDENT_GRAVIDADES = [
-  "sem_lesao",
-  "leve",
-  "moderada",
-  "grave",
-  "fatal",
-] as const;
+export const INCIDENT_GRAVIDADES = ["sem_lesao", "leve", "moderada", "grave", "fatal"] as const;
 
-export type IncidentGravidade = typeof INCIDENT_GRAVIDADES[number];
+export type IncidentGravidade = (typeof INCIDENT_GRAVIDADES)[number];
 
 export const INCIDENT_GRAVIDADE_LABELS: Record<IncidentGravidade, string> = {
   sem_lesao: "Sem lesão",
@@ -37,7 +31,7 @@ export const INCIDENT_GRAVIDADE_LABELS: Record<IncidentGravidade, string> = {
 };
 
 export const INCIDENT_STATUS = ["aberto", "em_investigacao", "concluido"] as const;
-export type IncidentStatus = typeof INCIDENT_STATUS[number];
+export type IncidentStatus = (typeof INCIDENT_STATUS)[number];
 
 export const INCIDENT_STATUS_LABELS: Record<IncidentStatus, string> = {
   aberto: "Aberto",

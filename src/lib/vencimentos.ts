@@ -1,6 +1,11 @@
 import { useMemo } from "react";
 import { addMonths, addYears, differenceInDays, format } from "date-fns";
-import { useEmployees, useITTrainings, useNR10Trainings, useWorkInstructions } from "./qualificacoes-queries";
+import {
+  useEmployees,
+  useITTrainings,
+  useNR10Trainings,
+  useWorkInstructions,
+} from "./qualificacoes-queries";
 import { useNR10Documents } from "./prontuario-queries";
 import { useInspections } from "./inspecoes-queries";
 import { useEPIs, useEPITests, type EPIWithEmployee } from "./epis-queries";
@@ -8,7 +13,11 @@ import { useASOs } from "./asos-queries";
 import { latestASOByEmployee, ASO_TIPO_LABELS, type ASO } from "./asos";
 import {
   TRAINING_LABELS,
-  type Employee, type ITTraining, type NR10Training, type TrainingType, type WorkInstruction,
+  type Employee,
+  type ITTraining,
+  type NR10Training,
+  type TrainingType,
+  type WorkInstruction,
 } from "./qualificacoes";
 import { PIE_CATEGORY_LABELS, type NR10Document } from "./prontuario";
 import { INSPECTION_TYPE_SHORT, type Inspection } from "./inspecoes";
@@ -17,7 +26,7 @@ import { EPI_TYPE_LABELS, lastTestByEpi, nextTestDate, type EPITest } from "./ep
 // ── Item normalizado de vencimento ──────────────────────────────────────────
 
 export const VENC_KINDS = ["treinamento", "it", "documento", "inspecao", "epi", "aso"] as const;
-export type VencKind = typeof VENC_KINDS[number];
+export type VencKind = (typeof VENC_KINDS)[number];
 
 export const VENC_KIND_LABELS: Record<VencKind, string> = {
   treinamento: "Capacitação NR-10",
@@ -72,7 +81,17 @@ export function buildVencimentos(
   horizonDays = 90,
   today: Date = new Date(),
 ): VencimentoItem[] {
-  const { employees, trainings, itTrainings, instructions, documents, inspections, epis, epiTests, asos } = data;
+  const {
+    employees,
+    trainings,
+    itTrainings,
+    instructions,
+    documents,
+    inspections,
+    epis,
+    epiTests,
+    asos,
+  } = data;
   const out: VencimentoItem[] = [];
   const push = (item: Omit<VencimentoItem, "daysLeft" | "status"> & { dueDate: string }) => {
     const daysLeft = differenceInDays(new Date(item.dueDate + "T12:00:00"), today);
@@ -119,7 +138,9 @@ export function buildVencimentos(
     push({
       id: `it-${it.id}`,
       kind: "it",
-      title: instr ? `IT ${instr.code}${instr.title ? ` — ${instr.title}` : ""}` : "Instrução de Trabalho",
+      title: instr
+        ? `IT ${instr.code}${instr.title ? ` — ${instr.title}` : ""}`
+        : "Instrução de Trabalho",
       subject: emp.name,
       detail: emp.setor ? `Mat. ${emp.matricula} · ${emp.setor}` : `Mat. ${emp.matricula}`,
       dueDate: due,
@@ -226,7 +247,18 @@ export function useVencimentos(horizonDays = 90) {
         },
         horizonDays,
       ),
-    [employees, trainings, itTrainings, instructions, documents, inspections, epis, epiTests, asos, horizonDays],
+    [
+      employees,
+      trainings,
+      itTrainings,
+      instructions,
+      documents,
+      inspections,
+      epis,
+      epiTests,
+      asos,
+      horizonDays,
+    ],
   );
 
   return { items, isLoading };

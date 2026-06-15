@@ -1,9 +1,6 @@
 // Domain types now live in packages/campo-core.
 // Modifications should be made in packages/campo-core/src/types.ts.
-export {
-  FIELD_INSPECTION_STATUSES,
-  NIVEIS_ARVORE,
-} from '@gestao/campo-core'
+export { FIELD_INSPECTION_STATUSES, NIVEIS_ARVORE } from "@gestao/campo-core";
 export type {
   NormaRef,
   RtiTipoExecucao,
@@ -16,4 +13,4 @@ export type {
   FieldPoint,
   FieldFinding,
   FieldPhoto,
-} from '@gestao/campo-core'
+} from "@gestao/campo-core";

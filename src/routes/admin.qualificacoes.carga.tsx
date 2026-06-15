@@ -21,7 +21,11 @@ function parseExcelDate(val: unknown): string | null {
   if (val == null || val === "") return null;
   if (typeof val === "number") {
     if (val < 1 || !isFinite(val)) return null;
-    try { return excelSerialToISO(val); } catch { return null; }
+    try {
+      return excelSerialToISO(val);
+    } catch {
+      return null;
+    }
   }
   if (typeof val === "string" && val.trim()) {
     const iso = val.trim();
@@ -105,7 +109,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
           training_date: nr10BasicoFormDate,
           art: strOrNull(row[10]),
           responsavel_tecnico: strOrNull(row[11]),
-          valid: String(row[15] ?? "").trim().toLowerCase() === "sim",
+          valid:
+            String(row[15] ?? "")
+              .trim()
+              .toLowerCase() === "sim",
         });
       }
 
@@ -118,7 +125,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
           training_date: nr10BasicoRecDate,
           art: strOrNull(row[13]),
           responsavel_tecnico: strOrNull(row[14]),
-          valid: String(row[15] ?? "").trim().toLowerCase() === "sim",
+          valid:
+            String(row[15] ?? "")
+              .trim()
+              .toLowerCase() === "sim",
         });
       }
 
@@ -132,7 +142,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
           training_date: acFormDate,
           art: strOrNull(row[17]),
           responsavel_tecnico: strOrNull(row[18]),
-          valid: String(row[22] ?? "").trim().toLowerCase() === "sim",
+          valid:
+            String(row[22] ?? "")
+              .trim()
+              .toLowerCase() === "sim",
         });
       }
 
@@ -145,7 +158,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
           training_date: acRecDate,
           art: strOrNull(row[20]),
           responsavel_tecnico: strOrNull(row[21]),
-          valid: String(row[22] ?? "").trim().toLowerCase() === "sim",
+          valid:
+            String(row[22] ?? "")
+              .trim()
+              .toLowerCase() === "sim",
         });
       }
 
@@ -159,7 +175,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
           training_date: sepFormDate,
           art: strOrNull(row[24]),
           responsavel_tecnico: strOrNull(row[25]),
-          valid: String(row[29] ?? "").trim().toLowerCase() === "sim",
+          valid:
+            String(row[29] ?? "")
+              .trim()
+              .toLowerCase() === "sim",
         });
       }
 
@@ -172,7 +191,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
           training_date: sepRecDate,
           art: strOrNull(row[27]),
           responsavel_tecnico: strOrNull(row[28]),
-          valid: String(row[29] ?? "").trim().toLowerCase() === "sim",
+          valid:
+            String(row[29] ?? "")
+              .trim()
+              .toLowerCase() === "sim",
         });
       }
 
@@ -186,7 +208,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
           funcao: strOrNull(row[32]),
           abrangencia: strOrNull(row[33]),
           authorization_date: parseExcelDate(row[30]),
-          valid: String(row[34] ?? "").trim().toLowerCase() === "sim",
+          valid:
+            String(row[34] ?? "")
+              .trim()
+              .toLowerCase() === "sim",
         });
       }
     }
@@ -225,8 +250,7 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
         if (!statusRaw) continue;
 
         const upper = statusRaw.toUpperCase();
-        const status =
-          upper === "OK" ? "ok" : upper === "VENCIDO" ? "vencido" : "pendente";
+        const status = upper === "OK" ? "ok" : upper === "VENCIDO" ? "vencido" : "pendente";
 
         const conclusao_date = parseExcelDate(row[4 + j * 2 + 1]);
 
@@ -241,13 +265,13 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
   }
 
   // Build instructions array from discovered IT codes
-  const instructions: ParsedData["instructions"] = Array.from(
-    instructionMap.keys()
-  ).map((code) => ({
-    code,
-    title: null,
-    validity_months: 24,
-  }));
+  const instructions: ParsedData["instructions"] = Array.from(instructionMap.keys()).map(
+    (code) => ({
+      code,
+      title: null,
+      validity_months: 24,
+    }),
+  );
 
   return { employees, nr10Trainings, authorizations, instructions, itTrainings };
 }
@@ -338,9 +362,7 @@ function QualificacoesCargaPage() {
       if (result.employees.length === 0) {
         toast.warning("Nenhum colaborador encontrado na planilha.");
       } else {
-        toast.success(
-          `${result.employees.length} colaborador(es) lido(s) com sucesso.`
-        );
+        toast.success(`${result.employees.length} colaborador(es) lido(s) com sucesso.`);
       }
     } catch (err) {
       toast.error(`Falha ao ler planilha: ${(err as Error).message}`);
@@ -371,7 +393,8 @@ function QualificacoesCargaPage() {
             <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">
               Qualificacao Treinamentos 240730.xlsx
             </code>{" "}
-            para importar colaboradores, treinamentos NR-10, autorizações de trabalho e conclusões de IT.
+            para importar colaboradores, treinamentos NR-10, autorizações de trabalho e conclusões
+            de IT.
           </p>
         </div>
 
@@ -383,19 +406,13 @@ function QualificacoesCargaPage() {
           >
             <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
               <FileSpreadsheet className="h-10 w-10" />
-              <p className="text-sm font-medium">
-                Clique para selecionar o arquivo Excel
-              </p>
+              <p className="text-sm font-medium">Clique para selecionar o arquivo Excel</p>
               <p className="text-xs">.xlsx ou .xls</p>
             </CardContent>
           </Card>
 
           <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={downloadTemplate}
-            >
+            <Button variant="outline" size="sm" onClick={downloadTemplate}>
               <Download className="h-4 w-4" />
               Baixar Modelo
             </Button>
@@ -417,21 +434,11 @@ function QualificacoesCargaPage() {
         {parsed && (
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">
-                {parsed.employees.length} colaboradores
-              </Badge>
-              <Badge variant="secondary">
-                {parsed.nr10Trainings.length} registros NR-10
-              </Badge>
-              <Badge variant="secondary">
-                {parsed.authorizations.length} autorizações
-              </Badge>
-              <Badge variant="secondary">
-                {parsed.instructions.length} ITs
-              </Badge>
-              <Badge variant="secondary">
-                {parsed.itTrainings.length} conclusões de IT
-              </Badge>
+              <Badge variant="secondary">{parsed.employees.length} colaboradores</Badge>
+              <Badge variant="secondary">{parsed.nr10Trainings.length} registros NR-10</Badge>
+              <Badge variant="secondary">{parsed.authorizations.length} autorizações</Badge>
+              <Badge variant="secondary">{parsed.instructions.length} ITs</Badge>
+              <Badge variant="secondary">{parsed.itTrainings.length} conclusões de IT</Badge>
             </div>
 
             {/* Preview table — first 10 employees */}
@@ -451,9 +458,7 @@ function QualificacoesCargaPage() {
                         <tr key={emp.matricula} className="hover:bg-muted/40">
                           <td className="px-3 py-1.5">{emp.name}</td>
                           <td className="px-3 py-1.5 font-mono">{emp.matricula}</td>
-                          <td className="px-3 py-1.5 text-muted-foreground">
-                            {emp.setor ?? "—"}
-                          </td>
+                          <td className="px-3 py-1.5 text-muted-foreground">{emp.setor ?? "—"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -474,9 +479,7 @@ function QualificacoesCargaPage() {
           <Card className="border-emerald-500/40 bg-emerald-500/5">
             <CardContent className="flex items-center gap-3 py-4 text-sm text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="h-5 w-5 shrink-0" />
-              <span>
-                Importação concluída! Todos os dados foram salvos com sucesso.
-              </span>
+              <span>Importação concluída! Todos os dados foram salvos com sucesso.</span>
             </CardContent>
           </Card>
         )}

@@ -5,9 +5,19 @@ import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { useEmployees, useInsertCertificate, uploadCertificateFile } from "@/lib/qualificacoes-queries";
+import {
+  useEmployees,
+  useInsertCertificate,
+  uploadCertificateFile,
+} from "@/lib/qualificacoes-queries";
 import { TRAINING_TYPES, TRAINING_LABELS, type TrainingType } from "@/lib/qualificacoes";
 import type { Employee } from "@/lib/qualificacoes";
 
@@ -23,7 +33,7 @@ async function getPdfJs() {
   // Use the bundled worker (Vite will handle the URL)
   pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url
+    import.meta.url,
   ).toString();
   return pdfjsLib;
 }
@@ -58,8 +68,11 @@ function matchEmployee(pageText: string, employees: Employee[]): Employee | null
 
   // 2. Try full name match
   for (const emp of employees) {
-    const nameParts = emp.name.toUpperCase().split(" ").filter(p => p.length > 3);
-    const matchCount = nameParts.filter(part => text.includes(part)).length;
+    const nameParts = emp.name
+      .toUpperCase()
+      .split(" ")
+      .filter((p) => p.length > 3);
+    const matchCount = nameParts.filter((part) => text.includes(part)).length;
     if (matchCount >= 2 && nameParts.length >= 2) {
       return emp;
     }
@@ -71,7 +84,7 @@ function matchEmployee(pageText: string, employees: Employee[]): Employee | null
 // ── Group consecutive pages for same employee (frente/verso) ─────────────────
 
 type PageGroup = {
-  pages: number[];       // 1-based page numbers
+  pages: number[]; // 1-based page numbers
   employee: Employee | null;
   text: string;
   trainingType: TrainingType | "";
@@ -100,7 +113,7 @@ function groupPages(pagesText: string[], employees: Employee[]): PageGroup[] {
     groups.push({
       pages: pageNums,
       employee,
-      text: pageNums.map(p => pagesText[p - 1]).join(" "),
+      text: pageNums.map((p) => pagesText[p - 1]).join(" "),
       trainingType: "",
       category: "",
     });
@@ -141,12 +154,12 @@ function CertificadosImportarPage() {
   }
 
   function updateGroup(idx: number, patch: Partial<PageGroup>) {
-    setGroups(prev => prev.map((g, i) => i === idx ? { ...g, ...patch } : g));
+    setGroups((prev) => prev.map((g, i) => (i === idx ? { ...g, ...patch } : g)));
   }
 
   async function handleImport() {
     if (!sourceFile) return;
-    const validGroups = groups.filter(g => g.employee && g.trainingType && g.category);
+    const validGroups = groups.filter((g) => g.employee && g.trainingType && g.category);
     if (validGroups.length === 0) {
       toast.error("Nenhum certificado com colaborador e tipo de treinamento definidos.");
       return;
@@ -161,7 +174,7 @@ function CertificadosImportarPage() {
         const url = await uploadCertificateFile(
           group.employee.id,
           sourceFile,
-          `p${group.pages.join("-")}`
+          `p${group.pages.join("-")}`,
         );
         await insertCert.mutateAsync({
           employee_id: group.employee.id,
@@ -181,23 +194,25 @@ function CertificadosImportarPage() {
     }
     setImporting(false);
     if (ok > 0) {
-      toast.success(`${ok} certificado(s) importado(s) com sucesso${fail > 0 ? `. ${fail} falhou.` : "."}`);
+      toast.success(
+        `${ok} certificado(s) importado(s) com sucesso${fail > 0 ? `. ${fail} falhou.` : "."}`,
+      );
       setDone(true);
     } else {
       toast.error("Nenhum certificado importado.");
     }
   }
 
-  const matchedCount = groups.filter(g => g.employee).length;
-  const unmatchedCount = groups.filter(g => !g.employee).length;
+  const matchedCount = groups.filter((g) => g.employee).length;
+  const unmatchedCount = groups.filter((g) => !g.employee).length;
 
   return (
     <PageShell>
       <div className="mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Importar Certificados em Lote</h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          Faça upload de um PDF com múltiplos certificados. O app extrai o texto de cada página
-          e tenta identificar automaticamente o colaborador.
+          Faça upload de um PDF com múltiplos certificados. O app extrai o texto de cada página e
+          tenta identificar automaticamente o colaborador.
         </p>
       </div>
 
@@ -250,13 +265,17 @@ function CertificadosImportarPage() {
           <div className="space-y-2">
             <p className="text-sm font-semibold">Confirme ou corrija as atribuições:</p>
             {groups.map((group, idx) => (
-              <Card key={idx} className={group.employee ? "border-emerald-200" : "border-amber-200"}>
+              <Card
+                key={idx}
+                className={group.employee ? "border-emerald-200" : "border-amber-200"}
+              >
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {group.employee
-                      ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                      : <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-                    }
+                    {group.employee ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    ) : (
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                    )}
                     <span>Páginas {group.pages.join("–")} do PDF</span>
                   </div>
 
@@ -265,7 +284,7 @@ function CertificadosImportarPage() {
                     <Select
                       value={group.employee?.id ?? ""}
                       onValueChange={(val) => {
-                        const emp = employees.find(e => e.id === val) ?? null;
+                        const emp = employees.find((e) => e.id === val) ?? null;
                         updateGroup(idx, { employee: emp });
                       }}
                     >
@@ -273,7 +292,7 @@ function CertificadosImportarPage() {
                         <SelectValue placeholder="Colaborador..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {employees.map(emp => (
+                        {employees.map((emp) => (
                           <SelectItem key={emp.id} value={emp.id} className="text-xs">
                             {emp.name} ({emp.matricula})
                           </SelectItem>
@@ -284,13 +303,15 @@ function CertificadosImportarPage() {
                     {/* Training type */}
                     <Select
                       value={group.trainingType}
-                      onValueChange={(val) => updateGroup(idx, { trainingType: val as TrainingType })}
+                      onValueChange={(val) =>
+                        updateGroup(idx, { trainingType: val as TrainingType })
+                      }
                     >
                       <SelectTrigger className="text-xs h-8">
                         <SelectValue placeholder="Tipo..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {TRAINING_TYPES.map(t => (
+                        {TRAINING_TYPES.map((t) => (
                           <SelectItem key={t} value={t} className="text-xs">
                             {TRAINING_LABELS[t]}
                           </SelectItem>
@@ -301,14 +322,20 @@ function CertificadosImportarPage() {
                     {/* Category */}
                     <Select
                       value={group.category}
-                      onValueChange={(val) => updateGroup(idx, { category: val as "formacao" | "reciclagem" })}
+                      onValueChange={(val) =>
+                        updateGroup(idx, { category: val as "formacao" | "reciclagem" })
+                      }
                     >
                       <SelectTrigger className="text-xs h-8">
                         <SelectValue placeholder="Categoria..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="formacao" className="text-xs">Formação</SelectItem>
-                        <SelectItem value="reciclagem" className="text-xs">Reciclagem</SelectItem>
+                        <SelectItem value="formacao" className="text-xs">
+                          Formação
+                        </SelectItem>
+                        <SelectItem value="reciclagem" className="text-xs">
+                          Reciclagem
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -326,7 +353,11 @@ function CertificadosImportarPage() {
             className="w-full bg-brand-gradient text-white shadow-brand hover:opacity-95"
           >
             <Upload className="h-4 w-4" />
-            {importing ? "Importando..." : done ? "Importação concluída" : `Importar ${groups.filter(g => g.employee && g.trainingType && g.category).length} certificado(s)`}
+            {importing
+              ? "Importando..."
+              : done
+                ? "Importação concluída"
+                : `Importar ${groups.filter((g) => g.employee && g.trainingType && g.category).length} certificado(s)`}
           </Button>
         )}
       </div>

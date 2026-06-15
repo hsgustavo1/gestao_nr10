@@ -12,7 +12,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "RAC - Bloqueio de energias perigosas" },
-      { name: "description", content: "Bloqueio de energias perigosas: controle de dispositivos, auditoria e monitoramento de bloqueios." },
+      {
+        name: "description",
+        content:
+          "Bloqueio de energias perigosas: controle de dispositivos, auditoria e monitoramento de bloqueios.",
+      },
     ],
   }),
 });
@@ -29,8 +33,15 @@ function HomePage() {
       .select("color")
       .then(({ data }) => {
         const list = data ?? [];
-        const byColor: Record<PadlockColor, number> = { azul: 0, amarelo: 0, latao: 0, vermelho: 0 };
-        list.forEach((p) => { byColor[p.color] += 1; });
+        const byColor: Record<PadlockColor, number> = {
+          azul: 0,
+          amarelo: 0,
+          latao: 0,
+          vermelho: 0,
+        };
+        list.forEach((p) => {
+          byColor[p.color] += 1;
+        });
         setCounts({ total: list.length, byColor });
       });
   }, []);
@@ -46,17 +57,30 @@ function HomePage() {
               <ShieldCheck className="h-3.5 w-3.5" /> Bloqueio de energias perigosas
             </span>
             <h1 className="mt-4 text-3xl md:text-4xl font-bold leading-tight">
-              Controle de dispositivos <span className="text-brand-gradient">Requisitos para Atividades Críticas</span>
+              Controle de dispositivos{" "}
+              <span className="text-brand-gradient">Requisitos para Atividades Críticas</span>
             </h1>
             <p className="mt-4 max-w-xl text-white/80 text-base whitespace-pre-line">
-              Registro único por dispositivo, auditoria imutável de cada transferência e baixa, além visibilidade em tempo real para todo o time.
+              Registro único por dispositivo, auditoria imutável de cada transferência e baixa, além
+              visibilidade em tempo real para todo o time.
               {"\n"}Consulta aberta / Operação com login restrito ao Dono de RAC e Apoios.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-                <Link to="/dashboard">Ver dashboard <ArrowRight className="h-4 w-4" /></Link>
+              <Button
+                asChild
+                size="lg"
+                className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+              >
+                <Link to="/dashboard">
+                  Ver dashboard <ArrowRight className="h-4 w-4" />
+                </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white"
+              >
                 <Link to="/cadeados">Base de dados</Link>
               </Button>
             </div>
@@ -99,7 +123,17 @@ function HomePage() {
   );
 }
 
-function Kpi({ label, value, icon, swatch }: { label: string; value: number; icon?: React.ReactNode; swatch?: PadlockColor }) {
+function Kpi({
+  label,
+  value,
+  icon,
+  swatch,
+}: {
+  label: string;
+  value: number;
+  icon?: React.ReactNode;
+  swatch?: PadlockColor;
+}) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-5">
@@ -108,7 +142,9 @@ function Kpi({ label, value, icon, swatch }: { label: string; value: number; ico
           {swatch ? (
             <div className={`h-7 w-7 rounded-full border-2 ${colorSwatch[swatch]}`} />
           ) : (
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-secondary text-foreground">{icon}</div>
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-secondary text-foreground">
+              {icon}
+            </div>
           )}
         </div>
         <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>

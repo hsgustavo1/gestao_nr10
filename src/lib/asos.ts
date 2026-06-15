@@ -10,7 +10,7 @@ export const ASO_TIPOS = [
   "demissional",
 ] as const;
 
-export type ASOTipo = typeof ASO_TIPOS[number];
+export type ASOTipo = (typeof ASO_TIPOS)[number];
 
 export const ASO_TIPO_LABELS: Record<ASOTipo, string> = {
   admissional: "Admissional",
@@ -21,7 +21,7 @@ export const ASO_TIPO_LABELS: Record<ASOTipo, string> = {
 };
 
 export const ASO_RESULTADOS = ["apto", "apto_com_restricoes", "inapto"] as const;
-export type ASOResultado = typeof ASO_RESULTADOS[number];
+export type ASOResultado = (typeof ASO_RESULTADOS)[number];
 
 export const ASO_RESULTADO_LABELS: Record<ASOResultado, string> = {
   apto: "Apto",

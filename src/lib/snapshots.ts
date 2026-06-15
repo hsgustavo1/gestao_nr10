@@ -48,7 +48,10 @@ export function useEnsureMonthlySnapshot(report: ComplianceReport | null, enable
     attempted.current = true;
     supabase
       .from("compliance_snapshots")
-      .upsert({ snapshot_date: monthKey, payload: snapshotPayloadFrom(report) }, { onConflict: "snapshot_date" })
+      .upsert(
+        { snapshot_date: monthKey, payload: snapshotPayloadFrom(report) },
+        { onConflict: "snapshot_date" },
+      )
       .then(({ error }) => {
         if (!error) qc.invalidateQueries({ queryKey: ["compliance_snapshots"] });
       });

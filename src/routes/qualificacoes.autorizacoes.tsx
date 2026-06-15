@@ -7,9 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
-import { useEmployees, useWorkAuthorizations, useAuthorizationHistory, useNR10Trainings } from "@/lib/qualificacoes-queries";
+import {
+  useEmployees,
+  useWorkAuthorizations,
+  useAuthorizationHistory,
+  useNR10Trainings,
+} from "@/lib/qualificacoes-queries";
 import { useASOs } from "@/lib/asos-queries";
 import { latestASOByEmployee } from "@/lib/asos";
 import { computeAptidao, type Aptidao } from "@/lib/aptidao";
@@ -36,12 +47,14 @@ function HistoryRow({ employeeId, colSpan }: { employeeId: string; colSpan: numb
   return (
     <tr className="bg-muted/10">
       <td colSpan={colSpan} className="px-4 py-3">
-        <p className="text-xs font-semibold text-muted-foreground mb-2">Histórico de autorizações anteriores</p>
+        <p className="text-xs font-semibold text-muted-foreground mb-2">
+          Histórico de autorizações anteriores
+        </p>
         {history.length === 0 ? (
           <p className="text-xs text-muted-foreground">Nenhum histórico registrado.</p>
         ) : (
           <div className="space-y-1">
-            {history.map(h => (
+            {history.map((h) => (
               <div key={h.id} className="text-xs flex gap-4 items-center text-muted-foreground">
                 <span className="font-mono font-semibold">{h.level}</span>
                 <span>{formatDatePtBR(h.authorization_date)}</span>
@@ -73,7 +86,10 @@ function AutorizacoesPage() {
   const [setorFilter, setSetorFilter] = useState<string>(search.setor ?? "todos");
   const [levelFilter, setLevelFilter] = useState<string>(search.level ?? "all");
   const [validFilter, setValidFilter] = useState<string>(search.valida ?? "all");
-  const [printDialog, setPrintDialog] = useState<{ auth: WorkAuthorization; employee: { name: string; matricula: string; setor: string | null; funcao: string | null } } | null>(null);
+  const [printDialog, setPrintDialog] = useState<{
+    auth: WorkAuthorization;
+    employee: { name: string; matricula: string; setor: string | null; funcao: string | null };
+  } | null>(null);
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
 
   const isLoading = empLoading || authLoading;
@@ -82,7 +98,6 @@ function AutorizacoesPage() {
   const authByEmployee = useMemo(() => {
     const map = new Map<string, WorkAuthorization>();
     for (const auth of authorizations) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       map.set(auth.employee_id, auth as unknown as WorkAuthorization);
     }
     return map;
@@ -106,18 +121,21 @@ function AutorizacoesPage() {
     }
     const map = new Map<string, Aptidao>();
     for (const emp of employees) {
-      map.set(emp.id, computeAptidao({
-        employee: emp,
-        trainings: trainingsByEmp.get(emp.id) ?? [],
-        authorization: authByEmployee.get(emp.id) ?? null,
-        aso: latestASOs.get(emp.id) ?? null,
-      }));
+      map.set(
+        emp.id,
+        computeAptidao({
+          employee: emp,
+          trainings: trainingsByEmp.get(emp.id) ?? [],
+          authorization: authByEmployee.get(emp.id) ?? null,
+          aso: latestASOs.get(emp.id) ?? null,
+        }),
+      );
     }
     return map;
   }, [employees, trainings, asos, authByEmployee]);
 
   const filteredEmployees = useMemo(() => {
-    return employees.filter(emp => {
+    return employees.filter((emp) => {
       if (nameSearch && !emp.name.toLowerCase().includes(nameSearch.toLowerCase())) return false;
       if (setorFilter !== "todos" && emp.setor !== setorFilter) return false;
       const auth = authByEmployee.get(emp.id);
@@ -145,11 +163,23 @@ function AutorizacoesPage() {
       <div className="mt-6">
         {/* Stats summary */}
         <div className="flex gap-4 text-xs text-muted-foreground mb-3">
-          <span>Total: <strong className="text-foreground">{employees.length}</strong></span>
-          <span>Com autorização: <strong className="text-foreground">{authorizations.length}</strong></span>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <span>Válidas: <strong className="text-emerald-600">{authorizations.filter((a: any) => a.valid).length}</strong></span>
-          <span>Sem autorização: <strong className="text-destructive">{employees.length - authorizations.length}</strong></span>
+          <span>
+            Total: <strong className="text-foreground">{employees.length}</strong>
+          </span>
+          <span>
+            Com autorização: <strong className="text-foreground">{authorizations.length}</strong>
+          </span>
+          {}
+          <span>
+            Válidas:{" "}
+            <strong className="text-emerald-600">
+              {authorizations.filter((a: any) => a.valid).length}
+            </strong>
+          </span>
+          <span>
+            Sem autorização:{" "}
+            <strong className="text-destructive">{employees.length - authorizations.length}</strong>
+          </span>
         </div>
 
         {/* Filter bar */}
@@ -157,29 +187,39 @@ function AutorizacoesPage() {
           <Input
             placeholder="Buscar por nome..."
             value={nameSearch}
-            onChange={e => setNameSearch(e.target.value)}
+            onChange={(e) => setNameSearch(e.target.value)}
             className="h-8 text-xs w-48"
           />
           <Select value={setorFilter} onValueChange={setSetorFilter}>
-            <SelectTrigger className="h-8 text-xs w-28"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-28">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todas equipes</SelectItem>
-              {["ELE", "GER", "INS", "MEC", "ADM", "OPE", "OUT"].map(s => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
+              {["ELE", "GER", "INS", "MEC", "ADM", "OPE", "OUT"].map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={levelFilter} onValueChange={setLevelFilter}>
-            <SelectTrigger className="h-8 text-xs w-28"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-28">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os níveis</SelectItem>
-              {["A0", "A1", "A2", "A3", "A4"].map(l => (
-                <SelectItem key={l} value={l}>Nível {l}</SelectItem>
+              {["A0", "A1", "A2", "A3", "A4"].map((l) => (
+                <SelectItem key={l} value={l}>
+                  Nível {l}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={validFilter} onValueChange={setValidFilter}>
-            <SelectTrigger className="h-8 text-xs w-36"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-36">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas</SelectItem>
               <SelectItem value="sim">Válidas</SelectItem>
@@ -260,20 +300,24 @@ function AutorizacoesPage() {
                             ) : null}
                           </td>
                           <td className="py-3 pr-4">
-                            {auth ? (() => {
-                              const apt = aptidaoByEmployee.get(emp.id);
-                              if (!apt) return null;
-                              return apt.apto ? (
-                                <Badge className="bg-emerald-600 text-white">Apto</Badge>
-                              ) : (
-                                <Badge
-                                  variant="destructive"
-                                  title={apt.bloqueantes.map((b) => b.label + (b.detail ? ` (${b.detail})` : "")).join(" · ")}
-                                >
-                                  Bloqueado ({apt.bloqueantes.length})
-                                </Badge>
-                              );
-                            })() : (
+                            {auth ? (
+                              (() => {
+                                const apt = aptidaoByEmployee.get(emp.id);
+                                if (!apt) return null;
+                                return apt.apto ? (
+                                  <Badge className="bg-emerald-600 text-white">Apto</Badge>
+                                ) : (
+                                  <Badge
+                                    variant="destructive"
+                                    title={apt.bloqueantes
+                                      .map((b) => b.label + (b.detail ? ` (${b.detail})` : ""))
+                                      .join(" · ")}
+                                  >
+                                    Bloqueado ({apt.bloqueantes.length})
+                                  </Badge>
+                                );
+                              })()
+                            ) : (
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
@@ -298,7 +342,11 @@ function AutorizacoesPage() {
                                   className="h-7 w-7 text-muted-foreground hover:text-foreground"
                                   title="Carteirinha digital (QR)"
                                 >
-                                  <Link to="/carteirinha/$matricula" params={{ matricula: emp.matricula }} target="_blank">
+                                  <Link
+                                    to="/carteirinha/$matricula"
+                                    params={{ matricula: emp.matricula }}
+                                    target="_blank"
+                                  >
                                     <IdCard className="h-3.5 w-3.5" />
                                   </Link>
                                 </Button>
@@ -307,11 +355,15 @@ function AutorizacoesPage() {
                                   variant="ghost"
                                   className="h-7 w-7 text-muted-foreground"
                                   title="Ver histórico"
-                                  onClick={() => setExpandedHistory(expandedHistory === emp.id ? null : emp.id)}
+                                  onClick={() =>
+                                    setExpandedHistory(expandedHistory === emp.id ? null : emp.id)
+                                  }
                                 >
-                                  {expandedHistory === emp.id
-                                    ? <ChevronUp className="h-3.5 w-3.5" />
-                                    : <History className="h-3.5 w-3.5" />}
+                                  {expandedHistory === emp.id ? (
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <History className="h-3.5 w-3.5" />
+                                  )}
                                 </Button>
                                 <Button
                                   size="icon"
@@ -326,7 +378,11 @@ function AutorizacoesPage() {
                           )}
                         </tr>
                         {expandedHistory === emp.id && (
-                          <HistoryRow key={`history-${emp.id}`} employeeId={emp.id} colSpan={colSpan} />
+                          <HistoryRow
+                            key={`history-${emp.id}`}
+                            employeeId={emp.id}
+                            colSpan={colSpan}
+                          />
                         )}
                       </>
                     );
@@ -359,7 +415,9 @@ function AutorizacoesPage() {
       {printDialog && (
         <AuthorizationPrintDialog
           open={!!printDialog}
-          onOpenChange={(v) => { if (!v) setPrintDialog(null); }}
+          onOpenChange={(v) => {
+            if (!v) setPrintDialog(null);
+          }}
           authorization={printDialog.auth}
           employee={printDialog.employee}
         />

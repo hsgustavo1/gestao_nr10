@@ -2,16 +2,38 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, Pencil, Trash2, History, ArrowLeftRight, XCircle, AlertTriangle, Printer, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Lock,
+  Pencil,
+  Trash2,
+  History,
+  ArrowLeftRight,
+  XCircle,
+  AlertTriangle,
+  Printer,
+  AlertCircle,
+} from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { CancelPadlockDialog } from "@/components/cancel-padlock-dialog";
 import { DeletePadlockDialog } from "@/components/delete-padlock-dialog";
@@ -22,14 +44,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { usePadlockDetail, useQueryClient } from "@/lib/queries";
 import {
-  formatDateTime, formatPhoneBR, logEvent, PADLOCK_COLORS,
-  colorBadge, colorLabel, colorSwatch,
-  type Padlock, type PadlockEvent, type PadlockColor,
+  formatDateTime,
+  formatPhoneBR,
+  logEvent,
+  PADLOCK_COLORS,
+  colorBadge,
+  colorLabel,
+  colorSwatch,
+  type Padlock,
+  type PadlockEvent,
+  type PadlockColor,
 } from "@/lib/padlocks";
 
 export const Route = createFileRoute("/cadeados/$codigo")({
   component: PadlockDetail,
-  head: ({ params }) => ({ meta: [{ title: `Dispositivo ${params.codigo} — Bloqueio de energias perigosas` }] }),
+  head: ({ params }) => ({
+    meta: [{ title: `Dispositivo ${params.codigo} — Bloqueio de energias perigosas` }],
+  }),
 });
 
 function PadlockDetail() {
@@ -64,12 +95,20 @@ function PadlockDetail() {
           </div>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <Card><CardContent className="p-5 space-y-4">
-            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
-          </CardContent></Card>
-          <Card><CardContent className="p-5 space-y-4">
-            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
-          </CardContent></Card>
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-8 rounded" />
+              ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-8 rounded" />
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </PageShell>
     );
@@ -81,7 +120,11 @@ function PadlockDetail() {
         <div className="text-center py-16">
           <h1 className="text-xl font-bold">Dispositivo não encontrado</h1>
           <p className="text-sm text-muted-foreground mt-2">Código: {codigo}</p>
-          <Button asChild variant="outline" className="mt-4"><Link to="/cadeados"><ArrowLeft className="h-4 w-4" /> Voltar à lista</Link></Button>
+          <Button asChild variant="outline" className="mt-4">
+            <Link to="/cadeados">
+              <ArrowLeft className="h-4 w-4" /> Voltar à lista
+            </Link>
+          </Button>
         </div>
       </PageShell>
     );
@@ -92,26 +135,40 @@ function PadlockDetail() {
 
   return (
     <PageShell>
-      <Link to="/cadeados" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/cadeados"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Link>
 
       <div className="mt-3 flex items-start justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-          <div className={`grid h-12 w-12 sm:h-14 sm:w-14 shrink-0 place-items-center rounded-2xl border-2 shadow-brand ${colorSwatch[padlock.color]}`}>
+          <div
+            className={`grid h-12 w-12 sm:h-14 sm:w-14 shrink-0 place-items-center rounded-2xl border-2 shadow-brand ${colorSwatch[padlock.color]}`}
+          >
             <Lock className="h-6 w-6 sm:h-7 sm:w-7 text-white drop-shadow" />
           </div>
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Dispositivo de Bloqueio</div>
-            <h1 className="font-mono text-lg sm:text-2xl font-bold truncate">{colorLabel[padlock.color]} #{padlock.number}</h1>
-            <span className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorBadge[padlock.color]}`}>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              Dispositivo de Bloqueio
+            </div>
+            <h1 className="font-mono text-lg sm:text-2xl font-bold truncate">
+              {colorLabel[padlock.color]} #{padlock.number}
+            </h1>
+            <span
+              className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorBadge[padlock.color]}`}
+            >
               {colorLabel[padlock.color]}
             </span>
           </div>
         </div>
         <div className="grid grid-cols-2 sm:flex gap-2 sm:flex-wrap w-full sm:w-auto">
           {isStaff && !isRed && !isCancelled && (
-            <Button onClick={() => setOpenTransfer(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95 col-span-2">
+            <Button
+              onClick={() => setOpenTransfer(true)}
+              className="bg-brand-gradient text-white shadow-brand hover:opacity-95 col-span-2"
+            >
               <ArrowLeftRight className="h-4 w-4" /> Transferir cadeado
             </Button>
           )}
@@ -120,19 +177,33 @@ function PadlockDetail() {
               <Printer className="h-4 w-4" /> Imprimir etiqueta
             </Button>
           )}
-          <Button onClick={() => setOpenReport(true)} variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10">
+          <Button
+            onClick={() => setOpenReport(true)}
+            variant="outline"
+            className="text-destructive border-destructive/40 hover:bg-destructive/10"
+          >
             <AlertCircle className="h-4 w-4" /> Reportar inconsistência
           </Button>
           {isAdmin && !isCancelled && (
-            <Button onClick={() => setOpenEdit(true)} variant="ghost"><Pencil className="h-4 w-4" /> Editar</Button>
+            <Button onClick={() => setOpenEdit(true)} variant="ghost">
+              <Pencil className="h-4 w-4" /> Editar
+            </Button>
           )}
           {isStaff && !isCancelled && (
-            <Button onClick={() => setOpenCancel(true)} variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10">
+            <Button
+              onClick={() => setOpenCancel(true)}
+              variant="outline"
+              className="text-destructive border-destructive/40 hover:bg-destructive/10"
+            >
               <XCircle className="h-4 w-4" /> Cancelar cadeado
             </Button>
           )}
           {isAdmin && (
-            <Button onClick={() => setOpenDelete(true)} variant="ghost" className="text-destructive hover:text-destructive">
+            <Button
+              onClick={() => setOpenDelete(true)}
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
+            >
               <Trash2 className="h-4 w-4" /> Eliminar registro
             </Button>
           )}
@@ -145,108 +216,170 @@ function PadlockDetail() {
           <div className="space-y-1">
             <div className="font-semibold text-destructive">Dispositivo baixado</div>
             <div className="text-muted-foreground">
-              Motivo: <strong className="text-foreground">{padlock.cancellation_reason ?? "—"}</strong>
+              Motivo:{" "}
+              <strong className="text-foreground">{padlock.cancellation_reason ?? "—"}</strong>
               {padlock.cancellation_detail && <> — {padlock.cancellation_detail}</>}
             </div>
             <div className="text-xs text-muted-foreground">
-              Cancelado em {formatDateTime(padlock.cancelled_at)}.
-              O número está liberado para reuso em um novo cadastro.
+              Cancelado em {formatDateTime(padlock.cancelled_at)}. O número está liberado para reuso
+              em um novo cadastro.
             </div>
           </div>
         </div>
       )}
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <Card><CardContent className="p-5 space-y-3">
-          <Field label="Setor / Empresa" value={padlock.owner_sector} />
-          {!isRed && (
-            <>
-              <Field label="Dono" value={padlock.owner_name} />
-              {user && <Field label="Matrícula" value={padlock.owner_registration} mono />}
-              {user && <Field label="Função" value={padlock.owner_role} />}
-              {user && <Field label="Telefone" value={padlock.owner_phone ? formatPhoneBR(padlock.owner_phone) : null} />}
-            </>
-          )}
-          {isRed && (
-            <p className="text-xs text-muted-foreground">
-              Cadeados vermelhos não exigem dados pessoais — apenas número e setor.
-            </p>
-          )}
-        </CardContent></Card>
-        <Card><CardContent className="p-5 space-y-3">
-          <Field label="Cor" value={colorLabel[padlock.color]} />
-          <Field label="Nº" value={String(padlock.number)} mono />
-          <Field label="Cadastrado em" value={formatDateTime(padlock.created_at)} />
-          <Field label="Última atualização" value={formatDateTime(padlock.updated_at)} />
-        </CardContent></Card>
+        <Card>
+          <CardContent className="p-5 space-y-3">
+            <Field label="Setor / Empresa" value={padlock.owner_sector} />
+            {!isRed && (
+              <>
+                <Field label="Dono" value={padlock.owner_name} />
+                {user && <Field label="Matrícula" value={padlock.owner_registration} mono />}
+                {user && <Field label="Função" value={padlock.owner_role} />}
+                {user && (
+                  <Field
+                    label="Telefone"
+                    value={padlock.owner_phone ? formatPhoneBR(padlock.owner_phone) : null}
+                  />
+                )}
+              </>
+            )}
+            {isRed && (
+              <p className="text-xs text-muted-foreground">
+                Cadeados vermelhos não exigem dados pessoais — apenas número e setor.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5 space-y-3">
+            <Field label="Cor" value={colorLabel[padlock.color]} />
+            <Field label="Nº" value={String(padlock.number)} mono />
+            <Field label="Cadastrado em" value={formatDateTime(padlock.created_at)} />
+            <Field label="Última atualização" value={formatDateTime(padlock.updated_at)} />
+          </CardContent>
+        </Card>
       </div>
 
       <section className="mt-8">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
           <History className="h-4 w-4" /> Linha do tempo
         </h2>
-        <Card><CardContent className="p-0">
-          {events.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">Sem eventos.</div>
-          ) : (
-            <ol className="relative divide-y divide-border">
-              {events.map((e) => (
-                <li key={e.id} className="flex gap-4 p-4">
-                  <div className="flex flex-col items-center">
-                    <div className={`h-2.5 w-2.5 rounded-full ${eventDot(e.action)}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold">{actionLabel(e.action)}</span>
-                      {e.actor_name && <span className="text-xs text-muted-foreground">por {e.actor_name}</span>}
+        <Card>
+          <CardContent className="p-0">
+            {events.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">Sem eventos.</div>
+            ) : (
+              <ol className="relative divide-y divide-border">
+                {events.map((e) => (
+                  <li key={e.id} className="flex gap-4 p-4">
+                    <div className="flex flex-col items-center">
+                      <div className={`h-2.5 w-2.5 rounded-full ${eventDot(e.action)}`} />
                     </div>
-                    {e.notes && <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{e.notes}</div>}
-                    <div className="text-xs text-muted-foreground mt-1">{formatDateTime(e.created_at)}</div>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </CardContent></Card>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold">{actionLabel(e.action)}</span>
+                        {e.actor_name && (
+                          <span className="text-xs text-muted-foreground">por {e.actor_name}</span>
+                        )}
+                      </div>
+                      {e.notes && (
+                        <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">
+                          {e.notes}
+                        </div>
+                      )}
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {formatDateTime(e.created_at)}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
-      <TransferDialog open={openTransfer} onOpenChange={setOpenTransfer} padlock={padlock} onDone={invalidate} />
-      <EditDialog open={openEdit} onOpenChange={setOpenEdit} padlock={padlock} onDone={invalidate} onCodeChanged={(newCode) => navigate({ to: "/cadeados/$codigo", params: { codigo: newCode } })} />
-      <CancelPadlockDialog open={openCancel} onOpenChange={setOpenCancel} padlock={padlock} onDone={invalidate} />
-      <DeletePadlockDialog open={openDelete} onOpenChange={setOpenDelete} padlock={padlock} onDeleted={() => navigate({ to: "/cadeados" })} />
+      <TransferDialog
+        open={openTransfer}
+        onOpenChange={setOpenTransfer}
+        padlock={padlock}
+        onDone={invalidate}
+      />
+      <EditDialog
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        padlock={padlock}
+        onDone={invalidate}
+        onCodeChanged={(newCode) =>
+          navigate({ to: "/cadeados/$codigo", params: { codigo: newCode } })
+        }
+      />
+      <CancelPadlockDialog
+        open={openCancel}
+        onOpenChange={setOpenCancel}
+        padlock={padlock}
+        onDone={invalidate}
+      />
+      <DeletePadlockDialog
+        open={openDelete}
+        onOpenChange={setOpenDelete}
+        padlock={padlock}
+        onDeleted={() => navigate({ to: "/cadeados" })}
+      />
       <PrintLabelDialog open={openPrint} onOpenChange={setOpenPrint} padlock={padlock} />
       <ReportInconsistencyDialog open={openReport} onOpenChange={setOpenReport} padlock={padlock} />
     </PageShell>
   );
 }
 
-function Field({ label, value, mono }: { label: string; value: string | null | undefined; mono?: boolean }) {
+function Field({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string | null | undefined;
+  mono?: boolean;
+}) {
   return (
     <div>
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-sm text-foreground ${mono ? "font-mono" : ""}`}>{value || "—"}</div>
+      <div className={`mt-1 text-sm text-foreground ${mono ? "font-mono" : ""}`}>
+        {value || "—"}
+      </div>
     </div>
   );
 }
 
 function eventDot(action: string) {
   switch (action) {
-    case "transferred": return "bg-violet-500";
-    case "updated": return "bg-amber-500";
-    case "deleted": return "bg-red-500";
-    case "created": return "bg-sky-500";
-    default: return "bg-muted-foreground";
+    case "transferred":
+      return "bg-violet-500";
+    case "updated":
+      return "bg-amber-500";
+    case "deleted":
+      return "bg-red-500";
+    case "created":
+      return "bg-sky-500";
+    default:
+      return "bg-muted-foreground";
   }
 }
 function actionLabel(action: string) {
-  return ({
-    created: "Cadastrado",
-    updated: "Editado",
-    deleted: "Eliminado definitivamente",
-    transferred: "Transferido",
-    applied: "Em uso",
-    released: "Removido",
-  } as Record<string, string>)[action] ?? action;
+  return (
+    (
+      {
+        created: "Cadastrado",
+        updated: "Editado",
+        deleted: "Eliminado definitivamente",
+        transferred: "Transferido",
+        applied: "Em uso",
+        released: "Removido",
+      } as Record<string, string>
+    )[action] ?? action
+  );
 }
 
 /* ============== Transfer ============== */
@@ -259,9 +392,26 @@ const transferSchema = z.object({
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
-type ExtraLock = { id: string; code: string; color: PadlockColor; number: number; owner_name: string | null; owner_registration: string | null };
+type ExtraLock = {
+  id: string;
+  code: string;
+  color: PadlockColor;
+  number: number;
+  owner_name: string | null;
+  owner_registration: string | null;
+};
 
-function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean; onOpenChange: (o: boolean) => void; padlock: Padlock; onDone: () => void }) {
+function TransferDialog({
+  open,
+  onOpenChange,
+  padlock,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  padlock: Padlock;
+  onDone: () => void;
+}) {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [reg, setReg] = useState("");
@@ -281,9 +431,12 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
   async function addExtra() {
     const num = parseInt(addNumber, 10);
     if (!addNumber || isNaN(num) || num < 1) return setAddError("Informe um número válido.");
-    if (addColor === padlock.color && num === padlock.number) return setAddError("Cadeado já incluído.");
-    if (extras.some(e => e.color === addColor && e.number === num)) return setAddError("Já adicionado.");
-    setAddLoading(true); setAddError("");
+    if (addColor === padlock.color && num === padlock.number)
+      return setAddError("Cadeado já incluído.");
+    if (extras.some((e) => e.color === addColor && e.number === num))
+      return setAddError("Já adicionado.");
+    setAddLoading(true);
+    setAddError("");
     const { data, error } = await supabase
       .from("padlocks")
       .select("id, code, color, number, owner_name, owner_registration, cancelled")
@@ -293,15 +446,29 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
     setAddLoading(false);
     if (error || !data) return setAddError("Cadeado não encontrado.");
     if (data.cancelled) return setAddError("Cadeado cancelado.");
-    setExtras(prev => [...prev, { id: data.id, code: data.code, color: data.color as PadlockColor, number: data.number, owner_name: data.owner_name, owner_registration: data.owner_registration }]);
+    setExtras((prev) => [
+      ...prev,
+      {
+        id: data.id,
+        code: data.code,
+        color: data.color as PadlockColor,
+        number: data.number,
+        owner_name: data.owner_name,
+        owner_registration: data.owner_registration,
+      },
+    ]);
     setAddNumber("");
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = transferSchema.safeParse({
-      owner_name: name, owner_registration: reg, owner_role: role,
-      owner_sector: sector, owner_phone: phone, notes,
+      owner_name: name,
+      owner_registration: reg,
+      owner_role: role,
+      owner_sector: sector,
+      owner_phone: phone,
+      notes,
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     setLoading(true);
@@ -315,27 +482,64 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
     };
 
     const allLocks = [
-      { id: padlock.id, code: padlock.code, owner_name: padlock.owner_name, owner_registration: padlock.owner_registration, owner_role: padlock.owner_role, owner_sector: padlock.owner_sector, owner_phone: padlock.owner_phone },
-      ...extras.map(e => ({ id: e.id, code: e.code, owner_name: e.owner_name, owner_registration: e.owner_registration, owner_role: null, owner_sector: null, owner_phone: null })),
+      {
+        id: padlock.id,
+        code: padlock.code,
+        owner_name: padlock.owner_name,
+        owner_registration: padlock.owner_registration,
+        owner_role: padlock.owner_role,
+        owner_sector: padlock.owner_sector,
+        owner_phone: padlock.owner_phone,
+      },
+      ...extras.map((e) => ({
+        id: e.id,
+        code: e.code,
+        owner_name: e.owner_name,
+        owner_registration: e.owner_registration,
+        owner_role: null,
+        owner_sector: null,
+        owner_phone: null,
+      })),
     ];
 
-    const results = await Promise.allSettled(allLocks.map(async (p) => {
-      const { data, error } = await supabase.from("padlocks")
-        .update(ownerFields).eq("id", p.id).select().single();
-      if (error || !data) throw new Error(translateError(error?.message ?? "Erro"));
-      await logEvent({
-        padlock_id: p.id, padlock_code: p.code, action: "transferred",
-        actor_id: user?.id ?? null, actor_name: user?.email ?? null,
-        previous_data: { owner_name: p.owner_name, owner_registration: p.owner_registration, owner_role: p.owner_role, owner_sector: p.owner_sector, owner_phone: p.owner_phone },
-        new_data: { owner_name: data.owner_name, owner_registration: data.owner_registration, owner_role: data.owner_role, owner_sector: data.owner_sector, owner_phone: data.owner_phone },
-        notes: parsed.data.notes
-          ? `De ${p.owner_name ?? "—"} (${p.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
-          : `De ${p.owner_name ?? "—"} (${p.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
-      });
-      await supabase.storage.from("padlock-photos").remove([`${p.id}.jpg`]);
-    }));
+    const results = await Promise.allSettled(
+      allLocks.map(async (p) => {
+        const { data, error } = await supabase
+          .from("padlocks")
+          .update(ownerFields)
+          .eq("id", p.id)
+          .select()
+          .single();
+        if (error || !data) throw new Error(translateError(error?.message ?? "Erro"));
+        await logEvent({
+          padlock_id: p.id,
+          padlock_code: p.code,
+          action: "transferred",
+          actor_id: user?.id ?? null,
+          actor_name: user?.email ?? null,
+          previous_data: {
+            owner_name: p.owner_name,
+            owner_registration: p.owner_registration,
+            owner_role: p.owner_role,
+            owner_sector: p.owner_sector,
+            owner_phone: p.owner_phone,
+          },
+          new_data: {
+            owner_name: data.owner_name,
+            owner_registration: data.owner_registration,
+            owner_role: data.owner_role,
+            owner_sector: data.owner_sector,
+            owner_phone: data.owner_phone,
+          },
+          notes: parsed.data.notes
+            ? `De ${p.owner_name ?? "—"} (${p.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}). ${parsed.data.notes}`
+            : `De ${p.owner_name ?? "—"} (${p.owner_registration ?? "—"}) para ${data.owner_name} (${data.owner_registration}).`,
+        });
+        await supabase.storage.from("padlock-photos").remove([`${p.id}.jpg`]);
+      }),
+    );
 
-    const failed = results.filter(r => r.status === "rejected");
+    const failed = results.filter((r) => r.status === "rejected");
     const succeeded = results.length - failed.length;
     setLoading(false);
     if (failed.length > 0 && succeeded === 0) {
@@ -344,54 +548,115 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
     if (failed.length > 0) {
       toast.warning(`${succeeded} transferido(s), ${failed.length} com erro.`);
     } else {
-      toast.success(totalCount === 1 ? "Cadeado transferido" : `${totalCount} cadeados transferidos`);
+      toast.success(
+        totalCount === 1 ? "Cadeado transferido" : `${totalCount} cadeados transferidos`,
+      );
     }
-    onOpenChange(false); onDone();
-    setName(""); setReg(""); setRole(""); setSector(""); setPhone(""); setNotes("");
-    setExtras([]); setAddNumber(""); setAddError("");
+    onOpenChange(false);
+    onDone();
+    setName("");
+    setReg("");
+    setRole("");
+    setSector("");
+    setPhone("");
+    setNotes("");
+    setExtras([]);
+    setAddNumber("");
+    setAddError("");
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Transferir {totalCount > 1 ? `${totalCount} cadeados` : `cadeado — ${colorLabel[padlock.color]} #${padlock.number}`}</DialogTitle>
+          <DialogTitle>
+            Transferir{" "}
+            {totalCount > 1
+              ? `${totalCount} cadeados`
+              : `cadeado — ${colorLabel[padlock.color]} #${padlock.number}`}
+          </DialogTitle>
           <DialogDescription>
-            Dono atual: <strong>{padlock.owner_name ?? "—"}</strong> ({padlock.owner_registration ?? "—"}).
-            A mudança fica registrada na linha do tempo.
+            Dono atual: <strong>{padlock.owner_name ?? "—"}</strong> (
+            {padlock.owner_registration ?? "—"}). A mudança fica registrada na linha do tempo.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Dono</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
-            <div className="space-y-1.5"><Label>Matrícula</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
+            <div className="space-y-1.5">
+              <Label>Dono</Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={120}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Matrícula</Label>
+              <Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
+            <div className="space-y-1.5">
+              <Label>Função</Label>
+              <Input
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                maxLength={80}
+                required
+              />
+            </div>
             <div className="space-y-1.5">
               <Label>Setor / Empresa</Label>
               {padlock.color === "latao" ? (
-                <Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required />
+                <Input
+                  value={sector}
+                  onChange={(e) => setSector(e.target.value)}
+                  maxLength={100}
+                  required
+                />
               ) : (
                 <SectorSelect value={sector} onChange={setSector} required />
               )}
             </div>
           </div>
-          <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(formatPhoneBR(e.target.value))} inputMode="tel" placeholder="(XX) XXXXX-XXXX" maxLength={16} required /></div>
-          <div className="space-y-1.5"><Label>Observação (opcional)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} /></div>
+          <div className="space-y-1.5">
+            <Label>Telefone</Label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(formatPhoneBR(e.target.value))}
+              inputMode="tel"
+              placeholder="(XX) XXXXX-XXXX"
+              maxLength={16}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Observação (opcional)</Label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} />
+          </div>
 
           {/* Cadeados a transferir */}
           <div className="space-y-2 rounded-lg border p-3">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Cadeados a transferir</Label>
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              Cadeados a transferir
+            </Label>
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">
                 {colorLabel[padlock.color]} #{padlock.number}
                 <span className="text-muted-foreground">(este)</span>
               </span>
-              {extras.map(e => (
-                <span key={e.id} className="inline-flex items-center gap-1 rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">
+              {extras.map((e) => (
+                <span
+                  key={e.id}
+                  className="inline-flex items-center gap-1 rounded-full border bg-muted px-2.5 py-1 text-xs font-medium"
+                >
                   {colorLabel[e.color]} #{e.number}
-                  <button type="button" onClick={() => setExtras(prev => prev.filter(x => x.id !== e.id))} className="ml-0.5 rounded-full text-muted-foreground hover:text-foreground">
+                  <button
+                    type="button"
+                    onClick={() => setExtras((prev) => prev.filter((x) => x.id !== e.id))}
+                    className="ml-0.5 rounded-full text-muted-foreground hover:text-foreground"
+                  >
                     <XCircle className="h-3.5 w-3.5" />
                   </button>
                 </span>
@@ -400,13 +665,21 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
             <div className="flex gap-2 items-end">
               <div className="space-y-1 w-28">
                 <Label className="text-xs">Cor</Label>
-                <Select value={addColor} onValueChange={(v) => { setAddColor(v as PadlockColor); setAddError(""); }}>
+                <Select
+                  value={addColor}
+                  onValueChange={(v) => {
+                    setAddColor(v as PadlockColor);
+                    setAddError("");
+                  }}
+                >
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(PADLOCK_COLORS.filter(c => c !== "vermelho") as PadlockColor[]).map(c => (
-                      <SelectItem key={c} value={c} className="text-xs">{colorLabel[c]}</SelectItem>
+                    {(PADLOCK_COLORS.filter((c) => c !== "vermelho") as PadlockColor[]).map((c) => (
+                      <SelectItem key={c} value={c} className="text-xs">
+                        {colorLabel[c]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -418,12 +691,27 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
                   type="number"
                   min={1}
                   value={addNumber}
-                  onChange={(e) => { setAddNumber(e.target.value); setAddError(""); }}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addExtra(); } }}
+                  onChange={(e) => {
+                    setAddNumber(e.target.value);
+                    setAddError("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addExtra();
+                    }
+                  }}
                   placeholder="ex.: 5"
                 />
               </div>
-              <Button type="button" variant="outline" size="sm" className="h-8 shrink-0" onClick={addExtra} disabled={addLoading}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0"
+                onClick={addExtra}
+                disabled={addLoading}
+              >
                 {addLoading ? "..." : "Adicionar"}
               </Button>
             </div>
@@ -431,9 +719,19 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
           </div>
 
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
-              {loading ? "..." : totalCount === 1 ? "Transferir" : `Transferir ${totalCount} cadeados`}
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+            >
+              {loading
+                ? "..."
+                : totalCount === 1
+                  ? "Transferir"
+                  : `Transferir ${totalCount} cadeados`}
             </Button>
           </DialogFooter>
         </form>
@@ -443,9 +741,18 @@ function TransferDialog({ open, onOpenChange, padlock, onDone }: { open: boolean
 }
 
 /* ============== Edit (admin) ============== */
-function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
-  open: boolean; onOpenChange: (o: boolean) => void; padlock: Padlock;
-  onDone: () => void; onCodeChanged: (newCode: string) => void;
+function EditDialog({
+  open,
+  onOpenChange,
+  padlock,
+  onDone,
+  onCodeChanged,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  padlock: Padlock;
+  onDone: () => void;
+  onCodeChanged: (newCode: string) => void;
 }) {
   const { user } = useAuth();
   const [color, setColor] = useState<PadlockColor>(padlock.color);
@@ -475,38 +782,51 @@ function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
       .from("padlocks")
       .update({
         code: newCode,
-        color, number: num,
+        color,
+        number: num,
         owner_name: isRed ? null : name.trim() || null,
         owner_registration: isRed ? null : reg.trim() || null,
         owner_role: isRed ? null : role.trim() || null,
         owner_sector: sector.trim(),
         owner_phone: isRed ? null : phone.trim() || null,
       })
-      .eq("id", padlock.id).select().single();
+      .eq("id", padlock.id)
+      .select()
+      .single();
     if (error || !data) {
       setLoading(false);
       return toast.error(translateError(error?.message ?? "Erro"));
     }
     await logEvent({
-      padlock_id: padlock.id, padlock_code: data.code, action: "updated",
-      actor_id: user?.id ?? null, actor_name: user?.email ?? null,
-      previous_data: padlock, new_data: data,
+      padlock_id: padlock.id,
+      padlock_code: data.code,
+      action: "updated",
+      actor_id: user?.id ?? null,
+      actor_name: user?.email ?? null,
+      previous_data: padlock,
+      new_data: data,
     });
     toast.success("Cadeado atualizado");
-    setLoading(false); onOpenChange(false); onDone();
+    setLoading(false);
+    onOpenChange(false);
+    onDone();
     if (data.code !== padlock.code) onCodeChanged(data.code);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-1rem)] sm:max-w-lg">
-        <DialogHeader><DialogTitle>Editar cadeado</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Editar cadeado</DialogTitle>
+        </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Cor</Label>
               <Select value={color} onValueChange={(v) => setColor(v as PadlockColor)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {PADLOCK_COLORS.map((c) => (
                     <SelectItem key={c} value={c}>
@@ -519,12 +839,26 @@ function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5"><Label>Número</Label><Input type="number" min={0} value={number} onChange={(e) => setNumber(e.target.value)} required /></div>
+            <div className="space-y-1.5">
+              <Label>Número</Label>
+              <Input
+                type="number"
+                min={0}
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                required
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label>Setor</Label>
             {color === "latao" ? (
-              <Input value={sector} onChange={(e) => setSector(e.target.value)} maxLength={100} required />
+              <Input
+                value={sector}
+                onChange={(e) => setSector(e.target.value)}
+                maxLength={100}
+                required
+              />
             ) : (
               <SectorSelect value={sector} onChange={setSector} required />
             )}
@@ -532,18 +866,60 @@ function EditDialog({ open, onOpenChange, padlock, onDone, onCodeChanged }: {
           {!isRed && (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5"><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required /></div>
-                <div className="space-y-1.5"><Label>Matrícula</Label><Input value={reg} onChange={(e) => setReg(e.target.value)} maxLength={40} required /></div>
+                <div className="space-y-1.5">
+                  <Label>Nome</Label>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    maxLength={120}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Matrícula</Label>
+                  <Input
+                    value={reg}
+                    onChange={(e) => setReg(e.target.value)}
+                    maxLength={40}
+                    required
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5"><Label>Função</Label><Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} required /></div>
-                <div className="space-y-1.5"><Label>Telefone</Label><Input value={phone} onChange={(e) => setPhone(formatPhoneBR(e.target.value))} inputMode="tel" placeholder="(XX) XXXXX-XXXX" maxLength={16} required /></div>
+                <div className="space-y-1.5">
+                  <Label>Função</Label>
+                  <Input
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    maxLength={80}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Telefone</Label>
+                  <Input
+                    value={phone}
+                    onChange={(e) => setPhone(formatPhoneBR(e.target.value))}
+                    inputMode="tel"
+                    placeholder="(XX) XXXXX-XXXX"
+                    maxLength={16}
+                    required
+                  />
+                </div>
               </div>
             </>
           )}
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">{loading ? "..." : "Salvar"}</Button>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+            >
+              {loading ? "..." : "Salvar"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

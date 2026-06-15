@@ -1,7 +1,7 @@
 // ── Tipos e constantes do motor de inspeções (RTI, Termografia, SPDA, Cercon) ──
 
 export const INSPECTION_TYPES = ["rti", "termografia", "spda", "cercon"] as const;
-export type InspectionType = typeof INSPECTION_TYPES[number];
+export type InspectionType = (typeof INSPECTION_TYPES)[number];
 
 export const INSPECTION_TYPE_LABELS: Record<InspectionType, string> = {
   rti: "RTI — Relatórios de Teste de Isolamento",
@@ -18,7 +18,7 @@ export const INSPECTION_TYPE_SHORT: Record<InspectionType, string> = {
 };
 
 export const INSPECTION_RESULTS = ["conforme", "conforme_com_ressalvas", "nao_conforme"] as const;
-export type InspectionResult = typeof INSPECTION_RESULTS[number];
+export type InspectionResult = (typeof INSPECTION_RESULTS)[number];
 
 export const INSPECTION_RESULT_LABELS: Record<InspectionResult, string> = {
   conforme: "Conforme",
@@ -27,7 +27,7 @@ export const INSPECTION_RESULT_LABELS: Record<InspectionResult, string> = {
 };
 
 export const ACTION_STATUSES = ["pendente", "em_andamento", "concluida"] as const;
-export type ActionStatus = typeof ACTION_STATUSES[number];
+export type ActionStatus = (typeof ACTION_STATUSES)[number];
 
 export const ACTION_STATUS_LABELS: Record<ActionStatus, string> = {
   pendente: "Pendente",

@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type {
-  RtiArea, RtiNc, RtiNcEvidencia, RtiNcHistorico, RtiReport,
-} from "./rti";
+import type { RtiArea, RtiNc, RtiNcEvidencia, RtiNcHistorico, RtiReport } from "./rti";
 
 export const rtiKeys = {
   reports: ["rti_reports"] as const,
@@ -15,7 +13,10 @@ export const rtiKeys = {
 
 /** Busca paginada para contornar o limite de 1000 linhas por request. */
 async function fetchAllRows<T>(
-  build: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>,
+  build: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>,
 ): Promise<T[]> {
   const pageSize = 1000;
   const all: T[] = [];
@@ -114,11 +115,7 @@ export function useCreateRtiArea() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: { report_id: string; nome: string; ordem: number }) => {
-      const { data, error } = await supabase
-        .from("rti_areas")
-        .insert(payload)
-        .select()
-        .single();
+      const { data, error } = await supabase.from("rti_areas").insert(payload).select().single();
       if (error) throw error;
       return data as RtiArea;
     },
@@ -151,11 +148,7 @@ export function useAllRtiNcs() {
     queryKey: rtiKeys.ncs(),
     queryFn: async () => {
       return fetchAllRows<RtiNc>((from, to) =>
-        supabase
-          .from("rti_ncs")
-          .select("*")
-          .order("numero", { ascending: true })
-          .range(from, to),
+        supabase.from("rti_ncs").select("*").order("numero", { ascending: true }).range(from, to),
       );
     },
   });
@@ -166,11 +159,7 @@ export function useRtiNc(id?: string) {
     queryKey: rtiKeys.nc(id ?? ""),
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("rti_ncs")
-        .select("*")
-        .eq("id", id!)
-        .single();
+      const { data, error } = await supabase.from("rti_ncs").select("*").eq("id", id!).single();
       if (error) throw error;
       return data as RtiNc;
     },
@@ -185,14 +174,8 @@ function invalidateNcs(qc: ReturnType<typeof useQueryClient>) {
 export function useCreateRtiNc() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (
-      payload: Omit<RtiNc, "id" | "created_at" | "updated_at">,
-    ) => {
-      const { data, error } = await supabase
-        .from("rti_ncs")
-        .insert(payload)
-        .select()
-        .single();
+    mutationFn: async (payload: Omit<RtiNc, "id" | "created_at" | "updated_at">) => {
+      const { data, error } = await supabase.from("rti_ncs").insert(payload).select().single();
       if (error) throw error;
       return data as RtiNc;
     },
@@ -301,12 +284,13 @@ export function useRtiEvidenciaFileIndex(reportId?: string) {
     queryKey: ["rti_nc_evidencias_files", reportId ?? "none"],
     enabled: !!reportId,
     queryFn: async () => {
-      const rows = await fetchAllRows<{ nc_id: string; tipo: string; file_name: string }>((from, to) =>
-        supabase
-          .from("rti_nc_evidencias")
-          .select("nc_id, tipo, file_name, rti_ncs!inner(report_id)")
-          .eq("rti_ncs.report_id", reportId!)
-          .range(from, to),
+      const rows = await fetchAllRows<{ nc_id: string; tipo: string; file_name: string }>(
+        (from, to) =>
+          supabase
+            .from("rti_nc_evidencias")
+            .select("nc_id, tipo, file_name, rti_ncs!inner(report_id)")
+            .eq("rti_ncs.report_id", reportId!)
+            .range(from, to),
       );
       return new Set(rows.map((r) => `${r.nc_id}|${r.tipo}|${r.file_name}`));
     },
@@ -316,9 +300,7 @@ export function useRtiEvidenciaFileIndex(reportId?: string) {
 export function useAddRtiEvidencia() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (
-      payload: Omit<RtiNcEvidencia, "id" | "created_at">,
-    ) => {
+    mutationFn: async (payload: Omit<RtiNcEvidencia, "id" | "created_at">) => {
       const { data, error } = await supabase
         .from("rti_nc_evidencias")
         .insert(payload)
@@ -337,11 +319,16 @@ export function useAddRtiEvidencia() {
 export function useUpdateRtiEvidencia() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, nc_id, descricao }: { id: string; nc_id: string; descricao: string | null }) => {
-      const { error } = await supabase
-        .from("rti_nc_evidencias")
-        .update({ descricao })
-        .eq("id", id);
+    mutationFn: async ({
+      id,
+      nc_id,
+      descricao,
+    }: {
+      id: string;
+      nc_id: string;
+      descricao: string | null;
+    }) => {
+      const { error } = await supabase.from("rti_nc_evidencias").update({ descricao }).eq("id", id);
       if (error) throw error;
       return { id, nc_id, descricao };
     },
@@ -388,9 +375,7 @@ export function useRtiHistorico(ncId?: string) {
 export function useAddRtiHistorico() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (
-      payload: Omit<RtiNcHistorico, "id" | "created_at">,
-    ) => {
+    mutationFn: async (payload: Omit<RtiNcHistorico, "id" | "created_at">) => {
       const { data, error } = await supabase
         .from("rti_nc_historico")
         .insert(payload)
@@ -440,7 +425,12 @@ export function rtiFileUrl(path: string): string {
  * que a exclusão da evidência de uma NC não afete as demais.
  */
 export async function bulkAttachRtiEvidencias({
-  ncIds, files, tipo, descricao, autorNome, onProgress,
+  ncIds,
+  files,
+  tipo,
+  descricao,
+  autorNome,
+  onProgress,
 }: {
   ncIds: string[];
   files: File[];

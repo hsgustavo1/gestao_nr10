@@ -1,16 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  AlertTriangle, ArrowLeft, FileText, LayoutList, Trash2,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, FileText, LayoutList, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
 import { formatDatePtBR } from "@/lib/qualificacoes";
@@ -56,7 +59,9 @@ function RtiGestaoPage() {
 
       {isLoading ? (
         <div className="mt-5 space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
         </div>
       ) : reports.length === 0 ? (
         <Card className="mt-6">
@@ -100,7 +105,8 @@ function RtiGestaoPage() {
                       </Button>
                       {isStaff && (
                         <Button
-                          size="sm" variant="ghost"
+                          size="sm"
+                          variant="ghost"
                           className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           onClick={() => setDeletingReport(report)}
                           title="Excluir relatório RTI"
@@ -122,7 +128,9 @@ function RtiGestaoPage() {
           report={deletingReport}
           linkedInspectionTitle={inspByReportId.get(deletingReport.id)?.titulo ?? null}
           linkedInspectionId={inspByReportId.get(deletingReport.id)?.id ?? null}
-          onOpenChange={(o) => { if (!o) setDeletingReport(null); }}
+          onOpenChange={(o) => {
+            if (!o) setDeletingReport(null);
+          }}
         />
       )}
     </PageShell>
@@ -175,13 +183,13 @@ function ExcluirRtiDialog({
             <div className="space-y-2 text-sm">
               <p>
                 Você está prestes a excluir permanentemente o relatório{" "}
-                <strong>{report.titulo}</strong>, incluindo todas as suas não
-                conformidades, histórico e evidências.
+                <strong>{report.titulo}</strong>, incluindo todas as suas não conformidades,
+                histórico e evidências.
               </p>
               {linkedInspectionTitle && (
                 <p className="text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                  A coleta em campo <strong>{linkedInspectionTitle}</strong>{" "}
-                  será desvinculada e voltará ao status <em>Em andamento</em>.
+                  A coleta em campo <strong>{linkedInspectionTitle}</strong> será desvinculada e
+                  voltará ao status <em>Em andamento</em>.
                 </p>
               )}
               <p className="font-medium text-destructive">

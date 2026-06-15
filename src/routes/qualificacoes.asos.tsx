@@ -9,19 +9,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth-context";
 import {
-  ASO_RESULTADO_LABELS, ASO_RESULTADOS, ASO_STATUS_LABELS, ASO_TIPO_LABELS, ASO_TIPOS,
-  asoStatus, latestASOByEmployee,
-  type ASO, type ASOResultado, type ASOStatus, type ASOTipo,
+  ASO_RESULTADO_LABELS,
+  ASO_RESULTADOS,
+  ASO_STATUS_LABELS,
+  ASO_TIPO_LABELS,
+  ASO_TIPOS,
+  asoStatus,
+  latestASOByEmployee,
+  type ASO,
+  type ASOResultado,
+  type ASOStatus,
+  type ASOTipo,
 } from "@/lib/asos";
 import { asoFileUrl, uploadASOFile, useASOs, useDeleteASO, useUpsertASO } from "@/lib/asos-queries";
 import { useEmployees } from "@/lib/qualificacoes-queries";
@@ -32,7 +54,11 @@ export const Route = createFileRoute("/qualificacoes/asos")({
   head: () => ({
     meta: [
       { title: "ASOs — Gestão NR-10" },
-      { name: "description", content: "Controle de Atestados de Saúde Ocupacional dos trabalhadores autorizados (NR-10 10.8.7)." },
+      {
+        name: "description",
+        content:
+          "Controle de Atestados de Saúde Ocupacional dos trabalhadores autorizados (NR-10 10.8.7).",
+      },
     ],
   }),
 });
@@ -46,7 +72,9 @@ function statusBadge(status: ASOStatus) {
     none: "border-slate-300 bg-slate-50 text-slate-600",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[status]}`}>
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cls[status]}`}
+    >
       {ASO_STATUS_LABELS[status]}
     </span>
   );
@@ -72,7 +100,11 @@ function ASOsPage() {
   }, [employees]);
 
   const stats = useMemo(() => {
-    let emDia = 0, vencendo = 0, vencidos = 0, inaptos = 0, semAso = 0;
+    let emDia = 0,
+      vencendo = 0,
+      vencidos = 0,
+      inaptos = 0,
+      semAso = 0;
     for (const e of employees) {
       const st = asoStatus(latestByEmp.get(e.id) ?? null);
       if (st === "ok") emDia++;
@@ -88,7 +120,8 @@ function ASOsPage() {
     const t = search.trim().toLowerCase();
     return employees.filter((e) => {
       if (setorFilter !== "all" && e.setor !== setorFilter) return false;
-      if (statusFilter !== "all" && asoStatus(latestByEmp.get(e.id) ?? null) !== statusFilter) return false;
+      if (statusFilter !== "all" && asoStatus(latestByEmp.get(e.id) ?? null) !== statusFilter)
+        return false;
       if (!t) return true;
       return (
         e.name.toLowerCase().includes(t) ||
@@ -108,7 +141,8 @@ function ASOsPage() {
             ASOs — Saúde Ocupacional
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Aptidão médica dos trabalhadores autorizados (NR-10 10.8.7) · {isLoading ? "Carregando..." : `${employees.length} colaboradores ativos`}
+            Aptidão médica dos trabalhadores autorizados (NR-10 10.8.7) ·{" "}
+            {isLoading ? "Carregando..." : `${employees.length} colaboradores ativos`}
           </p>
         </div>
       </div>
@@ -117,10 +151,26 @@ function ASOsPage() {
       <div className="mt-5 grid grid-cols-3 sm:grid-cols-6 gap-3">
         <StatCard label="Ativos" value={stats.total} />
         <StatCard label="Em dia" value={stats.emDia} tone="green" />
-        <StatCard label="Vencendo" value={stats.vencendo} tone={stats.vencendo > 0 ? "amber" : "default"} />
-        <StatCard label="Vencidos" value={stats.vencidos} tone={stats.vencidos > 0 ? "red" : "default"} />
-        <StatCard label="Inaptos" value={stats.inaptos} tone={stats.inaptos > 0 ? "red" : "default"} />
-        <StatCard label="Sem ASO" value={stats.semAso} tone={stats.semAso > 0 ? "amber" : "default"} />
+        <StatCard
+          label="Vencendo"
+          value={stats.vencendo}
+          tone={stats.vencendo > 0 ? "amber" : "default"}
+        />
+        <StatCard
+          label="Vencidos"
+          value={stats.vencidos}
+          tone={stats.vencidos > 0 ? "red" : "default"}
+        />
+        <StatCard
+          label="Inaptos"
+          value={stats.inaptos}
+          tone={stats.inaptos > 0 ? "red" : "default"}
+        />
+        <StatCard
+          label="Sem ASO"
+          value={stats.semAso}
+          tone={stats.semAso > 0 ? "amber" : "default"}
+        />
       </div>
 
       {/* Filtros */}
@@ -135,16 +185,22 @@ function ASOsPage() {
           />
         </div>
         <Select value={setorFilter} onValueChange={setSetorFilter}>
-          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Setor" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue placeholder="Setor" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os setores</SelectItem>
             {setores.map((s) => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="ok">Em dia</SelectItem>
@@ -161,7 +217,9 @@ function ASOsPage() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-5 space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10" />)}
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-10" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground">
@@ -188,37 +246,62 @@ function ASOsPage() {
                     return (
                       <TableRow key={e.id}>
                         <TableCell className="max-w-[220px]">
-                          <div className="font-medium leading-tight truncate" title={e.name}>{e.name}</div>
-                          <div className="text-[11px] text-muted-foreground">Mat. {e.matricula}{e.funcao ? ` · ${e.funcao}` : ""}</div>
+                          <div className="font-medium leading-tight truncate" title={e.name}>
+                            {e.name}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            Mat. {e.matricula}
+                            {e.funcao ? ` · ${e.funcao}` : ""}
+                          </div>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">{e.setor ?? "—"}</TableCell>
                         <TableCell className="whitespace-nowrap">
                           {last ? (
                             <>
                               <div className="text-sm">{formatDatePtBR(last.exam_date)}</div>
-                              <div className="text-[11px] text-muted-foreground">{ASO_TIPO_LABELS[last.tipo]}</div>
+                              <div className="text-[11px] text-muted-foreground">
+                                {ASO_TIPO_LABELS[last.tipo]}
+                              </div>
                             </>
-                          ) : "—"}
+                          ) : (
+                            "—"
+                          )}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">{last ? formatDatePtBR(last.validity_date) : "—"}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {last ? formatDatePtBR(last.validity_date) : "—"}
+                        </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {last ? (
                             <>
                               <div className="text-sm">{ASO_RESULTADO_LABELS[last.resultado]}</div>
                               {!last.apto_eletricidade && (
-                                <div className="text-[11px] text-red-600 font-medium">Sem aptidão p/ eletricidade</div>
+                                <div className="text-[11px] text-red-600 font-medium">
+                                  Sem aptidão p/ eletricidade
+                                </div>
                               )}
                             </>
-                          ) : "—"}
+                          ) : (
+                            "—"
+                          )}
                         </TableCell>
                         <TableCell>{statusBadge(status)}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             size="sm"
-                            variant={status === "expired" || status === "none" || status === "inapto" ? "default" : "outline"}
+                            variant={
+                              status === "expired" || status === "none" || status === "inapto"
+                                ? "default"
+                                : "outline"
+                            }
                             onClick={() => setHistoryFor(e)}
                             title="Histórico de ASOs"
-                            className={status === "expired" || status === "inapto" ? "bg-red-500 hover:bg-red-600 text-white" : status === "none" ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}
+                            className={
+                              status === "expired" || status === "inapto"
+                                ? "bg-red-500 hover:bg-red-600 text-white"
+                                : status === "none"
+                                  ? "bg-amber-500 hover:bg-amber-600 text-white"
+                                  : ""
+                            }
                           >
                             <Stethoscope className="h-4 w-4" />
                             <span className="hidden sm:inline">Histórico</span>
@@ -237,7 +320,9 @@ function ASOsPage() {
       {historyFor && (
         <ASOHistoryDialog
           employee={historyFor}
-          onOpenChange={(o) => { if (!o) setHistoryFor(null); }}
+          onOpenChange={(o) => {
+            if (!o) setHistoryFor(null);
+          }}
           canEdit={isStaff}
         />
       )}
@@ -245,11 +330,23 @@ function ASOsPage() {
   );
 }
 
-function StatCard({ label, value, tone = "default" }: { label: string; value: number; tone?: "default" | "green" | "amber" | "red" }) {
+function StatCard({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: number;
+  tone?: "default" | "green" | "amber" | "red";
+}) {
   const valueCls =
-    tone === "red" ? "text-red-600" :
-    tone === "amber" ? "text-amber-600" :
-    tone === "green" ? "text-emerald-600" : "";
+    tone === "red"
+      ? "text-red-600"
+      : tone === "amber"
+        ? "text-amber-600"
+        : tone === "green"
+          ? "text-emerald-600"
+          : "";
   return (
     <Card>
       <CardContent className="p-4">
@@ -261,7 +358,9 @@ function StatCard({ label, value, tone = "default" }: { label: string; value: nu
 }
 
 function ASOHistoryDialog({
-  employee, onOpenChange, canEdit,
+  employee,
+  onOpenChange,
+  canEdit,
 }: {
   employee: Employee;
   onOpenChange: (o: boolean) => void;
@@ -288,8 +387,10 @@ function ASOHistoryDialog({
     e.preventDefault();
     if (!examDate) return toast.error("Informe a data do exame.");
     if (!validityDate) return toast.error("Informe a validade do ASO.");
-    if (validityDate <= examDate) return toast.error("A validade deve ser posterior à data do exame.");
-    if (file && file.type !== "application/pdf") return toast.error("O ASO deve ser um arquivo PDF.");
+    if (validityDate <= examDate)
+      return toast.error("A validade deve ser posterior à data do exame.");
+    if (file && file.type !== "application/pdf")
+      return toast.error("O ASO deve ser um arquivo PDF.");
     if (file && file.size > 10 * 1024 * 1024) return toast.error("PDF excede 10 MB.");
 
     setBusy(true);
@@ -342,7 +443,8 @@ function ASOHistoryDialog({
             ASOs — {employee.name}
           </DialogTitle>
           <DialogDescription>
-            Histórico de Atestados de Saúde Ocupacional. Mat. {employee.matricula}{employee.setor ? ` · ${employee.setor}` : ""}.
+            Histórico de Atestados de Saúde Ocupacional. Mat. {employee.matricula}
+            {employee.setor ? ` · ${employee.setor}` : ""}.
           </DialogDescription>
         </DialogHeader>
 
@@ -354,17 +456,26 @@ function ASOHistoryDialog({
             </div>
           )}
           {asos.map((a) => (
-            <div key={a.id} className="rounded-md border p-3 flex items-start justify-between gap-3 flex-wrap">
+            <div
+              key={a.id}
+              className="rounded-md border p-3 flex items-start justify-between gap-3 flex-wrap"
+            >
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold">{formatDatePtBR(a.exam_date)}</span>
-                  <span className="text-[11px] text-muted-foreground">{ASO_TIPO_LABELS[a.tipo]}</span>
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${a.resultado === "inapto" || !a.apto_eletricidade ? "border-red-300 bg-red-50 text-red-700" : a.resultado === "apto_com_restricoes" ? "border-amber-300 bg-amber-50 text-amber-700" : "border-emerald-300 bg-emerald-50 text-emerald-700"}`}>
-                    {ASO_RESULTADO_LABELS[a.resultado]}{!a.apto_eletricidade ? " · sem aptidão p/ eletricidade" : ""}
+                  <span className="text-[11px] text-muted-foreground">
+                    {ASO_TIPO_LABELS[a.tipo]}
+                  </span>
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${a.resultado === "inapto" || !a.apto_eletricidade ? "border-red-300 bg-red-50 text-red-700" : a.resultado === "apto_com_restricoes" ? "border-amber-300 bg-amber-50 text-amber-700" : "border-emerald-300 bg-emerald-50 text-emerald-700"}`}
+                  >
+                    {ASO_RESULTADO_LABELS[a.resultado]}
+                    {!a.apto_eletricidade ? " · sem aptidão p/ eletricidade" : ""}
                   </span>
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
-                  Validade: <strong className="text-foreground">{formatDatePtBR(a.validity_date)}</strong>
+                  Validade:{" "}
+                  <strong className="text-foreground">{formatDatePtBR(a.validity_date)}</strong>
                   {a.medico && <> · Médico: {a.medico}</>}
                   {a.restricoes && <> · Restrições: {a.restricoes}</>}
                   {a.notes && <> · {a.notes}</>}
@@ -373,13 +484,24 @@ function ASOHistoryDialog({
               <div className="flex gap-1">
                 {a.file_path && (
                   <Button asChild size="sm" variant="outline">
-                    <a href={asoFileUrl(a.file_path)} target="_blank" rel="noreferrer" title="ASO (PDF)">
+                    <a
+                      href={asoFileUrl(a.file_path)}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="ASO (PDF)"
+                    >
                       <Download className="h-4 w-4" />
                     </a>
                   </Button>
                 )}
                 {isAdmin && (
-                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(a)} title="Excluir ASO">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={() => remove(a)}
+                    title="Excluir ASO"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -390,25 +512,44 @@ function ASOHistoryDialog({
 
         {canEdit && (
           <form onSubmit={addASO} className="space-y-3 rounded-md border bg-muted/20 p-3">
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Registrar novo ASO</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Registrar novo ASO
+            </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="aso-exam">Data do exame</Label>
-                <Input id="aso-exam" type="date" value={examDate} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setExamDate(e.target.value)} required />
+                <Input
+                  id="aso-exam"
+                  type="date"
+                  value={examDate}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setExamDate(e.target.value)}
+                  required
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="aso-validity">Válido até</Label>
-                <Input id="aso-validity" type="date" value={validityDate} onChange={(e) => setValidityDate(e.target.value)} required />
+                <Input
+                  id="aso-validity"
+                  type="date"
+                  value={validityDate}
+                  onChange={(e) => setValidityDate(e.target.value)}
+                  required
+                />
               </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="aso-tipo">Tipo de exame</Label>
                 <Select value={tipo} onValueChange={setTipo}>
-                  <SelectTrigger id="aso-tipo"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="aso-tipo">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {ASO_TIPOS.map((t) => (
-                      <SelectItem key={t} value={t}>{ASO_TIPO_LABELS[t]}</SelectItem>
+                      <SelectItem key={t} value={t}>
+                        {ASO_TIPO_LABELS[t]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -416,10 +557,14 @@ function ASOHistoryDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="aso-result">Resultado</Label>
                 <Select value={resultado} onValueChange={setResultado}>
-                  <SelectTrigger id="aso-result"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="aso-result">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {ASO_RESULTADOS.map((r) => (
-                      <SelectItem key={r} value={r}>{ASO_RESULTADO_LABELS[r]}</SelectItem>
+                      <SelectItem key={r} value={r}>
+                        {ASO_RESULTADO_LABELS[r]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -429,7 +574,9 @@ function ASOHistoryDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="aso-apto">Apto p/ trabalho em eletricidade</Label>
                 <Select value={aptoEletricidade} onValueChange={setAptoEletricidade}>
-                  <SelectTrigger id="aso-apto"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="aso-apto">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="sim">Sim</SelectItem>
                     <SelectItem value="nao">Não</SelectItem>
@@ -438,21 +585,43 @@ function ASOHistoryDialog({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="aso-medico">Médico examinador (opcional)</Label>
-                <Input id="aso-medico" value={medico} onChange={(e) => setMedico(e.target.value)} maxLength={150} placeholder="Nome / CRM" />
+                <Input
+                  id="aso-medico"
+                  value={medico}
+                  onChange={(e) => setMedico(e.target.value)}
+                  maxLength={150}
+                  placeholder="Nome / CRM"
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="aso-restr">Restrições (opcional)</Label>
-              <Input id="aso-restr" value={restricoes} onChange={(e) => setRestricoes(e.target.value)} maxLength={300} />
+              <Input
+                id="aso-restr"
+                value={restricoes}
+                onChange={(e) => setRestricoes(e.target.value)}
+                maxLength={300}
+              />
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="aso-file">Arquivo do ASO (PDF, opcional)</Label>
-                <Input id="aso-file" ref={fileRef} type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                <Input
+                  id="aso-file"
+                  ref={fileRef}
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="aso-notes">Observações (opcional)</Label>
-                <Input id="aso-notes" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={300} />
+                <Input
+                  id="aso-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  maxLength={300}
+                />
               </div>
             </div>
             {file && (
@@ -461,7 +630,12 @@ function ASOHistoryDialog({
               </div>
             )}
             <div className="flex justify-end">
-              <Button type="submit" size="sm" disabled={busy} className="bg-brand-gradient text-white shadow-brand">
+              <Button
+                type="submit"
+                size="sm"
+                disabled={busy}
+                className="bg-brand-gradient text-white shadow-brand"
+              >
                 <Plus className="h-4 w-4" /> {busy ? "Salvando..." : "Registrar ASO"}
               </Button>
             </div>
@@ -469,7 +643,9 @@ function ASOHistoryDialog({
         )}
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Fechar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

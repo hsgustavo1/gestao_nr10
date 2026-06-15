@@ -3,9 +3,18 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import type { RtiArea, RtiNc, RtiReport } from "./rti";
 import {
-  caminhoAbaixoDoSetor, normalizarEstrutura, resizeImage, setorDoNo,
-  type EstruturaLinha, type FieldFinding, type FieldInspection, type FieldNode,
-  type FieldPhoto, type FieldPoint, type NivelArvore, type RtiModoFalha,
+  caminhoAbaixoDoSetor,
+  normalizarEstrutura,
+  resizeImage,
+  setorDoNo,
+  type EstruturaLinha,
+  type FieldFinding,
+  type FieldInspection,
+  type FieldNode,
+  type FieldPhoto,
+  type FieldPoint,
+  type NivelArvore,
+  type RtiModoFalha,
 } from "./campo";
 
 export const campoKeys = {
@@ -101,9 +110,7 @@ export function useFieldInspection(id?: string) {
 export function useUpsertFieldInspection() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (
-      payload: Partial<FieldInspection> & { titulo: string; id?: string },
-    ) => {
+    mutationFn: async (payload: Partial<FieldInspection> & { titulo: string; id?: string }) => {
       const { data, error } = await supabase
         .from("field_inspections")
         .upsert(payload, { onConflict: "id" })
@@ -124,14 +131,14 @@ export function useSetArquivadaCampo() {
       arquivada_campo,
       status,
     }: {
-      id: string
-      arquivada_campo: boolean
-      status?: string
+      id: string;
+      arquivada_campo: boolean;
+      status?: string;
     }) => {
-      const update: { arquivada_campo: boolean; status?: string } = { arquivada_campo }
-      if (status !== undefined) update.status = status
-      const { error } = await supabase.from("field_inspections").update(update).eq("id", id)
-      if (error) throw error
+      const update: { arquivada_campo: boolean; status?: string } = { arquivada_campo };
+      if (status !== undefined) update.status = status;
+      const { error } = await supabase.from("field_inspections").update(update).eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["field_inspections"] }),
   });
@@ -190,7 +197,12 @@ export function useUpsertFieldNode() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (
-      payload: Partial<FieldNode> & { inspection_id: string; nivel: NivelArvore; nome: string; id?: string },
+      payload: Partial<FieldNode> & {
+        inspection_id: string;
+        nivel: NivelArvore;
+        nome: string;
+        id?: string;
+      },
     ) => {
       const { data, error } = await supabase
         .from("field_nodes")
@@ -241,7 +253,10 @@ export function useDeleteFieldNode() {
 }
 
 /** Cria a árvore a partir de linhas Setor/Ativo/Componente (dedupe + reaproveita nós existentes). */
-export async function bulkCreateNodes(inspectionId: string, linhasBrutas: EstruturaLinha[]): Promise<number> {
+export async function bulkCreateNodes(
+  inspectionId: string,
+  linhasBrutas: EstruturaLinha[],
+): Promise<number> {
   const linhas = normalizarEstrutura(linhasBrutas);
   if (linhas.length === 0) return 0;
 
@@ -252,7 +267,8 @@ export async function bulkCreateNodes(inspectionId: string, linhasBrutas: Estrut
   const nodes = (existentes ?? []) as unknown as FieldNode[];
 
   // Índice por "parentId|nome" para evitar duplicar
-  const keyOf = (parentId: string | null, nome: string) => `${parentId ?? ""}|${nome.toLowerCase()}`;
+  const keyOf = (parentId: string | null, nome: string) =>
+    `${parentId ?? ""}|${nome.toLowerCase()}`;
   const byKey = new Map<string, FieldNode>();
   for (const n of nodes) byKey.set(keyOf(n.parent_id, n.nome), n);
   const ordemPorParent = new Map<string | null, number>();
@@ -262,7 +278,11 @@ export async function bulkCreateNodes(inspectionId: string, linhasBrutas: Estrut
   }
 
   let criados = 0;
-  async function garante(parentId: string | null, nivel: NivelArvore, nome: string): Promise<string> {
+  async function garante(
+    parentId: string | null,
+    nivel: NivelArvore,
+    nome: string,
+  ): Promise<string> {
     const k = keyOf(parentId, nome);
     const ja = byKey.get(k);
     if (ja) return ja.id;
@@ -322,7 +342,9 @@ export function baixarPlanilhaModeloEstrutura(setoresReferencia: string[] = []) 
   XLSX.utils.book_append_sheet(wb, ws, "Estrutura");
 
   if (setoresReferencia.length > 0) {
-    const ref = XLSX.utils.json_to_sheet(setoresReferencia.map((s) => ({ "Setores de referência (RTI atual)": s })));
+    const ref = XLSX.utils.json_to_sheet(
+      setoresReferencia.map((s) => ({ "Setores de referência (RTI atual)": s })),
+    );
     ref["!cols"] = [{ wch: 40 }];
     XLSX.utils.book_append_sheet(wb, ref, "Setores de referência");
   }
@@ -536,7 +558,10 @@ export function usePointPhotos(pointId?: string) {
 /** Redimensiona (~1600px) e sobe a foto para o bucket rti-evidencias.
  * Path escopado por org ({org_id}/campo/…) quando orgId é informado; senão usa o
  * legado `campo/…` (sem regressão). Prepara isolamento + storage frio futuro. */
-export async function uploadFieldPhoto(file: File, orgId?: string): Promise<{ path: string; name: string }> {
+export async function uploadFieldPhoto(
+  file: File,
+  orgId?: string,
+): Promise<{ path: string; name: string }> {
   const resized = await resizeImage(file);
   const ext = resized.name.split(".").pop()?.toLowerCase() ?? "jpg";
   const path = orgId
@@ -554,11 +579,7 @@ export function useAddFieldPhoto() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Omit<FieldPhoto, "id" | "created_at">) => {
-      const { data, error } = await supabase
-        .from("field_photos")
-        .insert(payload)
-        .select()
-        .single();
+      const { data, error } = await supabase.from("field_photos").insert(payload).select().single();
       if (error) throw error;
       return data as unknown as FieldPhoto;
     },
@@ -643,7 +664,11 @@ export function useCriarPontoComColeta() {
 
       if (args.fotos.length > 0) {
         const rows = args.fotos.map((f, i) => ({
-          point_id: point.id, file_path: f.path, file_name: f.name, legenda: null, ordem: i,
+          point_id: point.id,
+          file_path: f.path,
+          file_name: f.name,
+          legenda: null,
+          ordem: i,
         }));
         const { error } = await supabase.from("field_photos").insert(rows);
         if (error) throw error;
@@ -664,9 +689,7 @@ export function useCriarPontoComColeta() {
 
 // ── Composição do RTI a partir da coleta ─────────────────────────────────────
 
-export type ComporRtiDestino =
-  | { mode: "novo" }
-  | { mode: "existente"; reportId: string };
+export type ComporRtiDestino = { mode: "novo" } | { mode: "existente"; reportId: string };
 
 export type ComporRtiResult = { reportId: string; ncsCriadas: number; fotosCopiadas: number };
 
@@ -676,7 +699,10 @@ export type ComporRtiResult = { reportId: string; ncsCriadas: number; fotosCopia
  * ponto são copiadas como evidência de constatação em cada NC daquele ponto.
  */
 export async function comporRti({
-  inspection, destino, actorName, onProgress,
+  inspection,
+  destino,
+  actorName,
+  onProgress,
 }: {
   inspection: FieldInspection;
   destino: ComporRtiDestino;
@@ -685,26 +711,38 @@ export async function comporRti({
 }): Promise<ComporRtiResult> {
   // 1) Carrega árvore, pontos, achados e fotos
   const { data: nodesData, error: nErr } = await supabase
-    .from("field_nodes").select("*").eq("inspection_id", inspection.id);
+    .from("field_nodes")
+    .select("*")
+    .eq("inspection_id", inspection.id);
   if (nErr) throw nErr;
   const nodes = (nodesData ?? []) as unknown as FieldNode[];
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
 
   const { data: pointsData, error: pErr } = await supabase
-    .from("field_points").select("*").eq("inspection_id", inspection.id).order("ordem").order("created_at");
+    .from("field_points")
+    .select("*")
+    .eq("inspection_id", inspection.id)
+    .order("ordem")
+    .order("created_at");
   if (pErr) throw pErr;
   const points = (pointsData ?? []) as unknown as FieldPoint[];
   if (points.length === 0) throw new Error("A coleta não possui pontos de inspeção.");
 
   const pointIds = points.map((p) => p.id);
   const { data: findingsData, error: fErr } = await supabase
-    .from("field_findings").select("*").in("point_id", pointIds).order("created_at");
+    .from("field_findings")
+    .select("*")
+    .in("point_id", pointIds)
+    .order("created_at");
   if (fErr) throw fErr;
   const findings = (findingsData ?? []) as unknown as FieldFinding[];
   if (findings.length === 0) throw new Error("A coleta não possui achados registrados.");
 
   const { data: photosData, error: phErr } = await supabase
-    .from("field_photos").select("*").in("point_id", pointIds).order("ordem");
+    .from("field_photos")
+    .select("*")
+    .in("point_id", pointIds)
+    .order("ordem");
   if (phErr) throw phErr;
   const photos = (photosData ?? []) as unknown as FieldPhoto[];
   const photosByPoint = new Map<string, FieldPhoto[]>();
@@ -740,33 +778,43 @@ export async function comporRti({
         notes: `Composto a partir da coleta em campo "${inspection.titulo}".`,
         created_by_name: actorName,
       })
-      .select().single();
+      .select()
+      .single();
     if (rErr) throw rErr;
     reportId = (rep as RtiReport).id;
   }
 
   // 3) Áreas (= Setores). Cria as que faltam.
   const { data: areasData, error: aErr } = await supabase
-    .from("rti_areas").select("*").eq("report_id", reportId);
+    .from("rti_areas")
+    .select("*")
+    .eq("report_id", reportId);
   if (aErr) throw aErr;
   const areaIdByNome = new Map((areasData as RtiArea[]).map((a) => [a.nome, a.id]));
   let maxOrdem = (areasData as RtiArea[]).reduce((m, a) => Math.max(m, a.ordem), 0);
   // Setor de cada ponto
   const setorNomeDoPonto = (p: FieldPoint) => setorDoNo(p.node_id, nodeById)?.nome ?? "Sem setor";
-  const setoresFaltantes = [...new Set(points.map((p) => setorNomeDoPonto(p)))]
-    .filter((nome) => !areaIdByNome.has(nome));
+  const setoresFaltantes = [...new Set(points.map((p) => setorNomeDoPonto(p)))].filter(
+    (nome) => !areaIdByNome.has(nome),
+  );
   for (const nome of setoresFaltantes) {
     maxOrdem += 1;
     const { data: area, error } = await supabase
-      .from("rti_areas").insert({ report_id: reportId, nome, ordem: maxOrdem }).select().single();
+      .from("rti_areas")
+      .insert({ report_id: reportId, nome, ordem: maxOrdem })
+      .select()
+      .single();
     if (error) throw error;
     areaIdByNome.set(nome, (area as RtiArea).id);
   }
 
   // 4) Numeração sequencial
   const { data: maxData } = await supabase
-    .from("rti_ncs").select("numero").eq("report_id", reportId)
-    .order("numero", { ascending: false }).limit(1);
+    .from("rti_ncs")
+    .select("numero")
+    .eq("report_id", reportId)
+    .order("numero", { ascending: false })
+    .limit(1);
   let numero = (maxData?.[0]?.numero ?? 0) as number;
 
   // 4b) Para re-compose em relatório existente: mapa finding_id → NC já criada.
@@ -774,14 +822,19 @@ export async function comporRti({
   const existingNcByFindingId = new Map<string, RtiNc>();
   if (destino.mode === "existente") {
     const { data: existingNcs } = await supabase
-      .from("rti_ncs").select("*").eq("report_id", reportId).not("finding_id", "is", null);
+      .from("rti_ncs")
+      .select("*")
+      .eq("report_id", reportId)
+      .not("finding_id", "is", null);
     for (const nc of (existingNcs ?? []) as RtiNc[]) {
       if (nc.finding_id) existingNcByFindingId.set(nc.finding_id, nc);
     }
   }
 
   // 5) Cria ou atualiza as NCs (uma por achado), na ordem dos pontos
-  const ordered = [...points].sort((a, b) => a.ordem - b.ordem || a.created_at.localeCompare(b.created_at));
+  const ordered = [...points].sort(
+    (a, b) => a.ordem - b.ordem || a.created_at.localeCompare(b.created_at),
+  );
   let ncsCriadas = 0;
   let ncsAtualizadas = 0;
   let fotosCopiadas = 0;
@@ -804,7 +857,13 @@ export async function comporRti({
         // Achado já foi exportado anteriormente — atualiza NC e registra no histórico
         const { error: updErr } = await supabase
           .from("rti_ncs")
-          .update({ descricao, recomendacao: finding.recomendacao, prioridade: finding.prioridade, tipo_execucao: finding.tipo_execucao, situacao_atual: situacaoAtual })
+          .update({
+            descricao,
+            recomendacao: finding.recomendacao,
+            prioridade: finding.prioridade,
+            tipo_execucao: finding.tipo_execucao,
+            situacao_atual: situacaoAtual,
+          })
           .eq("id", existingNc.id);
         if (updErr) throw updErr;
         await supabase.from("rti_nc_historico").insert({
@@ -840,7 +899,8 @@ export async function comporRti({
             concluida_em: null,
             finding_id: finding.id,
           })
-          .select().single();
+          .select()
+          .single();
         if (ncErr) throw ncErr;
         const nc = ncData as RtiNc;
         ncsCriadas += 1;
@@ -855,7 +915,9 @@ export async function comporRti({
           const novoPath = inspection.org_id
             ? `${inspection.org_id}/evidencias/${crypto.randomUUID()}.${ext}`
             : `evidencias/${crypto.randomUUID()}.${ext}`;
-          const { error: cpErr } = await supabase.storage.from("rti-evidencias").copy(ph.file_path, novoPath);
+          const { error: cpErr } = await supabase.storage
+            .from("rti-evidencias")
+            .copy(ph.file_path, novoPath);
           if (cpErr) throw cpErr;
           const { error: evErr } = await supabase.from("rti_nc_evidencias").insert({
             nc_id: nc.id,
@@ -884,7 +946,9 @@ export async function comporRti({
 
   // 6) Marca a coleta como importada
   const { error: upErr } = await supabase
-    .from("field_inspections").update({ status: "importada", report_id: reportId }).eq("id", inspection.id);
+    .from("field_inspections")
+    .update({ status: "importada", report_id: reportId })
+    .eq("id", inspection.id);
   if (upErr) throw upErr;
 
   return { reportId, ncsCriadas, fotosCopiadas };

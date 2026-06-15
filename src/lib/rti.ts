@@ -3,7 +3,7 @@
 // instalações elétricas (NR-10). Prioridades P1→P4, onde P4 é a mais grave.
 
 export const RTI_NC_STATUSES = ["pendente", "em_andamento", "concluida"] as const;
-export type RtiNcStatus = typeof RTI_NC_STATUSES[number];
+export type RtiNcStatus = (typeof RTI_NC_STATUSES)[number];
 
 export const RTI_NC_STATUS_LABELS: Record<RtiNcStatus, string> = {
   pendente: "Pendente",
@@ -18,7 +18,7 @@ export const RTI_NC_STATUS_BADGE: Record<RtiNcStatus, string> = {
 };
 
 export const RTI_PRIORIDADES = [1, 2, 3, 4] as const;
-export type RtiPrioridade = typeof RTI_PRIORIDADES[number];
+export type RtiPrioridade = (typeof RTI_PRIORIDADES)[number];
 
 /** P4 é a mais grave (convenção do relatório da auditoria). */
 export const RTI_PRIORIDADE_LABELS: Record<RtiPrioridade, string> = {
@@ -43,7 +43,7 @@ export const RTI_PRIORIDADE_COLORS: Record<RtiPrioridade, string> = {
 };
 
 export const RTI_TIPOS_EXECUCAO = ["os", "investimento"] as const;
-export type RtiTipoExecucao = typeof RTI_TIPOS_EXECUCAO[number];
+export type RtiTipoExecucao = (typeof RTI_TIPOS_EXECUCAO)[number];
 
 export const RTI_TIPO_EXECUCAO_LABELS: Record<RtiTipoExecucao, string> = {
   os: "OS (manutenção)",
@@ -56,7 +56,7 @@ export const RTI_TIPO_EXECUCAO_SHORT: Record<RtiTipoExecucao, string> = {
 };
 
 export const RTI_EVIDENCIA_TIPOS = ["constatacao", "correcao"] as const;
-export type RtiEvidenciaTipo = typeof RTI_EVIDENCIA_TIPOS[number];
+export type RtiEvidenciaTipo = (typeof RTI_EVIDENCIA_TIPOS)[number];
 
 export const RTI_EVIDENCIA_TIPO_LABELS: Record<RtiEvidenciaTipo, string> = {
   constatacao: "Constatação da NC",
@@ -169,9 +169,14 @@ export function ncPrazoProximo(nc: Pick<RtiNc, "prazo" | "status">, dias = 30): 
 // entram nesta análise (o prazo já não importa).
 
 export const RTI_PRAZO_BUCKETS = [
-  "vencido", "sem_prazo", "semana", "30dias", "90dias", "mais90",
+  "vencido",
+  "sem_prazo",
+  "semana",
+  "30dias",
+  "90dias",
+  "mais90",
 ] as const;
-export type RtiPrazoBucket = typeof RTI_PRAZO_BUCKETS[number];
+export type RtiPrazoBucket = (typeof RTI_PRAZO_BUCKETS)[number];
 
 export const RTI_PRAZO_BUCKET_LABELS: Record<RtiPrazoBucket, string> = {
   vencido: "Vencido",
@@ -197,7 +202,8 @@ export function ncPrazoBucket(nc: Pick<RtiNc, "prazo" | "status">): RtiPrazoBuck
   const hoje = new Date().toISOString().slice(0, 10);
   if (nc.prazo < hoje) return "vencido";
   const dias = Math.floor(
-    (new Date(nc.prazo + "T00:00:00").getTime() - new Date(hoje + "T00:00:00").getTime()) / 86400000,
+    (new Date(nc.prazo + "T00:00:00").getTime() - new Date(hoje + "T00:00:00").getTime()) /
+      86400000,
   );
   if (dias <= 7) return "semana";
   if (dias <= 30) return "30dias";

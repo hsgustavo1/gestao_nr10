@@ -3,7 +3,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { toast } from "sonner";
 import { Printer, Upload, RefreshCw } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,7 +36,9 @@ function photoPathFor(padlock: Padlock): string {
 }
 
 export function PrintLabelDialog({
-  open, onOpenChange, padlock,
+  open,
+  onOpenChange,
+  padlock,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -62,7 +69,10 @@ export function PrintLabelDialog({
         .list(folder, { search: filename, limit: 1 });
       const exists = !!list?.some((o) => o.name === filename);
       if (cancelled) return;
-      if (!exists) { setLoadingFoto(false); return; }
+      if (!exists) {
+        setLoadingFoto(false);
+        return;
+      }
       const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
       try {
         const resp = await fetch(`${pub.publicUrl}?t=${Date.now()}`, { cache: "no-store" });
@@ -76,9 +86,13 @@ export function PrintLabelDialog({
           setLoadingFoto(false);
         };
         reader.readAsDataURL(blob);
-      } catch { if (!cancelled) setLoadingFoto(false); }
+      } catch {
+        if (!cancelled) setLoadingFoto(false);
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [open, padlock.id, padlock.owner_name, padlock.owner_registration]);
 
   // Busca todos os cadeados do mesmo Integrante
@@ -160,7 +174,8 @@ export function PrintLabelDialog({
   function toggleOne(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -170,26 +185,31 @@ export function PrintLabelDialog({
     const toPrint = siblings.filter((p) => selected.has(p.id));
     if (toPrint.length === 0) return toast.error("Selecione ao menos um cadeado.");
 
-    const labelsHTML = toPrint.map((p) => {
-      const cd = {
-        numero: p.number,
-        cor: p.color as EtiquetaCor,
-        setor: p.owner_sector ?? "",
-        donoAtual: {
-          nome: p.owner_name ?? undefined,
-          matricula: p.owner_registration ?? undefined,
-          telefone: p.owner_phone ?? undefined,
-          funcao: p.owner_role ?? undefined,
-          setor: p.owner_sector ?? undefined,
-        },
-      };
-      return `<div class="label">${renderToStaticMarkup(
-        <EtiquetaLOTO cadeado={cd} fotoSrc={fotoSrc} scale={1} />
-      )}</div>`;
-    }).join("\n");
+    const labelsHTML = toPrint
+      .map((p) => {
+        const cd = {
+          numero: p.number,
+          cor: p.color as EtiquetaCor,
+          setor: p.owner_sector ?? "",
+          donoAtual: {
+            nome: p.owner_name ?? undefined,
+            matricula: p.owner_registration ?? undefined,
+            telefone: p.owner_phone ?? undefined,
+            funcao: p.owner_role ?? undefined,
+            setor: p.owner_sector ?? undefined,
+          },
+        };
+        return `<div class="label">${renderToStaticMarkup(
+          <EtiquetaLOTO cadeado={cd} fotoSrc={fotoSrc} scale={1} />,
+        )}</div>`;
+      })
+      .join("\n");
 
     const win = window.open("", "_blank");
-    if (!win) return toast.error("Não foi possível abrir a janela de impressão. Verifique bloqueador de pop-ups.");
+    if (!win)
+      return toast.error(
+        "Não foi possível abrir a janela de impressão. Verifique bloqueador de pop-ups.",
+      );
     win.document.write(`<!doctype html>
 <html>
 <head>
@@ -216,7 +236,13 @@ export function PrintLabelDialog({
   const showSiblings = siblings.length > 1;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) reset();
+        onOpenChange(o);
+      }}
+    >
       <DialogContent className="max-w-3xl print:hidden">
         <DialogHeader>
           <DialogTitle>Etiqueta de Bloqueio LOTO</DialogTitle>
@@ -260,7 +286,11 @@ export function PrintLabelDialog({
                 {temFotoArquivada ? (
                   <>
                     Foto arquivada para este cadeado.
-                    <> Clique para <strong>substituir</strong> a foto. <RefreshCw className="inline h-3 w-3 ml-1" /></>
+                    <>
+                      {" "}
+                      Clique para <strong>substituir</strong> a foto.{" "}
+                      <RefreshCw className="inline h-3 w-3 ml-1" />
+                    </>
                   </>
                 ) : (
                   <>Clique para enviar uma foto. JPG/PNG até 5MB. {uploading && "(enviando...)"}</>
@@ -302,12 +332,26 @@ export function PrintLabelDialog({
               </Label>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">
-                  {loadingSiblings ? "Carregando..." : `${selected.size} selecionado${selected.size !== 1 ? "s" : ""}`}
+                  {loadingSiblings
+                    ? "Carregando..."
+                    : `${selected.size} selecionado${selected.size !== 1 ? "s" : ""}`}
                 </span>
-                <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => toggleAll(true)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => toggleAll(true)}
+                >
                   Todos
                 </Button>
-                <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => toggleAll(false)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => toggleAll(false)}
+                >
                   Nenhum
                 </Button>
               </div>
@@ -318,10 +362,7 @@ export function PrintLabelDialog({
                   key={p.id}
                   className="flex items-center gap-2.5 py-1.5 cursor-pointer hover:bg-muted/30 rounded px-1"
                 >
-                  <Checkbox
-                    checked={selected.has(p.id)}
-                    onCheckedChange={() => toggleOne(p.id)}
-                  />
+                  <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleOne(p.id)} />
                   <span className="text-sm flex-1">
                     {colorLabel[p.color]} #{p.number}
                     {p.id === padlock.id && (

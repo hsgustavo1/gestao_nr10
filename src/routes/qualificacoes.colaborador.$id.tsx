@@ -1,7 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, BadgeCheck, CircleAlert, FileText, IdCard, Printer, UserRound } from "lucide-react";
+import {
+  AlertTriangle,
+  BadgeCheck,
+  CircleAlert,
+  FileText,
+  IdCard,
+  Printer,
+  UserRound,
+} from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,12 +17,23 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  useNR10Trainings, useAuthorizationHistory, useITTrainings, useCertificates,
+  useNR10Trainings,
+  useAuthorizationHistory,
+  useITTrainings,
+  useCertificates,
 } from "@/lib/qualificacoes-queries";
 import {
-  EMPLOYEE_STATUS_LABELS, IT_STATUS_LABELS, TRAINING_LABELS, TRAINING_TYPES,
-  employeeStatusVariant, formatDatePtBR, trainingExpiryStatus,
-  type Employee, type ITStatus, type WorkAuthorization, type WorkInstruction,
+  EMPLOYEE_STATUS_LABELS,
+  IT_STATUS_LABELS,
+  TRAINING_LABELS,
+  TRAINING_TYPES,
+  employeeStatusVariant,
+  formatDatePtBR,
+  trainingExpiryStatus,
+  type Employee,
+  type ITStatus,
+  type WorkAuthorization,
+  type WorkInstruction,
 } from "@/lib/qualificacoes";
 import { useASOs } from "@/lib/asos-queries";
 import { asoFileUrl } from "@/lib/asos-queries";
@@ -32,7 +51,11 @@ function useEmployee(id: string) {
   return useQuery({
     queryKey: ["employees", "byId", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("employees").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await supabase
+        .from("employees")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
       if (error) throw error;
       return (data as unknown as Employee) ?? null;
     },
@@ -84,7 +107,12 @@ function ColaboradorDossiePage() {
     return TRAINING_TYPES.flatMap((type) =>
       (["formacao", "reciclagem"] as const).map((cat) => {
         const t = trainings.find((tr) => tr.training_type === type && tr.category === cat);
-        return t ? { ...t, label: `${TRAINING_LABELS[type]} — ${cat === "formacao" ? "Formação" : "Reciclagem"}` } : null;
+        return t
+          ? {
+              ...t,
+              label: `${TRAINING_LABELS[type]} — ${cat === "formacao" ? "Formação" : "Reciclagem"}`,
+            }
+          : null;
       }),
     ).filter(Boolean) as Array<(typeof trainings)[number] & { label: string }>;
   }, [trainings]);
@@ -92,7 +120,11 @@ function ColaboradorDossiePage() {
   if (isLoading) {
     return (
       <PageShell>
-        <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
       </PageShell>
     );
   }
@@ -100,7 +132,11 @@ function ColaboradorDossiePage() {
   if (!employee) {
     return (
       <PageShell>
-        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Colaborador não encontrado.</CardContent></Card>
+        <Card>
+          <CardContent className="p-8 text-center text-sm text-muted-foreground">
+            Colaborador não encontrado.
+          </CardContent>
+        </Card>
       </PageShell>
     );
   }
@@ -119,11 +155,18 @@ function ColaboradorDossiePage() {
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link to="/carteirinha/$matricula" params={{ matricula: employee.matricula }} target="_blank">
+            <Link
+              to="/carteirinha/$matricula"
+              params={{ matricula: employee.matricula }}
+              target="_blank"
+            >
               <IdCard className="h-4 w-4" /> Carteirinha
             </Link>
           </Button>
-          <Button onClick={() => window.print()} className="bg-brand-gradient text-white shadow-brand">
+          <Button
+            onClick={() => window.print()}
+            className="bg-brand-gradient text-white shadow-brand"
+          >
             <Printer className="h-4 w-4" /> Imprimir
           </Button>
         </div>
@@ -132,10 +175,18 @@ function ColaboradorDossiePage() {
       {/* Identificação + aptidão */}
       <Card className="mt-4 overflow-hidden">
         {aptidao && (
-          <div className={`px-5 py-2.5 flex items-center gap-2 text-white ${aptidao.apto ? "bg-emerald-600" : "bg-red-600"}`}>
-            {aptidao.apto ? <BadgeCheck className="h-5 w-5" /> : <CircleAlert className="h-5 w-5" />}
+          <div
+            className={`px-5 py-2.5 flex items-center gap-2 text-white ${aptidao.apto ? "bg-emerald-600" : "bg-red-600"}`}
+          >
+            {aptidao.apto ? (
+              <BadgeCheck className="h-5 w-5" />
+            ) : (
+              <CircleAlert className="h-5 w-5" />
+            )}
             <span className="font-bold text-sm">
-              {aptidao.apto ? "APTO PARA TRABALHO EM ELETRICIDADE" : "NÃO APTO PARA TRABALHO EM ELETRICIDADE"}
+              {aptidao.apto
+                ? "APTO PARA TRABALHO EM ELETRICIDADE"
+                : "NÃO APTO PARA TRABALHO EM ELETRICIDADE"}
             </span>
             {!aptidao.apto && (
               <span className="text-[11px] opacity-90 truncate">
@@ -154,15 +205,20 @@ function ColaboradorDossiePage() {
                 {employee.funcao && <> · {employee.funcao}</>}
               </div>
               {employee.classificacao && (
-                <div className="text-xs text-muted-foreground mt-0.5">Classificação: {employee.classificacao}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Classificação: {employee.classificacao}
+                </div>
               )}
             </div>
             <div className="text-right space-y-1">
-              <Badge variant={employeeStatusVariant(employee.status)}>{EMPLOYEE_STATUS_LABELS[employee.status]}</Badge>
+              <Badge variant={employeeStatusVariant(employee.status)}>
+                {EMPLOYEE_STATUS_LABELS[employee.status]}
+              </Badge>
               {employee.reciclagem_requerida && (
                 <div className="flex items-center gap-1 text-[11px] text-red-600 font-semibold">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  Reciclagem requerida{employee.reciclagem_motivo ? `: ${employee.reciclagem_motivo}` : ""}
+                  Reciclagem requerida
+                  {employee.reciclagem_motivo ? `: ${employee.reciclagem_motivo}` : ""}
                 </div>
               )}
             </div>
@@ -173,9 +229,13 @@ function ColaboradorDossiePage() {
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Capacitações */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Capacitações NR-10</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Capacitações NR-10</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-2">
-            {trainingRows.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma capacitação registrada.</p>}
+            {trainingRows.length === 0 && (
+              <p className="text-sm text-muted-foreground">Nenhuma capacitação registrada.</p>
+            )}
             {trainingRows.map((t) => {
               const st = trainingExpiryStatus(t.training_date);
               const certs = certificates.filter((c) => c.nr10_training_id === t.id);
@@ -183,8 +243,16 @@ function ColaboradorDossiePage() {
                 <div key={t.id} className="rounded-md border p-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-sm font-medium">{t.label}</span>
-                    <span className={`text-xs font-semibold ${st === "ok" ? "text-emerald-600" : st === "expiring" ? "text-amber-600" : "text-red-600"}`}>
-                      {st === "ok" ? "Em dia" : st === "expiring" ? "Vencendo" : st === "expired" ? "Vencido" : "Sem data"}
+                    <span
+                      className={`text-xs font-semibold ${st === "ok" ? "text-emerald-600" : st === "expiring" ? "text-amber-600" : "text-red-600"}`}
+                    >
+                      {st === "ok"
+                        ? "Em dia"
+                        : st === "expiring"
+                          ? "Vencendo"
+                          : st === "expired"
+                            ? "Vencido"
+                            : "Sem data"}
                     </span>
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-1">
@@ -198,7 +266,13 @@ function ColaboradorDossiePage() {
                   {certs.length > 0 && (
                     <div className="mt-1 flex flex-wrap gap-2">
                       {certs.map((c) => (
-                        <a key={c.id} href={c.file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-primary underline">
+                        <a
+                          key={c.id}
+                          href={c.file_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] text-primary underline"
+                        >
                           <FileText className="h-3 w-3" /> {c.file_name ?? "Certificado"}
                         </a>
                       ))}
@@ -212,20 +286,32 @@ function ColaboradorDossiePage() {
 
         {/* Autorização */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Autorização de trabalho</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Autorização de trabalho</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3">
             {currentAuth ? (
               <div className="rounded-md border p-3 flex items-center justify-between gap-2 flex-wrap">
                 <div>
                   <span className="text-2xl font-bold">{currentAuth.level}</span>
-                  {currentAuth.funcao && <span className="ml-2 text-sm text-muted-foreground">{currentAuth.funcao}</span>}
-                  {currentAuth.abrangencia && <div className="text-[11px] text-muted-foreground">Abrangência: {currentAuth.abrangencia}</div>}
+                  {currentAuth.funcao && (
+                    <span className="ml-2 text-sm text-muted-foreground">{currentAuth.funcao}</span>
+                  )}
+                  {currentAuth.abrangencia && (
+                    <div className="text-[11px] text-muted-foreground">
+                      Abrangência: {currentAuth.abrangencia}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
-                  <div className={`text-sm font-semibold ${currentAuth.valid ? "text-emerald-600" : "text-red-600"}`}>
+                  <div
+                    className={`text-sm font-semibold ${currentAuth.valid ? "text-emerald-600" : "text-red-600"}`}
+                  >
                     {currentAuth.valid ? "VÁLIDA" : "INVÁLIDA"}
                   </div>
-                  <div className="text-[11px] text-muted-foreground">desde {formatDatePtBR(currentAuth.authorization_date)}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    desde {formatDatePtBR(currentAuth.authorization_date)}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -251,9 +337,13 @@ function ColaboradorDossiePage() {
 
         {/* ASOs */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">ASOs — Saúde Ocupacional</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">ASOs — Saúde Ocupacional</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-2">
-            {asos.length === 0 && <p className="text-sm text-red-600 font-semibold">Nenhum ASO registrado.</p>}
+            {asos.length === 0 && (
+              <p className="text-sm text-red-600 font-semibold">Nenhum ASO registrado.</p>
+            )}
             {asos.map((a, idx) => {
               const st = idx === 0 ? asoStatus(a) : null;
               return (
@@ -263,20 +353,32 @@ function ColaboradorDossiePage() {
                       {formatDatePtBR(a.exam_date)} · {ASO_TIPO_LABELS[a.tipo]}
                     </span>
                     {st && (
-                      <span className={`text-xs font-semibold ${st === "ok" ? "text-emerald-600" : st === "expiring" ? "text-amber-600" : "text-red-600"}`}>
+                      <span
+                        className={`text-xs font-semibold ${st === "ok" ? "text-emerald-600" : st === "expiring" ? "text-amber-600" : "text-red-600"}`}
+                      >
                         {ASO_STATUS_LABELS[st]}
                       </span>
                     )}
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-1">
                     {ASO_RESULTADO_LABELS[a.resultado]}
-                    {!a.apto_eletricidade && <span className="text-red-600 font-semibold"> · sem aptidão p/ eletricidade</span>}
+                    {!a.apto_eletricidade && (
+                      <span className="text-red-600 font-semibold">
+                        {" "}
+                        · sem aptidão p/ eletricidade
+                      </span>
+                    )}
                     {" · "}válido até {formatDatePtBR(a.validity_date)}
                     {a.medico && <> · {a.medico}</>}
                     {a.restricoes && <> · Restrições: {a.restricoes}</>}
                   </div>
                   {a.file_path && (
-                    <a href={asoFileUrl(a.file_path)} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary underline">
+                    <a
+                      href={asoFileUrl(a.file_path)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary underline"
+                    >
                       <FileText className="h-3 w-3" /> Arquivo do ASO
                     </a>
                   )}
@@ -288,20 +390,43 @@ function ColaboradorDossiePage() {
 
         {/* ITs + EPIs */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">ITs e EPIs sob responsabilidade</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">ITs e EPIs sob responsabilidade</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-1">Instruções de Trabalho</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">
+                Instruções de Trabalho
+              </p>
               {itTrainings.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhuma IT registrada.</p>
               ) : (
                 <div className="space-y-1">
-                  {(itTrainings as Array<{ id: string; status: ITStatus; conclusao_date: string | null; work_instructions?: Pick<WorkInstruction, "code" | "title"> | null }>).map((it) => (
+                  {(
+                    itTrainings as Array<{
+                      id: string;
+                      status: ITStatus;
+                      conclusao_date: string | null;
+                      work_instructions?: Pick<WorkInstruction, "code" | "title"> | null;
+                    }>
+                  ).map((it) => (
                     <div key={it.id} className="text-xs flex items-center justify-between gap-2">
-                      <span>{it.work_instructions ? `IT ${it.work_instructions.code}${it.work_instructions.title ? ` — ${it.work_instructions.title}` : ""}` : "IT"}</span>
+                      <span>
+                        {it.work_instructions
+                          ? `IT ${it.work_instructions.code}${it.work_instructions.title ? ` — ${it.work_instructions.title}` : ""}`
+                          : "IT"}
+                      </span>
                       <span className="whitespace-nowrap text-muted-foreground">
                         {it.conclusao_date ? formatDatePtBR(it.conclusao_date) : "—"} ·{" "}
-                        <span className={it.status === "ok" ? "text-emerald-600 font-semibold" : it.status === "vencido" ? "text-red-600 font-semibold" : "text-amber-600 font-semibold"}>
+                        <span
+                          className={
+                            it.status === "ok"
+                              ? "text-emerald-600 font-semibold"
+                              : it.status === "vencido"
+                                ? "text-red-600 font-semibold"
+                                : "text-amber-600 font-semibold"
+                          }
+                        >
                           {IT_STATUS_LABELS[it.status]}
                         </span>
                       </span>
@@ -320,8 +445,13 @@ function ColaboradorDossiePage() {
                     const st = epiTestStatus(e, lastTests.get(e.id) ?? null);
                     return (
                       <div key={e.id} className="text-xs flex items-center justify-between gap-2">
-                        <span>{EPI_TYPE_LABELS[e.epi_type]}{e.serial_number ? ` (série ${e.serial_number})` : ""}</span>
-                        <span className={`font-semibold ${st === "ok" ? "text-emerald-600" : st === "expiring" ? "text-amber-600" : "text-red-600"}`}>
+                        <span>
+                          {EPI_TYPE_LABELS[e.epi_type]}
+                          {e.serial_number ? ` (série ${e.serial_number})` : ""}
+                        </span>
+                        <span
+                          className={`font-semibold ${st === "ok" ? "text-emerald-600" : st === "expiring" ? "text-amber-600" : "text-red-600"}`}
+                        >
                           {EPI_STATUS_LABELS[st]}
                         </span>
                       </div>

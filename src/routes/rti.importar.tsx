@@ -3,9 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import {
-  AlertTriangle, CheckCircle2, FileSpreadsheet, Plus, Trash2, Upload,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileSpreadsheet, Plus, Trash2, Upload } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,14 +12,22 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { excelSerialToISO, formatDatePtBR } from "@/lib/qualificacoes";
 import { clampPrioridade, formatBRL, type RtiNcStatus } from "@/lib/rti";
 import {
-  batchImportRti, useDeleteRtiReport, useRtiReports, useUpsertRtiReport,
+  batchImportRti,
+  useDeleteRtiReport,
+  useRtiReports,
+  useUpsertRtiReport,
   type RtiImportNc,
 } from "@/lib/rti-queries";
 
@@ -50,7 +56,8 @@ function str(v: unknown): string | null {
 
 function toNumber(v: unknown): number | null {
   if (typeof v === "number" && isFinite(v)) return v;
-  if (typeof v === "string" && v.trim() !== "" && isFinite(Number(v.trim()))) return Number(v.trim());
+  if (typeof v === "string" && v.trim() !== "" && isFinite(Number(v.trim())))
+    return Number(v.trim());
   return null;
 }
 
@@ -66,7 +73,10 @@ function parseMoney(v: unknown): number | null {
     n = Math.round(v * 100) / 100;
   } else if (typeof v === "string") {
     if (v.trim() === "") return null;
-    const s = v.replace(/[^\d,.-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".");
+    const s = v
+      .replace(/[^\d,.-]/g, "")
+      .replace(/\.(?=\d{3}(\D|$))/g, "")
+      .replace(",", ".");
     if (s === "") return null;
     const parsed = Number(s);
     n = isFinite(parsed) ? Math.round(parsed * 100) / 100 : null;
@@ -78,7 +88,11 @@ function parseDateCell(v: unknown): string | null {
   if (v == null || v === "") return null;
   if (typeof v === "number") {
     if (v < 1 || !isFinite(v)) return null;
-    try { return excelSerialToISO(v); } catch { return null; }
+    try {
+      return excelSerialToISO(v);
+    } catch {
+      return null;
+    }
   }
   if (v instanceof Date && !isNaN(v.getTime())) return v.toISOString().slice(0, 10);
   if (typeof v === "string") {
@@ -132,7 +146,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParseResult {
         cells.some((c) => c === "nc") &&
         cells.some((c) => c.startsWith("nao conformidade")) &&
         cells.some((c) => c.includes("recomenda"))
-      ) { headerIdx = i; break; }
+      ) {
+        headerIdx = i;
+        break;
+      }
     }
     if (headerIdx === -1) continue; // abas de capa, resumos e gráficos
 
@@ -191,7 +208,9 @@ function parseWorkbook(wb: XLSX.WorkBook): ParseResult {
         status,
         progresso,
         prazo: idxPrazo >= 0 ? parseDateCell(row[idxPrazo]) : null,
-        tipo_execucao: norm(idxInvest >= 0 ? row[idxInvest] : null).startsWith("sim") ? "investimento" : "os",
+        tipo_execucao: norm(idxInvest >= 0 ? row[idxInvest] : null).startsWith("sim")
+          ? "investimento"
+          : "os",
         custo_planejado: parseMoney(idxCustoPlan >= 0 ? row[idxCustoPlan] : null),
         custo_realizado: parseMoney(idxCustoReal >= 0 ? row[idxCustoReal] : null),
         situacao_atual: idxSituacao >= 0 ? str(row[idxSituacao]) : null,
@@ -251,8 +270,7 @@ function RtiImportarPage() {
 
   const actorId = user?.id ?? null;
   const actorName =
-    (user?.user_metadata?.display_name as string | undefined) ||
-    user?.email?.split("@")[0] || null;
+    (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || null;
 
   if (!isStaff) {
     return (
@@ -276,7 +294,9 @@ function RtiImportarPage() {
       const wb = XLSX.read(buf, { type: "array" });
       const result = parseWorkbook(wb);
       if (result.ncs.length === 0) {
-        toast.error("Nenhuma NC encontrada. Verifique se a planilha segue o modelo do plano de ação (abas por área).");
+        toast.error(
+          "Nenhuma NC encontrada. Verifique se a planilha segue o modelo do plano de ação (abas por área).",
+        );
         setParsed(null);
         return;
       }
@@ -343,7 +363,12 @@ function RtiImportarPage() {
   }
 
   async function excluirRelatorio(id: string, tituloRel: string) {
-    if (!window.confirm(`Excluir o relatório "${tituloRel}"?\n\nTODAS as NCs, evidências e histórico vinculados serão excluídos permanentemente.`)) return;
+    if (
+      !window.confirm(
+        `Excluir o relatório "${tituloRel}"?\n\nTODAS as NCs, evidências e histórico vinculados serão excluídos permanentemente.`,
+      )
+    )
+      return;
     try {
       await deleteReport.mutateAsync(id);
       toast.success("Relatório excluído.");
@@ -368,18 +393,25 @@ function RtiImportarPage() {
           RTI — Importar Plano de Ação
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground">
-          Importe a planilha do plano de ação (uma aba por área auditada) ou crie um relatório em branco.
+          Importe a planilha do plano de ação (uma aba por área auditada) ou crie um relatório em
+          branco.
         </p>
       </div>
 
       {/* Relatórios existentes */}
       <Card className="mt-5">
-        <CardHeader className="pb-2"><CardTitle className="text-sm">Relatórios cadastrados</CardTitle></CardHeader>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Relatórios cadastrados</CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           {loadingReports ? (
-            <div className="p-4"><Skeleton className="h-10" /></div>
+            <div className="p-4">
+              <Skeleton className="h-10" />
+            </div>
           ) : reports.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">Nenhum relatório ainda.</div>
+            <div className="p-6 text-center text-sm text-muted-foreground">
+              Nenhum relatório ainda.
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -394,7 +426,9 @@ function RtiImportarPage() {
               <TableBody>
                 {reports.map((r) => (
                   <ReportRow
-                    key={r.id} report={r} canDelete={isAdmin}
+                    key={r.id}
+                    report={r}
+                    canDelete={isAdmin}
                     onDelete={() => excluirRelatorio(r.id, r.titulo)}
                   />
                 ))}
@@ -414,30 +448,59 @@ function RtiImportarPage() {
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="imp-titulo">Título do relatório *</Label>
               <Input
-                id="imp-titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={200}
+                id="imp-titulo"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                maxLength={200}
                 placeholder="Ex.: Plano de Ação RTI 2025 — Inspeção das Instalações Elétricas"
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="imp-auditora">Empresa auditora</Label>
-              <Input id="imp-auditora" value={empresaAuditora} onChange={(e) => setEmpresaAuditora(e.target.value)} maxLength={150} placeholder="Ex.: DIAGNERG" />
+              <Input
+                id="imp-auditora"
+                value={empresaAuditora}
+                onChange={(e) => setEmpresaAuditora(e.target.value)}
+                maxLength={150}
+                placeholder="Ex.: DIAGNERG"
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="imp-resp-aud">Responsável pela auditoria</Label>
-              <Input id="imp-resp-aud" value={responsavelAuditoria} onChange={(e) => setResponsavelAuditoria(e.target.value)} maxLength={150} />
+              <Input
+                id="imp-resp-aud"
+                value={responsavelAuditoria}
+                onChange={(e) => setResponsavelAuditoria(e.target.value)}
+                maxLength={150}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="imp-resp-plano">Responsável pelo plano de ação</Label>
-              <Input id="imp-resp-plano" value={responsavelPlano} onChange={(e) => setResponsavelPlano(e.target.value)} maxLength={150} />
+              <Input
+                id="imp-resp-plano"
+                value={responsavelPlano}
+                onChange={(e) => setResponsavelPlano(e.target.value)}
+                maxLength={150}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="imp-ini">Início da auditoria</Label>
-                <Input id="imp-ini" type="date" value={periodoInicio} onChange={(e) => setPeriodoInicio(e.target.value)} />
+                <Input
+                  id="imp-ini"
+                  type="date"
+                  value={periodoInicio}
+                  onChange={(e) => setPeriodoInicio(e.target.value)}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="imp-fim">Fim da auditoria</Label>
-                <Input id="imp-fim" type="date" value={periodoFim} onChange={(e) => setPeriodoFim(e.target.value)} />
+                <Input
+                  id="imp-fim"
+                  type="date"
+                  value={periodoFim}
+                  onChange={(e) => setPeriodoFim(e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -447,16 +510,21 @@ function RtiImportarPage() {
               <Upload className="h-4 w-4" /> Planilha do plano de ação (.xlsx)
             </Label>
             <p className="mt-1 text-xs text-muted-foreground">
-              O sistema lê automaticamente todas as abas de área (cabeçalho com NC, Não Conformidade, Recomendação, P, Status...).
-              Abas de capa, resumos e gráficos são ignoradas.
+              O sistema lê automaticamente todas as abas de área (cabeçalho com NC, Não
+              Conformidade, Recomendação, P, Status...). Abas de capa, resumos e gráficos são
+              ignoradas.
             </p>
             <Input
-              id="imp-file" type="file" className="mt-2"
+              id="imp-file"
+              type="file"
+              className="mt-2"
               accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               onChange={(e) => onFile(e.target.files?.[0] ?? null)}
               disabled={parsing || importing}
             />
-            {parsing && <p className="mt-2 text-xs text-muted-foreground">Analisando planilha...</p>}
+            {parsing && (
+              <p className="mt-2 text-xs text-muted-foreground">Analisando planilha...</p>
+            )}
           </div>
 
           {/* Preview da importação */}
@@ -469,23 +537,37 @@ function RtiImportarPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                 <div className="rounded-md bg-muted/40 p-3">
                   <div className="text-xl font-bold tabular-nums">{parsed.ncs.length}</div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">NCs</div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    NCs
+                  </div>
                 </div>
                 <div className="rounded-md bg-muted/40 p-3">
                   <div className="text-xl font-bold tabular-nums">{parsed.areas.length}</div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Áreas</div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Áreas
+                  </div>
                 </div>
                 <div className="rounded-md bg-muted/40 p-3">
                   <div className="text-xl font-bold tabular-nums">
                     {resumoPrioridades
-                      ? [4, 3, 2, 1].map((p) => resumoPrioridades[p] ? `${resumoPrioridades[p]} P${p}` : null).filter(Boolean).slice(0, 2).join(" · ")
+                      ? [4, 3, 2, 1]
+                          .map((p) =>
+                            resumoPrioridades[p] ? `${resumoPrioridades[p]} P${p}` : null,
+                          )
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .join(" · ")
                       : "—"}
                   </div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Mais graves</div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Mais graves
+                  </div>
                 </div>
                 <div className="rounded-md bg-muted/40 p-3">
                   <div className="text-xl font-bold tabular-nums">{formatBRL(custoTotal)}</div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Custo planejado</div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Custo planejado
+                  </div>
                 </div>
               </div>
 
@@ -514,7 +596,9 @@ function RtiImportarPage() {
                     <AlertTriangle className="h-3.5 w-3.5" /> Avisos ({parsed.avisos.length})
                   </div>
                   <ul className="list-disc pl-4 max-h-24 overflow-y-auto">
-                    {parsed.avisos.map((a, i) => <li key={i}>{a}</li>)}
+                    {parsed.avisos.map((a, i) => (
+                      <li key={i}>{a}</li>
+                    ))}
                   </ul>
                 </div>
               )}
@@ -540,7 +624,11 @@ function RtiImportarPage() {
               className="bg-brand-gradient text-white shadow-brand"
             >
               <Upload className="h-4 w-4" />
-              {importing ? "Importando..." : parsed ? `Importar ${parsed.ncs.length} NCs` : "Importar"}
+              {importing
+                ? "Importando..."
+                : parsed
+                  ? `Importar ${parsed.ncs.length} NCs`
+                  : "Importar"}
             </Button>
           </div>
         </CardContent>
@@ -550,9 +638,17 @@ function RtiImportarPage() {
 }
 
 function ReportRow({
-  report, canDelete, onDelete,
+  report,
+  canDelete,
+  onDelete,
 }: {
-  report: { id: string; titulo: string; periodo_inicio: string | null; periodo_fim: string | null; empresa_auditora: string | null };
+  report: {
+    id: string;
+    titulo: string;
+    periodo_inicio: string | null;
+    periodo_fim: string | null;
+    empresa_auditora: string | null;
+  };
   canDelete: boolean;
   onDelete: () => void;
 }) {
@@ -560,20 +656,36 @@ function ReportRow({
   return (
     <TableRow>
       <TableCell className="font-medium max-w-[280px]">
-        <Link to="/rti/plano" search={{ report: report.id }} className="hover:underline block truncate" title={report.titulo}>
+        <Link
+          to="/rti/plano"
+          search={{ report: report.id }}
+          className="hover:underline block truncate"
+          title={report.titulo}
+        >
           {report.titulo}
         </Link>
       </TableCell>
       <TableCell className="whitespace-nowrap text-sm">
-        {report.periodo_inicio
-          ? <>{formatDatePtBR(report.periodo_inicio)}{report.periodo_fim ? ` a ${formatDatePtBR(report.periodo_fim)}` : ""}</>
-          : "—"}
+        {report.periodo_inicio ? (
+          <>
+            {formatDatePtBR(report.periodo_inicio)}
+            {report.periodo_fim ? ` a ${formatDatePtBR(report.periodo_fim)}` : ""}
+          </>
+        ) : (
+          "—"
+        )}
       </TableCell>
       <TableCell className="text-sm">{report.empresa_auditora ?? "—"}</TableCell>
       <TableCell className="text-right tabular-nums">{count ?? "..."}</TableCell>
       <TableCell className="text-right">
         {canDelete && (
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={onDelete} title="Excluir relatório">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0 text-destructive"
+            onClick={onDelete}
+            title="Excluir relatório"
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}

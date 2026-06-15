@@ -1,26 +1,26 @@
-import { Outlet, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { SyncStatus } from './SyncStatus'
-import { startConnectivityWatcher } from '@/sync/engine'
+import { Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { SyncStatus } from "./SyncStatus";
+import { startConnectivityWatcher } from "@/sync/engine";
 
 export default function Layout() {
-  const navigate = useNavigate()
-  const [checked, setChecked] = useState(false)
+  const navigate = useNavigate();
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) navigate('/login', { replace: true })
-      else setChecked(true)
-    })
-  }, [navigate])
+      if (!data.session) navigate("/login", { replace: true });
+      else setChecked(true);
+    });
+  }, [navigate]);
 
   useEffect(() => {
-    if (!checked) return
-    return startConnectivityWatcher()
-  }, [checked])
+    if (!checked) return;
+    return startConnectivityWatcher();
+  }, [checked]);
 
-  if (!checked) return null
+  if (!checked) return null;
 
   return (
     <div className="flex flex-col min-h-dvh">
@@ -29,5 +29,5 @@ export default function Layout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

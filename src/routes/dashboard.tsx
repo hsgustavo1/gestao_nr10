@@ -9,8 +9,12 @@ import { useAuth } from "@/lib/auth-context";
 import { NewPadlockDialog } from "@/components/new-padlock-dialog";
 import { useDashboardData, useQueryClient } from "@/lib/queries";
 import {
-  formatDateTime, PADLOCK_COLORS, colorLabel, colorAccent,
-  type Padlock, type PadlockEvent,
+  formatDateTime,
+  PADLOCK_COLORS,
+  colorLabel,
+  colorAccent,
+  type Padlock,
+  type PadlockEvent,
 } from "@/lib/padlocks";
 
 export const Route = createFileRoute("/dashboard")({
@@ -18,9 +22,16 @@ export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — Bloqueio de energias perigosas" },
-      { name: "description", content: "Monitoramento de bloqueio: dispositivos em uso, distribuição por unidade e linha do tempo." },
+      {
+        name: "description",
+        content:
+          "Monitoramento de bloqueio: dispositivos em uso, distribuição por unidade e linha do tempo.",
+      },
       { property: "og:title", content: "Dashboard — Bloqueio de energias perigosas" },
-      { property: "og:description", content: "Visão consolidada dos dispositivos com em uso, baixados e atividade recente." },
+      {
+        property: "og:description",
+        content: "Visão consolidada dos dispositivos com em uso, baixados e atividade recente.",
+      },
     ],
   }),
 });
@@ -44,7 +55,8 @@ function DashboardPage() {
   }, [violations]);
 
   const byColor = PADLOCK_COLORS.map((c) => ({
-    color: c, count: ativos.filter((p) => p.color === c).length,
+    color: c,
+    count: ativos.filter((p) => p.color === c).length,
   }));
 
   const sectors = useMemo(() => {
@@ -69,7 +81,10 @@ function DashboardPage() {
           </p>
         </div>
         {isStaff && (
-          <Button onClick={() => setOpenNew(true)} className="bg-brand-gradient text-white shadow-brand hover:opacity-95 w-full sm:w-auto">
+          <Button
+            onClick={() => setOpenNew(true)}
+            className="bg-brand-gradient text-white shadow-brand hover:opacity-95 w-full sm:w-auto"
+          >
             <Plus className="h-4 w-4" /> Novo Dispositivo
           </Button>
         )}
@@ -85,33 +100,61 @@ function DashboardPage() {
           </>
         ) : (
           <>
-            <StatCard label="Total" value={padlocks.length} accent="bg-[#0D3A5C]" icon={<Lock className="h-5 w-5" />} to="/cadeados" search={{ status: "all" }} />
-            <StatCard label="Em uso" value={ativos.length} accent="bg-[#0F7A47]" icon={<CheckCircle2 className="h-5 w-5" />} to="/cadeados" search={{ status: "ativos" }} />
-            <StatCard label="Baixados" value={cancelados.length} accent="bg-[#B8281A]" icon={<XCircle className="h-5 w-5" />} to="/cadeados" search={{ status: "cancelados" }} />
+            <StatCard
+              label="Total"
+              value={padlocks.length}
+              accent="bg-[#0D3A5C]"
+              icon={<Lock className="h-5 w-5" />}
+              to="/cadeados"
+              search={{ status: "all" }}
+            />
+            <StatCard
+              label="Em uso"
+              value={ativos.length}
+              accent="bg-[#0F7A47]"
+              icon={<CheckCircle2 className="h-5 w-5" />}
+              to="/cadeados"
+              search={{ status: "ativos" }}
+            />
+            <StatCard
+              label="Baixados"
+              value={cancelados.length}
+              accent="bg-[#B8281A]"
+              icon={<XCircle className="h-5 w-5" />}
+              to="/cadeados"
+              search={{ status: "cancelados" }}
+            />
           </>
         )}
       </section>
 
       {/* Stats por cor */}
       <section className="mt-4 grid gap-3 grid-cols-2 lg:grid-cols-4">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
-        ) : (
-          byColor.map(({ color, count }) => (
-            <Link key={color} to="/cadeados" search={{ color, status: "ativos" }} className="block">
-              <Card className="overflow-hidden hover:shadow-md transition cursor-pointer">
-                <div className={`h-1 ${colorAccent[color]}`} />
-                <CardContent className="p-5">
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">{colorLabel[color]}</div>
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-3xl font-bold tabular-nums">{count}</span>
-                    <span className="text-xs text-muted-foreground">em uso</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))
-        )}
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))
+          : byColor.map(({ color, count }) => (
+              <Link
+                key={color}
+                to="/cadeados"
+                search={{ color, status: "ativos" }}
+                className="block"
+              >
+                <Card className="overflow-hidden hover:shadow-md transition cursor-pointer">
+                  <div className={`h-1 ${colorAccent[color]}`} />
+                  <CardContent className="p-5">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                      {colorLabel[color]}
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-3xl font-bold tabular-nums">{count}</span>
+                      <span className="text-xs text-muted-foreground">em uso</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
       </section>
 
       {/* Violações de dispositivos */}
@@ -123,7 +166,10 @@ function DashboardPage() {
                 <ShieldAlert className="h-4 w-4 text-destructive" />
                 Violações de dispositivos
               </h2>
-              <Link to="/violacoes" className="text-xs font-medium text-accent hover:underline inline-flex items-center gap-1">
+              <Link
+                to="/violacoes"
+                className="text-xs font-medium text-accent hover:underline inline-flex items-center gap-1"
+              >
                 Ver todas <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
@@ -136,14 +182,18 @@ function DashboardPage() {
             ) : (
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
                 <div className="rounded-lg border bg-secondary/30 p-4">
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Total de violações</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Total de violações
+                  </div>
                   <div className="mt-2 text-3xl font-bold tabular-nums">{violations.length}</div>
                 </div>
                 {["EXTRAVIO DA CHAVE", "INTEGRANTE AUSENTE"].map((reason) => {
                   const count = violationsByReason.find((v) => v.reason === reason)?.count ?? 0;
                   return (
                     <div key={reason} className="rounded-lg border bg-secondary/30 p-4">
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">{reason}</div>
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                        {reason}
+                      </div>
                       <div className="mt-2 text-3xl font-bold tabular-nums">{count}</div>
                     </div>
                   );
@@ -162,16 +212,23 @@ function DashboardPage() {
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 DISTRIBUIÇÃO POR SETOR
               </h2>
-              <Link to="/cadeados" className="text-xs font-medium text-accent hover:underline inline-flex items-center gap-1">
+              <Link
+                to="/cadeados"
+                className="text-xs font-medium text-accent hover:underline inline-flex items-center gap-1"
+              >
                 Ver todos <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
             {isLoading ? (
               <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8 rounded" />
+                ))}
               </div>
             ) : sectors.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma unidade com dispositivos em uso.</div>
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                Nenhuma unidade com dispositivos em uso.
+              </div>
             ) : (
               <ul className="space-y-3">
                 {sectors.map((s) => {
@@ -185,7 +242,10 @@ function DashboardPage() {
                       <div className="h-2 rounded-full bg-secondary overflow-hidden">
                         <div
                           className="h-full rounded-full"
-                          style={{ width: `${pct}%`, background: "linear-gradient(90deg, #F79220, #E35D12)" }}
+                          style={{
+                            width: `${pct}%`,
+                            background: "linear-gradient(90deg, #F79220, #E35D12)",
+                          }}
                         />
                       </div>
                     </li>
@@ -204,7 +264,9 @@ function DashboardPage() {
             </h2>
             {isLoading ? (
               <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded" />)}
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 rounded" />
+                ))}
               </div>
             ) : events.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">Nenhum evento.</div>
@@ -215,10 +277,16 @@ function DashboardPage() {
                     <div className={`mt-1.5 h-2 w-2 rounded-full ${eventDot(e.action)}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Link to="/cadeados/$codigo" params={{ codigo: e.padlock_code }} className="font-mono text-xs font-semibold hover:underline">
+                        <Link
+                          to="/cadeados/$codigo"
+                          params={{ codigo: e.padlock_code }}
+                          className="font-mono text-xs font-semibold hover:underline"
+                        >
                           {e.padlock_code}
                         </Link>
-                        <span className="text-xs text-muted-foreground">{actionLabel(e.action)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {actionLabel(e.action)}
+                        </span>
                       </div>
                       <div className="text-[11px] text-muted-foreground mt-0.5">
                         {formatDateTime(e.created_at)}
@@ -239,7 +307,10 @@ function DashboardPage() {
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Qualificações NR-10
         </h2>
-        <Link to="/qualificacoes" className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline">
+        <Link
+          to="/qualificacoes"
+          className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+        >
           Ver painel completo <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </section>
@@ -253,39 +324,72 @@ function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, accent, icon, to, search }: { label: string; value: number; accent: string; icon: React.ReactNode; to?: string; search?: Record<string, string> }) {
+function StatCard({
+  label,
+  value,
+  accent,
+  icon,
+  to,
+  search,
+}: {
+  label: string;
+  value: number;
+  accent: string;
+  icon: React.ReactNode;
+  to?: string;
+  search?: Record<string, string>;
+}) {
   const card = (
     <Card className={`overflow-hidden ${to ? "hover:shadow-md transition cursor-pointer" : ""}`}>
       <div className={`h-1 ${accent}`} />
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-secondary text-foreground">{icon}</div>
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-secondary text-foreground">
+            {icon}
+          </div>
         </div>
         <div className="mt-3 text-3xl font-bold tabular-nums">{value}</div>
       </CardContent>
     </Card>
   );
   if (to) {
-    return <Link to={to} search={search} className="block">{card}</Link>;
+    return (
+      <Link to={to} search={search} className="block">
+        {card}
+      </Link>
+    );
   }
   return card;
 }
 
 function eventDot(action: string) {
   switch (action) {
-    case "transferred": return "bg-violet-500";
-    case "updated": return "bg-amber-500";
-    case "deleted": return "bg-red-500";
-    case "created": return "bg-sky-500";
-    default: return "bg-muted-foreground";
+    case "transferred":
+      return "bg-violet-500";
+    case "updated":
+      return "bg-amber-500";
+    case "deleted":
+      return "bg-red-500";
+    case "created":
+      return "bg-sky-500";
+    default:
+      return "bg-muted-foreground";
   }
 }
 function actionLabel(action: string) {
-  return ({
-    created: "criado", updated: "editado", deleted: "cancelado",
-    transferred: "dono transferido", applied: "aplicado", released: "removido",
-  } as Record<string, string>)[action] ?? action;
+  return (
+    (
+      {
+        created: "criado",
+        updated: "editado",
+        deleted: "cancelado",
+        transferred: "dono transferido",
+        applied: "aplicado",
+        released: "removido",
+      } as Record<string, string>
+    )[action] ?? action
+  );
 }
 
 function ownerNameFor(e: PadlockEvent, padlocks: Padlock[]): string | null {

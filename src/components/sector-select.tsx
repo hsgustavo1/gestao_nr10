@@ -1,8 +1,21 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,7 +93,11 @@ export function SectorSelect({
     const next = [...sectors, name];
     const { error } = await supabase
       .from("configuracoes")
-      .update({ valor: JSON.stringify(next), updated_by: user.id, updated_at: new Date().toISOString() })
+      .update({
+        valor: JSON.stringify(next),
+        updated_by: user.id,
+        updated_at: new Date().toISOString(),
+      })
       .eq("chave", "sectors");
     if (error) {
       setSaving(false);
@@ -97,13 +114,20 @@ export function SectorSelect({
 
   return (
     <>
-      <Select value={value || undefined} onValueChange={handleSelect} required={required} disabled={loading}>
+      <Select
+        value={value || undefined}
+        onValueChange={handleSelect}
+        required={required}
+        disabled={loading}
+      >
         <SelectTrigger>
           <SelectValue placeholder={loading ? "Carregando..." : "Selecione o setor"} />
         </SelectTrigger>
         <SelectContent>
           {sectors.map((s) => (
-            <SelectItem key={s} value={s}>{s}</SelectItem>
+            <SelectItem key={s} value={s}>
+              {s}
+            </SelectItem>
           ))}
           {isAdmin && (
             <SelectItem value={ADD_NEW} className="text-primary">
@@ -115,7 +139,16 @@ export function SectorSelect({
         </SelectContent>
       </Select>
 
-      <Dialog open={addOpen} onOpenChange={(o) => { if (!o) { setNewSector(""); setAdminPwd(""); } setAddOpen(o); }}>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(o) => {
+          if (!o) {
+            setNewSector("");
+            setAdminPwd("");
+          }
+          setAddOpen(o);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Novo setor</DialogTitle>
@@ -147,8 +180,14 @@ export function SectorSelect({
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={saving} className="bg-brand-gradient text-white shadow-brand hover:opacity-95">
+              <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving}
+                className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+              >
                 {saving ? "Salvando..." : "Adicionar setor"}
               </Button>
             </DialogFooter>

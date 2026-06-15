@@ -2,7 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { FileBarChart, FolderCheck, Printer, TrendingUp } from "lucide-react";
 import {
-  CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +26,11 @@ export const Route = createFileRoute("/relatorio/")({
   head: () => ({
     meta: [
       { title: "Relatório de Conformidade — Gestão NR-10" },
-      { name: "description", content: "Índice de conformidade NR-10: capacitações, autorizações, ASOs, prontuário, inspeções e EPIs." },
+      {
+        name: "description",
+        content:
+          "Índice de conformidade NR-10: capacitações, autorizações, ASOs, prontuário, inspeções e EPIs.",
+      },
     ],
   }),
 });
@@ -56,7 +67,8 @@ function RelatorioPage() {
     [incidents],
   );
 
-  const overallColor = (v: number) => (v >= 90 ? "text-emerald-600" : v >= 70 ? "text-amber-600" : "text-red-600");
+  const overallColor = (v: number) =>
+    v >= 90 ? "text-emerald-600" : v >= 70 ? "text-amber-600" : "text-red-600";
 
   return (
     <PageShell>
@@ -76,7 +88,10 @@ function RelatorioPage() {
               <FolderCheck className="h-4 w-4" /> Dossiê de fiscalização
             </Link>
           </Button>
-          <Button onClick={() => window.print()} className="bg-brand-gradient text-white shadow-brand">
+          <Button
+            onClick={() => window.print()}
+            className="bg-brand-gradient text-white shadow-brand"
+          >
             <Printer className="h-4 w-4" /> Imprimir / PDF
           </Button>
         </div>
@@ -87,13 +102,16 @@ function RelatorioPage() {
         <p className="text-xs text-muted-foreground uppercase tracking-wider">Gestão NR-10</p>
         <h1 className="text-xl font-bold">RELATÓRIO DE CONFORMIDADE NR-10</h1>
         <p className="text-xs text-muted-foreground">
-          Emitido em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+          Emitido em {new Date().toLocaleDateString("pt-BR")} às{" "}
+          {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         </p>
       </div>
 
       {isLoading || !report ? (
         <div className="mt-5 space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
         </div>
       ) : (
         <>
@@ -118,14 +136,18 @@ function RelatorioPage() {
             {/* Pessoas */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Pessoas — {report.employees} colaboradores ativos</CardTitle>
+                <CardTitle className="text-base">
+                  Pessoas — {report.employees} colaboradores ativos
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {report.trainingRows.map((r) => (
                   <div key={r.type}>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span>{r.label}</span>
-                      <span className="font-semibold tabular-nums">{r.valid}/{r.universe} · {r.percent}%</span>
+                      <span className="font-semibold tabular-nums">
+                        {r.valid}/{r.universe} · {r.percent}%
+                      </span>
                     </div>
                     <Progress value={r.percent} className="h-1.5" />
                   </div>
@@ -133,14 +155,18 @@ function RelatorioPage() {
                 <div>
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span>Autorizações válidas</span>
-                    <span className="font-semibold tabular-nums">{report.validAuth}/{report.employees} · {report.authPercent}%</span>
+                    <span className="font-semibold tabular-nums">
+                      {report.validAuth}/{report.employees} · {report.authPercent}%
+                    </span>
                   </div>
                   <Progress value={report.authPercent} className="h-1.5" />
                 </div>
                 <div>
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span>ASOs em dia (NR-10 10.8.7)</span>
-                    <span className="font-semibold tabular-nums">{report.asoOk}/{report.employees} · {report.asoPercent}%</span>
+                    <span className="font-semibold tabular-nums">
+                      {report.asoOk}/{report.employees} · {report.asoPercent}%
+                    </span>
                   </div>
                   <Progress value={report.asoPercent} className="h-1.5" />
                 </div>
@@ -162,7 +188,9 @@ function RelatorioPage() {
                 </div>
                 {report.prontuario.missing.length > 0 && (
                   <div className="text-xs text-muted-foreground">
-                    Pendentes: {report.prontuario.missing.length} {report.prontuario.missing.length === 1 ? "categoria" : "categorias"} sem documento válido.
+                    Pendentes: {report.prontuario.missing.length}{" "}
+                    {report.prontuario.missing.length === 1 ? "categoria" : "categorias"} sem
+                    documento válido.
                   </div>
                 )}
               </CardContent>
@@ -173,7 +201,9 @@ function RelatorioPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">
                   Inspeções e Laudos
-                  {report.inspPercent !== null && <span className="ml-2 tabular-nums">{report.inspPercent}%</span>}
+                  {report.inspPercent !== null && (
+                    <span className="ml-2 tabular-nums">{report.inspPercent}%</span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -186,17 +216,25 @@ function RelatorioPage() {
                       <span>
                         {r.label}
                         {r.naoConformes > 0 && (
-                          <span className="ml-2 text-[11px] text-red-600 font-semibold">{r.naoConformes} NC</span>
+                          <span className="ml-2 text-[11px] text-red-600 font-semibold">
+                            {r.naoConformes} NC
+                          </span>
                         )}
                       </span>
-                      <span className="font-semibold tabular-nums">{r.valid}/{r.total} válidos · {r.percent}%</span>
+                      <span className="font-semibold tabular-nums">
+                        {r.valid}/{r.total} válidos · {r.percent}%
+                      </span>
                     </div>
                     <Progress value={r.percent} className="h-1.5" />
                   </div>
                 ))}
                 {report.openActions > 0 && (
                   <div className="text-xs text-amber-600 font-semibold">
-                    {report.openActions} {report.openActions === 1 ? "ação corretiva aberta" : "ações corretivas abertas"} no plano de ação.
+                    {report.openActions}{" "}
+                    {report.openActions === 1
+                      ? "ação corretiva aberta"
+                      : "ações corretivas abertas"}{" "}
+                    no plano de ação.
                   </div>
                 )}
               </CardContent>
@@ -207,7 +245,9 @@ function RelatorioPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">
                   EPIs e EPCs
-                  {report.epiPercent !== null && <span className="ml-2 tabular-nums">{report.epiPercent}%</span>}
+                  {report.epiPercent !== null && (
+                    <span className="ml-2 tabular-nums">{report.epiPercent}%</span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -217,12 +257,16 @@ function RelatorioPage() {
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span>Ensaios em dia</span>
-                      <span className="font-semibold tabular-nums">{report.epiOk}/{report.epis} · {report.epiPercent}%</span>
+                      <span className="font-semibold tabular-nums">
+                        {report.epiOk}/{report.epis} · {report.epiPercent}%
+                      </span>
                     </div>
                     <Progress value={report.epiPercent ?? 0} className="h-1.5" />
                   </div>
                 )}
-                <div className={`text-xs font-semibold ${incidentesAbertos > 0 ? "text-red-600" : "text-muted-foreground"}`}>
+                <div
+                  className={`text-xs font-semibold ${incidentesAbertos > 0 ? "text-red-600" : "text-muted-foreground"}`}
+                >
                   {incidentesAbertos > 0
                     ? `${incidentesAbertos} ${incidentesAbertos === 1 ? "incidente elétrico em aberto" : "incidentes elétricos em aberto"}.`
                     : "Nenhum incidente elétrico em aberto."}
@@ -242,8 +286,11 @@ function RelatorioPage() {
             <CardContent>
               {trendData.length < 2 ? (
                 <p className="text-xs text-muted-foreground py-4">
-                  O histórico é capturado automaticamente uma vez por mês quando o relatório é aberto.
-                  {trendData.length === 1 ? " Primeiro snapshot registrado — o gráfico aparece a partir do segundo mês." : ""}
+                  O histórico é capturado automaticamente uma vez por mês quando o relatório é
+                  aberto.
+                  {trendData.length === 1
+                    ? " Primeiro snapshot registrado — o gráfico aparece a partir do segundo mês."
+                    : ""}
                 </p>
               ) : (
                 <ResponsiveContainer width="100%" height={240}>
@@ -251,8 +298,16 @@ function RelatorioPage() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />
-                    <Tooltip formatter={(v: number, name: string) => [`${v}%`, TREND_SERIES.find((s) => s.key === name)?.label ?? name]} />
-                    <Legend formatter={(v) => TREND_SERIES.find((s) => s.key === v)?.label ?? v} wrapperStyle={{ fontSize: 10 }} />
+                    <Tooltip
+                      formatter={(v: number, name: string) => [
+                        `${v}%`,
+                        TREND_SERIES.find((s) => s.key === name)?.label ?? name,
+                      ]}
+                    />
+                    <Legend
+                      formatter={(v) => TREND_SERIES.find((s) => s.key === v)?.label ?? v}
+                      wrapperStyle={{ fontSize: 10 }}
+                    />
                     {TREND_SERIES.map((s) => (
                       <Line
                         key={s.key}

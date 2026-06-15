@@ -193,7 +193,13 @@ describe("buildVencimentos — capacitações NR-10", () => {
   it("vencimento = data de treinamento + 2 anos", () => {
     const data = emptyData({
       employees: [employee({ id: "emp1" })],
-      trainings: [training({ employee_id: "emp1", training_type: "nr10_basico", training_date: "2023-07-01" })],
+      trainings: [
+        training({
+          employee_id: "emp1",
+          training_type: "nr10_basico",
+          training_date: "2023-07-01",
+        }),
+      ],
     });
     const items = buildVencimentos(data, 90, TODAY);
     expect(items).toHaveLength(1);
@@ -211,8 +217,18 @@ describe("buildVencimentos — capacitações NR-10", () => {
     const data = emptyData({
       employees: [employee({ id: "emp1" })],
       trainings: [
-        training({ employee_id: "emp1", training_type: "sep", category: "formacao", training_date: "2021-01-01" }),
-        training({ employee_id: "emp1", training_type: "sep", category: "reciclagem", training_date: "2023-06-20" }),
+        training({
+          employee_id: "emp1",
+          training_type: "sep",
+          category: "formacao",
+          training_date: "2021-01-01",
+        }),
+        training({
+          employee_id: "emp1",
+          training_type: "sep",
+          category: "reciclagem",
+          training_date: "2023-06-20",
+        }),
       ],
     });
     const items = buildVencimentos(data, 90, TODAY);
@@ -286,7 +302,14 @@ describe("buildVencimentos — Instruções de Trabalho", () => {
   it("validade padrão de 24 meses quando a IT não é encontrada", () => {
     const data = emptyData({
       employees: [employee({ id: "emp1" })],
-      itTrainings: [itTraining({ id: "x", employee_id: "emp1", instruction_id: "inexistente", conclusao_date: "2023-07-01" })],
+      itTrainings: [
+        itTraining({
+          id: "x",
+          employee_id: "emp1",
+          instruction_id: "inexistente",
+          conclusao_date: "2023-07-01",
+        }),
+      ],
       instructions: [],
     });
     const [item] = buildVencimentos(data, 90, TODAY);
@@ -298,8 +321,17 @@ describe("buildVencimentos — Instruções de Trabalho", () => {
   it("usa validity_months da IT vinculada", () => {
     const data = emptyData({
       employees: [employee({ id: "emp1" })],
-      instructions: [instruction({ id: "instr1", code: "IT-05", title: "LOTO", validity_months: 12 })],
-      itTrainings: [itTraining({ id: "x", employee_id: "emp1", instruction_id: "instr1", conclusao_date: "2024-07-01" })],
+      instructions: [
+        instruction({ id: "instr1", code: "IT-05", title: "LOTO", validity_months: 12 }),
+      ],
+      itTrainings: [
+        itTraining({
+          id: "x",
+          employee_id: "emp1",
+          instruction_id: "instr1",
+          conclusao_date: "2024-07-01",
+        }),
+      ],
     });
     const [item] = buildVencimentos(data, 90, TODAY);
     expect(item.dueDate).toBe("2025-07-01"); // +12 meses
@@ -356,8 +388,18 @@ describe("buildVencimentos — prontuário, inspeções e ASO", () => {
     const data = emptyData({
       employees: [employee({ id: "emp1" })],
       asos: [
-        aso({ id: "aso-old", employee_id: "emp1", exam_date: "2023-01-01", validity_date: "2024-01-01" }),
-        aso({ id: "aso-new", employee_id: "emp1", exam_date: "2024-07-01", validity_date: "2025-07-01" }),
+        aso({
+          id: "aso-old",
+          employee_id: "emp1",
+          exam_date: "2023-01-01",
+          validity_date: "2024-01-01",
+        }),
+        aso({
+          id: "aso-new",
+          employee_id: "emp1",
+          exam_date: "2024-07-01",
+          validity_date: "2025-07-01",
+        }),
       ],
     });
     const items = buildVencimentos(data, 90, TODAY);
@@ -399,8 +441,16 @@ describe("buildVencimentos — ordenação e status", () => {
     const data = emptyData({
       employees: [employee({ id: "emp1" }), employee({ id: "emp2", matricula: "002" })],
       trainings: [
-        training({ employee_id: "emp1", training_type: "nr10_basico", training_date: "2023-08-01" }), // vence 2025-08-01
-        training({ employee_id: "emp2", training_type: "nr10_basico", training_date: "2022-01-01" }), // vencido
+        training({
+          employee_id: "emp1",
+          training_type: "nr10_basico",
+          training_date: "2023-08-01",
+        }), // vence 2025-08-01
+        training({
+          employee_id: "emp2",
+          training_type: "nr10_basico",
+          training_date: "2022-01-01",
+        }), // vencido
       ],
     });
     const items = buildVencimentos(data, 90, TODAY);

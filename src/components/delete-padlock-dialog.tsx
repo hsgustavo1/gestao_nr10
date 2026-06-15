@@ -2,7 +2,12 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { ShieldAlert } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -17,7 +22,10 @@ import { logEvent, colorLabel, type Padlock } from "@/lib/padlocks";
  * (eventos sobrevivem porque a FK não cascateia).
  */
 export function DeletePadlockDialog({
-  open, onOpenChange, padlock, onDeleted,
+  open,
+  onOpenChange,
+  padlock,
+  onDeleted,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -29,7 +37,8 @@ export function DeletePadlockDialog({
   const [loading, setLoading] = useState(false);
 
   function reset() {
-    setPassword(""); setLoading(false);
+    setPassword("");
+    setLoading(false);
   }
 
   async function submit(e: FormEvent) {
@@ -73,7 +82,13 @@ export function DeletePadlockDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) reset();
+        onOpenChange(o);
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -82,7 +97,9 @@ export function DeletePadlockDialog({
           </DialogTitle>
           <DialogDescription>
             Esta ação é <strong>irreversível</strong>. O dispositivo{" "}
-            <strong>{colorLabel[padlock.color]} #{padlock.number}</strong>{" "}
+            <strong>
+              {colorLabel[padlock.color]} #{padlock.number}
+            </strong>{" "}
             será apagado do banco. A linha do tempo de auditoria permanece preservada.
             <br />
             Em geral, prefira realizar a <em>Baixa</em> em vez de eliminar.
@@ -102,7 +119,9 @@ export function DeletePadlockDialog({
             <p className="text-xs text-muted-foreground">Logado como {user?.email}</p>
           </div>
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Voltar</Button>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Voltar
+            </Button>
             <Button type="submit" disabled={loading} variant="destructive">
               {loading ? "Processando..." : "Eliminar Definitivamente"}
             </Button>

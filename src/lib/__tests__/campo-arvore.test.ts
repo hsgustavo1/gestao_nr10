@@ -1,12 +1,32 @@
 import { describe, expect, it } from "vitest";
 import {
-  caminhoAbaixoDoSetor, filhosDoNo, nodePath, normalizarEstrutura, proximoNivel, setorDoNo,
+  caminhoAbaixoDoSetor,
+  filhosDoNo,
+  nodePath,
+  normalizarEstrutura,
+  proximoNivel,
+  setorDoNo,
   type FieldNode,
 } from "../campo";
 
 // Helper para montar nós de teste com o mínimo de campos
-function no(id: string, parent: string | null, nivel: FieldNode["nivel"], nome: string, ordem = 0): FieldNode {
-  return { id, inspection_id: "i", parent_id: parent, nivel, nome, ordem, created_at: "", updated_at: "" };
+function no(
+  id: string,
+  parent: string | null,
+  nivel: FieldNode["nivel"],
+  nome: string,
+  ordem = 0,
+): FieldNode {
+  return {
+    id,
+    inspection_id: "i",
+    parent_id: parent,
+    nivel,
+    nome,
+    ordem,
+    created_at: "",
+    updated_at: "",
+  };
 }
 
 // Árvore: Setor "Moagem" → Ativo "CCM-02" → Componente "Gaveta G4"
@@ -41,7 +61,10 @@ describe("nodePath / setorDoNo / caminhoAbaixoDoSetor", () => {
 
 describe("filhosDoNo", () => {
   it("raiz (null) lista os setores", () => {
-    expect(filhosDoNo(null, [setor, ativo, comp, setor2]).map((n) => n.nome)).toEqual(["Moagem", "Caldeira"]);
+    expect(filhosDoNo(null, [setor, ativo, comp, setor2]).map((n) => n.nome)).toEqual([
+      "Moagem",
+      "Caldeira",
+    ]);
   });
   it("setor lista seus ativos", () => {
     expect(filhosDoNo("s1", [setor, ativo, comp, setor2]).map((n) => n.nome)).toEqual(["CCM-02"]);
