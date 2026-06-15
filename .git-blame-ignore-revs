@@ -1,0 +1,6 @@
+# Revisões a ignorar no `git blame` (mudanças puramente mecânicas/formatação).
+# O GitHub usa este arquivo automaticamente. Localmente, ative com:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: formata o repo com prettier + ajusta config do eslint (2026-06-15)
+7c7d7fbe4105f6d6f11784a2d8c8b8a42ad2205b
