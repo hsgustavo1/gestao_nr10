@@ -137,6 +137,9 @@ Falta (fazer com a migração já aplicada, para poder verificar rodando o app):
 - **App no Vercel (opcional):** trocar o alvo de build do TanStack Start de
   Cloudflare para o preset Vercel (remover/condicionar `@cloudflare/vite-plugin`
   em [`vite.config.ts`](../../../vite.config.ts)); validar SSR no deploy real.
+- **Login offline multiusuário (aparelho compartilhado):** ver detalhes na seção
+  "Sessão, offline e login" (cache de sessões por usuário + `setSession` + PIN
+  local). Passar por brainstorming antes (mexe em auth/segurança).
 
 ## Sessão, offline e login (comportamento atual + futuro)
 
