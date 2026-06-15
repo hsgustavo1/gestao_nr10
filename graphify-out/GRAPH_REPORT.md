@@ -1,5 +1,36 @@
 # Graph Report - .  (2026-06-14)
 
+## ⚠️ Status atual (overlay manual — 2026-06-15)
+
+> Esta seção foi adicionada à mão para refletir o estado do projeto sem re-rodar a
+> extração do grafo. Os nós/arestas abaixo (Summary, Communities, God Nodes) ainda
+> refletem o snapshot de 2026-06-14 e **não** incluem as mudanças desta data — rode
+> um `/graphify` completo quando quiser regenerar os dados do grafo.
+> **Fonte canônica do estado atual: [`docs/superpowers/plans/ROADMAP.md`](../../docs/superpowers/plans/ROADMAP.md).**
+
+**O projeto virou multi-tenant (SaaS).** Principais adições desde o snapshot:
+
+- **Fundação multi-tenancy** (`supabase/migrations/20260614000000…`): tabelas novas
+  `organizations`, `org_memberships`, `org_entitlements`, `platform_admins`,
+  `org_public_tokens`; funções de acesso `SECURITY DEFINER` `can_access_org`,
+  `org_role_at_least`, `is_platform_admin`, `has_entitlement`; coluna `org_id` em
+  TODAS as tabelas de domínio + RLS reescrita de `USING(true)` para escopo por org.
+  → novo seam de autorização (antes era só `has_role`/`is_staff`).
+- **Cascata de org_id** (`…20260614010000`, Fase 1.6): trigger `fn_inherit_org_id`
+  faz o filho herdar `org_id` do pai (invariante: filho nunca em org diferente).
+  `org_id` propagado em `@gestao/campo-core` e no sync do PWA; path de Storage
+  `{org_id}/…`; `comporRti()` carimba a org na raiz `rti_reports`.
+- **MVP consultor** (`…20260614020000`, Fase 2): orgs Consultoria/Cliente A/Cliente B;
+  edge function `admin-users` escopada por org; **isolamento RLS VALIDADO** por teste.
+- **Contexto de org no frontend**: `src/lib/auth-context.tsx` estendido (`orgs`,
+  `currentOrg`, `entitlements`, `isPlatformAdmin`); seletor de org em `site-header.tsx`.
+- **Higiene de lint/CI**: repo reformatado com prettier + `no-explicit-any`→warn +
+  `**/dist/**` ignorado no eslint → CI verde (0 erros, 85 testes, build app+PWA).
+
+Comunidades novas que um re-graph deve criar: *Multi-Tenancy Foundation* (orgs/RLS/
+funções de acesso), *Org Context & Entitlements* (auth-context + guards). God node
+provável novo: `can_access_org()` (base de toda a RLS por org).
+
 ## Corpus Check
 - 238 files · ~175,321 words
 - Verdict: corpus is large enough that graph structure adds value.
