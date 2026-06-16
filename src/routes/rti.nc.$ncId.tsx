@@ -74,7 +74,10 @@ export const Route = createFileRoute("/rti/nc/$ncId")({
 
 function RtiNcDetailPage() {
   const { ncId } = Route.useParams();
-  const { isStaff, isAdmin, user } = useAuth();
+  const { isStaff, isAdmin, hasOrgRole, user } = useAuth();
+  // Gate de UI (RLS é a verdade): editar = papel operacional; excluir = admin no escopo.
+  const canEdit = isStaff || hasOrgRole("member");
+  const canDelete = isAdmin || hasOrgRole("admin");
   const navigate = useNavigate();
 
   const { data: nc, isLoading } = useRtiNc(ncId);
@@ -200,7 +203,7 @@ function RtiNcDetailPage() {
             )}
           </div>
         </div>
-        {isAdmin && (
+        {canDelete && (
           <Button variant="outline" size="sm" className="text-destructive" onClick={handleDelete}>
             <Trash2 className="h-4 w-4" /> Excluir NC
           </Button>
@@ -230,7 +233,7 @@ function RtiNcDetailPage() {
           <EvidenceSection
             nc={nc}
             tipo="constatacao"
-            canEdit={isStaff}
+            canEdit={canEdit}
             actorName={actorName}
             titulo="Registro da não conformidade"
             descricao="Fotos e documentos que evidenciam o problema constatado na inspeção."
@@ -239,7 +242,7 @@ function RtiNcDetailPage() {
           <EvidenceSection
             nc={nc}
             tipo="correcao"
-            canEdit={isStaff}
+            canEdit={canEdit}
             actorName={actorName}
             titulo="Evidências da correção"
             descricao="Comprovação da ação corretiva executada (fotos do depois, OS encerrada, laudos...)."
@@ -249,8 +252,8 @@ function RtiNcDetailPage() {
 
         {/* Coluna lateral */}
         <div className="space-y-4">
-          <GestaoCard nc={nc} canEdit={isStaff} actorName={actorName} />
-          <HistoricoCard ncId={nc.id} canComment={isStaff} actorName={actorName} />
+          <GestaoCard nc={nc} canEdit={canEdit} actorName={actorName} />
+          <HistoricoCard ncId={nc.id} canComment={canEdit} actorName={actorName} />
         </div>
       </div>
     </PageShell>

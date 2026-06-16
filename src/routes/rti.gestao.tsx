@@ -28,7 +28,9 @@ export const Route = createFileRoute("/rti/gestao")({
 });
 
 function RtiGestaoPage() {
-  const { isStaff } = useAuth();
+  const { isAdmin, hasOrgRole } = useAuth();
+  // Excluir relatório é destrutivo → exige admin no escopo (ou admin legado). RLS é a verdade.
+  const canDelete = isAdmin || hasOrgRole("admin");
   const { data: reports = [], isLoading } = useRtiReports();
   const { data: inspections = [] } = useFieldInspections();
   const [deletingReport, setDeletingReport] = useState<RtiReport | null>(null);
@@ -103,7 +105,7 @@ function RtiGestaoPage() {
                           Ver plano
                         </Link>
                       </Button>
-                      {isStaff && (
+                      {canDelete && (
                         <Button
                           size="sm"
                           variant="ghost"

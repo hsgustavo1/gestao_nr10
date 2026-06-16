@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import type { RtiArea, RtiNc, RtiNcEvidencia, RtiNcHistorico, RtiReport } from "./rti";
 
 export const rtiKeys = {
@@ -33,12 +34,15 @@ async function fetchAllRows<T>(
 // ── Relatórios ───────────────────────────────────────────────────────────────
 
 export function useRtiReports() {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: rtiKeys.reports,
+    queryKey: [...rtiKeys.reports, currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rti_reports")
         .select("*")
+        .eq("org_id", currentOrgId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as RtiReport[];
@@ -48,13 +52,17 @@ export function useRtiReports() {
 
 export function useUpsertRtiReport() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<RtiReport, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      // Ao criar (sem id), carimba a org ativa — fn_default_org_id só cobre usuário
+      // de 1 org; consultor/platform admin precisam do org_id explícito.
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("rti_reports")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -142,13 +150,20 @@ export function useRtiNcs(reportId?: string) {
   });
 }
 
-/** Todas as NCs de todos os relatórios (visões agregadas: dossiê, conformidade). */
+/** Todas as NCs da org ativa (visões agregadas: dossiê, conformidade). */
 export function useAllRtiNcs() {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: rtiKeys.ncs(),
+    queryKey: [...rtiKeys.ncs(), currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
       return fetchAllRows<RtiNc>((from, to) =>
-        supabase.from("rti_ncs").select("*").order("numero", { ascending: true }).range(from, to),
+        supabase
+          .from("rti_ncs")
+          .select("*")
+          .eq("org_id", currentOrgId!)
+          .order("numero", { ascending: true })
+          .range(from, to),
       );
     },
   });
@@ -484,14 +499,18 @@ export type RtiImportPayload = {
   report: Omit<RtiReport, "id" | "created_at" | "updated_at" | "report_path" | "notes">;
   areas: { nome: string; ordem: number }[];
   ncs: RtiImportNc[];
+  /** Org ativa — carimbada no relatório; áreas/NCs herdam via trigger no banco. */
+  orgId?: string | null;
   onProgress?: (done: number, total: number) => void;
 };
 
-export async function batchImportRti({ report, areas, ncs, onProgress }: RtiImportPayload) {
+export async function batchImportRti({ report, areas, ncs, orgId, onProgress }: RtiImportPayload) {
   // 1) Relatório
+  const reportRow = { ...report } as typeof report & { org_id?: string };
+  if (orgId) reportRow.org_id = orgId;
   const { data: rep, error: repErr } = await supabase
     .from("rti_reports")
-    .insert(report)
+    .insert(reportRow)
     .select()
     .single();
   if (repErr) throw repErr;

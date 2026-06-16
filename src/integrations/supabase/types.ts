@@ -1354,6 +1354,7 @@ export type Database = {
           finding_id: string | null;
           id: string;
           numero: number;
+          org_id: string;
           os_numero: string | null;
           prazo: string | null;
           prioridade: number;
@@ -1376,6 +1377,7 @@ export type Database = {
           finding_id?: string | null;
           id?: string;
           numero: number;
+          org_id?: string;
           os_numero?: string | null;
           prazo?: string | null;
           prioridade?: number;
@@ -1398,6 +1400,7 @@ export type Database = {
           finding_id?: string | null;
           id?: string;
           numero?: number;
+          org_id?: string;
           os_numero?: string | null;
           prazo?: string | null;
           prioridade?: number;

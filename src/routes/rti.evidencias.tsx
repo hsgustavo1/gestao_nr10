@@ -91,7 +91,9 @@ type FileRow = {
 };
 
 function RtiEvidenciasMassaPage() {
-  const { isStaff, user } = useAuth();
+  const { isStaff, hasOrgRole, user } = useAuth();
+  // Gate de UI: papel operacional na org ativa (ou staff legado). RLS é a verdade.
+  const canEdit = isStaff || hasOrgRole("member");
   const qc = useQueryClient();
   const { data: reports = [] } = useRtiReports();
 
@@ -221,12 +223,12 @@ function RtiEvidenciasMassaPage() {
     }
   }
 
-  if (!isStaff) {
+  if (!canEdit) {
     return (
       <PageShell>
         <Card className="mt-8">
           <CardContent className="p-10 text-center text-sm text-muted-foreground">
-            Apenas usuários de apoio ou administradores podem importar evidências.
+            Você não tem permissão para importar evidências nesta empresa.
           </CardContent>
         </Card>
       </PageShell>

@@ -247,7 +247,10 @@ function useRtiNcCount(reportId: string) {
 // ── Página ────────────────────────────────────────────────────────────────────
 
 function RtiImportarPage() {
-  const { isStaff, isAdmin, user } = useAuth();
+  const { isStaff, isAdmin, hasOrgRole, user, currentOrgId } = useAuth();
+  // Gate de UI (RLS é a verdade): operar = papel na org ativa; excluir = admin no escopo.
+  const canEdit = isStaff || hasOrgRole("member");
+  const canDelete = isAdmin || hasOrgRole("admin");
   const navigate = useNavigate();
   const { data: reports = [], isLoading: loadingReports } = useRtiReports();
   const deleteReport = useDeleteRtiReport();
@@ -272,12 +275,12 @@ function RtiImportarPage() {
   const actorName =
     (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || null;
 
-  if (!isStaff) {
+  if (!canEdit) {
     return (
       <PageShell>
         <Card className="mt-8">
           <CardContent className="p-10 text-center text-sm text-muted-foreground">
-            Apenas usuários de apoio ou administradores podem importar planilhas do RTI.
+            Você não tem permissão para importar planilhas do RTI nesta empresa.
           </CardContent>
         </Card>
       </PageShell>
@@ -328,6 +331,7 @@ function RtiImportarPage() {
         },
         areas: parsed.areas.map(({ nome, ordem }) => ({ nome, ordem })),
         ncs: parsed.ncs,
+        orgId: currentOrgId,
         onProgress: (done, total) => setProgress({ done, total }),
       });
       toast.success(`Plano de ação importado: ${parsed.ncs.length} NCs.`);
@@ -428,7 +432,7 @@ function RtiImportarPage() {
                   <ReportRow
                     key={r.id}
                     report={r}
-                    canDelete={isAdmin}
+                    canDelete={canDelete}
                     onDelete={() => excluirRelatorio(r.id, r.titulo)}
                   />
                 ))}

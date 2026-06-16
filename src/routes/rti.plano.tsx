@@ -110,7 +110,9 @@ export const Route = createFileRoute("/rti/plano")({
 });
 
 function RtiPlanoPage() {
-  const { isStaff, user } = useAuth();
+  const { isStaff, hasOrgRole, user } = useAuth();
+  // Gate de UI: papel operacional na org ativa (ou staff legado). RLS é a verdade.
+  const canEdit = isStaff || hasOrgRole("member");
   const navigate = useNavigate();
   const search = Route.useSearch();
   const { data: reports = [], isLoading: loadingReports } = useRtiReports();
@@ -318,7 +320,7 @@ function RtiPlanoPage() {
           <Button variant="outline" onClick={exportXlsx} disabled={filtered.length === 0}>
             <Download className="h-4 w-4" /> Exportar
           </Button>
-          {isStaff && activeReport && (
+          {canEdit && activeReport && (
             <Button
               onClick={() => setNovaNcOpen(true)}
               className="bg-brand-gradient text-white shadow-brand"
@@ -469,7 +471,7 @@ function RtiPlanoPage() {
       </div>
 
       {/* Barra de ações em massa */}
-      {isStaff && selected.size > 0 && (
+      {canEdit && selected.size > 0 && (
         <BulkBar
           count={selected.size}
           onClear={() => setSelected(new Set())}
@@ -532,7 +534,7 @@ function RtiPlanoPage() {
           ) : !activeReport ? (
             <div className="p-8 text-center text-sm text-muted-foreground">
               Nenhum relatório cadastrado.{" "}
-              {isStaff && (
+              {canEdit && (
                 <>
                   Importe a planilha em{" "}
                   <Link to="/rti/importar" className="underline">
@@ -553,7 +555,7 @@ function RtiPlanoPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {isStaff && (
+                    {canEdit && (
                       <TableHead className="w-10">
                         <Checkbox
                           checked={allPageSelected}
@@ -578,7 +580,7 @@ function RtiPlanoPage() {
                     const ev = evidenciaIndex?.get(nc.id);
                     return (
                       <TableRow key={nc.id} className="group">
-                        {isStaff && (
+                        {canEdit && (
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={selected.has(nc.id)}
@@ -639,7 +641,7 @@ function RtiPlanoPage() {
                           )}
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
-                          {isStaff ? (
+                          {canEdit ? (
                             <div className="space-y-1">
                               <Select
                                 value={nc.status}
@@ -760,7 +762,7 @@ function RtiPlanoPage() {
         </div>
       )}
 
-      {isStaff && novaNcOpen && activeReport && (
+      {canEdit && novaNcOpen && activeReport && (
         <NovaNcDialog
           reportId={activeReport.id}
           proximoNumero={ncs.reduce((max, nc) => Math.max(max, nc.numero), 0) + 1}

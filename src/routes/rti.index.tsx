@@ -62,7 +62,9 @@ const STATUS_COLORS: Record<RtiNcStatus, string> = {
 const TIPO_COLORS = { os: "#0A2D48", investimento: "#F79220" } as const;
 
 function RtiDashboardPage() {
-  const { isStaff } = useAuth();
+  const { isStaff, hasOrgRole } = useAuth();
+  // Gate de UI: papel operacional na org ativa (ou staff legado). RLS é a verdade.
+  const canEdit = isStaff || hasOrgRole("member");
   const navigate = useNavigate();
   const { data: reports = [], isLoading: loadingReports } = useRtiReports();
 
@@ -217,14 +219,14 @@ function RtiDashboardPage() {
               </Link>
             </Button>
           )}
-          {isStaff && (
+          {canEdit && (
             <Button asChild variant="outline">
               <Link to="/rti/gestao">
                 <LayoutList className="h-4 w-4" /> Gestão RTI
               </Link>
             </Button>
           )}
-          {isStaff && (
+          {canEdit && (
             <Button asChild variant="outline">
               <Link to="/rti/importar">
                 <FileSpreadsheet className="h-4 w-4" /> Importar / Relatórios
@@ -249,9 +251,9 @@ function RtiDashboardPage() {
             <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
               Nenhum relatório de inspeção cadastrado ainda.
-              {isStaff ? " Importe a planilha do plano de ação para começar." : ""}
+              {canEdit ? " Importe a planilha do plano de ação para começar." : ""}
             </p>
-            {isStaff && (
+            {canEdit && (
               <Button asChild className="bg-brand-gradient text-white shadow-brand">
                 <Link to="/rti/importar">
                   <FileSpreadsheet className="h-4 w-4" /> Importar planilha
