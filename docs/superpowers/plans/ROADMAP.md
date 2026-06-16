@@ -20,10 +20,18 @@ Pendências (todas opcionais agora):
 1. ✅ **Deploy da edge function `admin-users` — FEITO (2026-06-15, v1, ACTIVE,
    verify_jwt on)** via Supabase MCP. (Antes nunca tinha sido publicada — era v1.)
    Inclui a versão multi-tenant: ação `list` + autz org-aware.
-2. **UI:** wire do painel de usuários para criar/listar usuário **na org do cliente
-   selecionado** (backend já pronto). É o próximo passo de produto da Fase 2.
+2. ✅ **UI do painel por org — FEITO (2026-06-15/16).** Criar/listar usuário na org
+   do cliente selecionado (via edge `list`); commit `8e4ec8a`. UX de tenancy (commit
+   `89ac137`): "Controle de acessos" movido do menu RAC — Bloqueio para o menu do
+   usuário (avatar); seletor de org **hierárquico** (consultoria → clientes indentados);
+   painel mostra "gerenciado por {consultoria}". Falta opcional: árvore multi-org num só
+   painel (precisa de ação nova na edge + redeploy).
 3. *(Opcional, prova final)* Logar no app/PWA como cada usuário de teste e ver só
    os dados da própria org.
+
+**👉 PRÓXIMO PASSO DE PRODUTO:** Fase 1.5 — migrar os gates de tela de papel global
+(`isStaff`/`isAdmin`) para `hasEntitlement`/`hasOrgRole`. É o que falta para um
+cliente-admin operar o app **sem** receber papel global legado (ver "Próximas fases").
 
 Outros itens opcionais/futuros estão em "Passos manuais" e "Fases posteriores".
 
