@@ -111,23 +111,25 @@ describe("computeBudget", () => {
 });
 
 describe("computeAndamentoPorCusto", () => {
-  it("segmenta por com-custo (>0) e custo-zero, excluindo não informado (null)", () => {
+  it("segmenta em com-custo (>0), custo-zero (=0) e sem-custo (null)", () => {
     const r = computeAndamentoPorCusto([
       nc("concluida", 1000),
       nc("pendente", 500),
       nc("concluida", 0),
       nc("em_andamento", 0),
-      nc("concluida", null), // excluída
-      nc("pendente", null), // excluída
+      nc("concluida", null),
+      nc("pendente", null),
     ]);
     expect(r.comCusto).toEqual({ total: 2, concluidas: 1 });
     expect(r.custoZero).toEqual({ total: 2, concluidas: 1 });
+    expect(r.semCusto).toEqual({ total: 2, concluidas: 1 });
   });
 
   it("recorte vazio → grupos zerados", () => {
     expect(computeAndamentoPorCusto([])).toEqual({
       comCusto: { total: 0, concluidas: 0 },
       custoZero: { total: 0, concluidas: 0 },
+      semCusto: { total: 0, concluidas: 0 },
     });
   });
 });
@@ -143,6 +145,12 @@ describe("matchCustoFiltro", () => {
     expect(matchCustoFiltro({ custo_planejado: 0 }, "informado")).toBe(true);
     expect(matchCustoFiltro({ custo_planejado: 10 }, "informado")).toBe(true);
     expect(matchCustoFiltro({ custo_planejado: null }, "informado")).toBe(false);
+  });
+
+  it("'comvalor' só custo > 0 (exclui zero e null)", () => {
+    expect(matchCustoFiltro({ custo_planejado: 10 }, "comvalor")).toBe(true);
+    expect(matchCustoFiltro({ custo_planejado: 0 }, "comvalor")).toBe(false);
+    expect(matchCustoFiltro({ custo_planejado: null }, "comvalor")).toBe(false);
   });
 
   it("'sem' só null; 'zero' só igual a 0", () => {

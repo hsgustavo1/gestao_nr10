@@ -165,13 +165,21 @@ function RtiDashboardPage() {
     () => [
       {
         grupo: "Com custo",
+        custo: "comvalor",
         Total: andamentoCusto.comCusto.total,
         Concluídas: andamentoCusto.comCusto.concluidas,
       },
       {
         grupo: "Custo zero",
+        custo: "zero",
         Total: andamentoCusto.custoZero.total,
         Concluídas: andamentoCusto.custoZero.concluidas,
+      },
+      {
+        grupo: "Sem custo",
+        custo: "sem",
+        Total: andamentoCusto.semCusto.total,
+        Concluídas: andamentoCusto.semCusto.concluidas,
       },
     ],
     [andamentoCusto],
@@ -504,13 +512,16 @@ function RtiDashboardPage() {
           </div>
 
           {/* Andamento por custo */}
-          {(andamentoCusto.comCusto.total > 0 || andamentoCusto.custoZero.total > 0) && (
+          {andamentoCusto.comCusto.total +
+            andamentoCusto.custoZero.total +
+            andamentoCusto.semCusto.total >
+            0 && (
             <Card className="mt-3">
               <CardHeader className="pb-0">
                 <CardTitle className="text-sm">
                   Andamento por custo{" "}
                   <span className="font-normal text-muted-foreground">
-                    (conclusão das ações com investimento vs sem investimento)
+                    (conclusão por atribuição de custo · clique para abrir no plano)
                   </span>
                 </CardTitle>
               </CardHeader>
@@ -526,8 +537,24 @@ function RtiDashboardPage() {
                       <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                       <Tooltip formatter={(v: number) => [`${v} NCs`, ""]} />
                       <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
-                      <Bar dataKey="Total" fill="#0A2D48" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="Concluídas" fill="#10b981" radius={[4, 4, 0, 0]} />
+                      <Bar
+                        dataKey="Total"
+                        fill="#0A2D48"
+                        radius={[4, 4, 0, 0]}
+                        className="cursor-pointer"
+                        onClick={(d: { custo?: string }) =>
+                          d.custo && gotoPlano({ custo: d.custo })
+                        }
+                      />
+                      <Bar
+                        dataKey="Concluídas"
+                        fill="#10b981"
+                        radius={[4, 4, 0, 0]}
+                        className="cursor-pointer"
+                        onClick={(d: { custo?: string }) =>
+                          d.custo && gotoPlano({ custo: d.custo, status: "concluida" })
+                        }
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -545,6 +572,13 @@ function RtiDashboardPage() {
                       {andamentoCusto.custoZero.concluidas}/{andamentoCusto.custoZero.total}
                     </strong>{" "}
                     concluídas ({pctConcl(andamentoCusto.custoZero)}%)
+                  </span>
+                  <span>
+                    Sem custo:{" "}
+                    <strong className="text-foreground">
+                      {andamentoCusto.semCusto.concluidas}/{andamentoCusto.semCusto.total}
+                    </strong>{" "}
+                    concluídas ({pctConcl(andamentoCusto.semCusto)}%)
                   </span>
                 </div>
               </CardContent>

@@ -222,17 +222,22 @@ export function clampPrioridade(p: number): RtiPrioridade {
 // (null); "zero" = custo planejado igual a 0. A tela de Custos usa "informado"
 // para o atalho "Ver no Plano".
 
-export const RTI_CUSTO_FILTROS = ["all", "informado", "sem", "zero"] as const;
+export const RTI_CUSTO_FILTROS = ["all", "informado", "comvalor", "zero", "sem"] as const;
 export type RtiCustoFiltro = (typeof RTI_CUSTO_FILTROS)[number];
 
 export const RTI_CUSTO_FILTRO_LABELS: Record<RtiCustoFiltro, string> = {
   all: "Custo: todos",
   informado: "Com custo informado",
-  sem: "Sem custo informado",
+  comvalor: "Com custo (> R$ 0)",
   zero: "Custo zero",
+  sem: "Sem custo informado",
 };
 
-/** Predicado do filtro de custo do Plano. "informado" inclui custo zero. */
+/**
+ * Predicado do filtro de custo do Plano.
+ * "informado" = custo preenchido (inclui 0); "comvalor" = custo > 0;
+ * "zero" = custo = 0; "sem" = custo não informado (null).
+ */
 export function matchCustoFiltro(
   nc: Pick<RtiNc, "custo_planejado">,
   modo: RtiCustoFiltro,
@@ -241,10 +246,12 @@ export function matchCustoFiltro(
   switch (modo) {
     case "informado":
       return cp != null;
-    case "sem":
-      return cp == null;
+    case "comvalor":
+      return cp != null && cp > 0;
     case "zero":
       return cp === 0;
+    case "sem":
+      return cp == null;
     default:
       return true;
   }
@@ -325,13 +332,15 @@ export function computeBudget(
 }
 
 // ── Andamento por custo (Dashboard RTI) ──────────────────────────────────────
-// Progresso de conclusão segmentado por presença de custo. NCs com custo NÃO
-// informado (null) ficam de fora — o foco é comparar o avanço das ações que
-// demandam investimento (>0) com as que não demandam (custo zero).
+// Progresso de conclusão segmentado por atribuição de custo: com investimento
+// (>0), sem investimento (custo zero) e sem custo atribuído (não informado).
+// As três relações são apresentadas para não dar a falsa impressão de que só
+// existem ações com custo atribuído e custo zero a executar.
 
 export type RtiAndamentoCusto = {
   comCusto: { total: number; concluidas: number };
   custoZero: { total: number; concluidas: number };
+  semCusto: { total: number; concluidas: number };
 };
 
 export function computeAndamentoPorCusto(
@@ -339,12 +348,12 @@ export function computeAndamentoPorCusto(
 ): RtiAndamentoCusto {
   const comCusto = { total: 0, concluidas: 0 };
   const custoZero = { total: 0, concluidas: 0 };
+  const semCusto = { total: 0, concluidas: 0 };
   for (const nc of ncs) {
     const cp = nc.custo_planejado;
-    if (cp == null) continue; // custo não definido não compõe o gráfico
-    const bucket = cp > 0 ? comCusto : custoZero;
+    const bucket = cp == null ? semCusto : cp > 0 ? comCusto : custoZero;
     bucket.total += 1;
     if (nc.status === "concluida") bucket.concluidas += 1;
   }
-  return { comCusto, custoZero };
+  return { comCusto, custoZero, semCusto };
 }
