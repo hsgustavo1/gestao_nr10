@@ -43,6 +43,11 @@ function strOrNull(val: unknown): string | null {
   return s ? s : null;
 }
 
+/** true se a data ISO é posterior a hoje (conclusão no futuro = inválida). */
+function isFutureISO(iso: string | null, hoje: string): boolean {
+  return iso != null && iso > hoje;
+}
+
 // ── Parsed result type ────────────────────────────────────────────────────────
 
 type ParsedData = {
@@ -51,6 +56,8 @@ type ParsedData = {
   authorizations: Parameters<typeof batchImportQualificacoes>[0]["authorizations"];
   instructions: Parameters<typeof batchImportQualificacoes>[0]["instructions"];
   itTrainings: Parameters<typeof batchImportQualificacoes>[0]["itTrainings"];
+  /** nº de datas de conclusão futuras descartadas na leitura (não permitidas). */
+  futureConclusoes: number;
 };
 
 // ── Parser ────────────────────────────────────────────────────────────────────
@@ -61,6 +68,8 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
   const authorizations: ParsedData["authorizations"] = [];
   const itTrainings: ParsedData["itTrainings"] = [];
   const instructionMap = new Map<string, true>();
+  const hoje = new Date().toISOString().slice(0, 10);
+  let futureConclusoes = 0;
 
   // ── Sheet "Escolaridade" ──────────────────────────────────────────────────
   const escSheet = wb.Sheets["Escolaridade"];
@@ -83,7 +92,11 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
       const funcao = strOrNull(row[5]);
       const escolaridade = strOrNull(row[6]);
       const diploma = strOrNull(row[7]);
-      const diploma_conclusao = parseExcelDate(row[8]);
+      let diploma_conclusao = parseExcelDate(row[8]);
+      if (isFutureISO(diploma_conclusao, hoje)) {
+        diploma_conclusao = null;
+        futureConclusoes++;
+      }
       const crea_cft = strOrNull(row[35]);
 
       employees.push({
@@ -252,7 +265,11 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
         const upper = statusRaw.toUpperCase();
         const status = upper === "OK" ? "ok" : upper === "VENCIDO" ? "vencido" : "pendente";
 
-        const conclusao_date = parseExcelDate(row[4 + j * 2 + 1]);
+        let conclusao_date = parseExcelDate(row[4 + j * 2 + 1]);
+        if (isFutureISO(conclusao_date, hoje)) {
+          conclusao_date = null;
+          futureConclusoes++;
+        }
 
         itTrainings.push({
           matricula,
@@ -273,7 +290,7 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
     }),
   );
 
-  return { employees, nr10Trainings, authorizations, instructions, itTrainings };
+  return { employees, nr10Trainings, authorizations, instructions, itTrainings, futureConclusoes };
 }
 
 // ── Template download ─────────────────────────────────────────────────────────
@@ -364,6 +381,11 @@ function QualificacoesCargaPage() {
       } else {
         toast.success(`${result.employees.length} colaborador(es) lido(s) com sucesso.`);
       }
+      if (result.futureConclusoes > 0) {
+        toast.warning(
+          `${result.futureConclusoes} data(s) de conclusão no futuro foram ignoradas (não permitidas).`,
+        );
+      }
     } catch (err) {
       toast.error(`Falha ao ler planilha: ${(err as Error).message}`);
     }
@@ -439,6 +461,11 @@ function QualificacoesCargaPage() {
               <Badge variant="secondary">{parsed.authorizations.length} autorizações</Badge>
               <Badge variant="secondary">{parsed.instructions.length} ITs</Badge>
               <Badge variant="secondary">{parsed.itTrainings.length} conclusões de IT</Badge>
+              {parsed.futureConclusoes > 0 && (
+                <Badge variant="destructive">
+                  {parsed.futureConclusoes} conclusão(ões) futura(s) ignorada(s)
+                </Badge>
+              )}
             </div>
 
             {/* Preview table — first 10 employees */}

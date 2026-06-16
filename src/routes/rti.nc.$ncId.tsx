@@ -346,6 +346,10 @@ function GestaoCard({
     setBusy(true);
     try {
       const concluidaEmFinal = status === "concluida" ? concluidaEm || hoje() : null;
+      if (concluidaEmFinal && concluidaEmFinal > hoje()) {
+        toast.error("A data de conclusão não pode ser futura.");
+        return;
+      }
       const patch: Partial<RtiNc> & { id: string } = {
         id: nc.id,
         status,
@@ -566,6 +570,7 @@ function GestaoCard({
               id="g-concl"
               type="date"
               value={concluidaEm}
+              max={hoje()}
               onChange={(e) => setConcluidaEm(e.target.value)}
               disabled={status !== "concluida"}
             />

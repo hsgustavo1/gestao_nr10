@@ -52,6 +52,7 @@ export function ITTrainingDialog({
   currentDate,
 }: Props) {
   const upsert = useUpsertITTraining();
+  const hoje = new Date().toISOString().slice(0, 10);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -63,6 +64,10 @@ export function ITTrainingDialog({
   });
 
   async function onSubmit(values: FormValues) {
+    if (values.conclusao_date && values.conclusao_date > hoje) {
+      toast.error("A data de conclusão não pode ser futura.");
+      return;
+    }
     try {
       // conclusao_date do form é string | undefined ("" quando vazio);
       // a coluna aceita string | null, então normalizamos ausência para null.
@@ -114,7 +119,7 @@ export function ITTrainingDialog({
                 <FormItem>
                   <FormLabel>Data de conclusão</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" max={hoje} {...field} />
                   </FormControl>
                 </FormItem>
               )}
