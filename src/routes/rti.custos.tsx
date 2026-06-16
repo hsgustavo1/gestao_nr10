@@ -25,9 +25,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  computeBudget,
   formatBRL,
   RTI_PRIORIDADE_LABELS,
   RTI_TIPO_EXECUCAO_LABELS,
+  type RtiBudget,
   type RtiNc,
   type RtiPrioridade,
   type RtiTipoExecucao,
@@ -142,27 +144,26 @@ function RtiCustosPage() {
     return { byArea, byPrioridade, byTipo };
   }, [ncs, areaNome, matchSetor, matchPrioridade, matchTipo]);
 
-  // Cards (resumo) refletem TODOS os filtros ativos simultaneamente.
-  const resumo = useMemo(() => {
-    const agg = zero();
+  // NCs do recorte (todos os filtros ativos) — base dos cards, da barra e dos atalhos.
+  const filteredNcs = useMemo(
+    () => ncs.filter((nc) => matchSetor(nc) && matchPrioridade(nc) && matchTipo(nc)),
+    [ncs, matchSetor, matchPrioridade, matchTipo],
+  );
+  const budget = useMemo(() => computeBudget(filteredNcs), [filteredNcs]);
+  const counts = useMemo(() => {
     let comCusto = 0,
       semCusto = 0,
       custoZero = 0;
-    for (const nc of ncs) {
-      if (matchSetor(nc) && matchPrioridade(nc) && matchTipo(nc)) {
-        add(agg, nc);
-        // "Informado" baseia-se no custo planejado: null = não informado; 0 = zero explícito.
-        const cp = nc.custo_planejado;
-        if (cp == null) {
-          semCusto += 1;
-        } else {
-          comCusto += 1;
-          if (Number(cp) === 0) custoZero += 1;
-        }
+    for (const nc of filteredNcs) {
+      // "Informado" baseia-se no custo planejado: null = não informado; 0 = zero explícito.
+      if (nc.custo_planejado == null) semCusto += 1;
+      else {
+        comCusto += 1;
+        if (nc.custo_planejado === 0) custoZero += 1;
       }
     }
-    return { ...agg, comCusto, semCusto, custoZero };
-  }, [ncs, matchSetor, matchPrioridade, matchTipo]);
+    return { qtd: filteredNcs.length, comCusto, semCusto, custoZero };
+  }, [filteredNcs]);
 
   const hasFilters = search.setor !== "all" || search.prioridade !== "all" || search.tipo !== "all";
 
@@ -184,6 +185,7 @@ function RtiCustosPage() {
 
   const planoSearch = {
     report: activeReport?.id,
+    custo: "informado",
     ...(search.setor !== "all" ? { area: search.setor } : {}),
     ...(search.prioridade !== "all" ? { prioridade: search.prioridade } : {}),
     ...(search.tipo !== "all" ? { tipo: search.tipo } : {}),
@@ -273,63 +275,36 @@ function RtiCustosPage() {
         </Card>
       ) : (
         <>
-          {/* Cards de resumo (reagem ao filtro) */}
+          {/* Cards financeiros (reagem ao filtro) */}
           <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
             <ResumoCard
-              label="Custo planejado"
-              value={formatBRL(resumo.planejado)}
-              sub={`${resumo.comCusto} NC(s) informada(s)`}
-            />
-            <ResumoCard label="Custo realizado" value={formatBRL(resumo.realizado)} />
-            <ResumoCard
-              label="Execução do orçamento"
-              value={
-                resumo.planejado > 0
-                  ? `${Math.round((resumo.realizado / resumo.planejado) * 100)}%`
-                  : "—"
-              }
+              label="Realizado"
+              value={formatBRL(budget.realizado)}
               sub={
-                resumo.planejado > 0
-                  ? `${formatBRL(Math.max(0, resumo.planejado - resumo.realizado))} restante`
-                  : "Sem custo planejado"
+                budget.realizadoAInformar > 0
+                  ? `${budget.realizadoAInformar} concluída(s) sem realizado`
+                  : "valor final das concluídas"
               }
             />
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  NCs no recorte
-                </div>
-                <div className="mt-1 text-xl font-bold tabular-nums">{resumo.qtd}</div>
-                <div className="mt-2 space-y-1 text-[11px]">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 text-emerald-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Com custo
-                      informado
-                    </span>
-                    <span className="font-semibold tabular-nums">{resumo.comCusto}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 text-muted-foreground">
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Sem custo informado
-                    </span>
-                    <span className="font-semibold tabular-nums">{resumo.semCusto}</span>
-                  </div>
-                  <div
-                    className="flex items-center justify-between gap-2"
-                    title="Custo planejado igual a zero — sem barreira financeira para executar"
-                  >
-                    <span className="inline-flex items-center gap-1 text-sky-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-sky-500" /> Custo zero
-                      (executável)
-                    </span>
-                    <span className="font-semibold tabular-nums">{resumo.custoZero}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <ResumoCard
+              label="Em aberto"
+              value={formatBRL(budget.emAberto)}
+              sub="previsto a executar"
+            />
+            <SaldoCard budget={budget} />
+            <ResumoCard
+              label="Projeção total"
+              value={formatBRL(budget.projecaoTotal)}
+              sub={
+                `Planejado ${formatBRL(budget.planejadoTotal)}` +
+                (budget.desvioProjecao !== 0
+                  ? ` · ${budget.desvioProjecao > 0 ? "+" : "−"}${formatBRL(Math.abs(budget.desvioProjecao))}`
+                  : "")
+              }
+            />
           </div>
 
-          {resumo.comCusto === 0 && (
+          {counts.comCusto === 0 ? (
             <Card className="mt-3">
               <CardContent className="p-6 text-center text-sm text-muted-foreground">
                 Nenhuma NC com custo informado neste recorte. Edite cada NC (ou use a ação em massa
@@ -337,6 +312,81 @@ function RtiCustosPage() {
                 indicar que não há custo de execução.
               </CardContent>
             </Card>
+          ) : (
+            <div className="mt-3 grid gap-3 lg:grid-cols-[1.7fr_1fr]">
+              {/* Barra de execução do orçamento */}
+              <Card>
+                <CardContent className="p-4 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <span>Execução do orçamento</span>
+                    <span className="normal-case tracking-normal">
+                      Projeção {formatBRL(budget.projecaoTotal)} · Planejado{" "}
+                      {formatBRL(budget.planejadoTotal)}
+                    </span>
+                  </div>
+                  <BudgetBar budget={budget} />
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+                    <LegendDot
+                      color={REALIZADO_COLOR}
+                      label={`Realizado ${formatBRL(budget.realizado)}`}
+                    />
+                    <LegendDot
+                      color={PLANEJADO_COLOR}
+                      label={`Em aberto ${formatBRL(budget.emAberto)}`}
+                    />
+                    {budget.saldoLiquido !== 0 && (
+                      <span
+                        className={
+                          budget.saldoLiquido > 0
+                            ? "font-semibold text-red-600"
+                            : "font-semibold text-emerald-600"
+                        }
+                      >
+                        {budget.saldoLiquido > 0 ? "Estouro " : "Economia "}
+                        {formatBRL(Math.abs(budget.saldoLiquido))}
+                      </span>
+                    )}
+                    <span className="text-muted-foreground">▍ marca o planejado original</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* NCs no recorte */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    NCs no recorte
+                  </div>
+                  <div className="mt-1 text-xl font-bold tabular-nums">{counts.qtd}</div>
+                  <div className="mt-2 space-y-1 text-[11px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 text-emerald-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Com custo
+                        informado
+                      </span>
+                      <span className="font-semibold tabular-nums">{counts.comCusto}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 text-muted-foreground">
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Sem custo
+                        informado
+                      </span>
+                      <span className="font-semibold tabular-nums">{counts.semCusto}</span>
+                    </div>
+                    <div
+                      className="flex items-center justify-between gap-2"
+                      title="Custo planejado igual a zero — sem barreira financeira para executar"
+                    >
+                      <span className="inline-flex items-center gap-1 text-sky-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-sky-500" /> Custo zero
+                        (executável)
+                      </span>
+                      <span className="font-semibold tabular-nums">{counts.custoZero}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* Custo por setor */}
@@ -535,7 +585,7 @@ function RtiCustosPage() {
               <Button asChild variant="outline" size="sm">
                 <Link to="/rti/plano" search={planoSearch}>
                   <ExternalLink className="h-3.5 w-3.5" />
-                  Abrir as {resumo.qtd} NCs deste recorte no Plano de Ação
+                  Abrir as {counts.comCusto} NC(s) com custo no Plano de Ação
                 </Link>
               </Button>
             </div>
@@ -564,5 +614,69 @@ function ResumoCard({ label, value, sub }: { label: string; value: string; sub?:
         {sub && <div className="mt-0.5 text-[11px] text-muted-foreground">{sub}</div>}
       </CardContent>
     </Card>
+  );
+}
+
+/** Card de saldo: estouro/economia bruto + líquido colorido. */
+function SaldoCard({ budget }: { budget: RtiBudget }) {
+  const { saldoLiquido, estourado, economizado } = budget;
+  const cls = saldoLiquido > 0 ? "text-red-600" : saldoLiquido < 0 ? "text-emerald-600" : "";
+  const valor =
+    saldoLiquido === 0
+      ? formatBRL(0)
+      : `${saldoLiquido > 0 ? "+" : "−"}${formatBRL(Math.abs(saldoLiquido))}`;
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          Saldo do realizado
+        </div>
+        <div className={`mt-1 text-xl font-bold tabular-nums ${cls}`}>{valor}</div>
+        <div className="mt-0.5 text-[11px] text-muted-foreground">
+          Estouro {formatBRL(estourado)} · Economia {formatBRL(economizado)}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Barra de execução: Realizado | Em aberto | (a informar), com marcador do
+ * planejado original. Escala pelo maior entre projeção e planejado.
+ */
+function BudgetBar({ budget }: { budget: RtiBudget }) {
+  const scale = Math.max(budget.projecaoTotal, budget.planejadoTotal, 1);
+  const w = (v: number) => `${(v / scale) * 100}%`;
+  const aInformar = Math.max(0, budget.projecaoTotal - budget.realizado - budget.emAberto);
+  return (
+    <div className="relative h-4 w-full overflow-hidden rounded-full bg-muted">
+      <div className="flex h-full">
+        <div
+          style={{ width: w(budget.realizado), background: REALIZADO_COLOR }}
+          title={`Realizado ${formatBRL(budget.realizado)}`}
+        />
+        <div
+          style={{ width: w(budget.emAberto), background: PLANEJADO_COLOR, opacity: 0.55 }}
+          title={`Em aberto ${formatBRL(budget.emAberto)}`}
+        />
+        <div
+          style={{ width: w(aInformar), background: "#94a3b8", opacity: 0.6 }}
+          title="Concluídas sem realizado informado"
+        />
+      </div>
+      <div
+        className="absolute top-0 h-full w-0.5 bg-foreground/70"
+        style={{ left: w(budget.planejadoTotal) }}
+        title={`Planejado ${formatBRL(budget.planejadoTotal)}`}
+      />
+    </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-muted-foreground">
+      <span className="h-2 w-2 rounded-sm" style={{ background: color }} /> {label}
+    </span>
   );
 }

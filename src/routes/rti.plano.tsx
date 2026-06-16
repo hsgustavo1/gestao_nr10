@@ -55,6 +55,9 @@ import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
   clampPrioridade,
   formatBRL,
+  matchCustoFiltro,
+  RTI_CUSTO_FILTROS,
+  RTI_CUSTO_FILTRO_LABELS,
   ncPrazoBucket,
   ncPrazoVencido,
   ncPrazoProximo,
@@ -68,6 +71,7 @@ import {
   RTI_PRIORIDADE_LABELS,
   RTI_TIPO_EXECUCAO_LABELS,
   RTI_TIPO_EXECUCAO_SHORT,
+  type RtiCustoFiltro,
   type RtiEvidenciaTipo,
   type RtiNc,
   type RtiNcStatus,
@@ -98,6 +102,7 @@ const planoSearchSchema = z.object({
   status: z.string().optional().default("all"),
   tipo: z.string().optional().default("all"),
   prazo: z.string().optional().default("all"),
+  custo: z.string().optional().default("all"),
   evidencia: z.string().optional().default("all"),
   ordem: z.string().optional().default("numero"),
   page: z.coerce.number().optional().default(1),
@@ -164,6 +169,8 @@ function RtiPlanoPage() {
         if (search.evidencia === "com_correcao" && !temCorrecao) return false;
         if (search.evidencia === "sem_correcao" && temCorrecao) return false;
       }
+      if (search.custo !== "all" && !matchCustoFiltro(nc, search.custo as RtiCustoFiltro))
+        return false;
       if (!t) return true;
       return (
         String(nc.numero).includes(t) ||
@@ -223,7 +230,8 @@ function RtiPlanoPage() {
     search.status !== "all" ||
     search.tipo !== "all" ||
     search.prazo !== "all" ||
-    search.evidencia !== "all";
+    search.evidencia !== "all" ||
+    search.custo !== "all";
 
   async function quickStatus(nc: RtiNc, status: RtiNcStatus) {
     if (status === nc.status) return;
@@ -415,6 +423,18 @@ function RtiPlanoPage() {
             <SelectItem value="sem_correcao">Sem evidência de correção</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={search.custo} onValueChange={(v) => setSearch({ custo: v })}>
+          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-44">
+            <SelectValue placeholder="Custo" />
+          </SelectTrigger>
+          <SelectContent>
+            {RTI_CUSTO_FILTROS.map((c) => (
+              <SelectItem key={c} value={c}>
+                {RTI_CUSTO_FILTRO_LABELS[c]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={search.ordem} onValueChange={(v) => setSearch({ ordem: v })}>
           <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-44">
             <SelectValue placeholder="Ordenar" />
@@ -440,6 +460,7 @@ function RtiPlanoPage() {
                 tipo: "all",
                 prazo: "all",
                 evidencia: "all",
+                custo: "all",
               })
             }
           >

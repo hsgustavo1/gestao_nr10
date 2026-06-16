@@ -13,6 +13,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -35,6 +36,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
+  computeAndamentoPorCusto,
   formatBRL,
   ncPrazoBucket,
   ncPrazoVencido,
@@ -157,6 +159,23 @@ function RtiDashboardPage() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 12);
   }, [ncs]);
+
+  const andamentoCusto = useMemo(() => computeAndamentoPorCusto(ncs), [ncs]);
+  const andamentoCustoData = useMemo(
+    () => [
+      {
+        grupo: "Com custo",
+        Total: andamentoCusto.comCusto.total,
+        Concluídas: andamentoCusto.comCusto.concluidas,
+      },
+      {
+        grupo: "Custo zero",
+        Total: andamentoCusto.custoZero.total,
+        Concluídas: andamentoCusto.custoZero.concluidas,
+      },
+    ],
+    [andamentoCusto],
+  );
 
   const gotoPlano = (search: Record<string, string>) => {
     if (!activeReport) return;
@@ -484,6 +503,54 @@ function RtiDashboardPage() {
             </Card>
           </div>
 
+          {/* Andamento por custo */}
+          {(andamentoCusto.comCusto.total > 0 || andamentoCusto.custoZero.total > 0) && (
+            <Card className="mt-3">
+              <CardHeader className="pb-0">
+                <CardTitle className="text-sm">
+                  Andamento por custo{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (conclusão das ações com investimento vs sem investimento)
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={andamentoCustoData}
+                      margin={{ top: 16, right: 8, left: -16, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="grupo" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                      <Tooltip formatter={(v: number) => [`${v} NCs`, ""]} />
+                      <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+                      <Bar dataKey="Total" fill="#0A2D48" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Concluídas" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-1 flex flex-wrap justify-center gap-x-6 gap-y-1 text-[11px] text-muted-foreground">
+                  <span>
+                    Com custo:{" "}
+                    <strong className="text-foreground">
+                      {andamentoCusto.comCusto.concluidas}/{andamentoCusto.comCusto.total}
+                    </strong>{" "}
+                    concluídas ({pctConcl(andamentoCusto.comCusto)}%)
+                  </span>
+                  <span>
+                    Custo zero:{" "}
+                    <strong className="text-foreground">
+                      {andamentoCusto.custoZero.concluidas}/{andamentoCusto.custoZero.total}
+                    </strong>{" "}
+                    concluídas ({pctConcl(andamentoCusto.custoZero)}%)
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Ações por prazo de vencimento */}
           <Card className="mt-3">
             <CardHeader className="pb-0">
@@ -607,6 +674,10 @@ function RtiDashboardPage() {
       )}
     </PageShell>
   );
+}
+
+function pctConcl(g: { total: number; concluidas: number }): number {
+  return g.total > 0 ? Math.round((g.concluidas / g.total) * 100) : 0;
 }
 
 function KpiCard({

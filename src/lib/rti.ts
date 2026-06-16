@@ -216,3 +216,135 @@ export function clampPrioridade(p: number): RtiPrioridade {
   if (p >= 4) return 4;
   return p as RtiPrioridade;
 }
+
+// ── Filtro de custo (Plano de Ação) ──────────────────────────────────────────
+// "informado" = custo planejado preenchido (inclui 0); "sem" = não informado
+// (null); "zero" = custo planejado igual a 0. A tela de Custos usa "informado"
+// para o atalho "Ver no Plano".
+
+export const RTI_CUSTO_FILTROS = ["all", "informado", "sem", "zero"] as const;
+export type RtiCustoFiltro = (typeof RTI_CUSTO_FILTROS)[number];
+
+export const RTI_CUSTO_FILTRO_LABELS: Record<RtiCustoFiltro, string> = {
+  all: "Custo: todos",
+  informado: "Com custo informado",
+  sem: "Sem custo informado",
+  zero: "Custo zero",
+};
+
+/** Predicado do filtro de custo do Plano. "informado" inclui custo zero. */
+export function matchCustoFiltro(
+  nc: Pick<RtiNc, "custo_planejado">,
+  modo: RtiCustoFiltro,
+): boolean {
+  const cp = nc.custo_planejado;
+  switch (modo) {
+    case "informado":
+      return cp != null;
+    case "sem":
+      return cp == null;
+    case "zero":
+      return cp === 0;
+    default:
+      return true;
+  }
+}
+
+// ── Orçamento / execução (tela de Custos) ────────────────────────────────────
+// Separa o que já é realizado final (concluídas, com estouro/economia líquidos)
+// do que ainda é orçamento em aberto (não concluídas, assumidas no previsto).
+// Só entram NCs com custo planejado informado (custo zero conta como 0).
+
+export type RtiBudget = {
+  /** Σ custo_realizado das concluídas com realizado informado (dinheiro gasto). */
+  realizado: number;
+  /** Σ custo_planejado das não-concluídas (previsto a gastar). */
+  emAberto: number;
+  /** Σ max(0, realizado − planejado) nas concluídas. */
+  estourado: number;
+  /** Σ max(0, planejado − realizado) nas concluídas. */
+  economizado: number;
+  /** estourado − economizado (>0 estouro, <0 economia). */
+  saldoLiquido: number;
+  /** Σ custo_planejado de todas as NCs informadas. */
+  planejadoTotal: number;
+  /** realizado + emAberto + planejado das concluídas-sem-realizado. */
+  projecaoTotal: number;
+  /** projecaoTotal − planejadoTotal. */
+  desvioProjecao: number;
+  /** nº de concluídas informadas sem custo_realizado (fora do saldo). */
+  realizadoAInformar: number;
+};
+
+export function computeBudget(
+  ncs: readonly Pick<RtiNc, "status" | "custo_planejado" | "custo_realizado">[],
+): RtiBudget {
+  let realizado = 0;
+  let emAberto = 0;
+  let estourado = 0;
+  let economizado = 0;
+  let planejadoTotal = 0;
+  let concluidasSemRealizado = 0; // soma de planejado, para a projeção
+  let realizadoAInformar = 0;
+
+  for (const nc of ncs) {
+    const planejado = nc.custo_planejado;
+    if (planejado == null) continue; // só NCs com custo planejado informado entram no R$
+    planejadoTotal += planejado;
+
+    if (nc.status === "concluida") {
+      const real = nc.custo_realizado;
+      if (real == null) {
+        // concluída sem realizado informado → "a informar"; projeção usa o planejado
+        realizadoAInformar += 1;
+        concluidasSemRealizado += planejado;
+      } else {
+        realizado += real;
+        const desvio = real - planejado;
+        if (desvio > 0) estourado += desvio;
+        else economizado += -desvio;
+      }
+    } else {
+      emAberto += planejado; // pendente/em andamento: assume conclusão no previsto
+    }
+  }
+
+  const saldoLiquido = estourado - economizado;
+  const projecaoTotal = realizado + emAberto + concluidasSemRealizado;
+  return {
+    realizado,
+    emAberto,
+    estourado,
+    economizado,
+    saldoLiquido,
+    planejadoTotal,
+    projecaoTotal,
+    desvioProjecao: projecaoTotal - planejadoTotal,
+    realizadoAInformar,
+  };
+}
+
+// ── Andamento por custo (Dashboard RTI) ──────────────────────────────────────
+// Progresso de conclusão segmentado por presença de custo. NCs com custo NÃO
+// informado (null) ficam de fora — o foco é comparar o avanço das ações que
+// demandam investimento (>0) com as que não demandam (custo zero).
+
+export type RtiAndamentoCusto = {
+  comCusto: { total: number; concluidas: number };
+  custoZero: { total: number; concluidas: number };
+};
+
+export function computeAndamentoPorCusto(
+  ncs: readonly Pick<RtiNc, "status" | "custo_planejado">[],
+): RtiAndamentoCusto {
+  const comCusto = { total: 0, concluidas: 0 };
+  const custoZero = { total: 0, concluidas: 0 };
+  for (const nc of ncs) {
+    const cp = nc.custo_planejado;
+    if (cp == null) continue; // custo não definido não compõe o gráfico
+    const bucket = cp > 0 ? comCusto : custoZero;
+    bucket.total += 1;
+    if (nc.status === "concluida") bucket.concluidas += 1;
+  }
+  return { comCusto, custoZero };
+}
