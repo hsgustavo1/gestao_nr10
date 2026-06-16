@@ -86,7 +86,7 @@ function orgRoleLabel(r: OrgRole | null): string {
 }
 
 function AdminUsersPage() {
-  const { isAdmin, loading, user, currentOrg, currentOrgId, hasOrgRole } = useAuth();
+  const { isAdmin, loading, user, orgs, currentOrg, currentOrgId, hasOrgRole } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [openInvite, setOpenInvite] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Row | null>(null);
@@ -97,6 +97,12 @@ function AdminUsersPage() {
   // Sem tenancy aplicada cai no papel global; com org-cliente exige admin na org
   // (cobre o consultor que gerencia o cliente via managed_by).
   const canManage = isPrincipal ? isAdmin : hasOrgRole("admin");
+
+  // Quem está acima da org ativa na hierarquia (consultoria que gerencia, ou
+  // empresa-mãe), para deixar claro "de quem é este cliente".
+  const parentOrgId = currentOrg?.managed_by_org_id ?? currentOrg?.parent_org_id ?? null;
+  const parentOrg = parentOrgId ? (orgs.find((o) => o.id === parentOrgId) ?? null) : null;
+  const parentRelation = currentOrg?.managed_by_org_id ? "gerenciado por" : "unidade de";
 
   const reload = useCallback(async () => {
     const principal = !currentOrgId || currentOrgId === PRINCIPAL_ORG_ID;
@@ -235,9 +241,14 @@ function AdminUsersPage() {
               de senha.
             </p>
           ) : (
-            <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
+            <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5 flex-wrap">
               <Building2 className="h-3.5 w-3.5" />
               Gerenciando os acessos de <strong>{currentOrg?.nome ?? "—"}</strong>
+              {parentOrg && (
+                <span className="text-muted-foreground/70">
+                  · {parentRelation} <strong className="font-medium">{parentOrg.nome}</strong>
+                </span>
+              )}
             </p>
           )}
         </div>

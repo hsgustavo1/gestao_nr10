@@ -1,7 +1,16 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LogIn, LogOut, Eye, Menu, ChevronDown, BellRing, Building2 } from "lucide-react";
+import {
+  LogIn,
+  LogOut,
+  Eye,
+  Menu,
+  ChevronDown,
+  BellRing,
+  Building2,
+  CornerDownRight,
+} from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, type Org } from "@/lib/auth-context";
 import { useVencimentosBadge } from "@/lib/vencimentos";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -20,10 +29,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
  * Régua decorativa de 3px renderizada logo abaixo (no PageShell).
  */
 export function SiteHeader() {
-  const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode } = useAuth();
+  const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode, hasOrgRole } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Quem gerencia acessos: admin global (legado) OU admin/owner na org ativa
+  // (cobre o consultor que gerencia o cliente via managed_by).
+  const canManageUsers = isAdmin || hasOrgRole("admin");
   const cargo = isAdmin ? "Dono de RAC (Admin)" : isStaff ? "Apoio" : "Consulta";
   const displayName =
     (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || "";
@@ -67,6 +79,13 @@ export function SiteHeader() {
                   </div>
                 </div>
               )}
+              {user && canManageUsers && (
+                <div className="p-2 border-b border-white/10">
+                  <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>
+                    Controle de acessos
+                  </MobileNavLink>
+                </div>
+              )}
               <nav className="flex flex-col p-2 gap-0.5">
                 <MobileNavGroup
                   label="RAC — Bloqueio"
@@ -77,7 +96,6 @@ export function SiteHeader() {
                     "/admin/reports",
                     "/admin/carga",
                     "/admin/certificados",
-                    "/admin/usuarios",
                   ]}
                 >
                   <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>
@@ -105,11 +123,6 @@ export function SiteHeader() {
                       onNav={() => setMenuOpen(false)}
                     >
                       Importar Certificados
-                    </MobileNavLink>
-                  )}
-                  {isAdmin && (
-                    <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>
-                      Controle de acessos
                     </MobileNavLink>
                   )}
                 </MobileNavGroup>
@@ -252,26 +265,21 @@ export function SiteHeader() {
         <div className="flex items-center gap-2 shrink-0">
           <OrgSwitcher />
           {user ? (
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2.5 rounded-full bg-white/8 pr-3 pl-1 py-1 ring-1 ring-white/10">
-                <span
-                  aria-hidden
-                  className="atvos-avatar grid h-8 w-8 place-items-center rounded-full text-xs"
-                >
-                  {initials}
-                </span>
-                <div className="leading-tight">
-                  <div className="text-xs font-semibold text-white">{displayName}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-white/60">{cargo}</div>
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              <UserMenu
+                displayName={displayName}
+                initials={initials}
+                cargo={cargo}
+                canManageUsers={canManageUsers}
+              />
+              {/* Logout sempre acessível no mobile (onde o pill/menu fica oculto). */}
               <button
                 type="button"
                 onClick={async () => {
                   await signOut();
                   navigate({ to: "/" });
                 }}
-                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-white/85 hover:bg-white/10 hover:text-white transition-colors"
+                className="sm:hidden inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-white/85 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <LogOut className="h-3.5 w-3.5" /> Sair
               </button>
@@ -303,6 +311,96 @@ export function SiteHeader() {
   );
 }
 
+/** Menu de conta do usuário (avatar). Concentra a gestão de acessos e o logout —
+ * "Controle de acessos" saiu do menu RAC — Bloqueio (era resquício do LOTO) e
+ * passou a viver aqui, por ser coisa de conta, não de feature. Oculto no mobile
+ * (lá o acesso vem pelo Sheet + botão Sair dedicado). */
+function UserMenu({
+  displayName,
+  initials,
+  cargo,
+  canManageUsers,
+}: {
+  displayName: string;
+  initials: string;
+  cargo: string;
+  canManageUsers: boolean;
+}) {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="hidden sm:flex items-center gap-2.5 rounded-full bg-white/8 pr-2.5 pl-1 py-1 ring-1 ring-white/10 hover:bg-white/15 transition-colors"
+        >
+          <span
+            aria-hidden
+            className="atvos-avatar grid h-8 w-8 place-items-center rounded-full text-xs"
+          >
+            {initials}
+          </span>
+          <div className="leading-tight text-left">
+            <div className="text-xs font-semibold text-white">{displayName}</div>
+            <div className="text-[10px] uppercase tracking-wider text-white/60">{cargo}</div>
+          </div>
+          <ChevronDown className="h-3.5 w-3.5 text-white/60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[210px]">
+        <div className="px-2 py-1.5">
+          <div className="text-sm font-semibold truncate">{displayName}</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{cargo}</div>
+        </div>
+        {canManageUsers && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/admin/usuarios" className="cursor-pointer gap-2">
+                <Building2 className="h-3.5 w-3.5" /> Controle de acessos
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={async () => {
+            await signOut();
+            navigate({ to: "/" });
+          }}
+          className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+        >
+          <LogOut className="h-3.5 w-3.5" /> Sair
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** Achata as orgs acessíveis numa lista ordenada com profundidade, montando a
+ * hierarquia: consultoria → clientes gerenciados (managed_by) e empresa-mãe →
+ * unidades (parent). Tolerante a ciclos/órfãos. */
+function buildOrgTree(orgs: Org[]): { org: Org; depth: number }[] {
+  const parentIdOf = (o: Org) => o.managed_by_org_id ?? o.parent_org_id ?? null;
+  const hasVisibleParent = (o: Org) => {
+    const pid = parentIdOf(o);
+    return pid !== null && orgs.some((p) => p.id === pid);
+  };
+  const childrenOf = (id: string) => orgs.filter((o) => o.id !== id && parentIdOf(o) === id);
+  const out: { org: Org; depth: number }[] = [];
+  const seen = new Set<string>();
+  const walk = (o: Org, depth: number) => {
+    if (seen.has(o.id)) return;
+    seen.add(o.id);
+    out.push({ org: o, depth });
+    for (const c of childrenOf(o.id)) walk(c, depth + 1);
+  };
+  for (const r of orgs.filter((o) => !hasVisibleParent(o))) walk(r, 0);
+  for (const o of orgs) if (!seen.has(o.id)) out.push({ org: o, depth: 0 }); // órfãos/ciclos
+  return out;
+}
+
 /** Seletor de organização ativa. Só aparece quando o usuário tem 2+ orgs
  * (consultor entre clientes, empresa-mãe entre unidades). Antes da migração
  * de tenancy estar aplicada/semeada, `orgs` fica vazio e este componente
@@ -310,6 +408,7 @@ export function SiteHeader() {
 function OrgSwitcher() {
   const { orgs, currentOrg, setCurrentOrg } = useAuth();
   if (orgs.length <= 1) return null;
+  const tree = buildOrgTree(orgs);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -324,15 +423,17 @@ function OrgSwitcher() {
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[220px]">
-        {orgs.map((o) => (
+      <DropdownMenuContent align="end" className="min-w-[240px]">
+        {tree.map(({ org, depth }) => (
           <DropdownMenuItem
-            key={o.id}
-            onClick={() => setCurrentOrg(o.id)}
-            className="cursor-pointer gap-2"
+            key={org.id}
+            onClick={() => setCurrentOrg(org.id)}
+            className="cursor-pointer gap-1.5"
+            style={{ paddingLeft: 8 + depth * 16 }}
           >
-            <span className="flex-1 truncate">{o.nome}</span>
-            {o.id === currentOrg?.id && (
+            {depth > 0 && <CornerDownRight className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
+            <span className="flex-1 truncate">{org.nome}</span>
+            {org.id === currentOrg?.id && (
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 atual
               </span>
@@ -635,11 +736,6 @@ function RACDropdown() {
             <DropdownMenuItem asChild>
               <Link to="/admin/certificados/importar" className="cursor-pointer">
                 Importar Certificados
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/admin/usuarios" className="cursor-pointer">
-                Controle de acessos
               </Link>
             </DropdownMenuItem>
           </>
