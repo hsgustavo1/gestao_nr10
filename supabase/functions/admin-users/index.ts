@@ -80,8 +80,7 @@ Deno.serve(async (req) => {
     //    (cobre consultor que gerencia o cliente, via can_access/org_role_at_least);
     //  - sem org_id, cai no papel global legado (has_role admin) — compat single-tenant.
     // org_id escopa a autorização em qualquer ação que o aceite.
-    const actionOrgId =
-      "org_id" in action ? (action as { org_id?: string }).org_id : undefined;
+    const actionOrgId = "org_id" in action ? (action as { org_id?: string }).org_id : undefined;
 
     const { data: platformAdmin } = await userClient.rpc("is_platform_admin", { _uid: callerId });
     let authorized = platformAdmin === true;
@@ -150,10 +149,9 @@ Deno.serve(async (req) => {
         (mems ?? []).map((m: { user_id: string; org_role: string }) => [m.user_id, m.org_role]),
       );
       const profMap = new Map(
-        (profs ?? []).map((p: { id: string; email: string | null; display_name: string | null }) => [
-          p.id,
-          p,
-        ]),
+        (profs ?? []).map(
+          (p: { id: string; email: string | null; display_name: string | null }) => [p.id, p],
+        ),
       );
 
       const users = ids.map((id: string) => {
