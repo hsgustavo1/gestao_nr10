@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
   FIELD_INSPECTION_STATUS_BADGE,
@@ -59,7 +60,8 @@ export const Route = createFileRoute("/campo/")({
 });
 
 function CampoIndexPage() {
-  const { isStaff } = useAuth();
+  const auth = useAuth();
+  const { canEdit, canAdmin } = getRtiCampoAccess(auth);
   const { data: inspections = [], isLoading } = useFieldInspections();
   const [novaOpen, setNovaOpen] = useState(false);
 
@@ -82,7 +84,7 @@ function CampoIndexPage() {
               <ListChecks className="h-4 w-4" /> Base de modos de falha
             </Link>
           </Button>
-          {isStaff && (
+          {canEdit && (
             <Button
               onClick={() => setNovaOpen(true)}
               className="bg-brand-gradient text-white shadow-brand"
@@ -105,9 +107,9 @@ function CampoIndexPage() {
             <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
               Nenhuma coleta de campo ainda.
-              {isStaff ? " Crie uma inspeção para começar a registrar os pontos." : ""}
+              {canEdit ? " Crie uma inspeção para começar a registrar os pontos." : ""}
             </p>
-            {isStaff && (
+            {canEdit && (
               <Button
                 onClick={() => setNovaOpen(true)}
                 className="bg-brand-gradient text-white shadow-brand"
@@ -120,12 +122,12 @@ function CampoIndexPage() {
       ) : (
         <div className="mt-5 space-y-3">
           {inspections.map((insp) => (
-            <InspectionCard key={insp.id} inspection={insp} canDelete={isStaff} />
+            <InspectionCard key={insp.id} inspection={insp} canDelete={canAdmin} />
           ))}
         </div>
       )}
 
-      {isStaff && novaOpen && (
+      {canEdit && novaOpen && (
         <NovaInspecaoDialog
           onOpenChange={(o) => {
             if (!o) setNovaOpen(false);

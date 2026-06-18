@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { RTI_EVIDENCIA_TIPO_LABELS, type RtiEvidenciaTipo, type RtiNc } from "@/lib/rti";
 import {
   uploadRtiFile,
@@ -91,9 +92,9 @@ type FileRow = {
 };
 
 function RtiEvidenciasMassaPage() {
-  const { isStaff, hasOrgRole, user } = useAuth();
-  // Gate de UI: papel operacional na org ativa (ou staff legado). RLS é a verdade.
-  const canEdit = isStaff || hasOrgRole("member");
+  const auth = useAuth();
+  const { user } = auth;
+  const { canEdit } = getRtiCampoAccess(auth);
   const qc = useQueryClient();
   const { data: reports = [] } = useRtiReports();
 

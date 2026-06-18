@@ -45,6 +45,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
   RTI_PRIORIDADE_BADGE,
@@ -100,7 +101,8 @@ export const Route = createFileRoute("/campo/inspecao/$id")({
 
 function CampoInspecaoPage() {
   const { id } = Route.useParams();
-  const { isStaff } = useAuth();
+  const auth = useAuth();
+  const { canEdit, canAdmin } = getRtiCampoAccess(auth);
   const { data: inspection, isLoading } = useFieldInspection(id);
   const { data: nodes = [] } = useFieldNodes(id);
   const { data: points = [] } = useFieldPoints(id);
@@ -235,7 +237,7 @@ function CampoInspecaoPage() {
             </span>
           </div>
         </div>
-        {isStaff && !jaImportada && totalAchados > 0 && (
+        {canEdit && !jaImportada && totalAchados > 0 && (
           <Button size="sm" variant="outline" onClick={() => setComporOpen(true)}>
             <Sparkles className="h-4 w-4" /> {foiReaberta ? "Recompor RTI" : "Compor RTI"}
           </Button>
@@ -249,7 +251,7 @@ function CampoInspecaoPage() {
               <FileCheck2 className="h-4 w-4 shrink-0" /> Coleta já composta no Plano de Ação RTI.
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              {isStaff && (
+              {canEdit && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -310,7 +312,7 @@ function CampoInspecaoPage() {
       </div>
 
       {/* Botão primário: coletar aqui */}
-      {isStaff && !jaImportada && (
+      {canEdit && !jaImportada && (
         <div className="mt-2">
           {podeColetar ? (
             <Button
@@ -335,7 +337,7 @@ function CampoInspecaoPage() {
               {NIVEL_LABEL_PLURAL[childLevel]}
               {children.length > 0 ? ` (${children.length})` : ""}
             </h2>
-            {isStaff && !jaImportada && (
+            {canEdit && !jaImportada && (
               <div className="flex gap-1">
                 {currentNodeId === null && (
                   <Button
@@ -384,7 +386,7 @@ function CampoInspecaoPage() {
                             {c.achados !== 1 ? "s" : ""}
                           </div>
                         </div>
-                        {isStaff && !jaImportada && <DeleteNodeButton node={n} />}
+                        {canAdmin && !jaImportada && <DeleteNodeButton node={n} />}
                         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                       </button>
                     </CardContent>
@@ -441,7 +443,7 @@ function CampoInspecaoPage() {
         </div>
       )}
 
-      {isStaff && capturaOpen && currentNodeId && (
+      {canEdit && capturaOpen && currentNodeId && (
         <CapturaPontoSheet
           inspectionId={id}
           orgId={inspection.org_id}
@@ -455,7 +457,7 @@ function CampoInspecaoPage() {
           }}
         />
       )}
-      {isStaff && addNodeOpen && childLevel && (
+      {canEdit && addNodeOpen && childLevel && (
         <AddNodeDialog
           inspectionId={id}
           parentId={currentNodeId}
@@ -466,7 +468,7 @@ function CampoInspecaoPage() {
           }}
         />
       )}
-      {isStaff && cargaOpen && (
+      {canEdit && cargaOpen && (
         <CargaEstruturaDialog
           inspectionId={id}
           onOpenChange={(o) => {
@@ -474,7 +476,7 @@ function CampoInspecaoPage() {
           }}
         />
       )}
-      {isStaff && comporOpen && (
+      {canEdit && comporOpen && (
         <ComporRtiDialog
           inspection={inspection}
           totalAchados={totalAchados}

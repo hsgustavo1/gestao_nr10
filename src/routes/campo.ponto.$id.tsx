@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import {
   RTI_PRIORIDADE_BADGE,
   RTI_PRIORIDADE_LABELS,
@@ -77,14 +78,15 @@ export const Route = createFileRoute("/campo/ponto/$id")({
 
 function CampoPontoPage() {
   const { id } = Route.useParams();
-  const { isStaff } = useAuth();
+  const auth = useAuth();
+  const { canEdit: canEditRtiCampo } = getRtiCampoAccess(auth);
   const { data: point, isLoading } = useFieldPoint(id);
   const { data: inspection } = useFieldInspection(point?.inspection_id);
   const { data: nodes = [] } = useFieldNodes(point?.inspection_id);
   const { data: findings = [] } = useFieldFindings(id);
   const { data: photos = [] } = usePointPhotos(id);
 
-  const canEdit = isStaff && inspection?.status !== "importada";
+  const canEdit = canEditRtiCampo && inspection?.status !== "importada";
 
   const [modoSheetOpen, setModoSheetOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
@@ -178,7 +180,7 @@ function CampoPontoPage() {
       </div>
 
       {/* Banner: inspeção bloqueada */}
-      {isStaff && inspection?.status === "importada" && (
+      {canEditRtiCampo && inspection?.status === "importada" && (
         <div className="mt-4 flex items-start gap-2 rounded-md border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700">
           <Lock className="h-4 w-4 shrink-0 mt-0.5 text-slate-500" />
           <span>

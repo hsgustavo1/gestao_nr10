@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth, type Org } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { useVencimentosBadge } from "@/lib/vencimentos";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -29,7 +30,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
  * Régua decorativa de 3px renderizada logo abaixo (no PageShell).
  */
 export function SiteHeader() {
-  const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode, hasOrgRole } = useAuth();
+  const auth = useAuth();
+  const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode, hasOrgRole } = auth;
+  const { canView: canViewRtiCampo, canEdit: canEditRtiCampo } = getRtiCampoAccess(auth);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -159,38 +162,40 @@ export function SiteHeader() {
                   )}
                 </MobileNavGroup>
 
-                <MobileNavGroup label="RTI" prefixes={["/rti", "/campo"]}>
-                  <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>
-                    Dashboard
-                  </MobileNavLink>
-                  <MobileNavLink to="/rti/plano" onNav={() => setMenuOpen(false)}>
-                    Plano de Ação
-                  </MobileNavLink>
-                  <MobileNavLink to="/rti/custos" onNav={() => setMenuOpen(false)}>
-                    Análise de Custos
-                  </MobileNavLink>
-                  <MobileNavLink to="/campo" onNav={() => setMenuOpen(false)}>
-                    Coleta em Campo
-                  </MobileNavLink>
-                  <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>
-                    Modos de falha
-                  </MobileNavLink>
-                  {isStaff && (
-                    <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>
-                      Importar planilha
+                {canViewRtiCampo && (
+                  <MobileNavGroup label="RTI" prefixes={["/rti", "/campo"]}>
+                    <MobileNavLink to="/rti" onNav={() => setMenuOpen(false)}>
+                      Dashboard
                     </MobileNavLink>
-                  )}
-                  {isStaff && (
-                    <MobileNavLink to="/rti/evidencias" onNav={() => setMenuOpen(false)}>
-                      Importar evidências
+                    <MobileNavLink to="/rti/plano" onNav={() => setMenuOpen(false)}>
+                      Plano de Ação
                     </MobileNavLink>
-                  )}
-                  {isStaff && (
-                    <MobileNavLink to="/rti/gestao" onNav={() => setMenuOpen(false)}>
-                      Gestão de Relatórios RTI
+                    <MobileNavLink to="/rti/custos" onNav={() => setMenuOpen(false)}>
+                      Análise de Custos
                     </MobileNavLink>
-                  )}
-                </MobileNavGroup>
+                    <MobileNavLink to="/campo" onNav={() => setMenuOpen(false)}>
+                      Coleta em Campo
+                    </MobileNavLink>
+                    <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>
+                      Modos de falha
+                    </MobileNavLink>
+                    {canEditRtiCampo && (
+                      <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>
+                        Importar planilha
+                      </MobileNavLink>
+                    )}
+                    {canEditRtiCampo && (
+                      <MobileNavLink to="/rti/evidencias" onNav={() => setMenuOpen(false)}>
+                        Importar evidências
+                      </MobileNavLink>
+                    )}
+                    {canEditRtiCampo && (
+                      <MobileNavLink to="/rti/gestao" onNav={() => setMenuOpen(false)}>
+                        Gestão de Relatórios RTI
+                      </MobileNavLink>
+                    )}
+                  </MobileNavGroup>
+                )}
 
                 <MobileNavGroup label="Inspeções" prefixes={["/termografias", "/cercon", "/spda"]}>
                   <MobileNavLink to="/termografias" onNav={() => setMenuOpen(false)}>
@@ -595,7 +600,9 @@ function VencimentosBell() {
 }
 
 function RTIDropdown() {
-  const { isStaff } = useAuth();
+  const auth = useAuth();
+  const { canView, canEdit } = getRtiCampoAccess(auth);
+  if (!canView) return null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -633,7 +640,7 @@ function RTIDropdown() {
             Base de modos de falha
           </Link>
         </DropdownMenuItem>
-        {isStaff && (
+        {canEdit && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

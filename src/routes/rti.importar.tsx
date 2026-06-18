@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { excelSerialToISO, formatDatePtBR } from "@/lib/qualificacoes";
 import { clampPrioridade, formatBRL, type RtiNcStatus } from "@/lib/rti";
 import {
@@ -247,10 +248,9 @@ function useRtiNcCount(reportId: string) {
 // ── Página ────────────────────────────────────────────────────────────────────
 
 function RtiImportarPage() {
-  const { isStaff, isAdmin, hasOrgRole, user, currentOrgId } = useAuth();
-  // Gate de UI (RLS é a verdade): operar = papel na org ativa; excluir = admin no escopo.
-  const canEdit = isStaff || hasOrgRole("member");
-  const canDelete = isAdmin || hasOrgRole("admin");
+  const auth = useAuth();
+  const { user, currentOrgId } = auth;
+  const { canEdit, canAdmin: canDelete } = getRtiCampoAccess(auth);
   const navigate = useNavigate();
   const { data: reports = [], isLoading: loadingReports } = useRtiReports();
   const deleteReport = useDeleteRtiReport();

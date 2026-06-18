@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import {
   RTI_PRIORIDADE_BADGE,
   RTI_PRIORIDADE_LABELS,
@@ -51,7 +52,8 @@ function slugify(s: string): string {
 }
 
 function CampoModosPage() {
-  const { isStaff, isAdmin } = useAuth();
+  const auth = useAuth();
+  const { canEdit, canAdmin } = getRtiCampoAccess(auth);
   const { data: modos = [], isLoading } = useModosFalha();
   const [busca, setBusca] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -95,7 +97,7 @@ function CampoModosPage() {
             Suporte do engenheiro em campo — textos-modelo de NC e recomendação por modo de falha.
           </p>
         </div>
-        {isStaff && (
+        {canEdit && (
           <Button
             onClick={() => {
               setEditing(null);
@@ -156,7 +158,7 @@ function CampoModosPage() {
                           </p>
                         )}
                       </div>
-                      {isStaff && (
+                      {canEdit && (
                         <div className="flex shrink-0 gap-1">
                           <Button
                             size="sm"
@@ -170,7 +172,7 @@ function CampoModosPage() {
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          {isAdmin && <DeleteModoButton modo={m} />}
+                          {canAdmin && <DeleteModoButton modo={m} />}
                         </div>
                       )}
                     </CardContent>
@@ -182,7 +184,7 @@ function CampoModosPage() {
         )}
       </div>
 
-      {isStaff && dialogOpen && (
+      {canEdit && dialogOpen && (
         <ModoDialog
           existing={editing}
           existingCodigos={new Set(modos.map((m) => m.codigo))}

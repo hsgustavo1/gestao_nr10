@@ -32,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
   clampPrioridade,
@@ -74,10 +75,9 @@ export const Route = createFileRoute("/rti/nc/$ncId")({
 
 function RtiNcDetailPage() {
   const { ncId } = Route.useParams();
-  const { isStaff, isAdmin, hasOrgRole, user } = useAuth();
-  // Gate de UI (RLS é a verdade): editar = papel operacional; excluir = admin no escopo.
-  const canEdit = isStaff || hasOrgRole("member");
-  const canDelete = isAdmin || hasOrgRole("admin");
+  const auth = useAuth();
+  const { user } = auth;
+  const { canEdit, canAdmin: canDelete } = getRtiCampoAccess(auth);
   const navigate = useNavigate();
 
   const { data: nc, isLoading } = useRtiNc(ncId);

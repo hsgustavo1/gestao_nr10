@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
   clampPrioridade,
@@ -115,9 +116,9 @@ export const Route = createFileRoute("/rti/plano")({
 });
 
 function RtiPlanoPage() {
-  const { isStaff, hasOrgRole, user } = useAuth();
-  // Gate de UI: papel operacional na org ativa (ou staff legado). RLS é a verdade.
-  const canEdit = isStaff || hasOrgRole("member");
+  const auth = useAuth();
+  const { user } = auth;
+  const { canEdit } = getRtiCampoAccess(auth);
   const navigate = useNavigate();
   const search = Route.useSearch();
   const { data: reports = [], isLoading: loadingReports } = useRtiReports();

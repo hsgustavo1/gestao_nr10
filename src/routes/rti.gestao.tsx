@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import type { RtiReport } from "@/lib/rti";
 import { useDeleteRtiReport, useRtiReports } from "@/lib/rti-queries";
@@ -28,9 +29,8 @@ export const Route = createFileRoute("/rti/gestao")({
 });
 
 function RtiGestaoPage() {
-  const { isAdmin, hasOrgRole } = useAuth();
-  // Excluir relatório é destrutivo → exige admin no escopo (ou admin legado). RLS é a verdade.
-  const canDelete = isAdmin || hasOrgRole("admin");
+  const auth = useAuth();
+  const { canAdmin: canDelete } = getRtiCampoAccess(auth);
   const { data: reports = [], isLoading } = useRtiReports();
   const { data: inspections = [] } = useFieldInspections();
   const [deletingReport, setDeletingReport] = useState<RtiReport | null>(null);

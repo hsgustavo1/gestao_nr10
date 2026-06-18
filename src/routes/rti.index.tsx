@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
   computeAndamentoPorCusto,
@@ -64,9 +65,8 @@ const STATUS_COLORS: Record<RtiNcStatus, string> = {
 const TIPO_COLORS = { os: "#0A2D48", investimento: "#F79220" } as const;
 
 function RtiDashboardPage() {
-  const { isStaff, hasOrgRole } = useAuth();
-  // Gate de UI: papel operacional na org ativa (ou staff legado). RLS é a verdade.
-  const canEdit = isStaff || hasOrgRole("member");
+  const auth = useAuth();
+  const { canEdit } = getRtiCampoAccess(auth);
   const navigate = useNavigate();
   const { data: reports = [], isLoading: loadingReports } = useRtiReports();
 
