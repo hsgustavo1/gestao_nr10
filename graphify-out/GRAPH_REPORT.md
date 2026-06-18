@@ -1,6 +1,6 @@
 # Graph Report - .  (2026-06-14)
 
-## ⚠️ Status atual (overlay manual — 2026-06-15)
+## ⚠️ Status atual (overlay manual — 2026-06-18)
 
 > Esta seção foi adicionada à mão para refletir o estado do projeto sem re-rodar a
 > extração do grafo. Os nós/arestas abaixo (Summary, Communities, God Nodes) ainda
@@ -25,11 +25,24 @@
 - **Contexto de org no frontend**: `src/lib/auth-context.tsx` estendido (`orgs`,
   `currentOrg`, `entitlements`, `isPlatformAdmin`); seletor de org em `site-header.tsx`.
 - **Higiene de lint/CI**: repo reformatado com prettier + `no-explicit-any`→warn +
-  `**/dist/**` ignorado no eslint → CI verde (0 erros, 85 testes, build app+PWA).
+  `**/dist/**` ignorado no eslint → CI verde (0 erros, build app+PWA).
+- **Fase 1.5 frontend — gates por papel/entitlement + filtro de dados por org
+  (2026-06-18):** novo helper puro `src/lib/tenancy-gates.ts` →
+  `getRtiCampoAccess(ctx)` retorna `{canView, canEdit, canAdmin}` (entitlement
+  `rti_pwa`/`gestao_completa` + papel de org via `hasOrgRole` + fallback legado
+  `isStaff`/`isAdmin`). Aplicado nas 6 rotas RTI + 4 rotas Campo + `site-header`
+  (grupo RTI no menu escondido sem entitlement). Dados RTI (`useRtiReports`/
+  `useAllRtiNcs`) filtrados por `currentOrgId`. Tela de Análise de Custos
+  (`src/routes/rti.custos.tsx`) refeita com `computeBudget`/`computeAndamentoPorCusto`
+  (funções puras em `src/lib/rti.ts`, testadas). Suíte: 104 testes verdes.
+  **Demais módulos (NR-10/EPIs/qualificações/LOTO/...) ainda usam `isStaff`/`isAdmin`
+  global** — replicação pendente (ver ROADMAP).
 
 Comunidades novas que um re-graph deve criar: *Multi-Tenancy Foundation* (orgs/RLS/
-funções de acesso), *Org Context & Entitlements* (auth-context + guards). God node
-provável novo: `can_access_org()` (base de toda a RLS por org).
+funções de acesso), *Org Context & Entitlements* (auth-context + guards + o novo
+`tenancy-gates.ts`/`getRtiCampoAccess`). God nodes prováveis novos:
+`can_access_org()` (base de toda a RLS por org) e `getRtiCampoAccess()` (hub dos
+gates de UI do recorte RTI/Campo).
 
 ## Corpus Check
 - 238 files · ~175,321 words
