@@ -1,7 +1,7 @@
 # ROADMAP — gestão_nr10 (handoff entre sessões)
 
 > Documento de continuidade. Permite retomar o trabalho numa nova sessão de IA
-> sem o contexto desta. Última atualização: 2026-06-15.
+> sem o contexto desta. Última atualização: 2026-06-18.
 
 ## ⏱️ O QUE FALTA FAZER AGORA (checklist ordenado)
 
@@ -29,9 +29,16 @@ Pendências (todas opcionais agora):
 3. *(Opcional, prova final)* Logar no app/PWA como cada usuário de teste e ver só
    os dados da própria org.
 
-**👉 PRÓXIMO PASSO DE PRODUTO:** Fase 1.5 — migrar os gates de tela de papel global
-(`isStaff`/`isAdmin`) para `hasEntitlement`/`hasOrgRole`. É o que falta para um
-cliente-admin operar o app **sem** receber papel global legado (ver "Próximas fases").
+**👉 FASE 1.5 EM ANDAMENTO (gates por papel/entitlement + filtro de dados por org):**
+- ✅ **RTI + Campo migrados (2026-06-18, commits `238c9e3` + `01e02d0`).** Gates
+  centralizados em `src/lib/tenancy-gates.ts` (`getRtiCampoAccess` → canView/canEdit/
+  canAdmin, com entitlement `rti_pwa`/`gestao_completa` + papel de org + fallback legado).
+  Menu esconde o grupo RTI para org sem entitlement. Dados RTI (`useRtiReports`/
+  `useAllRtiNcs`) filtrados por org. Um cliente `member` com `rti_pwa` já opera o fluxo
+  RTI/Campo **sem** papel global.
+- ⏳ **Falta:** replicar o padrão de gate aos demais módulos (NR-10, EPIs, qualificações,
+  LOTO, incidentes, ASOs, prontuário + restante do `site-header`) e filtrar os outros
+  `*-queries.ts` por org (só RTI está filtrado). Detalhe na seção "Fase 1.5".
 
 Outros itens opcionais/futuros estão em "Passos manuais" e "Fases posteriores".
 
@@ -163,16 +170,32 @@ não-tipado, Recharts).
 
 ## Próximas fases (ordem sugerida)
 
-### Fase 1.5 — Contexto de org no frontend  ✅ núcleo feito / ⏳ resto gated
+### Fase 1.5 — Contexto de org + gates no frontend  ✅ núcleo + RTI/Campo / ⏳ demais módulos
 Feito: `AuthProvider` estendido + seletor de org no header (ver "Estado atual").
-Falta (fazer com a migração já aplicada, para poder verificar rodando o app):
-- Guard de rota por entitlement: org só-`rti_pwa` não vê telas de gestão. Usar
-  `hasEntitlement('gestao_completa')` do contexto. NÃO wire antes do seed dos
-  entitlements (senão esconde tudo). Componente sugerido: `RequireEntitlement`.
-- `*-queries.ts` filtram por `currentOrg.id` (RLS é a rede de segurança; o filtro
-  evita buscar dados de outras orgs acessíveis sem querer).
-- `types.ts` (mantido à mão): adicionar as novas tabelas/colunas `org_id` para
-  remover o acesso não-tipado (`sb as any`) em `auth-context.tsx`.
+
+✅ **Fatia RTI/Campo concluída (2026-06-18):**
+- Dados: `useRtiReports`/`useAllRtiNcs` filtram por `currentOrgId` (queryKey + `.eq` +
+  `enabled`); criação de relatório carimba `org_id` da org ativa (commit `238c9e3`).
+- Gates: helper `getRtiCampoAccess` ([`src/lib/tenancy-gates.ts`](../../../src/lib/tenancy-gates.ts))
+  + testes, aplicado em 6 rotas RTI + 4 rotas Campo + menu (commit `01e02d0`). `canView`
+  gateia por entitlement `rti_pwa`/`gestao_completa`; `canEdit`=member; `canAdmin`=admin;
+  fallback legado `isStaff`/`isAdmin`. Spec: [`docs/superpowers/specs/2026-06-16-rti-campo-gates-design.md`](../specs/2026-06-16-rti-campo-gates-design.md).
+- (Produto, não tenancy) Tela de Análise de Custos refeita: realizado/em aberto/saldo
+  estouro-economia + gráfico de andamento por custo clicável — commits `e214806`/`69a4c8b`.
+
+⏳ **Falta para fechar a Fase 1.5:**
+- **Replicar gates aos demais módulos:** NR-10, EPIs, qualificações, LOTO, incidentes,
+  ASOs, prontuário e o restante do `site-header` ainda usam `isStaff`/`isAdmin` globais.
+  Padrão: helper por recorte espelhando `getRtiCampoAccess` (ou generalizar para
+  `getModuleAccess(modulo, ctx)`). Cada módulo amarra ao seu entitlement
+  (`gestao_completa` p/ NR-10/EPIs/etc.; `loto` p/ LOTO).
+- **Filtrar os demais `*-queries.ts` por `currentOrg.id`** (só RTI está filtrado):
+  campo-queries, qualificacoes, inspecoes, epis, prontuario, asos, incidentes. RLS é a
+  rede de segurança; o filtro é correção de UX p/ usuário multi-org.
+- `types.ts` (à mão): adicionar tabelas de tenancy/colunas `org_id` p/ remover o
+  `sb as any` em `auth-context.tsx`.
+- (Opcional) Componente `RequireEntitlement` p/ guard de rota formal — hoje o menu já
+  esconde por entitlement no recorte RTI/Campo.
 
 ### Fase 1.6 — org_id em campo-core e campo-pwa  ✅ feito (2026-06-14)
 **Decisão-chave (base sólida):** filhos da árvore campo→RTI **herdam `org_id` do
@@ -235,8 +258,9 @@ Entregue (código/SQL no repo) e **isolamento validado em 2026-06-15**:
   Administrador/Visualização); gate por `hasOrgRole('admin')`. Legado (Empresa
   Principal) inalterado. ✅ **`admin-users` deployada (v1, ACTIVE) em 2026-06-15.**
 - Rodar o pipeline campo→RTI logado como usuário do Cliente A e confirmar que o
-  RTI nasce com `org_id`=A (a fundação 1.6 já garante via cascata). **Depende da
-  Fase 1.5** (gates por entitlement) para o cliente-admin operar sem papel global.
+  RTI nasce com `org_id`=A (a fundação 1.6 já garante via cascata). ✅ **Desbloqueado
+  pela fatia RTI/Campo da Fase 1.5 (2026-06-18):** cliente `member`/`admin` com `rti_pwa`
+  já opera o pipeline sem papel global. Falta a **prova logado** como Cliente A.
 
 ### Fases posteriores (registrar, não construir ainda)
 - **Dois níveis de cliente do consultor** (levantado 2026-06-15): hoje o painel oferece
@@ -246,10 +270,10 @@ Entregue (código/SQL no repo) e **isolamento validado em 2026-06-15**:
   cliente não deve alterar essa curadoria). É permissão **por campo** no domínio RTI
   (column/action-level lock), mapeando a um futuro `org_role=member` + travas. O outro
   nível (cliente-final, consultor só distribui) já é coberto por `admin` hoje.
-- **Gates de feature por entitlement (Fase 1.5):** as telas ainda liberam por papel
-  **global** (`isStaff`/`isAdmin`). Para um cliente-admin operar o app 100% sem receber
-  papel global, falta migrar os gates para `hasEntitlement`/`hasOrgRole`. Pré-requisito
-  real para "cliente do Cliente A roda o próprio pipeline campo→RTI".
+- **Gates de feature por entitlement (Fase 1.5) — RTI/Campo ✅, demais módulos ⏳:** o
+  recorte RTI/Campo já libera por entitlement+papel de org (helper `getRtiCampoAccess`,
+  2026-06-18). Os demais módulos (NR-10/EPIs/qualificações/LOTO/...) ainda usam papel
+  **global** (`isStaff`/`isAdmin`) — falta replicar o padrão (ver seção "Fase 1.5").
 - **Vitrine sem login segura:** função `SECURITY DEFINER` que recebe um
   `org_public_tokens.token` e retorna só os indicadores **conformes** (nunca NCs).
   O "viewer mode" atual é client-side (`sessionStorage`) e **não serve** como
