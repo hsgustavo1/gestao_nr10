@@ -39,6 +39,8 @@ type Action =
       display_name?: string;
       password?: string;
       org_id?: string;
+      // Troca de papel na org (admin↔viewer pela UI). Só aplica com org_id.
+      org_role?: OrgRole;
     };
 
 function json(body: unknown, status = 200) {
@@ -188,6 +190,11 @@ Deno.serve(async (req) => {
       if (action.org_role !== undefined && !validOrgRoles.includes(action.org_role)) {
         return json({ error: "org_role inválido" }, 400);
       }
+      // Só platform admin pode criar nível 'owner' (admin-geral). Sem isto, um
+      // admin-padrão do cliente criaria um owner e bypassaria o selo de entrega.
+      if (platformAdmin !== true && action.org_role === "owner") {
+        return json({ error: "Sem permissão para definir o nível 'owner'" }, 403);
+      }
 
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email,
@@ -319,6 +326,31 @@ Deno.serve(async (req) => {
       if (Object.keys(profilePatch).length > 0) {
         await admin.from("profiles").update(profilePatch).eq("id", action.user_id);
       }
+
+      // Troca de papel na org (somente no escopo de uma org). Guardas:
+      //  - exige org_id (papel é por org, não global);
+      //  - não pode alterar o próprio nível (evita auto-lockout);
+      //  - quem não é platform admin não pode promover a 'owner' (sem escalonamento).
+      if (action.org_role !== undefined) {
+        if (!actionOrgId) return json({ error: "org_id é obrigatório para trocar o nível" }, 400);
+        const validOrgRoles = ["owner", "admin", "member", "viewer"];
+        if (!validOrgRoles.includes(action.org_role)) {
+          return json({ error: "org_role inválido" }, 400);
+        }
+        if (action.user_id === callerId) {
+          return json({ error: "Você não pode alterar o seu próprio nível" }, 400);
+        }
+        if (platformAdmin !== true && action.org_role === "owner") {
+          return json({ error: "Sem permissão para definir o nível 'owner'" }, 403);
+        }
+        const { error: roleErr } = await admin
+          .from("org_memberships")
+          .update({ org_role: action.org_role })
+          .eq("user_id", action.user_id)
+          .eq("org_id", actionOrgId);
+        if (roleErr) return json({ error: roleErr.message }, 500);
+      }
+
       return json({ ok: true });
     }
 
