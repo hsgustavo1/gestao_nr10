@@ -268,7 +268,12 @@ function RtiNcDetailPage() {
 
         {/* Coluna lateral */}
         <div className="space-y-4">
-          <GestaoCard nc={nc} canEdit={canEditOperacional} actorName={actorName} />
+          <GestaoCard
+            nc={nc}
+            canEdit={canEditOperacional}
+            canEditTecnico={canEditTecnico}
+            actorName={actorName}
+          />
           <HistoricoCard ncId={nc.id} canComment={canEditOperacional} actorName={actorName} />
         </div>
       </div>
@@ -289,10 +294,13 @@ function parseCusto(s: string): number | null {
 function GestaoCard({
   nc,
   canEdit,
+  canEditTecnico,
   actorName,
 }: {
   nc: RtiNc;
   canEdit: boolean;
+  /** Edição da criticidade (prioridade) — registro técnico; bloqueada quando entregue. */
+  canEditTecnico: boolean;
   actorName: string | null;
 }) {
   const updateNc = useUpdateRtiNc();
@@ -494,8 +502,14 @@ function GestaoCard({
             </div>
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
-              <Select value={prioridade} onValueChange={setPrioridade}>
-                <SelectTrigger>
+              <Select value={prioridade} onValueChange={setPrioridade} disabled={!canEditTecnico}>
+                <SelectTrigger
+                  title={
+                    canEditTecnico
+                      ? undefined
+                      : "Criticidade entregue pelo consultor — somente leitura"
+                  }
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
