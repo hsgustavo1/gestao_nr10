@@ -1187,6 +1187,8 @@ export type Database = {
       rti_areas: {
         Row: {
           created_at: string;
+          entregue_em: string | null;
+          entregue_por_org: string | null;
           id: string;
           nome: string;
           ordem: number;
@@ -1194,6 +1196,8 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           id?: string;
           nome: string;
           ordem?: number;
@@ -1201,6 +1205,8 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           id?: string;
           nome?: string;
           ordem?: number;
@@ -1269,6 +1275,8 @@ export type Database = {
           created_at: string;
           created_by_name: string | null;
           descricao: string | null;
+          entregue_em: string | null;
+          entregue_por_org: string | null;
           file_name: string;
           file_path: string;
           id: string;
@@ -1280,6 +1288,8 @@ export type Database = {
           created_at?: string;
           created_by_name?: string | null;
           descricao?: string | null;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           file_name: string;
           file_path: string;
           id?: string;
@@ -1291,6 +1301,8 @@ export type Database = {
           created_at?: string;
           created_by_name?: string | null;
           descricao?: string | null;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           file_name?: string;
           file_path?: string;
           id?: string;
@@ -1351,6 +1363,8 @@ export type Database = {
           custo_planejado: number | null;
           custo_realizado: number | null;
           descricao: string;
+          entregue_em: string | null;
+          entregue_por_org: string | null;
           finding_id: string | null;
           id: string;
           numero: number;
@@ -1374,6 +1388,8 @@ export type Database = {
           custo_planejado?: number | null;
           custo_realizado?: number | null;
           descricao: string;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           finding_id?: string | null;
           id?: string;
           numero: number;
@@ -1397,6 +1413,8 @@ export type Database = {
           custo_planejado?: number | null;
           custo_realizado?: number | null;
           descricao?: string;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           finding_id?: string | null;
           id?: string;
           numero?: number;
@@ -1437,6 +1455,8 @@ export type Database = {
           created_by: string | null;
           created_by_name: string | null;
           empresa_auditora: string | null;
+          entregue_em: string | null;
+          entregue_por_org: string | null;
           id: string;
           notes: string | null;
           periodo_fim: string | null;
@@ -1453,6 +1473,8 @@ export type Database = {
           created_by?: string | null;
           created_by_name?: string | null;
           empresa_auditora?: string | null;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           id?: string;
           notes?: string | null;
           periodo_fim?: string | null;
@@ -1469,6 +1491,8 @@ export type Database = {
           created_by?: string | null;
           created_by_name?: string | null;
           empresa_auditora?: string | null;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           id?: string;
           notes?: string | null;
           periodo_fim?: string | null;

@@ -79,6 +79,8 @@ export type RtiReport = {
   created_by_name: string | null;
   created_at: string;
   updated_at: string;
+  entregue_em?: string | null;
+  entregue_por_org?: string | null;
 };
 
 export type RtiArea = {
@@ -87,6 +89,8 @@ export type RtiArea = {
   nome: string;
   ordem: number;
   created_at: string;
+  entregue_em?: string | null;
+  entregue_por_org?: string | null;
 };
 
 export type RtiNc = {
@@ -111,6 +115,8 @@ export type RtiNc = {
   finding_id: string | null;
   created_at: string;
   updated_at: string;
+  entregue_em?: string | null;
+  entregue_por_org?: string | null;
 };
 
 export type RtiNcEvidencia = {
@@ -123,6 +129,8 @@ export type RtiNcEvidencia = {
   descricao: string | null;
   created_by_name: string | null;
   created_at: string;
+  entregue_em?: string | null;
+  entregue_por_org?: string | null;
 };
 
 export type RtiNcHistorico = {
@@ -296,23 +304,23 @@ export function computeBudget(
 
   for (const nc of ncs) {
     const planejado = nc.custo_planejado;
-    if (planejado == null) continue; // só NCs com custo planejado informado entram no R$
+    if (planejado == null) continue;
     planejadoTotal += planejado;
 
-    if (nc.status === "concluida") {
-      const real = nc.custo_realizado;
-      if (real == null) {
-        // concluída sem realizado informado → "a informar"; projeção usa o planejado
-        realizadoAInformar += 1;
-        concluidasSemRealizado += planejado;
-      } else {
-        realizado += real;
-        const desvio = real - planejado;
-        if (desvio > 0) estourado += desvio;
-        else economizado += -desvio;
-      }
+    const real = nc.custo_realizado;
+    if (real != null) {
+      // Custo registrado → conta como realizado independente do status
+      realizado += real;
+      const desvio = real - planejado;
+      if (desvio > 0) estourado += desvio;
+      else economizado += -desvio;
+    } else if (nc.status === "concluida") {
+      // Concluída sem realizado → "a informar"; projeção usa o planejado
+      realizadoAInformar += 1;
+      concluidasSemRealizado += planejado;
     } else {
-      emAberto += planejado; // pendente/em andamento: assume conclusão no previsto
+      // Não concluída e sem realizado → previsto a executar
+      emAberto += planejado;
     }
   }
 
