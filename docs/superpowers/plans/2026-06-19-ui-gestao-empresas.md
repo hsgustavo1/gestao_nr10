@@ -34,7 +34,7 @@
 **Files:**
 - Create: `supabase/migrations/20260619000000_empresas_management.sql`
 
-> Convenção do projeto: migrations são aplicadas **manualmente** no SQL Editor do Supabase. O arquivo é a fonte versionada. Não há runner automático; a verificação é manual (Task 2).
+> Convenção do projeto (atualizada 2026-06-19): migrations são aplicadas via **MCP do Supabase** (`apply_migration`) no projeto `fumwovtzyhxrjhkjzujs`. O arquivo `.sql` continua versionado em `supabase/migrations/`. A verificação roda via `execute_sql` (Task 2).
 
 - [ ] **Step 1: Escrever a migração completa**
 
@@ -337,9 +337,9 @@ END $$;
 SELECT * FROM _r ORDER BY cenario;
 ```
 
-- [ ] **Step 2: (Manual) Aplicar a migração e rodar o teste**
+- [ ] **Step 2: Aplicar via MCP e rodar o teste**
 
-No SQL Editor do Supabase: cole e rode a migração da Task 1; depois edite os 5 UUIDs e rode este teste.
+Aplicar a migração da Task 1 via `apply_migration`. Rodar este teste via `execute_sql` (resolvendo os 5 UUIDs reais a partir do banco — platform admin, consultor demo, cliente demo e as orgs correspondentes).
 Esperado: a tabela retornada tem **todas as linhas com `passou = true`**.
 
 - [ ] **Step 3: Commit**

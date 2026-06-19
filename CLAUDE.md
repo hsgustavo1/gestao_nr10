@@ -45,7 +45,7 @@ Este relatório foi gerado pelo graphify e contém o mapa estrutural completo do
 
 ## Convenções
 
-- Migrations: manuais via SQL Editor do Supabase
+- Migrations: aplicadas via **MCP do Supabase** (`apply_migration` para DDL, `execute_sql` para checagens/seed) no projeto `fumwovtzyhxrjhkjzujs`. Manter também o arquivo `.sql` versionado em `supabase/migrations/`. (Antes era manual via SQL Editor — mudou em 2026-06-19.)
 - `types.ts` atualizado à mão
 - Commits direto na `main`
 - Erros tsc pré-existentes são conhecidos — não reportar como bugs novos
