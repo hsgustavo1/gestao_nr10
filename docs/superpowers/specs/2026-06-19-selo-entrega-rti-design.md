@@ -168,9 +168,11 @@ Notas:
 - **Dois níveis, obrigatório.** A UI esconde/desabilita **e** o trigger no banco
   recusa. O objetivo é anti-adulteração — UI sozinha não basta (um cliente
   determinado bate direto na API).
-- **Toda mutação pós-entrega** (inclusive nos campos livres) grava uma entrada em
-  `rti_nc_historico` (tipo `alteracao`), via trigger, para rastro à prova de
-  violação.
+- **Auditoria de mutação pós-entrega:** fica a cargo do log do app
+  (`logBulkHistorico`), que registra em `rti_nc_historico` (tipo `alteracao`) as
+  alterações com detalhe e autor. _Decisão 2026-06-19:_ o trigger de auditoria
+  no banco foi descartado para não duplicar entradas no histórico da NC (o
+  enforcement no banco continua sendo a barreira anti-adulteração).
 
 ## Fora de escopo (YAGNI)
 

@@ -1,12 +1,15 @@
 -- ============================================================================
--- Selo de Entrega — enforcement (UPDATE/DELETE), provença no INSERT, auditoria.
+-- Selo de Entrega — enforcement (UPDATE/DELETE) + provença no INSERT.
 -- ----------------------------------------------------------------------------
 -- Aplicado via Supabase MCP em 2026-06-19. Idempotente.
 --
 -- Enforcement em dois níveis (este trigger + gate na UI). O trigger é a fonte
 -- com dentes: quando a linha está entregue e o ator não bypassa, bloqueia as
--- colunas congeladas (seal_policy) e o DELETE. Toda mutação pós-entrega em NC
--- vira histórico (auditoria à prova de violação).
+-- colunas congeladas (seal_policy) e o DELETE.
+--
+-- Nota: a auditoria de mutação pós-entrega fica a cargo do log do app
+-- (logBulkHistorico) — o trigger de auditoria foi descartado para não duplicar
+-- entradas no histórico da NC (decisão de 2026-06-19).
 -- ============================================================================
 
 -- ---------- 1. Enforcement de colunas congeladas e DELETE ----------
@@ -101,19 +104,7 @@ BEGIN
 END;
 $$;
 
--- ---------- 3. Auditoria: mutação pós-entrega em NC vira histórico ----------
-CREATE OR REPLACE FUNCTION public.fn_seal_audit_nc()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF OLD.entregue_em IS NOT NULL AND (to_jsonb(OLD) IS DISTINCT FROM to_jsonb(NEW)) THEN
-    INSERT INTO public.rti_nc_historico (nc_id, tipo, texto, autor_nome, org_id)
-    VALUES (NEW.id, 'alteracao', 'Alteração após entrega do relatório.', NULL, NEW.org_id);
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
--- ---------- 4. Anexa triggers ----------
+-- ---------- 3. Anexa triggers ----------
 DO $$
 DECLARE
   -- child_table, parent_table, fk_column
@@ -142,9 +133,4 @@ BEGIN
       'FOR EACH ROW EXECUTE FUNCTION public.fn_seal_on_insert(%L, %L)',
       rels[i][1], rels[i][2], rels[i][3]);
   END LOOP;
-
-  -- auditoria de NC
-  EXECUTE 'DROP TRIGGER IF EXISTS trg_seal_audit_nc ON public.rti_ncs';
-  EXECUTE 'CREATE TRIGGER trg_seal_audit_nc AFTER UPDATE ON public.rti_ncs '
-          'FOR EACH ROW EXECUTE FUNCTION public.fn_seal_audit_nc()';
 END $$;
