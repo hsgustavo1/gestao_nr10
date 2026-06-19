@@ -51,7 +51,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
-import { getRtiCampoAccess } from "@/lib/tenancy-gates";
+import { getRtiCampoAccess, getRecordAccess, type SealActor } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
   clampPrioridade,
@@ -85,6 +85,7 @@ import {
   useBulkUpdateRtiNcs,
   useCreateRtiArea,
   useCreateRtiNc,
+  useEntregarRtiReport,
   useRtiAreas,
   useRtiEvidenciaIndex,
   useRtiNcs,
@@ -130,7 +131,23 @@ function RtiPlanoPage() {
 
   const updateNc = useUpdateRtiNc();
   const bulkUpdate = useBulkUpdateRtiNcs();
+  const entregar = useEntregarRtiReport();
   const qc = useQueryClient();
+
+  const sealActor: SealActor = {
+    isStaff: auth.isStaff,
+    isPlatformAdmin: auth.isPlatformAdmin,
+    hasEntitlement: auth.hasEntitlement,
+    directOrgRole: auth.orgRole,
+    managerOrgRole: auth.managerOrgRole,
+    roleInOrg: auth.roleInOrg,
+  };
+  const repAcc = activeReport
+    ? getRecordAccess(sealActor, {
+        entregue_em: activeReport.entregue_em ?? null,
+        entregue_por_org: activeReport.entregue_por_org ?? null,
+      })
+    : null;
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [novaNcOpen, setNovaNcOpen] = useState(false);
@@ -305,6 +322,38 @@ function RtiPlanoPage() {
               ? activeReport.titulo
               : "Não conformidades do Relatório Técnico das Inspeções."}
           </p>
+          {activeReport && (activeReport.entregue_em || repAcc?.canEntregar) && (
+            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+              {activeReport.entregue_em && (
+                <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  Entregue em {formatDatePtBR(activeReport.entregue_em)}
+                </span>
+              )}
+              {repAcc?.canEntregar && auth.currentOrgId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={entregar.isPending}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Após entregar, o cliente não poderá mais alterar o registro técnico " +
+                          "(criticidade, recomendações, evidências de constatação) deste relatório. Continuar?",
+                      )
+                    ) {
+                      entregar.mutate({
+                        reportId: activeReport.id,
+                        orgId: auth.currentOrg?.managed_by_org_id ?? auth.currentOrgId!,
+                      });
+                    }
+                  }}
+                >
+                  {entregar.isPending ? "Entregando…" : "Entregar relatório"}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {reports.length > 1 && (

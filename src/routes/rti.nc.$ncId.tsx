@@ -32,7 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
-import { getRtiCampoAccess } from "@/lib/tenancy-gates";
+import { getRecordAccess, type SealActor } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
   clampPrioridade,
@@ -77,10 +77,25 @@ function RtiNcDetailPage() {
   const { ncId } = Route.useParams();
   const auth = useAuth();
   const { user } = auth;
-  const { canEdit, canAdmin: canDelete } = getRtiCampoAccess(auth);
   const navigate = useNavigate();
 
   const { data: nc, isLoading } = useRtiNc(ncId);
+
+  const sealActor: SealActor = {
+    isStaff: auth.isStaff,
+    isPlatformAdmin: auth.isPlatformAdmin,
+    hasEntitlement: auth.hasEntitlement,
+    directOrgRole: auth.orgRole,
+    managerOrgRole: auth.managerOrgRole,
+    roleInOrg: auth.roleInOrg,
+  };
+  const acc = getRecordAccess(sealActor, {
+    entregue_em: nc?.entregue_em ?? null,
+    entregue_por_org: nc?.entregue_por_org ?? null,
+  });
+  const canEditTecnico = acc.canEditTecnico;
+  const canEditOperacional = acc.canEditOperacional;
+  const canDeleteNc = acc.canDelete;
   const { data: areas = [] } = useRtiAreas(nc?.report_id);
   const { data: siblings = [] } = useRtiNcs(nc?.report_id);
   const deleteNc = useDeleteRtiNc();
@@ -203,7 +218,7 @@ function RtiNcDetailPage() {
             )}
           </div>
         </div>
-        {canDelete && (
+        {canDeleteNc && (
           <Button variant="outline" size="sm" className="text-destructive" onClick={handleDelete}>
             <Trash2 className="h-4 w-4" /> Excluir NC
           </Button>
@@ -233,7 +248,8 @@ function RtiNcDetailPage() {
           <EvidenceSection
             nc={nc}
             tipo="constatacao"
-            canEdit={canEdit}
+            canEdit={canEditTecnico}
+            sealedReadonly={acc.sealed && !canEditTecnico}
             actorName={actorName}
             titulo="Registro da não conformidade"
             descricao="Fotos e documentos que evidenciam o problema constatado na inspeção."
@@ -242,7 +258,7 @@ function RtiNcDetailPage() {
           <EvidenceSection
             nc={nc}
             tipo="correcao"
-            canEdit={canEdit}
+            canEdit={canEditOperacional}
             actorName={actorName}
             titulo="Evidências da correção"
             descricao="Comprovação da ação corretiva executada (fotos do depois, OS encerrada, laudos...)."
@@ -252,8 +268,8 @@ function RtiNcDetailPage() {
 
         {/* Coluna lateral */}
         <div className="space-y-4">
-          <GestaoCard nc={nc} canEdit={canEdit} actorName={actorName} />
-          <HistoricoCard ncId={nc.id} canComment={canEdit} actorName={actorName} />
+          <GestaoCard nc={nc} canEdit={canEditOperacional} actorName={actorName} />
+          <HistoricoCard ncId={nc.id} canComment={canEditOperacional} actorName={actorName} />
         </div>
       </div>
     </PageShell>
@@ -645,6 +661,7 @@ function EvidenceSection({
   nc,
   tipo,
   canEdit,
+  sealedReadonly = false,
   actorName,
   titulo,
   descricao,
@@ -653,6 +670,7 @@ function EvidenceSection({
   nc: RtiNc;
   tipo: RtiEvidenciaTipo;
   canEdit: boolean;
+  sealedReadonly?: boolean;
   actorName: string | null;
   titulo: string;
   descricao: string;
@@ -734,11 +752,16 @@ function EvidenceSection({
   const isImage = (ev: RtiNcEvidencia) => (ev.mime_type ?? "").startsWith("image/");
 
   return (
-    <Card>
+    <Card title={sealedReadonly ? "Registro entregue pelo consultor — somente leitura" : undefined}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           {icon} {titulo}
           <span className="text-xs font-normal text-muted-foreground">({evidencias.length})</span>
+          {sealedReadonly && (
+            <span className="ml-auto rounded bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
+              Entregue · somente leitura
+            </span>
+          )}
         </CardTitle>
         <p className="text-xs text-muted-foreground">{descricao}</p>
       </CardHeader>
