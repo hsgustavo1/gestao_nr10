@@ -40,6 +40,9 @@ export function SiteHeader() {
   // Quem gerencia acessos: admin global (legado) OU admin/owner na org ativa
   // (cobre o consultor que gerencia o cliente via managed_by).
   const canManageUsers = isAdmin || hasOrgRole("admin");
+  // Gestão de empresas: dono da plataforma ou consultor admin (carteira).
+  const { isPlatformAdmin } = auth;
+  const canManageEmpresas = isPlatformAdmin || hasOrgRole("admin");
   const cargo = isAdmin ? "Dono de RAC (Admin)" : isStaff ? "Apoio" : "Consulta";
   const displayName =
     (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || "";
@@ -83,11 +86,18 @@ export function SiteHeader() {
                   </div>
                 </div>
               )}
-              {user && canManageUsers && (
-                <div className="p-2 border-b border-white/10">
-                  <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>
-                    Controle de acessos
-                  </MobileNavLink>
+              {user && (canManageUsers || canManageEmpresas) && (
+                <div className="p-2 border-b border-white/10 space-y-0.5">
+                  {canManageEmpresas && (
+                    <MobileNavLink to="/admin/empresas" onNav={() => setMenuOpen(false)}>
+                      Gestão de empresas
+                    </MobileNavLink>
+                  )}
+                  {canManageUsers && (
+                    <MobileNavLink to="/admin/usuarios" onNav={() => setMenuOpen(false)}>
+                      Controle de acessos
+                    </MobileNavLink>
+                  )}
                 </div>
               )}
               <nav className="flex flex-col p-2 gap-0.5">
@@ -277,6 +287,7 @@ export function SiteHeader() {
                 initials={initials}
                 cargo={cargo}
                 canManageUsers={canManageUsers}
+                canManageEmpresas={canManageEmpresas}
               />
               {/* Logout sempre acessível no mobile (onde o pill/menu fica oculto). */}
               <button
@@ -326,11 +337,13 @@ function UserMenu({
   initials,
   cargo,
   canManageUsers,
+  canManageEmpresas,
 }: {
   displayName: string;
   initials: string;
   cargo: string;
   canManageUsers: boolean;
+  canManageEmpresas: boolean;
 }) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -359,15 +372,20 @@ function UserMenu({
           <div className="text-sm font-semibold truncate">{displayName}</div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{cargo}</div>
         </div>
+        {(canManageUsers || canManageEmpresas) && <DropdownMenuSeparator />}
+        {canManageEmpresas && (
+          <DropdownMenuItem asChild>
+            <Link to="/admin/empresas" className="cursor-pointer gap-2">
+              <Building2 className="h-3.5 w-3.5" /> Gestão de empresas
+            </Link>
+          </DropdownMenuItem>
+        )}
         {canManageUsers && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/admin/usuarios" className="cursor-pointer gap-2">
-                <Building2 className="h-3.5 w-3.5" /> Controle de acessos
-              </Link>
-            </DropdownMenuItem>
-          </>
+          <DropdownMenuItem asChild>
+            <Link to="/admin/usuarios" className="cursor-pointer gap-2">
+              <Building2 className="h-3.5 w-3.5" /> Controle de acessos
+            </Link>
+          </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
