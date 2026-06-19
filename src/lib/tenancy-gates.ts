@@ -77,3 +77,32 @@ export function getRecordAccess(ctx: SealActor, record: SealedRecord): RecordAcc
     sealed,
   };
 }
+
+export type EmpresaAdminAccess = {
+  canCreate: boolean;
+  canEditOrg: boolean;
+  canManageEntitlements: boolean;
+  canDeactivate: boolean;
+  canManageUsers: boolean;
+};
+
+type EmpresaGateContext = {
+  isPlatformAdmin: boolean;
+  hasOrgRole: (min: OrgRole) => boolean;
+};
+
+/** Gate de UI da tela de gestão de empresas. Criação, entitlements e desativação
+ * são decisões da plataforma (só platform admin). Editar dados e gerenciar
+ * usuários cobrem também o consultor admin da carteira. A barreira real é o
+ * banco (RLS + autz das RPCs); este gate é só UX. */
+export function getEmpresaAdminAccess(ctx: EmpresaGateContext): EmpresaAdminAccess {
+  const pa = ctx.isPlatformAdmin;
+  const orgAdmin = pa || ctx.hasOrgRole("admin");
+  return {
+    canCreate: pa,
+    canManageEntitlements: pa,
+    canDeactivate: pa,
+    canEditOrg: orgAdmin,
+    canManageUsers: orgAdmin,
+  };
+}

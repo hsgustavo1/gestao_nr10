@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getRtiCampoAccess, getRecordAccess } from "../tenancy-gates";
+import { getRtiCampoAccess, getRecordAccess, getEmpresaAdminAccess } from "../tenancy-gates";
 
 const ctx = ({
   isStaff = false,
@@ -142,5 +142,62 @@ describe("getRecordAccess", () => {
   it("relatório em rascunho: admin-padrão edita técnico (sem selo)", () => {
     const a = getRecordAccess(sealCtx({ direct: "admin" }), rascunho);
     expect(a.canEditTecnico).toBe(true);
+  });
+});
+
+const empresaCtx = ({
+  isPlatformAdmin = false,
+  roles = [],
+}: {
+  isPlatformAdmin?: boolean;
+  roles?: string[];
+}) => {
+  const rank = { viewer: 1, member: 2, admin: 3, owner: 4 } as const;
+  return {
+    isPlatformAdmin,
+    hasOrgRole: (min: "viewer" | "member" | "admin" | "owner") =>
+      isPlatformAdmin || roles.some((role) => rank[role as keyof typeof rank] >= rank[min]),
+  };
+};
+
+describe("getEmpresaAdminAccess", () => {
+  it("platform admin: pode tudo", () => {
+    expect(getEmpresaAdminAccess(empresaCtx({ isPlatformAdmin: true }))).toEqual({
+      canCreate: true,
+      canEditOrg: true,
+      canManageEntitlements: true,
+      canDeactivate: true,
+      canManageUsers: true,
+    });
+  });
+
+  it("consultor (admin): edita e gerencia usuários, mas NÃO cria/entitlements/desativa", () => {
+    expect(getEmpresaAdminAccess(empresaCtx({ roles: ["admin"] }))).toEqual({
+      canCreate: false,
+      canEditOrg: true,
+      canManageEntitlements: false,
+      canDeactivate: false,
+      canManageUsers: true,
+    });
+  });
+
+  it("member: nada", () => {
+    expect(getEmpresaAdminAccess(empresaCtx({ roles: ["member"] }))).toEqual({
+      canCreate: false,
+      canEditOrg: false,
+      canManageEntitlements: false,
+      canDeactivate: false,
+      canManageUsers: false,
+    });
+  });
+
+  it("viewer: nada", () => {
+    expect(getEmpresaAdminAccess(empresaCtx({ roles: ["viewer"] }))).toEqual({
+      canCreate: false,
+      canEditOrg: false,
+      canManageEntitlements: false,
+      canDeactivate: false,
+      canManageUsers: false,
+    });
   });
 });
