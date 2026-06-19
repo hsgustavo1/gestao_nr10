@@ -167,6 +167,7 @@ describe("getEmpresaAdminAccess", () => {
       canEditOrg: true,
       canManageEntitlements: true,
       canDeactivate: true,
+      canDelete: true,
       canManageUsers: true,
     });
   });
@@ -177,6 +178,7 @@ describe("getEmpresaAdminAccess", () => {
       canEditOrg: true,
       canManageEntitlements: false,
       canDeactivate: false,
+      canDelete: false,
       canManageUsers: true,
     });
   });
@@ -187,6 +189,7 @@ describe("getEmpresaAdminAccess", () => {
       canEditOrg: false,
       canManageEntitlements: false,
       canDeactivate: false,
+      canDelete: false,
       canManageUsers: false,
     });
   });
@@ -197,6 +200,7 @@ describe("getEmpresaAdminAccess", () => {
       canEditOrg: false,
       canManageEntitlements: false,
       canDeactivate: false,
+      canDelete: false,
       canManageUsers: false,
     });
   });

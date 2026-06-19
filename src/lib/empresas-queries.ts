@@ -87,3 +87,10 @@ export async function setOrgActive(org: string, ativa: boolean): Promise<void> {
   const { error } = await sb.rpc("fn_set_org_active", { p_org: org, p_ativa: ativa });
   if (error) throw new Error(error.message);
 }
+
+/** Exclui a empresa de vez (só platform admin). A RPC bloqueia se houver unidades
+ * filhas, clientes geridos ou dados de domínio — nesse caso, desative em vez de excluir. */
+export async function deleteOrg(org: string): Promise<void> {
+  const { error } = await sb.rpc("fn_delete_org", { p_org: org });
+  if (error) throw new Error(error.message);
+}

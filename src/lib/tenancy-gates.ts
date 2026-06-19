@@ -56,7 +56,8 @@ export function getRecordAccess(ctx: SealActor, record: SealedRecord): RecordAcc
   const canView = ctx.isStaff || ctx.isPlatformAdmin || hasRti;
 
   const editRank = Math.max(rank(ctx.directOrgRole), rank(ctx.managerOrgRole));
-  const canEditModule = canView && (ctx.isStaff || ctx.isPlatformAdmin || editRank >= ORG_RANK.member);
+  const canEditModule =
+    canView && (ctx.isStaff || ctx.isPlatformAdmin || editRank >= ORG_RANK.member);
 
   const authorRank = record.entregue_por_org ? rank(ctx.roleInOrg(record.entregue_por_org)) : 0;
   const canBypass =
@@ -83,6 +84,7 @@ export type EmpresaAdminAccess = {
   canEditOrg: boolean;
   canManageEntitlements: boolean;
   canDeactivate: boolean;
+  canDelete: boolean;
   canManageUsers: boolean;
 };
 
@@ -102,6 +104,7 @@ export function getEmpresaAdminAccess(ctx: EmpresaGateContext): EmpresaAdminAcce
     canCreate: pa,
     canManageEntitlements: pa,
     canDeactivate: pa,
+    canDelete: pa,
     canEditOrg: orgAdmin,
     canManageUsers: orgAdmin,
   };

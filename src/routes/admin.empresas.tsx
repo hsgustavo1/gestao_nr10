@@ -1,7 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Building2, Plus, Pencil, Users, ShieldAlert, CornerDownRight, Power } from "lucide-react";
+import {
+  Building2,
+  Plus,
+  Pencil,
+  Users,
+  ShieldAlert,
+  CornerDownRight,
+  Power,
+  Trash2,
+} from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +51,7 @@ import {
   updateOrg,
   setOrgEntitlements,
   setOrgActive,
+  deleteOrg,
   type EmpresaRow,
   createOrg,
 } from "@/lib/empresas-queries";
@@ -567,6 +577,7 @@ function EditarEmpresaPanel({
   const [modules, setModules] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmToggle, setConfirmToggle] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (row) {
@@ -624,6 +635,20 @@ function EditarEmpresaPanel({
       onSaved();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao alterar status");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeOrg() {
+    setSaving(true);
+    try {
+      await deleteOrg(row!.id);
+      toast.success(`Empresa "${row!.nome}" excluída`);
+      setConfirmDelete(false);
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir empresa");
     } finally {
       setSaving(false);
     }
@@ -721,6 +746,18 @@ function EditarEmpresaPanel({
                 <Power className="h-3.5 w-3.5" /> {row.ativa ? "Desativar" : "Reativar"}
               </Button>
             )}
+            {access.canDelete && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmDelete(true)}
+                disabled={saving}
+                className="text-destructive hover:text-destructive"
+                title="Excluir permanentemente"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Excluir
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -768,6 +805,35 @@ function EditarEmpresaPanel({
               }
             >
               {row.ativa ? "Desativar" : "Reativar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {row.nome} permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível e remove a empresa de vez. Só é permitida se ela não tiver
+              unidades, clientes geridos ou dados (inspeções, RTI, EPIs…). Se tiver, prefira
+              <strong> desativar</strong>, que preserva tudo.
+              {row.tipo === "consultoria" && clientesGeridos > 0 && (
+                <>
+                  {" "}
+                  Esta consultoria gere {clientesGeridos} cliente(s) — a exclusão será bloqueada até
+                  desvinculá-los.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void removeOrg()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

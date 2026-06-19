@@ -93,6 +93,37 @@ BEGIN
     public.can_access_org(pa, cliA_org) = true
   );
   PERFORM public.fn_set_org_active(cliA_org, true);  -- restaura
+
+  -- 8. consultor NÃO exclui empresa -> exceção
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', cons)::text, true);
+  BEGIN
+    PERFORM public.fn_delete_org(cliA_org);
+    INSERT INTO _r VALUES ('8 consultor exclui empresa', 'erro', 'sucesso (FURO!)', false);
+  EXCEPTION WHEN OTHERS THEN
+    INSERT INTO _r VALUES ('8 consultor exclui empresa', 'erro', 'erro: ' || SQLERRM, true);
+  END;
+
+  -- 9. platform admin NÃO exclui consultoria com cliente gerido -> bloqueio de órfão
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', pa)::text, true);
+  BEGIN
+    PERFORM public.fn_delete_org(consorg);
+    INSERT INTO _r VALUES ('9 PA exclui consultoria c/ cliente', 'erro', 'sucesso (FURO!)', false);
+  EXCEPTION WHEN OTHERS THEN
+    INSERT INTO _r VALUES ('9 PA exclui consultoria c/ cliente', 'erro', 'erro: ' || SQLERRM, true);
+  END;
+
+  -- 10. platform admin exclui org-folha de teste -> sucesso (e some)
+  BEGIN
+    v := public.fn_create_org('Del Test (apagar)', 'consultoria', NULL, NULL, ARRAY['loto']);
+    PERFORM public.fn_delete_org(v);
+    INSERT INTO _r VALUES (
+      '10 PA exclui org-folha', 'sucesso',
+      CASE WHEN EXISTS (SELECT 1 FROM public.organizations WHERE id = v)
+           THEN 'ainda existe (FURO!)' ELSE 'sucesso' END,
+      NOT EXISTS (SELECT 1 FROM public.organizations WHERE id = v));
+  EXCEPTION WHEN OTHERS THEN
+    INSERT INTO _r VALUES ('10 PA exclui org-folha', 'sucesso', 'erro: ' || SQLERRM, false);
+  END;
 END $$;
 
 SELECT * FROM _r ORDER BY cenario;
