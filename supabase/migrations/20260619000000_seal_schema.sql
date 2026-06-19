@@ -40,14 +40,17 @@ ON CONFLICT (table_name) DO UPDATE
 
 -- ---------- 3. Predicado único de bypass (banco + espelho na UI) ----------
 -- true se o usuário pode editar registro técnico mesmo selado:
---   dono (platform_admin)  OU  membro (>=member) da org autora/entregadora
+--   dono (platform_admin)
+--   OU  membro (>=member) da org autora/entregadora — desde que essa org seja
+--       DIFERENTE da org do registro (entrega genuinamente de cima para baixo;
+--       evita que uma auto-entrega deixe o próprio admin do cliente bypassar)
 --   OU  owner (admin-geral) na própria org do registro.
 CREATE OR REPLACE FUNCTION public.fn_can_bypass_seal(
   _uid uuid, _row_org uuid, _entregue_por_org uuid
 ) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT
     public.is_platform_admin(_uid)
-    OR (_entregue_por_org IS NOT NULL AND EXISTS (
+    OR (_entregue_por_org IS NOT NULL AND _entregue_por_org <> _row_org AND EXISTS (
           SELECT 1 FROM public.org_memberships m
           WHERE m.user_id = _uid AND m.org_id = _entregue_por_org
             AND m.org_role IN ('member','admin','owner')))
