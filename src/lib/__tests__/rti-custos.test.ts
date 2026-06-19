@@ -45,14 +45,16 @@ describe("computeBudget", () => {
     expect(b.projecaoTotal).toBe(0);
   });
 
-  it("não-concluídas (pendente/andamento) viram orçamento em aberto pelo planejado", () => {
+  it("não-concluída sem realizado vira em aberto; com realizado conta como realizado", () => {
     const b = computeBudget([nc("pendente", 1000), nc("em_andamento", 500, 200)]);
-    // em andamento assume o previsto: ignora o realizado parcial
-    expect(b.emAberto).toBe(1500);
-    expect(b.realizado).toBe(0);
+    // pendente sem realizado → em aberto pelo planejado
+    expect(b.emAberto).toBe(1000);
+    // em_andamento com realizado parcial → conta como realizado (custo já registrado)
+    expect(b.realizado).toBe(200);
+    expect(b.economizado).toBe(300); // 200 realizado vs 500 planejado → economia
     expect(b.planejadoTotal).toBe(1500);
-    expect(b.projecaoTotal).toBe(1500);
-    expect(b.desvioProjecao).toBe(0);
+    expect(b.projecaoTotal).toBe(1200); // 200 + 1000
+    expect(b.desvioProjecao).toBe(-300);
   });
 
   it("concluída com estouro: realizado > planejado", () => {

@@ -51,6 +51,7 @@ export const Route = createFileRoute("/rti/custos")({
 
 const PLANEJADO_COLOR = "#0A2D48";
 const REALIZADO_COLOR = "#F79220";
+const EM_ABERTO_COLOR = "#64748b";
 
 type Agg = { planejado: number; realizado: number; qtd: number };
 const zero = (): Agg => ({ planejado: 0, realizado: 0, qtd: 0 });
@@ -283,15 +284,20 @@ function RtiCustosPage() {
               sub={
                 budget.realizadoAInformar > 0
                   ? `${budget.realizadoAInformar} concluída(s) sem realizado`
-                  : "valor final das concluídas"
+                  : "custo já registrado"
               }
+              onClick={() => navigate({ to: "/rti/plano", search: planoSearch })}
             />
             <ResumoCard
               label="Em aberto"
               value={formatBRL(budget.emAberto)}
               sub="previsto a executar"
+              onClick={() => navigate({ to: "/rti/plano", search: planoSearch })}
             />
-            <SaldoCard budget={budget} />
+            <SaldoCard
+              budget={budget}
+              onClick={() => navigate({ to: "/rti/plano", search: planoSearch })}
+            />
             <ResumoCard
               label="Projeção total"
               value={formatBRL(budget.projecaoTotal)}
@@ -301,6 +307,7 @@ function RtiCustosPage() {
                   ? ` · ${budget.desvioProjecao > 0 ? "+" : "−"}${formatBRL(Math.abs(budget.desvioProjecao))}`
                   : "")
               }
+              onClick={() => navigate({ to: "/rti/plano", search: planoSearch })}
             />
           </div>
 
@@ -331,7 +338,7 @@ function RtiCustosPage() {
                       label={`Realizado ${formatBRL(budget.realizado)}`}
                     />
                     <LegendDot
-                      color={PLANEJADO_COLOR}
+                      color={EM_ABERTO_COLOR}
                       label={`Em aberto ${formatBRL(budget.emAberto)}`}
                     />
                     {budget.saldoLiquido !== 0 && (
@@ -605,9 +612,22 @@ function costTooltipFmt(v: number, name: string) {
   return [formatBRL(v), name] as [string, string];
 }
 
-function ResumoCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function ResumoCard({
+  label,
+  value,
+  sub,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  onClick?: () => void;
+}) {
   return (
-    <Card>
+    <Card
+      className={onClick ? "cursor-pointer hover:ring-2 hover:ring-primary/20 transition-shadow" : ""}
+      onClick={onClick}
+    >
       <CardContent className="p-4">
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
         <div className="mt-1 text-xl font-bold tabular-nums">{value}</div>
@@ -618,7 +638,7 @@ function ResumoCard({ label, value, sub }: { label: string; value: string; sub?:
 }
 
 /** Card de saldo: estouro/economia bruto + líquido colorido. */
-function SaldoCard({ budget }: { budget: RtiBudget }) {
+function SaldoCard({ budget, onClick }: { budget: RtiBudget; onClick?: () => void }) {
   const { saldoLiquido, estourado, economizado } = budget;
   const cls = saldoLiquido > 0 ? "text-red-600" : saldoLiquido < 0 ? "text-emerald-600" : "";
   const valor =
@@ -626,7 +646,10 @@ function SaldoCard({ budget }: { budget: RtiBudget }) {
       ? formatBRL(0)
       : `${saldoLiquido > 0 ? "+" : "−"}${formatBRL(Math.abs(saldoLiquido))}`;
   return (
-    <Card>
+    <Card
+      className={onClick ? "cursor-pointer hover:ring-2 hover:ring-primary/20 transition-shadow" : ""}
+      onClick={onClick}
+    >
       <CardContent className="p-4">
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
           Saldo do realizado
@@ -656,7 +679,7 @@ function BudgetBar({ budget }: { budget: RtiBudget }) {
           title={`Realizado ${formatBRL(budget.realizado)}`}
         />
         <div
-          style={{ width: w(budget.emAberto), background: PLANEJADO_COLOR, opacity: 0.55 }}
+          style={{ width: w(budget.emAberto), background: EM_ABERTO_COLOR }}
           title={`Em aberto ${formatBRL(budget.emAberto)}`}
         />
         <div

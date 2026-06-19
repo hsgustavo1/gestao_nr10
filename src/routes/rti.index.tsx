@@ -176,7 +176,7 @@ function RtiDashboardPage() {
         Concluídas: andamentoCusto.custoZero.concluidas,
       },
       {
-        grupo: "Sem custo",
+        grupo: "Sem custo informado",
         custo: "sem",
         Total: andamentoCusto.semCusto.total,
         Concluídas: andamentoCusto.semCusto.concluidas,
@@ -574,7 +574,7 @@ function RtiDashboardPage() {
                     concluídas ({pctConcl(andamentoCusto.custoZero)}%)
                   </span>
                   <span>
-                    Sem custo:{" "}
+                    Sem custo informado:{" "}
                     <strong className="text-foreground">
                       {andamentoCusto.semCusto.concluidas}/{andamentoCusto.semCusto.total}
                     </strong>{" "}
