@@ -10,8 +10,9 @@ import {
   CornerDownRight,
 } from "lucide-react";
 import { useState } from "react";
-import { useAuth, type Org } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-context";
 import { getRtiCampoAccess } from "@/lib/tenancy-gates";
+import { buildOrgTree } from "@/lib/org-tree";
 import { useVencimentosBadge } from "@/lib/vencimentos";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -381,29 +382,6 @@ function UserMenu({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-/** Achata as orgs acessíveis numa lista ordenada com profundidade, montando a
- * hierarquia: consultoria → clientes gerenciados (managed_by) e empresa-mãe →
- * unidades (parent). Tolerante a ciclos/órfãos. */
-function buildOrgTree(orgs: Org[]): { org: Org; depth: number }[] {
-  const parentIdOf = (o: Org) => o.managed_by_org_id ?? o.parent_org_id ?? null;
-  const hasVisibleParent = (o: Org) => {
-    const pid = parentIdOf(o);
-    return pid !== null && orgs.some((p) => p.id === pid);
-  };
-  const childrenOf = (id: string) => orgs.filter((o) => o.id !== id && parentIdOf(o) === id);
-  const out: { org: Org; depth: number }[] = [];
-  const seen = new Set<string>();
-  const walk = (o: Org, depth: number) => {
-    if (seen.has(o.id)) return;
-    seen.add(o.id);
-    out.push({ org: o, depth });
-    for (const c of childrenOf(o.id)) walk(c, depth + 1);
-  };
-  for (const r of orgs.filter((o) => !hasVisibleParent(o))) walk(r, 0);
-  for (const o of orgs) if (!seen.has(o.id)) out.push({ org: o, depth: 0 }); // órfãos/ciclos
-  return out;
 }
 
 /** Seletor de organização ativa. Só aparece quando o usuário tem 2+ orgs
