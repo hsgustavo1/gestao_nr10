@@ -274,6 +274,33 @@ Entregue (código/SQL no repo) e **isolamento validado em 2026-06-15**:
   pela fatia RTI/Campo da Fase 1.5 (2026-06-18):** cliente `member`/`admin` com `rti_pwa`
   já opera o pipeline sem papel global. Falta a **prova logado** como Cliente A.
 
+✅ **UI de gestão de empresas (subsistema A) — ENTREGUE (2026-06-19, commits `2cd9cf7`..`0384bf1`).**
+Antes orgs só nasciam por seed SQL; agora há a rota
+[`/admin/empresas`](../../../src/routes/admin.empresas.tsx) com árvore hierárquica +
+wizard de criação em 4 passos (4º = 1º usuário, **opcional**, via edge `admin-users`) +
+painel de edição (renomear / vínculo / módulos / ativar-desativar), condicionado ao papel
+pelo gate puro `getEmpresaAdminAccess` (criar/entitlements/desativar = só platform admin;
+editar/usuários = +consultor admin). Backend na migração
+[`20260619200000_empresas_management.sql`](../../../supabase/migrations/20260619200000_empresas_management.sql)
+(**aplicada via MCP do Supabase** — convenção mudou nesta sessão): coluna `organizations.ativa`,
+`can_access_org` passou a exigir org-alvo ativa (platform admin faz bypass p/ reativar) e 4 RPCs
+`SECURITY DEFINER` (`fn_create_org` / `fn_update_org` / `fn_set_org_entitlements` / `fn_set_org_active`,
+autz própria via `auth.uid()`). Acesso não-tipado isolado em
+[`src/lib/empresas-queries.ts`](../../../src/lib/empresas-queries.ts) (decisão: NÃO regenerar
+`types.ts` à mão — wrapper isolado como em `auth-context`). Teste de autz
+[`supabase/tests/empresas_rpc_test.sql`](../../../supabase/tests/empresas_rpc_test.sql) = **8/8 verde**.
+Spec: [`2026-06-19-ui-gestao-empresas-design.md`](../specs/2026-06-19-ui-gestao-empresas-design.md);
+plano: [`2026-06-19-ui-gestao-empresas.md`](2026-06-19-ui-gestao-empresas.md).
+
+⏳ **Follow-ups MENORES (inertes hoje, da revisão final 2026-06-19):**
+  - `fn_update_org` reconhece o consultor **só pela cadeia `managed_by`**, não `parent` — uma
+    *unidade* sob um cliente gerido recusaria a edição na RPC com "sem permissão" (falha **fechada**,
+    sem risco de segurança; sem unidades cadastradas hoje). Corrigir adicionando o ramo
+    `parent_org_id` ao `EXISTS` quando criarmos unidades.
+  - `possiveisMaes` (seletor de empresa-mãe no wizard/edição) **não filtra por `tipo`**, permitindo
+    escolher uma unidade como mãe de outra. Confirmar se sub-unidades são desejadas; senão, filtrar
+    `tipo !== "unidade"`.
+
 ### Fases posteriores (registrar, não construir ainda)
 - **Dois níveis de cliente do consultor** (levantado 2026-06-15): hoje o painel oferece
   só níveis grossos (`admin` = controla tudo / `viewer` = só lê). Falta o nível
