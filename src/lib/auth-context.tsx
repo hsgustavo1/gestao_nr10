@@ -50,6 +50,8 @@ interface AuthState {
   isPlatformAdmin: boolean;
   entitlements: string[];
   orgRole: OrgRole | null;
+  managerOrgRole: OrgRole | null;
+  roleInOrg: (orgId: string) => OrgRole | null;
   hasEntitlement: (module: string) => boolean;
   hasOrgRole: (min: OrgRole) => boolean;
   // ---
@@ -186,6 +188,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     orgId ? (memberships.find((m) => m.org_id === orgId)?.org_role ?? null) : null;
 
   const orgRole = roleInOrg(currentOrgId);
+  // Maior papel na cadeia que GERENCIA a org ativa (consultor via managed_by /
+  // org-mãe via parent). Distingue "consultor" do "admin do próprio cliente".
+  const managerOrgRole: OrgRole | null = (() => {
+    const candidates: (OrgRole | null)[] = [
+      roleInOrg(currentOrg?.managed_by_org_id),
+      roleInOrg(currentOrg?.parent_org_id),
+    ];
+    return candidates.reduce<OrgRole | null>((best, r) => {
+      if (!r) return best;
+      if (!best) return r;
+      return ORG_ROLE_RANK[r] > ORG_ROLE_RANK[best] ? r : best;
+    }, null);
+  })();
 
   const hasEntitlement = (module: string) => isPlatformAdmin || entitlements.includes(module);
 
@@ -234,6 +249,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isPlatformAdmin,
         entitlements,
         orgRole,
+        managerOrgRole,
+        roleInOrg,
         hasEntitlement,
         hasOrgRole,
         enterViewerMode,
