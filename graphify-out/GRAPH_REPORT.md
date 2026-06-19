@@ -1,6 +1,6 @@
 # Graph Report - .  (2026-06-14)
 
-## ⚠️ Status atual (overlay manual — 2026-06-18)
+## ⚠️ Status atual (overlay manual — 2026-06-19)
 
 > Esta seção foi adicionada à mão para refletir o estado do projeto sem re-rodar a
 > extração do grafo. Os nós/arestas abaixo (Summary, Communities, God Nodes) ainda
@@ -37,12 +37,35 @@
   (funções puras em `src/lib/rti.ts`, testadas). Suíte: 104 testes verdes.
   **Demais módulos (NR-10/EPIs/qualificações/LOTO/...) ainda usam `isStaff`/`isAdmin`
   global** — replicação pendente (ver ROADMAP).
+- **Selo de Entrega — controle de acesso por provença (2026-06-19):** nova camada
+  genérica (ortogonal a rank/entitlement) que congela o registro técnico de um RTI
+  *entregue* para o admin-padrão do cliente, mantendo a gestão de rotina livre.
+  Migrations `…20260619000000/001000/002000`:
+  - Colunas `entregue_em`/`entregue_por_org` em `rti_reports`/`rti_areas`/`rti_ncs`/
+    `rti_nc_evidencias`; tabela declarativa `seal_policy(table, frozen_columns[],
+    allow_delete, row_filter)` (um ponto a tocar p/ estender a LOTO — sem código novo).
+  - Predicado único `fn_can_bypass_seal(uid,row_org,entregue_por_org)` (dono ∨ membro
+    de org entregadora *distinta* ∨ owner da própria org) — consumido por banco **e** UI.
+  - RPC `fn_entregar_rti_report(report_id, entregue_por_org)` carimba o root e
+    cascateia o selo aos filhos; trigger `fn_enforce_seal()` (BEFORE UPDATE/DELETE)
+    bloqueia colunas congeladas/DELETE; `fn_seal_on_insert()` define a provença de
+    filhos novos (cliente→livre, consultor→selado).
+  - Frontend: `getRecordAccess(ctx, record)` em `tenancy-gates.ts` (técnico ×
+    operacional × entregar); `auth-context` expõe `managerOrgRole`/`roleInOrg`; hook
+    `useEntregarRtiReport()`; `admin.usuarios` com 3 níveis (Admin geral=owner /
+    Admin padrão=admin / Visualização=viewer); `rti.plano` (botão Entregar + badge) e
+    `rti.nc.$ncId` (gate por campo + criticidade travada). Edge `admin-users` v3 fecha
+    criação de `owner` por não-platform-admin. Suíte: 111 testes verdes.
+  Spec/plano: [`docs/superpowers/specs/2026-06-19-selo-entrega-rti-design.md`](../../docs/superpowers/specs/2026-06-19-selo-entrega-rti-design.md),
+  [`docs/superpowers/plans/2026-06-19-selo-entrega-rti.md`](../../docs/superpowers/plans/2026-06-19-selo-entrega-rti.md).
 
 Comunidades novas que um re-graph deve criar: *Multi-Tenancy Foundation* (orgs/RLS/
 funções de acesso), *Org Context & Entitlements* (auth-context + guards + o novo
-`tenancy-gates.ts`/`getRtiCampoAccess`). God nodes prováveis novos:
-`can_access_org()` (base de toda a RLS por org) e `getRtiCampoAccess()` (hub dos
-gates de UI do recorte RTI/Campo).
+`tenancy-gates.ts`/`getRtiCampoAccess`), *Selo de Entrega / Provença* (`seal_policy`,
+`fn_can_bypass_seal`, `fn_entregar_rti_report`, `fn_enforce_seal`, `getRecordAccess`).
+God nodes prováveis novos: `can_access_org()` (base de toda a RLS por org),
+`getRtiCampoAccess()` (hub dos gates de UI do recorte RTI/Campo) e
+`fn_can_bypass_seal()` (predicado de selo compartilhado banco↔UI).
 
 ## Corpus Check
 - 238 files · ~175,321 words

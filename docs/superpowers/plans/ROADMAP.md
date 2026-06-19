@@ -40,6 +40,18 @@ Pendências (todas opcionais agora):
   LOTO, incidentes, ASOs, prontuário + restante do `site-header`) e filtrar os outros
   `*-queries.ts` por org (só RTI está filtrado). Detalhe na seção "Fase 1.5".
 
+✅ **Selo de Entrega — controle por provença (2026-06-19, commits `81bf31f`→`5be8a9c`).**
+Terceiro nível de autorização (entre admin e visualização): ao **entregar** um RTI, o
+registro técnico (criticidade, recomendação, descrição, evidência de constatação,
+exclusão de NC) congela para o admin-padrão do cliente; rotina (prazo/custo/andamento/
+evidência de correção/criar ação) segue livre. Camada genérica (`seal_policy` +
+`fn_can_bypass_seal` + `fn_enforce_seal`), **extensível à LOTO** sem código novo —
+só registrar a tabela na `seal_policy`. Migrations `20260619000000/001000/002000`
+APLICADAS via MCP + verificadas; edge `admin-users` **v3**. Spec/plano em
+`docs/superpowers/{specs,plans}/2026-06-19-selo-entrega-rti*`. 111 testes verdes.
+- ⏳ **Follow-up opcional:** alinhar o gate da UI (`getRecordAccess`) ao banco em perfis
+  legados raros (`isStaff`/cadeia `parent_org_id`) — cosmético, banco já é a barreira.
+
 Outros itens opcionais/futuros estão em "Passos manuais" e "Fases posteriores".
 
 ## Visão de produto (por que existe)
