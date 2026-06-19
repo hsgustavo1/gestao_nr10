@@ -5,11 +5,31 @@ import { Building2, Plus, Pencil, Users, ShieldAlert, CornerDownRight } from "lu
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
+import type { OrgTipo, OrgRole } from "@/lib/auth-context";
 import { getEmpresaAdminAccess } from "@/lib/tenancy-gates";
 import { buildOrgTree } from "@/lib/org-tree";
-import { fetchEmpresas, type EmpresaRow } from "@/lib/empresas-queries";
-import { TIPO_LABEL, MODULE_LABEL } from "@/lib/empresas-labels";
+import { fetchEmpresas, type EmpresaRow, createOrg } from "@/lib/empresas-queries";
+import { TIPO_LABEL, MODULE_LABEL, MODULES } from "@/lib/empresas-labels";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/empresas")({
   component: AdminEmpresasPage,
@@ -23,6 +43,7 @@ function AdminEmpresasPage() {
 
   const [rows, setRows] = useState<EmpresaRow[]>([]);
   const [busy, setBusy] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const reload = useCallback(async () => {
     setBusy(true);
@@ -84,9 +105,8 @@ function AdminEmpresasPage() {
         </div>
         {access.canCreate && (
           <Button
-            disabled
+            onClick={() => setWizardOpen(true)}
             className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
-            title="Disponível na próxima etapa do plano"
           >
             <Plus className="h-4 w-4" /> Nova empresa
           </Button>
@@ -155,6 +175,347 @@ function AdminEmpresasPage() {
           </ul>
         </CardContent>
       </Card>
+
+      {access.canCreate && (
+        <NovaEmpresaWizard
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          empresas={rows}
+          onCreated={() => {
+            setWizardOpen(false);
+            void reload();
+          }}
+        />
+      )}
     </PageShell>
+  );
+}
+
+const CLIENT_ROLE_OPTIONS: {
+  value: Extract<OrgRole, "owner" | "admin" | "viewer">;
+  label: string;
+}[] = [
+  { value: "owner", label: "Admin geral (acesso total)" },
+  { value: "admin", label: "Admin padrão (gestão de rotina)" },
+  { value: "viewer", label: "Visualização (somente leitura)" },
+];
+
+function NovaEmpresaWizard({
+  open,
+  onOpenChange,
+  empresas,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  empresas: EmpresaRow[];
+  onCreated: () => void;
+}) {
+  const [step, setStep] = useState(1);
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<OrgTipo>("cliente");
+  const [managedBy, setManagedBy] = useState<string>(""); // "" = cliente direto
+  const [parent, setParent] = useState<string>("");
+  const [modules, setModules] = useState<string[]>(["rti_pwa"]);
+  // passo 4 (opcional)
+  const [email, setEmail] = useState("");
+  const [userName, setUserName] = useState("");
+  const [password, setPassword] = useState("");
+  const [orgRole, setOrgRole] = useState<Extract<OrgRole, "owner" | "admin" | "viewer">>("admin");
+  const [saving, setSaving] = useState(false);
+
+  const consultorias = empresas.filter((e) => e.tipo === "consultoria" && e.ativa);
+  const possiveisMaes = empresas.filter((e) => e.id && e.ativa);
+
+  function reset() {
+    setStep(1);
+    setNome("");
+    setTipo("cliente");
+    setManagedBy("");
+    setParent("");
+    setModules(["rti_pwa"]);
+    setEmail("");
+    setUserName("");
+    setPassword("");
+    setOrgRole("admin");
+    setSaving(false);
+  }
+
+  function close(o: boolean) {
+    if (!o) reset();
+    onOpenChange(o);
+  }
+
+  function toggleModule(key: string) {
+    setModules((prev) => (prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]));
+  }
+
+  function validateStep(): string | null {
+    if (step === 1 && !nome.trim()) return "Informe o nome da empresa";
+    if (step === 2 && tipo === "unidade" && !parent) return "Unidade exige empresa-mãe";
+    return null;
+  }
+
+  function next() {
+    const err = validateStep();
+    if (err) return toast.error(err);
+    setStep((s) => Math.min(4, s + 1));
+  }
+
+  // Cria a empresa (passos 1–3) e, se preenchido, o 1º usuário (passo 4, opcional).
+  async function finish(withUser: boolean) {
+    if (withUser) {
+      if (!email.includes("@")) return toast.error("E-mail inválido");
+      if (password.length < 8) return toast.error("Senha deve ter ao menos 8 caracteres");
+    }
+    setSaving(true);
+    let newId: string;
+    try {
+      newId = await createOrg({
+        nome: nome.trim(),
+        tipo,
+        managedBy: tipo === "cliente" && managedBy ? managedBy : null,
+        parent: tipo === "unidade" && parent ? parent : null,
+        entitlements: modules,
+      });
+    } catch (e) {
+      setSaving(false);
+      return toast.error(e instanceof Error ? e.message : "Erro ao criar empresa");
+    }
+
+    if (withUser) {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: {
+          type: "create",
+          email,
+          password,
+          display_name: userName || undefined,
+          org_id: newId,
+          org_role: orgRole,
+        },
+      });
+      if (error || (data as { error?: string } | null)?.error) {
+        const msg =
+          (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao criar usuário";
+        setSaving(false);
+        toast.error(
+          `Empresa criada, mas falhou ao criar o usuário: ${msg}. Defina depois em Controle de acessos.`,
+        );
+        onCreated();
+        return;
+      }
+    }
+
+    setSaving(false);
+    toast.success(`Empresa "${nome.trim()}" criada`);
+    onCreated();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={close}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Nova empresa — passo {step} de 4</DialogTitle>
+          <DialogDescription>
+            {step === 1 && "Dados básicos da empresa."}
+            {step === 2 && "Vínculo na hierarquia."}
+            {step === 3 && "Módulos liberados para a empresa."}
+            {step === 4 && "Primeiro acesso (opcional — pode definir depois)."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === 1 && (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="emp-nome">Nome</Label>
+              <Input
+                id="emp-nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex.: Indústria Acme Ltda."
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tipo</Label>
+              <Select value={tipo} onValueChange={(v) => setTipo(v as OrgTipo)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="consultoria">Consultoria</SelectItem>
+                  <SelectItem value="cliente">Cliente</SelectItem>
+                  <SelectItem value="unidade">Unidade</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-3">
+            {tipo === "consultoria" && (
+              <p className="text-sm text-muted-foreground">
+                Consultoria não tem vínculo — é uma raiz da hierarquia.
+              </p>
+            )}
+            {tipo === "cliente" && (
+              <div className="space-y-1.5">
+                <Label>Consultoria gestora (opcional)</Label>
+                <Select
+                  value={managedBy || "none"}
+                  onValueChange={(v) => setManagedBy(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Cliente direto (sem consultoria)</SelectItem>
+                    {consultorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {tipo === "unidade" && (
+              <div className="space-y-1.5">
+                <Label>Empresa-mãe (obrigatório)</Label>
+                <Select value={parent} onValueChange={setParent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a empresa-mãe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {possiveisMaes.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-2">
+            {MODULES.map((m) => (
+              <label key={m.key} className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={modules.includes(m.key)}
+                  onCheckedChange={() => toggleModule(m.key)}
+                />
+                <span className="text-sm">{m.label}</span>
+              </label>
+            ))}
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="emp-uname">Nome do usuário</Label>
+              <Input
+                id="emp-uname"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="emp-email">E-mail</Label>
+              <Input
+                id="emp-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="emp-pass">Senha provisória</Label>
+              <Input
+                id="emp-pass"
+                type="text"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                placeholder="Mínimo 8 caracteres"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nível de acesso</Label>
+              <Select value={orgRole} onValueChange={(v) => setOrgRole(v as typeof orgRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLIENT_ROLE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          {step > 1 && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setStep((s) => s - 1)}
+              disabled={saving}
+            >
+              Voltar
+            </Button>
+          )}
+          {step < 4 && (
+            <Button
+              type="button"
+              onClick={next}
+              className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+            >
+              Avançar
+            </Button>
+          )}
+          {step === 3 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void finish(false)}
+              disabled={saving}
+            >
+              Criar sem usuário
+            </Button>
+          )}
+          {step === 4 && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void finish(false)}
+                disabled={saving}
+              >
+                Pular — definir depois
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void finish(true)}
+                disabled={saving}
+                className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+              >
+                {saving ? "Criando..." : "Criar empresa + usuário"}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
