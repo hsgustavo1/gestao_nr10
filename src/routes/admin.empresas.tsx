@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Building2, Plus, Pencil, Users, ShieldAlert, CornerDownRight } from "lucide-react";
+import { Building2, Plus, Pencil, Users, ShieldAlert, CornerDownRight, Power } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,28 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth-context";
 import type { OrgTipo, OrgRole } from "@/lib/auth-context";
 import { getEmpresaAdminAccess } from "@/lib/tenancy-gates";
 import { buildOrgTree } from "@/lib/org-tree";
-import { fetchEmpresas, type EmpresaRow, createOrg } from "@/lib/empresas-queries";
+import {
+  fetchEmpresas,
+  updateOrg,
+  setOrgEntitlements,
+  setOrgActive,
+  type EmpresaRow,
+  createOrg,
+} from "@/lib/empresas-queries";
 import { TIPO_LABEL, MODULE_LABEL, MODULES } from "@/lib/empresas-labels";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -44,6 +61,7 @@ function AdminEmpresasPage() {
   const [rows, setRows] = useState<EmpresaRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [editing, setEditing] = useState<EmpresaRow | null>(null);
 
   const reload = useCallback(async () => {
     setBusy(true);
@@ -154,8 +172,8 @@ function AdminEmpresasPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled
-                    title="Editar (próxima etapa do plano)"
+                    onClick={() => setEditing(org)}
+                    title="Editar empresa"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
@@ -187,6 +205,16 @@ function AdminEmpresasPage() {
           }}
         />
       )}
+      <EditarEmpresaPanel
+        row={editing}
+        empresas={rows}
+        access={access}
+        onOpenChange={(o) => !o && setEditing(null)}
+        onSaved={() => {
+          setEditing(null);
+          void reload();
+        }}
+      />
     </PageShell>
   );
 }
@@ -517,5 +545,233 @@ function NovaEmpresaWizard({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function EditarEmpresaPanel({
+  row,
+  empresas,
+  access,
+  onOpenChange,
+  onSaved,
+}: {
+  row: EmpresaRow | null;
+  empresas: EmpresaRow[];
+  access: ReturnType<typeof getEmpresaAdminAccess>;
+  onOpenChange: (o: boolean) => void;
+  onSaved: () => void;
+}) {
+  const [nome, setNome] = useState("");
+  const [managedBy, setManagedBy] = useState<string>("");
+  const [parent, setParent] = useState<string>("");
+  const [modules, setModules] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [confirmToggle, setConfirmToggle] = useState(false);
+
+  useEffect(() => {
+    if (row) {
+      setNome(row.nome);
+      setManagedBy(row.managed_by_org_id ?? "");
+      setParent(row.parent_org_id ?? "");
+      setModules(row.entitlements);
+    }
+  }, [row]);
+
+  if (!row) return null;
+
+  const consultorias = empresas.filter(
+    (e) => e.tipo === "consultoria" && e.id !== row.id && e.ativa,
+  );
+  const possiveisMaes = empresas.filter((e) => e.id !== row.id && e.ativa);
+  // Quantos clientes esta consultoria gere (aviso ao desativar).
+  const clientesGeridos = empresas.filter((e) => e.managed_by_org_id === row.id).length;
+
+  function toggleModule(key: string) {
+    setModules((prev) => (prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]));
+  }
+
+  async function save() {
+    if (!nome.trim()) return toast.error("Informe o nome");
+    setSaving(true);
+    try {
+      await updateOrg({
+        org: row!.id,
+        nome: nome.trim(),
+        managedBy: row!.tipo === "cliente" && managedBy ? managedBy : null,
+        parent: row!.tipo === "unidade" && parent ? parent : null,
+      });
+      // Entitlements só quando a UI permite (platform admin) e houve mudança.
+      if (access.canManageEntitlements) {
+        const before = [...row!.entitlements].sort().join(",");
+        const after = [...modules].sort().join(",");
+        if (before !== after) await setOrgEntitlements(row!.id, modules);
+      }
+      toast.success("Empresa atualizada");
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleActive() {
+    setSaving(true);
+    try {
+      await setOrgActive(row!.id, !row!.ativa);
+      toast.success(row!.ativa ? "Empresa desativada" : "Empresa reativada");
+      setConfirmToggle(false);
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao alterar status");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <Dialog open={row !== null} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar {TIPO_LABEL[row.tipo].toLowerCase()}</DialogTitle>
+            <DialogDescription>
+              {access.canManageEntitlements
+                ? "Renomeie, ajuste o vínculo e os módulos."
+                : "Renomeie a empresa. Módulos e vínculo são definidos pelo dono da plataforma."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="ed-nome">Nome</Label>
+              <Input
+                id="ed-nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                maxLength={120}
+              />
+            </div>
+
+            {/* Vínculo: só platform admin altera (canManageEntitlements == platform admin) */}
+            {access.canManageEntitlements && row.tipo === "cliente" && (
+              <div className="space-y-1.5">
+                <Label>Consultoria gestora</Label>
+                <Select
+                  value={managedBy || "none"}
+                  onValueChange={(v) => setManagedBy(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Cliente direto (sem consultoria)</SelectItem>
+                    {consultorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {access.canManageEntitlements && row.tipo === "unidade" && (
+              <div className="space-y-1.5">
+                <Label>Empresa-mãe</Label>
+                <Select value={parent} onValueChange={setParent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {possiveisMaes.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {access.canManageEntitlements && (
+              <div className="space-y-2">
+                <Label>Módulos</Label>
+                {MODULES.map((m) => (
+                  <label key={m.key} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={modules.includes(m.key)}
+                      onCheckedChange={() => toggleModule(m.key)}
+                    />
+                    <span className="text-sm">{m.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {access.canDeactivate && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmToggle(true)}
+                disabled={saving}
+                className={row.ativa ? "text-destructive hover:text-destructive" : ""}
+              >
+                <Power className="h-3.5 w-3.5" /> {row.ativa ? "Desativar" : "Reativar"}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={saving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void save()}
+              disabled={saving}
+              className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+            >
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmToggle} onOpenChange={setConfirmToggle}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {row.ativa ? "Desativar" : "Reativar"} {row.nome}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {row.ativa
+                ? `A empresa some para os usuários comuns; os dados são preservados e você pode reativá-la. ${
+                    row.tipo === "consultoria" && clientesGeridos > 0
+                      ? `Atenção: esta consultoria gere ${clientesGeridos} cliente(s) — eles NÃO são desativados automaticamente.`
+                      : ""
+                  }`
+                : "A empresa volta a ficar acessível aos usuários vinculados."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void toggleActive()}
+              className={
+                row.ativa
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : ""
+              }
+            >
+              {row.ativa ? "Desativar" : "Reativar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
