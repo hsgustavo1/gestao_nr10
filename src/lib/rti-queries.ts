@@ -72,6 +72,23 @@ export function useUpsertRtiReport() {
   });
 }
 
+export function useEntregarRtiReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId, orgId }: { reportId: string; orgId: string }) => {
+      const { error } = await (supabase as any).rpc("fn_entregar_rti_report", {
+        _report_id: reportId,
+        _entregue_por_org: orgId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: rtiKeys.reports });
+      qc.invalidateQueries({ queryKey: ["rti_ncs"] });
+    },
+  });
+}
+
 export function useDeleteRtiReport() {
   const qc = useQueryClient();
   return useMutation({
@@ -137,6 +154,7 @@ export function useRtiNcs(reportId?: string) {
   return useQuery({
     queryKey: rtiKeys.ncs(reportId),
     enabled: !!reportId,
+    refetchOnMount: "always",
     queryFn: async () => {
       return fetchAllRows<RtiNc>((from, to) =>
         supabase
