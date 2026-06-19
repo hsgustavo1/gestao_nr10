@@ -35,3 +35,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tooling local de agentes / dev (não versionar — config/estado da máquina)
+.agent/
+.codex/
+ecosystem.config.cjs
+
+# graphify — artefatos e cache (mantém GRAPH_REPORT.md + dados do grafo)
+graphify-out/cache/
+graphify-out/.graphify_python
+graphify-out/cost.json
