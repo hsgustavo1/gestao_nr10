@@ -65,7 +65,7 @@ const PRINCIPAL_ORG_ID = "00000000-0000-0000-0000-000000000001";
 
 // Nível de cliente oferecido na criação por org. Grosso de propósito no MVP; o nível
 // "operador restrito" (edita operação, mas prioridades/NCs travadas) está no ROADMAP.
-type ClientOrgRole = Extract<OrgRole, "admin" | "viewer">;
+type ClientOrgRole = Extract<OrgRole, "owner" | "admin" | "viewer">;
 
 type Profile = { id: string; email: string | null; display_name: string | null };
 type Row = Profile & { roles: AppRole[]; org_role: OrgRole | null };
@@ -594,7 +594,8 @@ function InviteUserDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Administrador da empresa</SelectItem>
+                  <SelectItem value="owner">Admin geral (acesso total)</SelectItem>
+                  <SelectItem value="admin">Admin padrão (gestão de rotina)</SelectItem>
                   <SelectItem value="viewer">Visualização (somente leitura)</SelectItem>
                 </SelectContent>
               </Select>
@@ -634,6 +635,7 @@ function EditUserDialog({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [orgRole, setOrgRole] = useState<ClientOrgRole>("viewer");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -641,6 +643,10 @@ function EditUserDialog({
       setName(row.display_name ?? "");
       setEmail(row.email ?? "");
       setPassword("");
+      // Níveis legados (member/owner) caem em "viewer" no seletor; salvar normaliza.
+      setOrgRole(
+        row.org_role === "owner" ? "owner" : row.org_role === "admin" ? "admin" : "viewer",
+      );
     }
   }, [row]);
 
@@ -657,7 +663,7 @@ function EditUserDialog({
         display_name: name,
         email: email || undefined,
         password: password || undefined,
-        ...(isPrincipal ? {} : { org_id: orgId }),
+        ...(isPrincipal ? {} : { org_id: orgId, org_role: orgRole }),
       },
     });
     setLoading(false);
@@ -709,6 +715,24 @@ function EditUserDialog({
               placeholder="Mínimo 8 caracteres"
             />
           </div>
+          {!isPrincipal && (
+            <div className="space-y-1.5">
+              <Label>Nível de acesso</Label>
+              <Select value={orgRole} onValueChange={(v) => setOrgRole(v as ClientOrgRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="owner">Admin geral (acesso total)</SelectItem>
+                  <SelectItem value="admin">Admin padrão (gestão de rotina)</SelectItem>
+                  <SelectItem value="viewer">Visualização (somente leitura)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                Visualização só consulta; Administrador altera o plano de ação e dados da empresa.
+              </p>
+            </div>
+          )}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancelar
