@@ -43,6 +43,7 @@ import { Route as CampoModosRouteImport } from './routes/campo.modos'
 import { Route as CadeadosCodigoRouteImport } from './routes/cadeados.$codigo'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminCargaRouteImport } from './routes/admin.carga'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 import { Route as RtiNcNcIdRouteImport } from './routes/rti.nc.$ncId'
@@ -224,6 +225,11 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/admin/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminEmpresasRoute = AdminEmpresasRouteImport.update({
+  id: '/admin/empresas',
+  path: '/admin/empresas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCargaRoute = AdminCargaRouteImport.update({
   id: '/admin/carga',
   path: '/admin/carga',
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/violacoes': typeof ViolacoesRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/carga': typeof AdminCargaRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByTo {
   '/violacoes': typeof ViolacoesRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/carga': typeof AdminCargaRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
@@ -364,6 +372,7 @@ export interface FileRoutesById {
   '/violacoes': typeof ViolacoesRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/carga': typeof AdminCargaRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
@@ -410,6 +419,7 @@ export interface FileRouteTypes {
     | '/violacoes'
     | '/admin/auditoria'
     | '/admin/carga'
+    | '/admin/empresas'
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/violacoes'
     | '/admin/auditoria'
     | '/admin/carga'
+    | '/admin/empresas'
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
@@ -498,6 +509,7 @@ export interface FileRouteTypes {
     | '/violacoes'
     | '/admin/auditoria'
     | '/admin/carga'
+    | '/admin/empresas'
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
@@ -543,6 +555,7 @@ export interface RootRouteChildren {
   ViolacoesRoute: typeof ViolacoesRoute
   AdminAuditoriaRoute: typeof AdminAuditoriaRoute
   AdminCargaRoute: typeof AdminCargaRoute
+  AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   CadeadosCodigoRoute: typeof CadeadosCodigoRoute
@@ -820,6 +833,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/empresas': {
+      id: '/admin/empresas'
+      path: '/admin/empresas'
+      fullPath: '/admin/empresas'
+      preLoaderRoute: typeof AdminEmpresasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/carga': {
       id: '/admin/carga'
       path: '/admin/carga'
@@ -887,6 +907,7 @@ const rootRouteChildren: RootRouteChildren = {
   ViolacoesRoute: ViolacoesRoute,
   AdminAuditoriaRoute: AdminAuditoriaRoute,
   AdminCargaRoute: AdminCargaRoute,
+  AdminEmpresasRoute: AdminEmpresasRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   CadeadosCodigoRoute: CadeadosCodigoRoute,
