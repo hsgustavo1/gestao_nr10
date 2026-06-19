@@ -39,6 +39,7 @@ dist-ssr
 # Tooling local de agentes / dev (não versionar — config/estado da máquina)
 .agent/
 .codex/
+.claude/
 ecosystem.config.cjs
 
 # graphify — artefatos e cache (mantém GRAPH_REPORT.md + dados do grafo)
