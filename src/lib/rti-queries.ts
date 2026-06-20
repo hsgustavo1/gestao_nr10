@@ -111,8 +111,13 @@ export function useDeleteRtiReport() {
           await supabase.storage.from("rti-evidencias").remove(paths.slice(i, i + 100));
         }
       }
-      const { error } = await supabase.from("rti_reports").delete().eq("id", reportId);
+      const { count, error } = await supabase
+        .from("rti_reports")
+        .delete({ count: "exact" })
+        .eq("id", reportId);
       if (error) throw error;
+      if ((count ?? 0) === 0)
+        throw new Error("Sem permissão para excluir este relatório. Relatórios entregues por consultor externo só podem ser removidos pelo próprio consultor.");
     },
     onSuccess: () => qc.invalidateQueries(),
   });
