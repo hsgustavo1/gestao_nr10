@@ -1,7 +1,7 @@
 # ROADMAP — gestão_nr10 (handoff entre sessões)
 
 > Documento de continuidade. Permite retomar o trabalho numa nova sessão de IA
-> sem o contexto desta. Última atualização: 2026-06-18.
+> sem o contexto desta. Última atualização: 2026-06-20.
 
 ## ⏱️ O QUE FALTA FAZER AGORA (checklist ordenado)
 
@@ -302,13 +302,24 @@ plano: [`2026-06-19-ui-gestao-empresas.md`](2026-06-19-ui-gestao-empresas.md).
     `tipo !== "unidade"`.
 
 ### Fases posteriores (registrar, não construir ainda)
-- **Propagação de modos de falha por org (campo/modos):** hoje a base de modos de
-  falha é **global** (sem `org_id`). A decisão foi arquitetar por-org no futuro.
-  Quando isso chegar, adicionar coluna `org_id` à `rti_modos_falha` (nullable =
-  global, preenchido = pertence a org específica). UI precisaria de popup no formulário
-  de modo perguntando: "Propagar para clientes vinculados?" — executado via
-  `fn_propagate_modo_falha` (inserir cópia nas orgs filhas com `org_id` correto).
-  Consultor gerencia o catálogo; cliente vê os próprios + os globais.
+- ✅ **Propagação de modos de falha por org (campo/modos) — ENTREGUE (2026-06-20,
+  migration [`20260620070000_modos_falha_escopo_publico.sql`](../../../supabase/migrations/20260620070000_modos_falha_escopo_publico.sql)).**
+  Modelo por **visibilidade** (RLS), **não por cópia** — superou o plano antigo de
+  `fn_propagate_modo_falha`. Colunas: `organizations.is_root` (Empresa Principal =
+  dona do app, única, índice único parcial) e `rti_modos_falha.publico`; `org_id`
+  virou **NOT NULL** (procedência — todo modo tem dono; os 30 globais legados
+  `org_id IS NULL` viraram `publico=true` da raiz). Regras: **(A)** modo da raiz com
+  `publico=true` → todas as empresas; **(B)** modo de consultoria → ela + clientes
+  que gere (`managed_by`); **(C)** modo de filha → só ela; **(D)** nível acima
+  edita/exclui o de baixo; **(E)** platform admin vê/edita/exclui tudo. Autz em 2
+  funções `SECURITY DEFINER` (`can_write_modo_falha(org_id)` /
+  `can_publish_modo_falha()`); 4 policies recriadas. UI
+  ([`campo.modos.tsx`](../../../src/routes/campo.modos.tsx)): toggle **"Publicar para
+  todas as empresas / Manter interno"** só no contexto da raiz; PA exclui qualquer
+  modo (corrige o bug "criei na Principal e não conseguia excluir"). **Decisão:**
+  Opção A (camadas fixas dona/consultoria/cliente) em vez de árvore recursiva —
+  clientes/consultores nunca enxergam a hierarquia. Validado por simulação RLS dos
+  4 papéis (consultor vê os modos do cliente que gere; cliente B isolado; PA tudo).
 - **Dois níveis de cliente do consultor** (levantado 2026-06-15): hoje o painel oferece
   só níveis grossos (`admin` = controla tudo / `viewer` = só lê). Falta o nível
   **"cliente operador restrito":** edita a operação mas **prioridades/NCs definidas

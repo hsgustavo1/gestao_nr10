@@ -53,33 +53,42 @@ function slugify(s: string): string {
 
 function CampoModosPage() {
   const auth = useAuth();
-  const { isPlatformAdmin, currentOrg } = auth;
+  const { isPlatformAdmin, currentOrg, orgs } = auth;
   const { canEdit, canAdmin } = getRtiCampoAccess(auth);
 
-  // Quem pode criar um novo modo (e para qual org_id)?
-  //   platform admin  → global (org_id = null)
-  //   membro de consultoria → org da consultoria
-  //   admin de cliente/unidade → própria org
+  // Org "dona do app" (raiz). Modos criados nela podem ser publicados p/ todas.
+  const rootOrg = orgs.find((o) => o.is_root) ?? null;
+  const inRootContext = !!currentOrg?.is_root;
+
+  // Quem pode criar um novo modo (e em qual org_id)?
+  //   platform admin           → na org ativa (default: a raiz)
+  //   membro de consultoria     → org da consultoria
+  //   admin de cliente/unidade  → própria org
   const canCreateModo =
     isPlatformAdmin ||
     (canEdit && currentOrg?.tipo === "consultoria") ||
     (canAdmin && !!currentOrg);
-  // org ativa no switcher determina o escopo do modo.
-  // Platform admin sem org selecionada → global (null).
-  // Platform admin com org consultoria selecionada → escopo da consultoria.
-  const newModeOrgId: string | null = currentOrg?.id ?? null;
+  // A org ativa no switcher determina o escopo do modo; PA sem org cai na raiz.
+  const newModeOrgId: string | null = currentOrg?.id ?? rootOrg?.id ?? null;
 
-  // Pode editar UM modo específico?
-  const canModifyModo = (m: RtiModoFalha) =>
-    (isPlatformAdmin && m.org_id === null) ||
-    (m.org_id !== null &&
-      m.org_id === currentOrg?.id &&
-      (currentOrg.tipo === "consultoria" ? canEdit : canAdmin));
+  // Pode publicar (disponibilizar o modo para todas as empresas)?
+  // Só a partir da org raiz (dona do app).
+  const canPublish = isPlatformAdmin || (inRootContext && canAdmin);
 
-  // Pode arquivar/excluir UM modo específico?
-  const canAdminModo = (m: RtiModoFalha) =>
-    (isPlatformAdmin && m.org_id === null) ||
-    (m.org_id !== null && m.org_id === currentOrg?.id && canAdmin);
+  // Pode editar UM modo? (espelha can_write_modo_falha no banco)
+  //   dona do app → qualquer modo; senão, membro da org do modo com papel certo.
+  const canModifyModo = (m: RtiModoFalha) => {
+    if (isPlatformAdmin) return true;
+    if (m.org_id !== currentOrg?.id) return false;
+    return currentOrg?.tipo === "consultoria" ? canEdit : canAdmin;
+  };
+
+  // Pode arquivar/excluir UM modo?
+  const canAdminModo = (m: RtiModoFalha) => {
+    if (isPlatformAdmin) return true;
+    if (m.org_id !== currentOrg?.id) return false;
+    return canAdmin;
+  };
   const { data: modos = [], isLoading } = useModosFalha();
   const [busca, setBusca] = useState("");
   const [mostrarInativos, setMostrarInativos] = useState(false);
@@ -88,11 +97,11 @@ function CampoModosPage() {
 
   // Filtra pelo contexto da org ativa no switcher:
   //   PA sem org → vê tudo (administração global)
-  //   qualquer org ativa → global + modos da própria org + modos herdados da consultoria gestora
+  //   org ativa → públicos + modos da própria org + herdados da consultoria gestora
   const modosFiltrados = useMemo(() => {
     if (isPlatformAdmin && !currentOrg) return modos;
     return modos.filter((m) => {
-      if (m.org_id === null) return true;
+      if (m.publico) return true;
       if (m.org_id === currentOrg?.id) return true;
       if (currentOrg?.managed_by_org_id && m.org_id === currentOrg.managed_by_org_id) return true;
       return false;
@@ -224,7 +233,9 @@ function CampoModosPage() {
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          {canAdminModo(m) && <DeleteModoButton modo={m} />}
+                          {canAdminModo(m) && (
+                            <DeleteModoButton modo={m} canHardDelete={isPlatformAdmin} />
+                          )}
                         </div>
                       )}
                     </CardContent>
@@ -240,6 +251,10 @@ function CampoModosPage() {
         <ModoDialog
           existing={editing}
           orgId={editing ? editing.org_id : newModeOrgId}
+          canPublish={
+            canPublish &&
+            (editing ? editing.org_id === rootOrg?.id : newModeOrgId === rootOrg?.id)
+          }
           existingCodigos={new Set(modos.map((m) => m.codigo))}
           maxOrdem={modos.reduce((mx, m) => Math.max(mx, m.ordem), 0)}
           onOpenChange={(o) => {
@@ -253,14 +268,18 @@ function CampoModosPage() {
   );
 }
 
-function DeleteModoButton({ modo }: { modo: RtiModoFalha }) {
+function DeleteModoButton({
+  modo,
+  canHardDelete,
+}: {
+  modo: RtiModoFalha;
+  canHardDelete: boolean;
+}) {
   const del = useDeleteModoFalha();
   const archive = useArchiveModoFalha();
-  // Modos globais (org_id=null) só chegam aqui via platform admin → excluir.
-  // Modos de org → arquivar (mantém histórico).
-  const isGlobal = modo.org_id === null;
-
-  if (!isGlobal) {
+  // Dona do app (platform admin) → exclusão permanente de qualquer modo.
+  // Demais papéis → arquivar (oculta na coleta, mas preserva o histórico).
+  if (!canHardDelete) {
     async function handleArchive() {
       if (!window.confirm(`Arquivar "${modo.label}"? O modo ficará oculto na coleta em campo, mas pode ser reativado.`))
         return;
@@ -300,6 +319,7 @@ function DeleteModoButton({ modo }: { modo: RtiModoFalha }) {
 function ModoDialog({
   existing,
   orgId,
+  canPublish,
   existingCodigos,
   maxOrdem,
   onOpenChange,
@@ -307,6 +327,7 @@ function ModoDialog({
 }: {
   existing: RtiModoFalha | null;
   orgId: string | null;
+  canPublish: boolean;
   existingCodigos: Set<string>;
   maxOrdem: number;
   onOpenChange: (o: boolean) => void;
@@ -315,6 +336,9 @@ function ModoDialog({
   const isEdit = !!existing;
   const upsert = useUpsertModoFalha();
 
+  // Catálogo da raiz: publicar p/ todas as empresas vs manter interno.
+  // Novo modo na raiz nasce público (uso principal); demais contextos: false.
+  const [publico, setPublico] = useState(existing?.publico ?? true);
   const [label, setLabel] = useState(existing?.label ?? "");
   const [categoria, setCategoria] = useState(existing?.categoria ?? "");
   const [descricao, setDescricao] = useState(existing?.descricao_padrao ?? "");
@@ -370,6 +394,7 @@ function ModoDialog({
       await upsert.mutateAsync({
         ...(isEdit ? { id: existing!.id } : {}),
         org_id: orgId,
+        publico: canPublish ? publico : (existing?.publico ?? false),
         codigo,
         label: label.trim(),
         categoria: categoria.trim(),
@@ -403,6 +428,41 @@ function ModoDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
+          {canPublish && (
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <p className="text-xs font-semibold text-foreground">Disponibilidade</p>
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="publico"
+                  className="mt-0.5 h-4 w-4"
+                  checked={publico}
+                  onChange={() => setPublico(true)}
+                />
+                <span>
+                  <span className="font-medium">Publicar para todas as empresas</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    Disponível automaticamente em todo cliente e consultoria cadastrados.
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="publico"
+                  className="mt-0.5 h-4 w-4"
+                  checked={!publico}
+                  onChange={() => setPublico(false)}
+                />
+                <span>
+                  <span className="font-medium">Manter interno</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    Visível apenas para a Empresa Principal.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="md-label">Nome (label exibido na checklist)</Label>
             <Input

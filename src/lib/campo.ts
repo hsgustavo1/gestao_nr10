@@ -10,6 +10,8 @@ export type NormaRef = { norma: string; item: string };
 export type RtiModoFalha = {
   id: string;
   org_id: string | null;
+  /** Disponível para todas as empresas (catálogo da dona do app). */
+  publico: boolean;
   codigo: string;
   label: string;
   categoria: string;

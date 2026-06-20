@@ -14,6 +14,7 @@ export interface Org {
   tipo: OrgTipo;
   parent_org_id: string | null;
   managed_by_org_id: string | null;
+  is_root: boolean;
 }
 interface Membership {
   org_id: string;
@@ -99,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // RLS em organizations já retorna exatamente as orgs acessíveis
       // (membro direto + filhas via parent + clientes via managed_by).
       const [orgRes, memRes, paRes] = await Promise.all([
-        sb.from("organizations").select("id, nome, tipo, parent_org_id, managed_by_org_id"),
+        sb.from("organizations").select("id, nome, tipo, parent_org_id, managed_by_org_id, is_root"),
         sb.from("org_memberships").select("org_id, org_role").eq("user_id", userId),
         sb.from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle(),
       ]);

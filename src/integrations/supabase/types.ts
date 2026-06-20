@@ -1233,7 +1233,9 @@ export type Database = {
           label: string;
           normas: Json;
           ordem: number;
+          org_id: string | null;
           prioridade_sugerida: number;
+          publico: boolean;
           recomendacao_padrao: string | null;
           tipo_execucao_sugerido: string;
           updated_at: string;
@@ -1248,7 +1250,9 @@ export type Database = {
           label: string;
           normas?: Json;
           ordem?: number;
+          org_id?: string | null;
           prioridade_sugerida?: number;
+          publico?: boolean;
           recomendacao_padrao?: string | null;
           tipo_execucao_sugerido?: string;
           updated_at?: string;
@@ -1263,7 +1267,9 @@ export type Database = {
           label?: string;
           normas?: Json;
           ordem?: number;
+          org_id?: string | null;
           prioridade_sugerida?: number;
+          publico?: boolean;
           recomendacao_padrao?: string | null;
           tipo_execucao_sugerido?: string;
           updated_at?: string;
