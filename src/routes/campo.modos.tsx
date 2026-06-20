@@ -55,12 +55,28 @@ function CampoModosPage() {
   const auth = useAuth();
   const { isPlatformAdmin, currentOrg } = auth;
   const { canEdit, canAdmin } = getRtiCampoAccess(auth);
-  // Escrita no catálogo global de modos é exclusiva de consultoria + platform admin.
-  // Clientes só leem — do contrário poluiriam o catálogo de todos os níveis acima.
-  const canEditModos =
-    isPlatformAdmin || (canEdit && currentOrg?.tipo === "consultoria");
-  const canAdminModos =
-    isPlatformAdmin || (canAdmin && currentOrg?.tipo === "consultoria");
+
+  // Quem pode criar um novo modo (e para qual org_id)?
+  //   platform admin  → global (org_id = null)
+  //   membro de consultoria → org da consultoria
+  //   admin de cliente/unidade → própria org
+  const canCreateModo =
+    isPlatformAdmin ||
+    (canEdit && currentOrg?.tipo === "consultoria") ||
+    (canAdmin && !!currentOrg);
+  const newModeOrgId: string | null = isPlatformAdmin ? null : (currentOrg?.id ?? null);
+
+  // Pode editar UM modo específico?
+  const canModifyModo = (m: RtiModoFalha) =>
+    (isPlatformAdmin && m.org_id === null) ||
+    (m.org_id !== null &&
+      m.org_id === currentOrg?.id &&
+      (currentOrg.tipo === "consultoria" ? canEdit : canAdmin));
+
+  // Pode arquivar/excluir UM modo específico?
+  const canAdminModo = (m: RtiModoFalha) =>
+    (isPlatformAdmin && m.org_id === null) ||
+    (m.org_id !== null && m.org_id === currentOrg?.id && canAdmin);
   const { data: modos = [], isLoading } = useModosFalha();
   const [busca, setBusca] = useState("");
   const [mostrarInativos, setMostrarInativos] = useState(false);
@@ -104,7 +120,7 @@ function CampoModosPage() {
             Suporte do engenheiro em campo — textos-modelo de NC e recomendação por modo de falha.
           </p>
         </div>
-        {canEditModos && (
+        {canCreateModo && (
           <Button
             onClick={() => {
               setEditing(null);
@@ -127,7 +143,7 @@ function CampoModosPage() {
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
-        {canAdminModos && (
+        {(isPlatformAdmin || canAdmin) && (
           <label className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none">
             <input
               type="checkbox"
@@ -178,7 +194,7 @@ function CampoModosPage() {
                           </p>
                         )}
                       </div>
-                      {canEditModos && (
+                      {canModifyModo(m) && (
                         <div className="flex shrink-0 gap-1">
                           <Button
                             size="sm"
@@ -192,7 +208,7 @@ function CampoModosPage() {
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          {canAdminModos && <DeleteModoButton modo={m} isPlatformAdmin={isPlatformAdmin} />}
+                          {canAdminModo(m) && <DeleteModoButton modo={m} />}
                         </div>
                       )}
                     </CardContent>
@@ -204,9 +220,10 @@ function CampoModosPage() {
         )}
       </div>
 
-      {canEditModos && dialogOpen && (
+      {dialogOpen && (
         <ModoDialog
           existing={editing}
+          orgId={editing ? editing.org_id : newModeOrgId}
           existingCodigos={new Set(modos.map((m) => m.codigo))}
           maxOrdem={modos.reduce((mx, m) => Math.max(mx, m.ordem), 0)}
           onOpenChange={(o) => {
@@ -220,11 +237,14 @@ function CampoModosPage() {
   );
 }
 
-function DeleteModoButton({ modo, isPlatformAdmin }: { modo: RtiModoFalha; isPlatformAdmin: boolean }) {
+function DeleteModoButton({ modo }: { modo: RtiModoFalha }) {
   const del = useDeleteModoFalha();
   const archive = useArchiveModoFalha();
+  // Modos globais (org_id=null) só chegam aqui via platform admin → excluir.
+  // Modos de org → arquivar (mantém histórico).
+  const isGlobal = modo.org_id === null;
 
-  if (!isPlatformAdmin) {
+  if (!isGlobal) {
     async function handleArchive() {
       if (!window.confirm(`Arquivar "${modo.label}"? O modo ficará oculto na coleta em campo, mas pode ser reativado.`))
         return;
@@ -236,13 +256,8 @@ function DeleteModoButton({ modo, isPlatformAdmin }: { modo: RtiModoFalha; isPla
       }
     }
     return (
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-7 w-7 p-0 text-muted-foreground"
-        onClick={handleArchive}
-        title="Arquivar"
-      >
+      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground"
+        onClick={handleArchive} title="Arquivar">
         <Archive className="h-3.5 w-3.5" />
       </Button>
     );
@@ -259,13 +274,8 @@ function DeleteModoButton({ modo, isPlatformAdmin }: { modo: RtiModoFalha; isPla
     }
   }
   return (
-    <Button
-      size="sm"
-      variant="ghost"
-      className="h-7 w-7 p-0 text-destructive"
-      onClick={handleDelete}
-      title="Excluir permanentemente"
-    >
+    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"
+      onClick={handleDelete} title="Excluir permanentemente">
       <Trash2 className="h-3.5 w-3.5" />
     </Button>
   );
@@ -273,12 +283,14 @@ function DeleteModoButton({ modo, isPlatformAdmin }: { modo: RtiModoFalha; isPla
 
 function ModoDialog({
   existing,
+  orgId,
   existingCodigos,
   maxOrdem,
   onOpenChange,
   slugify,
 }: {
   existing: RtiModoFalha | null;
+  orgId: string | null;
   existingCodigos: Set<string>;
   maxOrdem: number;
   onOpenChange: (o: boolean) => void;
@@ -341,6 +353,7 @@ function ModoDialog({
     try {
       await upsert.mutateAsync({
         ...(isEdit ? { id: existing!.id } : {}),
+        org_id: orgId,
         codigo,
         label: label.trim(),
         categoria: categoria.trim(),

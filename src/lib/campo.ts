@@ -9,6 +9,7 @@ export type NormaRef = { norma: string; item: string };
 
 export type RtiModoFalha = {
   id: string;
+  org_id: string | null;
   codigo: string;
   label: string;
   categoria: string;
