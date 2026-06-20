@@ -64,7 +64,10 @@ function CampoModosPage() {
     isPlatformAdmin ||
     (canEdit && currentOrg?.tipo === "consultoria") ||
     (canAdmin && !!currentOrg);
-  const newModeOrgId: string | null = isPlatformAdmin ? null : (currentOrg?.id ?? null);
+  // org ativa no switcher determina o escopo do modo.
+  // Platform admin sem org selecionada → global (null).
+  // Platform admin com org consultoria selecionada → escopo da consultoria.
+  const newModeOrgId: string | null = currentOrg?.id ?? null;
 
   // Pode editar UM modo específico?
   const canModifyModo = (m: RtiModoFalha) =>
