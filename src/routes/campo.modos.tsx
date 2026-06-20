@@ -86,9 +86,22 @@ function CampoModosPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<RtiModoFalha | null>(null);
 
+  // Filtra pelo contexto da org ativa no switcher:
+  //   PA sem org → vê tudo (administração global)
+  //   qualquer org ativa → global + modos da própria org + modos herdados da consultoria gestora
+  const modosFiltrados = useMemo(() => {
+    if (isPlatformAdmin && !currentOrg) return modos;
+    return modos.filter((m) => {
+      if (m.org_id === null) return true;
+      if (m.org_id === currentOrg?.id) return true;
+      if (currentOrg?.managed_by_org_id && m.org_id === currentOrg.managed_by_org_id) return true;
+      return false;
+    });
+  }, [modos, isPlatformAdmin, currentOrg]);
+
   const porCategoria = useMemo(() => {
     const t = busca.trim().toLowerCase();
-    const list = modos.filter(
+    const list = modosFiltrados.filter(
       (m) =>
         (mostrarInativos || m.ativo) &&
         (!t ||
