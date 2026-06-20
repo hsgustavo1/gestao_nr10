@@ -116,7 +116,7 @@ function CampoModosPage() {
       else map.set(m.categoria, [m]);
     }
     return map;
-  }, [modos, busca, mostrarInativos]);
+  }, [modosFiltrados, busca, mostrarInativos]);
 
   return (
     <PageShell>

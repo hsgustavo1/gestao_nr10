@@ -52,9 +52,23 @@ export function useUpsertModoFalha() {
     mutationFn: async (
       payload: Omit<RtiModoFalha, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      // Usa INSERT para novos modos e UPDATE para edição — evita o path
+      // ON CONFLICT DO UPDATE que exige checar políticas de INSERT E UPDATE
+      // simultaneamente, o que bloqueava o PA em certos contextos.
+      if (!payload.id) {
+        const { data, error } = await supabase
+          .from("rti_modos_falha")
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        return data as unknown as RtiModoFalha;
+      }
+      const { id, ...rest } = payload;
       const { data, error } = await supabase
         .from("rti_modos_falha")
-        .upsert(payload, { onConflict: "id" })
+        .update(rest)
+        .eq("id", id)
         .select()
         .single();
       if (error) throw error;
