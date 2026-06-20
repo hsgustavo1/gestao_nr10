@@ -571,6 +571,7 @@ function EditarEmpresaPanel({
   onOpenChange: (o: boolean) => void;
   onSaved: () => void;
 }) {
+  const { currentOrg, hasOrgRole } = useAuth();
   const [nome, setNome] = useState("");
   const [managedBy, setManagedBy] = useState<string>("");
   const [parent, setParent] = useState<string>("");
@@ -589,6 +590,14 @@ function EditarEmpresaPanel({
   }, [row]);
 
   if (!row) return null;
+
+  // Consultor admin pode ativar/desativar empresas que ele gere.
+  // Platform admin já vem com access.canDeactivate=true.
+  const canDeactivateThis =
+    access.canDeactivate ||
+    (hasOrgRole("admin") &&
+      currentOrg?.tipo === "consultoria" &&
+      row.managed_by_org_id === currentOrg?.id);
 
   const consultorias = empresas.filter(
     (e) => e.tipo === "consultoria" && e.id !== row.id && e.ativa,
@@ -735,7 +744,7 @@ function EditarEmpresaPanel({
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            {access.canDeactivate && (
+            {canDeactivateThis && (
               <Button
                 type="button"
                 variant="outline"
