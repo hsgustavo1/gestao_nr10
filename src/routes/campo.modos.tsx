@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, ListChecks, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Archive, ArrowLeft, EyeOff, ListChecks, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,7 +34,7 @@ import {
   type RtiTipoExecucao,
 } from "@/lib/rti";
 import { formatNormas, modosPorCategoria, type NormaRef, type RtiModoFalha } from "@/lib/campo";
-import { useDeleteModoFalha, useModosFalha, useUpsertModoFalha } from "@/lib/campo-queries";
+import { useArchiveModoFalha, useDeleteModoFalha, useModosFalha, useUpsertModoFalha } from "@/lib/campo-queries";
 
 export const Route = createFileRoute("/campo/modos")({
   component: CampoModosPage,
@@ -53,23 +53,24 @@ function slugify(s: string): string {
 
 function CampoModosPage() {
   const auth = useAuth();
+  const { isPlatformAdmin } = auth;
   const { canEdit, canAdmin } = getRtiCampoAccess(auth);
   const { data: modos = [], isLoading } = useModosFalha();
   const [busca, setBusca] = useState("");
+  const [mostrarInativos, setMostrarInativos] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<RtiModoFalha | null>(null);
 
   const porCategoria = useMemo(() => {
     const t = busca.trim().toLowerCase();
-    const list = t
-      ? modos.filter(
-          (m) =>
-            m.label.toLowerCase().includes(t) ||
-            m.categoria.toLowerCase().includes(t) ||
-            m.descricao_padrao.toLowerCase().includes(t),
-        )
-      : modos;
-    // mostra inclusive inativos nesta tela de gestão
+    const list = modos.filter(
+      (m) =>
+        (mostrarInativos || m.ativo) &&
+        (!t ||
+          m.label.toLowerCase().includes(t) ||
+          m.categoria.toLowerCase().includes(t) ||
+          m.descricao_padrao.toLowerCase().includes(t)),
+    );
     const map = new Map<string, RtiModoFalha[]>();
     for (const m of [...list].sort((a, b) => a.ordem - b.ordem || a.label.localeCompare(b.label))) {
       const arr = map.get(m.categoria);
@@ -77,7 +78,7 @@ function CampoModosPage() {
       else map.set(m.categoria, [m]);
     }
     return map;
-  }, [modos, busca]);
+  }, [modos, busca, mostrarInativos]);
 
   return (
     <PageShell>
@@ -110,14 +111,27 @@ function CampoModosPage() {
         )}
       </div>
 
-      <div className="mt-4 relative max-w-md">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        <Input
-          placeholder="Buscar modo de falha..."
-          className="pl-8"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
+      <div className="mt-4 flex items-center gap-3 flex-wrap">
+        <div className="relative max-w-md flex-1 min-w-[200px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Buscar modo de falha..."
+            className="pl-8"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </div>
+        {canAdmin && (
+          <label className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={mostrarInativos}
+              onChange={(e) => setMostrarInativos(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <EyeOff className="h-3.5 w-3.5" /> Mostrar arquivados
+          </label>
+        )}
       </div>
 
       <div className="mt-4 space-y-5">
@@ -172,7 +186,7 @@ function CampoModosPage() {
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          {canAdmin && <DeleteModoButton modo={m} />}
+                          {canAdmin && <DeleteModoButton modo={m} isPlatformAdmin={isPlatformAdmin} />}
                         </div>
                       )}
                     </CardContent>
@@ -200,10 +214,36 @@ function CampoModosPage() {
   );
 }
 
-function DeleteModoButton({ modo }: { modo: RtiModoFalha }) {
+function DeleteModoButton({ modo, isPlatformAdmin }: { modo: RtiModoFalha; isPlatformAdmin: boolean }) {
   const del = useDeleteModoFalha();
-  async function handle() {
-    if (!window.confirm(`Excluir o modo "${modo.label}"? Achados já registrados não são afetados.`))
+  const archive = useArchiveModoFalha();
+
+  if (!isPlatformAdmin) {
+    async function handleArchive() {
+      if (!window.confirm(`Arquivar "${modo.label}"? O modo ficará oculto na coleta em campo, mas pode ser reativado.`))
+        return;
+      try {
+        await archive.mutateAsync(modo.id);
+        toast.success("Modo arquivado com sucesso.");
+      } catch (e) {
+        toast.error("Falha ao arquivar: " + (e as Error).message);
+      }
+    }
+    return (
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-7 w-7 p-0 text-muted-foreground"
+        onClick={handleArchive}
+        title="Arquivar"
+      >
+        <Archive className="h-3.5 w-3.5" />
+      </Button>
+    );
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(`Excluir permanentemente "${modo.label}"? Esta ação não pode ser desfeita.`))
       return;
     try {
       await del.mutateAsync(modo.id);
@@ -217,8 +257,8 @@ function DeleteModoButton({ modo }: { modo: RtiModoFalha }) {
       size="sm"
       variant="ghost"
       className="h-7 w-7 p-0 text-destructive"
-      onClick={handle}
-      title="Excluir"
+      onClick={handleDelete}
+      title="Excluir permanentemente"
     >
       <Trash2 className="h-3.5 w-3.5" />
     </Button>

@@ -65,10 +65,23 @@ const PRINCIPAL_ORG_ID = "00000000-0000-0000-0000-000000000001";
 
 // Nível de cliente oferecido na criação por org. Grosso de propósito no MVP; o nível
 // "operador restrito" (edita operação, mas prioridades/NCs travadas) está no ROADMAP.
-type ClientOrgRole = Extract<OrgRole, "owner" | "admin" | "viewer">;
+// "owner" (admin geral) foi removido da UI — apenas platform admin pode defini-lo.
+type ClientOrgRole = Extract<OrgRole, "admin" | "viewer">;
 
 type Profile = { id: string; email: string | null; display_name: string | null };
 type Row = Profile & { roles: AppRole[]; org_role: OrgRole | null };
+
+function apiErrorMsg(raw: string): string {
+  if (/owner/i.test(raw))
+    return "Apenas o consultor responsável pode definir esse nível de acesso. Solicite a ele.";
+  if (/Email.*already/i.test(raw) || /já.*cadastrado/i.test(raw))
+    return "Este e-mail já está cadastrado no sistema.";
+  if (/pelo menos 8|at least 8/i.test(raw)) return "A senha deve ter pelo menos 8 caracteres.";
+  if (/email.*obrigat|email.*required/i.test(raw)) return "Informe o e-mail do usuário.";
+  if (/Forbidden/i.test(raw))
+    return "Você não tem permissão para realizar esta ação nesta empresa.";
+  return raw;
+}
 
 function orgRoleLabel(r: OrgRole | null): string {
   switch (r) {
@@ -507,9 +520,9 @@ function InviteUserDialog({
     const { data, error } = await supabase.functions.invoke("admin-users", { body });
     setLoading(false);
     if (error || (data && (data as { error?: string }).error)) {
-      const msg =
+      const raw =
         (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao cadastrar";
-      return toast.error(msg);
+      return toast.error(apiErrorMsg(raw));
     }
     const levelLabel = isPrincipal
       ? role === "admin"
@@ -594,8 +607,7 @@ function InviteUserDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="owner">Admin geral (acesso total)</SelectItem>
-                  <SelectItem value="admin">Admin padrão (gestão de rotina)</SelectItem>
+                  <SelectItem value="admin">Administrador (gestão de rotina)</SelectItem>
                   <SelectItem value="viewer">Visualização (somente leitura)</SelectItem>
                 </SelectContent>
               </Select>
@@ -644,9 +656,8 @@ function EditUserDialog({
       setEmail(row.email ?? "");
       setPassword("");
       // Níveis legados (member/owner) caem em "viewer" no seletor; salvar normaliza.
-      setOrgRole(
-        row.org_role === "owner" ? "owner" : row.org_role === "admin" ? "admin" : "viewer",
-      );
+      // owner não é mais oferecido na UI; existentes são tratados como admin.
+      setOrgRole(row.org_role === "admin" ? "admin" : "viewer");
     }
   }, [row]);
 
@@ -668,10 +679,10 @@ function EditUserDialog({
     });
     setLoading(false);
     if (error || (data && (data as { error?: string }).error)) {
-      const msg = (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao salvar";
-      return toast.error(msg);
+      const raw = (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao salvar";
+      return toast.error(apiErrorMsg(raw));
     }
-    toast.success("Usuário atualizado");
+    toast.success("Usuário atualizado com sucesso.");
     onSaved();
   }
 
@@ -723,8 +734,7 @@ function EditUserDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="owner">Admin geral (acesso total)</SelectItem>
-                  <SelectItem value="admin">Admin padrão (gestão de rotina)</SelectItem>
+                  <SelectItem value="admin">Administrador (gestão de rotina)</SelectItem>
                   <SelectItem value="viewer">Visualização (somente leitura)</SelectItem>
                 </SelectContent>
               </Select>

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -54,6 +55,7 @@ import {
 import {
   logBulkHistorico,
   rtiFileUrl,
+  rtiKeys,
   uploadRtiFile,
   useAddRtiEvidencia,
   useAddRtiHistorico,
@@ -303,6 +305,7 @@ function GestaoCard({
   canEditTecnico: boolean;
   actorName: string | null;
 }) {
+  const qc = useQueryClient();
   const updateNc = useUpdateRtiNc();
 
   const hoje = () => new Date().toISOString().slice(0, 10);
@@ -413,7 +416,7 @@ function GestaoCard({
         );
       }
       if ((situacao.trim() || null) !== nc.situacao_atual)
-        mudancas.push("situação atual atualizada");
+        mudancas.push(`situação atual → ${situacao.trim() || "—"}`);
 
       if (mudancas.length === 0) {
         toast.info("Nenhuma alteração para salvar.");
@@ -422,6 +425,7 @@ function GestaoCard({
 
       await updateNc.mutateAsync(patch);
       await logBulkHistorico([nc.id], mudancas.join("; "), actorName);
+      await qc.invalidateQueries({ queryKey: rtiKeys.historico(nc.id) });
       toast.success("NC atualizada.");
     } catch (err) {
       toast.error("Falha ao salvar: " + (err as Error).message);
@@ -612,32 +616,44 @@ function GestaoCard({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="g-cp">Custo planejado (R$)</Label>
-              <Input
-                id="g-cp"
-                type="number"
-                min={0}
-                step="0.01"
-                value={custoPlanejado}
-                onChange={(e) => setCustoPlanejado(e.target.value)}
-                placeholder="Não informado"
-              />
+              <Label htmlFor="g-cp">Custo planejado</Label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none select-none">
+                  R$
+                </span>
+                <Input
+                  id="g-cp"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="pl-9"
+                  value={custoPlanejado}
+                  onChange={(e) => setCustoPlanejado(e.target.value)}
+                  placeholder="0,00"
+                />
+              </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Deixe vazio = não informado
                 <br />0 = sem custo p/ executar
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="g-cr">Custo realizado (R$)</Label>
-              <Input
-                id="g-cr"
-                type="number"
-                min={0}
-                step="0.01"
-                value={custoRealizado}
-                onChange={(e) => setCustoRealizado(e.target.value)}
-                placeholder="Não informado"
-              />
+              <Label htmlFor="g-cr">Custo realizado</Label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none select-none">
+                  R$
+                </span>
+                <Input
+                  id="g-cr"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="pl-9"
+                  value={custoRealizado}
+                  onChange={(e) => setCustoRealizado(e.target.value)}
+                  placeholder="0,00"
+                />
+              </div>
             </div>
           </div>
           <div className="space-y-1.5">

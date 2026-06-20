@@ -302,6 +302,13 @@ plano: [`2026-06-19-ui-gestao-empresas.md`](2026-06-19-ui-gestao-empresas.md).
     `tipo !== "unidade"`.
 
 ### Fases posteriores (registrar, não construir ainda)
+- **Propagação de modos de falha por org (campo/modos):** hoje a base de modos de
+  falha é **global** (sem `org_id`). A decisão foi arquitetar por-org no futuro.
+  Quando isso chegar, adicionar coluna `org_id` à `rti_modos_falha` (nullable =
+  global, preenchido = pertence a org específica). UI precisaria de popup no formulário
+  de modo perguntando: "Propagar para clientes vinculados?" — executado via
+  `fn_propagate_modo_falha` (inserir cópia nas orgs filhas com `org_id` correto).
+  Consultor gerencia o catálogo; cliente vê os próprios + os globais.
 - **Dois níveis de cliente do consultor** (levantado 2026-06-15): hoje o painel oferece
   só níveis grossos (`admin` = controla tudo / `viewer` = só lê). Falta o nível
   **"cliente operador restrito":** edita a operação mas **prioridades/NCs definidas

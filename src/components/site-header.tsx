@@ -40,9 +40,9 @@ export function SiteHeader() {
   // Quem gerencia acessos: admin global (legado) OU admin/owner na org ativa
   // (cobre o consultor que gerencia o cliente via managed_by).
   const canManageUsers = isAdmin || hasOrgRole("admin");
-  // Gestão de empresas: dono da plataforma ou consultor admin (carteira).
-  const { isPlatformAdmin } = auth;
-  const canManageEmpresas = isPlatformAdmin || hasOrgRole("admin");
+  // Gestão de empresas: dono da plataforma ou admin de org do tipo consultoria.
+  const { isPlatformAdmin, currentOrg } = auth;
+  const canManageEmpresas = isPlatformAdmin || (hasOrgRole("admin") && currentOrg?.tipo === "consultoria");
   const cargo = isAdmin ? "Dono de RAC (Admin)" : isStaff ? "Apoio" : "Consulta";
   const displayName =
     (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || "";
@@ -184,12 +184,16 @@ export function SiteHeader() {
                     <MobileNavLink to="/rti/custos" onNav={() => setMenuOpen(false)}>
                       Análise de Custos
                     </MobileNavLink>
-                    <MobileNavLink to="/campo" onNav={() => setMenuOpen(false)}>
-                      Coleta em Campo
-                    </MobileNavLink>
-                    <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>
-                      Modos de falha
-                    </MobileNavLink>
+                    {canEditRtiCampo && (
+                      <MobileNavLink to="/campo" onNav={() => setMenuOpen(false)}>
+                        Coleta em Campo
+                      </MobileNavLink>
+                    )}
+                    {canEditRtiCampo && (
+                      <MobileNavLink to="/campo/modos" onNav={() => setMenuOpen(false)}>
+                        Modos de falha
+                      </MobileNavLink>
+                    )}
                     {canEditRtiCampo && (
                       <MobileNavLink to="/rti/importar" onNav={() => setMenuOpen(false)}>
                         Importar planilha
@@ -625,19 +629,19 @@ function RTIDropdown() {
             Análise de Custos
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/campo" className="cursor-pointer">
-            Coleta em Campo
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/campo/modos" className="cursor-pointer">
-            Base de modos de falha
-          </Link>
-        </DropdownMenuItem>
         {canEdit && (
           <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/campo" className="cursor-pointer">
+                Coleta em Campo
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/campo/modos" className="cursor-pointer">
+                Base de modos de falha
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/rti/importar" className="cursor-pointer">

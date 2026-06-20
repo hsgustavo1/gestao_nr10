@@ -68,7 +68,25 @@ export function useDeleteModoFalha() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("rti_modos_falha").delete().eq("id", id);
+      const { count, error } = await supabase
+        .from("rti_modos_falha")
+        .delete({ count: "exact" })
+        .eq("id", id);
+      if (error) throw error;
+      if ((count ?? 0) === 0) throw new Error("Sem permissão para excluir este registro.");
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: campoKeys.modos }),
+  });
+}
+
+export function useArchiveModoFalha() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("rti_modos_falha")
+        .update({ ativo: false })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: campoKeys.modos }),
