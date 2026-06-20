@@ -53,8 +53,14 @@ function slugify(s: string): string {
 
 function CampoModosPage() {
   const auth = useAuth();
-  const { isPlatformAdmin } = auth;
+  const { isPlatformAdmin, currentOrg } = auth;
   const { canEdit, canAdmin } = getRtiCampoAccess(auth);
+  // Escrita no catálogo global de modos é exclusiva de consultoria + platform admin.
+  // Clientes só leem — do contrário poluiriam o catálogo de todos os níveis acima.
+  const canEditModos =
+    isPlatformAdmin || (canEdit && currentOrg?.tipo === "consultoria");
+  const canAdminModos =
+    isPlatformAdmin || (canAdmin && currentOrg?.tipo === "consultoria");
   const { data: modos = [], isLoading } = useModosFalha();
   const [busca, setBusca] = useState("");
   const [mostrarInativos, setMostrarInativos] = useState(false);
@@ -98,7 +104,7 @@ function CampoModosPage() {
             Suporte do engenheiro em campo — textos-modelo de NC e recomendação por modo de falha.
           </p>
         </div>
-        {canEdit && (
+        {canEditModos && (
           <Button
             onClick={() => {
               setEditing(null);
@@ -121,7 +127,7 @@ function CampoModosPage() {
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
-        {canAdmin && (
+        {canAdminModos && (
           <label className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none">
             <input
               type="checkbox"
@@ -172,7 +178,7 @@ function CampoModosPage() {
                           </p>
                         )}
                       </div>
-                      {canEdit && (
+                      {canEditModos && (
                         <div className="flex shrink-0 gap-1">
                           <Button
                             size="sm"
@@ -186,7 +192,7 @@ function CampoModosPage() {
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          {canAdmin && <DeleteModoButton modo={m} isPlatformAdmin={isPlatformAdmin} />}
+                          {canAdminModos && <DeleteModoButton modo={m} isPlatformAdmin={isPlatformAdmin} />}
                         </div>
                       )}
                     </CardContent>
@@ -198,7 +204,7 @@ function CampoModosPage() {
         )}
       </div>
 
-      {canEdit && dialogOpen && (
+      {canEditModos && dialogOpen && (
         <ModoDialog
           existing={editing}
           existingCodigos={new Set(modos.map((m) => m.codigo))}
