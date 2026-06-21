@@ -302,6 +302,23 @@ plano: [`2026-06-19-ui-gestao-empresas.md`](2026-06-19-ui-gestao-empresas.md).
     `tipo !== "unidade"`.
 
 ### Fases posteriores (registrar, não construir ainda)
+- 📐 **Visibilidade por entrega (inspeção/RTI só aparece ao cliente após entregue)
+  — DESIGN PRONTO (2026-06-20), implementação pendente.** Spec:
+  [`2026-06-20-visibilidade-por-entrega-design.md`](../specs/2026-06-20-visibilidade-por-entrega-design.md).
+  Regra: inspeção/RTI criado pela **própria org** do cliente → visível na hora;
+  criado pelo **consultor/dono** → invisível ao cliente até **entregar**; autores
+  veem rascunhos sempre. Reusa `entregue_em` do Selo (o RTI já tem; falta na
+  inspeção) + nova coluna **server-set `created_by_org_id`** (procedência
+  confiável, trigger anti-spoofing) + nova **policy de SELECT** nas raízes
+  (`fn_can_view_entregavel` distingue gestor de membro-cliente) com filhos
+  herdando por `EXISTS`. Sync do PWA: nada a mudar (RLS já filtra o download).
+- ✅ **Cache de org no PWA auto-sana (2026-06-20, commit `e8960bc`).** Atualização
+  do PWA não depende mais de o usuário limpar cache: `getActiveOrgId` valida contra
+  a lista de orgs operáveis (descarta valor stale, ex.: consultoria de versão antiga)
+  e `startConnectivityWatcher` refresca a org no kick inicial (o evento `online` nunca
+  dispara no celular). Relacionado ao fix do drill-down de cliente (commit `a5f60af`:
+  `org.ts` lia `org_memberships`→consultoria; passou a ler `organizations`→clientes
+  geridos; modal carimba `org_id` = cliente escolhido).
 - ✅ **Propagação de modos de falha por org (campo/modos) — ENTREGUE (2026-06-20,
   migration [`20260620070000_modos_falha_escopo_publico.sql`](../../../supabase/migrations/20260620070000_modos_falha_escopo_publico.sql)).**
   Modelo por **visibilidade** (RLS), **não por cópia** — superou o plano antigo de
