@@ -157,6 +157,22 @@ export function useUpsertFieldInspection() {
   });
 }
 
+/** Entrega a inspeção ao cliente (carimba entregue_em). Só gestor/dono entrega.
+ * Espelha useEntregarRtiReport; a visibilidade do cliente é gateada no banco. */
+export function useEntregarInspecao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ inspectionId, orgId }: { inspectionId: string; orgId: string }) => {
+      const { error } = await (supabase as any).rpc("fn_entregar_inspecao", {
+        _inspection_id: inspectionId,
+        _entregue_por_org: orgId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["field_inspections"] }),
+  });
+}
+
 export function useSetArquivadaCampo() {
   const qc = useQueryClient();
   return useMutation({

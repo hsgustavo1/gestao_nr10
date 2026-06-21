@@ -302,16 +302,26 @@ plano: [`2026-06-19-ui-gestao-empresas.md`](2026-06-19-ui-gestao-empresas.md).
     `tipo !== "unidade"`.
 
 ### Fases posteriores (registrar, não construir ainda)
-- 📐 **Visibilidade por entrega (inspeção/RTI só aparece ao cliente após entregue)
-  — DESIGN PRONTO (2026-06-20), implementação pendente.** Spec:
+- ✅ **Visibilidade por entrega (inspeção/RTI só aparece ao cliente após entregue)
+  — ENTREGUE (2026-06-20, migration
+  [`20260620100000_visibilidade_por_entrega.sql`](../../../supabase/migrations/20260620100000_visibilidade_por_entrega.sql),
+  aplicada via MCP).** Spec:
   [`2026-06-20-visibilidade-por-entrega-design.md`](../specs/2026-06-20-visibilidade-por-entrega-design.md).
   Regra: inspeção/RTI criado pela **própria org** do cliente → visível na hora;
-  criado pelo **consultor/dono** → invisível ao cliente até **entregar**; autores
-  veem rascunhos sempre. Reusa `entregue_em` do Selo (o RTI já tem; falta na
-  inspeção) + nova coluna **server-set `created_by_org_id`** (procedência
-  confiável, trigger anti-spoofing) + nova **policy de SELECT** nas raízes
-  (`fn_can_view_entregavel` distingue gestor de membro-cliente) com filhos
-  herdando por `EXISTS`. Sync do PWA: nada a mudar (RLS já filtra o download).
+  criado pelo **consultor/dono** → invisível ao cliente até **entregar**; gestor
+  (consultor/PA) vê rascunhos sempre. Reusa `entregue_em` do Selo + coluna
+  **server-set `created_by_org_id`** (procedência, trigger anti-spoof
+  `fn_set_created_by_org`) + overlay `fn_delivery_visible` ANDado nas policies de
+  SELECT das 10 tabelas campo/RTI (filhos resolvem a raiz via funções
+  `SECURITY DEFINER`, sem denormalizar colunas). RPC `fn_entregar_inspecao`
+  (espelha `fn_entregar_rti_report`); UI: botão "Entregar ao cliente" + badge em
+  [`campo.inspecao.$id.tsx`](../../../src/routes/campo.inspecao.$id.tsx) (gate
+  reusa `getRecordAccess`). Sync do PWA: nada mudou (RLS filtra o download).
+  Teste [`supabase/tests/visibilidade_entrega_test.sql`](../../../supabase/tests/visibilidade_entrega_test.sql)
+  = **6/6 verde** (matriz: consultor/PA veem rascunho; cliente vê próprio +
+  entregue, não o rascunho externo; cliente B isolado). ⏳ Follow-up: entrega da
+  inspeção hoje é só no app web; avaliar botão no PWA. Unidade/hierarquia profunda
+  fica como risco diferido (`fn_org_is_manager` cobre 1 nível).
 - ✅ **Cache de org no PWA auto-sana (2026-06-20, commit `e8960bc`).** Atualização
   do PWA não depende mais de o usuário limpar cache: `getActiveOrgId` valida contra
   a lista de orgs operáveis (descarta valor stale, ex.: consultoria de versão antiga)

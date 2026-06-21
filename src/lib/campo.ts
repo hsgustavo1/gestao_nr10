@@ -54,6 +54,11 @@ export type FieldInspection = {
   notes: string | null;
   created_by_name: string | null;
   arquivada_campo: boolean; // arquivada no campo (oculta da lista do PWA, sem apagar no servidor)
+  // Visibilidade por entrega (migração 20260620100000): procedência + estado de
+  // entrega. created_by_org_id é server-set; entregue_em libera a leitura ao cliente.
+  created_by_org_id?: string | null;
+  entregue_em?: string | null;
+  entregue_por_org?: string | null;
   created_at: string;
   updated_at: string;
 };

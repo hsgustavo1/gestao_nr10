@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Camera,
+  CheckCircle2,
   ChevronRight,
   FileCheck2,
   FolderTree,
@@ -15,6 +16,7 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Send,
   Sparkles,
   Trash2,
   Upload,
@@ -45,7 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
-import { getRtiCampoAccess } from "@/lib/tenancy-gates";
+import { getRtiCampoAccess, getRecordAccess, type SealActor } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
   RTI_PRIORIDADE_BADGE,
@@ -84,6 +86,7 @@ import {
   useFieldPoints,
   useInspectionFindings,
   useModosFalha,
+  useEntregarInspecao,
   useSetArquivadaCampo,
   useSetoresHistoricos,
   useUpsertFieldInspection,
@@ -114,8 +117,10 @@ function CampoInspecaoPage() {
   const [cargaOpen, setCargaOpen] = useState(false);
   const [comporOpen, setComporOpen] = useState(false);
   const [reopening, setReopening] = useState(false);
+  const [entregarOpen, setEntregarOpen] = useState(false);
 
   const upsertInspection = useUpsertFieldInspection();
+  const entregarInspecao = useEntregarInspecao();
 
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const path = useMemo(
@@ -196,6 +201,36 @@ function CampoInspecaoPage() {
   const jaImportada = inspection.status === "importada";
   const foiReaberta = !jaImportada && !!inspection.report_id;
 
+  // Visibilidade por entrega: gate de "Entregar ao cliente" reusa o do Selo RTI.
+  const sealActor: SealActor = {
+    isStaff: auth.isStaff,
+    isPlatformAdmin: auth.isPlatformAdmin,
+    hasEntitlement: auth.hasEntitlement,
+    directOrgRole: auth.orgRole,
+    managerOrgRole: auth.managerOrgRole,
+    roleInOrg: auth.roleInOrg,
+  };
+  const entregaAcc = getRecordAccess(sealActor, {
+    entregue_em: inspection.entregue_em ?? null,
+    entregue_por_org: inspection.entregue_por_org ?? null,
+  });
+
+  async function handleEntregar() {
+    if (!inspection) return;
+    const orgEntregadora = auth.currentOrg?.managed_by_org_id ?? auth.currentOrgId;
+    if (!orgEntregadora) {
+      toast.error("Org entregadora indefinida.");
+      return;
+    }
+    try {
+      await entregarInspecao.mutateAsync({ inspectionId: inspection.id, orgId: orgEntregadora });
+      toast.success("Inspeção entregue ao cliente.");
+      setEntregarOpen(false);
+    } catch (err) {
+      toast.error("Falha ao entregar: " + (err as Error).message);
+    }
+  }
+
   async function handleReopen() {
     if (!inspection || reopening) return;
     setReopening(true);
@@ -235,13 +270,31 @@ function CampoInspecaoPage() {
             <span className="font-semibold text-primary">
               {totalAchados} achado{totalAchados !== 1 ? "s" : ""}
             </span>
+            {entregaAcc.sealed && inspection.entregue_em && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                <CheckCircle2 className="h-3 w-3" /> Entregue em{" "}
+                {formatDatePtBR(inspection.entregue_em)}
+              </span>
+            )}
           </div>
         </div>
-        {canEdit && !jaImportada && totalAchados > 0 && (
-          <Button size="sm" variant="outline" onClick={() => setComporOpen(true)}>
-            <Sparkles className="h-4 w-4" /> {foiReaberta ? "Recompor RTI" : "Compor RTI"}
-          </Button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {entregaAcc.canEntregar && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+              onClick={() => setEntregarOpen(true)}
+            >
+              <Send className="h-4 w-4" /> Entregar ao cliente
+            </Button>
+          )}
+          {canEdit && !jaImportada && totalAchados > 0 && (
+            <Button size="sm" variant="outline" onClick={() => setComporOpen(true)}>
+              <Sparkles className="h-4 w-4" /> {foiReaberta ? "Recompor RTI" : "Compor RTI"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {jaImportada && inspection.report_id && (
@@ -486,6 +539,38 @@ function CampoInspecaoPage() {
           }}
         />
       )}
+
+      <Dialog open={entregarOpen} onOpenChange={(o) => !entregarInspecao.isPending && setEntregarOpen(o)}>
+        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 leading-tight">
+              <Send className="h-5 w-5 shrink-0 text-emerald-600" /> Entregar ao cliente
+            </DialogTitle>
+            <DialogDescription>
+              Após entregar, esta inspeção passa a ficar <strong>visível para o cliente</strong>. As
+              inspeções criadas pelo consultor ficam ocultas até a entrega.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEntregarOpen(false)}
+              disabled={entregarInspecao.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={handleEntregar}
+              disabled={entregarInspecao.isPending}
+            >
+              {entregarInspecao.isPending ? "Entregando..." : "Entregar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }

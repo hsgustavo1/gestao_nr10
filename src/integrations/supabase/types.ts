@@ -429,6 +429,9 @@ export type Database = {
           notes: string | null;
           report_id: string | null;
           arquivada_campo: boolean;
+          created_by_org_id: string | null;
+          entregue_em: string | null;
+          entregue_por_org: string | null;
           status: string;
           titulo: string;
           updated_at: string;
@@ -445,6 +448,9 @@ export type Database = {
           notes?: string | null;
           report_id?: string | null;
           arquivada_campo?: boolean;
+          created_by_org_id?: string | null;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           status?: string;
           titulo: string;
           updated_at?: string;
@@ -461,6 +467,9 @@ export type Database = {
           notes?: string | null;
           report_id?: string | null;
           arquivada_campo?: boolean;
+          created_by_org_id?: string | null;
+          entregue_em?: string | null;
+          entregue_por_org?: string | null;
           status?: string;
           titulo?: string;
           updated_at?: string;

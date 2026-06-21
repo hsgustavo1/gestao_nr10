@@ -1,7 +1,9 @@
 # Visibilidade por entrega — inspeções e RTI só aparecem ao cliente após entregues
 
 **Data:** 2026-06-20
-**Status:** Design — pronto para plano de implementação
+**Status:** ✅ Implementado (migration `20260620100000`, aplicada via MCP; teste
+6/6 verde). Decisão de implementação: filhos gateados por funções `SECURITY
+DEFINER` que resolvem a raiz (não denormalização de colunas) — superfície menor.
 **Escopo:** `field_inspections` e `rti_reports` (+ filhos). Mecanismo genérico,
 mesmo espírito do [Selo de Entrega](2026-06-19-selo-entrega-rti-design.md).
 
