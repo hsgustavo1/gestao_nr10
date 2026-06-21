@@ -69,9 +69,25 @@ export function getOperableOrgs(): OrgLite[] {
   }
 }
 
-/** org_id ativo (do cache). undefined se nunca sincronizou online neste aparelho. */
+/**
+ * org_id ativo, AUTO-SANADO contra a lista atual de orgs operáveis.
+ *
+ * O cache é estado descartável, nunca autoritativo: um valor que não está mais
+ * entre as orgs operáveis (ex.: a consultoria gravada por uma versão antiga do
+ * código) é silenciosamente descartado e corrigido para a 1ª operável. Assim
+ * uma atualização nunca depende de o usuário limpar o cache manualmente.
+ *
+ * Sem lista cacheada (nunca sincronizou online) devolve o valor cru — pode ser
+ * undefined, e aí a trigger fn_default_org_id resolve no servidor (single-org).
+ */
 export function getActiveOrgId(): string | undefined {
-  return localStorage.getItem(ACTIVE_KEY) ?? undefined;
+  const stored = localStorage.getItem(ACTIVE_KEY) ?? undefined;
+  const operable = getOperableOrgs();
+  if (operable.length === 0) return stored;
+  if (stored && operable.some((o) => o.id === stored)) return stored;
+  const fallback = operable[0]?.id;
+  if (fallback) localStorage.setItem(ACTIVE_KEY, fallback); // cura o cache
+  return fallback;
 }
 
 /** Limpa o cache de org (chamar no logout). */

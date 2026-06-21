@@ -334,7 +334,13 @@ export function startConnectivityWatcher(): () => void {
   const heartbeat = window.setInterval(uploadFlush, SYNC_HEARTBEAT_MS);
   // Kick inicial: no celular o app abre já online, então o evento 'online' nunca dispara.
   // Sem isto, dead-letters nunca seriam rearmados e o falso alarme persistiria.
-  if (navigator.onLine) flushWithDeadLetterRearm().catch(console.error);
+  // Refrescamos a org no boot (barato: 1 query) — independente do downloadAll pesado —
+  // para o cache de orgs já estar quente/correto quando o usuário criar uma inspeção,
+  // sem depender do evento 'online' nem de o usuário limpar o cache.
+  if (navigator.onLine) {
+    refreshOrgContext().catch(console.error);
+    flushWithDeadLetterRearm().catch(console.error);
+  }
   return () => {
     window.removeEventListener("online", fullFlush);
     window.clearInterval(heartbeat);
