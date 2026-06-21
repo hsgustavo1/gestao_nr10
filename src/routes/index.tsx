@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Lock, ShieldCheck, History, ArrowRight, Fingerprint } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { PADLOCK_COLORS, colorLabel, colorSwatch, type PadlockColor } from "@/lib/padlocks";
 
 export const Route = createFileRoute("/")({
@@ -22,10 +24,27 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const { canView: canViewRti } = getRtiCampoAccess(auth);
   const [counts, setCounts] = useState<{ total: number; byColor: Record<PadlockColor, number> }>({
     total: 0,
     byColor: { azul: 0, amarelo: 0, latao: 0, vermelho: 0 },
   });
+
+  // Home por papel: o dono do app (platform admin), o público e o modo consulta
+  // ficam neste painel (legado do LOTO). Demais níveis logados (consultor/cliente)
+  // são levados direto ao módulo principal — o MVP entrega RTI + Pessoas.
+  const redirectTo =
+    !auth.loading && auth.user && !auth.isPlatformAdmin
+      ? canViewRti
+        ? "/rti"
+        : "/qualificacoes"
+      : null;
+
+  useEffect(() => {
+    if (redirectTo) navigate({ to: redirectTo, replace: true });
+  }, [redirectTo, navigate]);
 
   useEffect(() => {
     supabase
@@ -45,6 +64,9 @@ function HomePage() {
         setCounts({ total: list.length, byColor });
       });
   }, []);
+
+  // Evita o flash do painel de LOTO enquanto auth resolve ou antes do redirect.
+  if (auth.loading || redirectTo) return null;
 
   return (
     <PageShell>

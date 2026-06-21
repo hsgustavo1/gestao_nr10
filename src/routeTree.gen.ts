@@ -29,6 +29,7 @@ import { Route as CadeadosIndexRouteImport } from './routes/cadeados.index'
 import { Route as RtiPlanoRouteImport } from './routes/rti.plano'
 import { Route as RtiImportarRouteImport } from './routes/rti.importar'
 import { Route as RtiGestaoRouteImport } from './routes/rti.gestao'
+import { Route as RtiEvolucaoRouteImport } from './routes/rti.evolucao'
 import { Route as RtiEvidenciasRouteImport } from './routes/rti.evidencias'
 import { Route as RtiCustosRouteImport } from './routes/rti.custos'
 import { Route as RelatorioDossieRouteImport } from './routes/relatorio.dossie'
@@ -151,6 +152,11 @@ const RtiImportarRoute = RtiImportarRouteImport.update({
 const RtiGestaoRoute = RtiGestaoRouteImport.update({
   id: '/rti/gestao',
   path: '/rti/gestao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RtiEvolucaoRoute = RtiEvolucaoRouteImport.update({
+  id: '/rti/evolucao',
+  path: '/rti/evolucao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RtiEvidenciasRoute = RtiEvidenciasRouteImport.update({
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/relatorio/dossie': typeof RelatorioDossieRoute
   '/rti/custos': typeof RtiCustosRoute
   '/rti/evidencias': typeof RtiEvidenciasRoute
+  '/rti/evolucao': typeof RtiEvolucaoRoute
   '/rti/gestao': typeof RtiGestaoRoute
   '/rti/importar': typeof RtiImportarRoute
   '/rti/plano': typeof RtiPlanoRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByTo {
   '/relatorio/dossie': typeof RelatorioDossieRoute
   '/rti/custos': typeof RtiCustosRoute
   '/rti/evidencias': typeof RtiEvidenciasRoute
+  '/rti/evolucao': typeof RtiEvolucaoRoute
   '/rti/gestao': typeof RtiGestaoRoute
   '/rti/importar': typeof RtiImportarRoute
   '/rti/plano': typeof RtiPlanoRoute
@@ -387,6 +395,7 @@ export interface FileRoutesById {
   '/relatorio/dossie': typeof RelatorioDossieRoute
   '/rti/custos': typeof RtiCustosRoute
   '/rti/evidencias': typeof RtiEvidenciasRoute
+  '/rti/evolucao': typeof RtiEvolucaoRoute
   '/rti/gestao': typeof RtiGestaoRoute
   '/rti/importar': typeof RtiImportarRoute
   '/rti/plano': typeof RtiPlanoRoute
@@ -434,6 +443,7 @@ export interface FileRouteTypes {
     | '/relatorio/dossie'
     | '/rti/custos'
     | '/rti/evidencias'
+    | '/rti/evolucao'
     | '/rti/gestao'
     | '/rti/importar'
     | '/rti/plano'
@@ -479,6 +489,7 @@ export interface FileRouteTypes {
     | '/relatorio/dossie'
     | '/rti/custos'
     | '/rti/evidencias'
+    | '/rti/evolucao'
     | '/rti/gestao'
     | '/rti/importar'
     | '/rti/plano'
@@ -524,6 +535,7 @@ export interface FileRouteTypes {
     | '/relatorio/dossie'
     | '/rti/custos'
     | '/rti/evidencias'
+    | '/rti/evolucao'
     | '/rti/gestao'
     | '/rti/importar'
     | '/rti/plano'
@@ -570,6 +582,7 @@ export interface RootRouteChildren {
   RelatorioDossieRoute: typeof RelatorioDossieRoute
   RtiCustosRoute: typeof RtiCustosRoute
   RtiEvidenciasRoute: typeof RtiEvidenciasRoute
+  RtiEvolucaoRoute: typeof RtiEvolucaoRoute
   RtiGestaoRoute: typeof RtiGestaoRoute
   RtiImportarRoute: typeof RtiImportarRoute
   RtiPlanoRoute: typeof RtiPlanoRoute
@@ -733,6 +746,13 @@ declare module '@tanstack/react-router' {
       path: '/rti/gestao'
       fullPath: '/rti/gestao'
       preLoaderRoute: typeof RtiGestaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rti/evolucao': {
+      id: '/rti/evolucao'
+      path: '/rti/evolucao'
+      fullPath: '/rti/evolucao'
+      preLoaderRoute: typeof RtiEvolucaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rti/evidencias': {
@@ -922,6 +942,7 @@ const rootRouteChildren: RootRouteChildren = {
   RelatorioDossieRoute: RelatorioDossieRoute,
   RtiCustosRoute: RtiCustosRoute,
   RtiEvidenciasRoute: RtiEvidenciasRoute,
+  RtiEvolucaoRoute: RtiEvolucaoRoute,
   RtiGestaoRoute: RtiGestaoRoute,
   RtiImportarRoute: RtiImportarRoute,
   RtiPlanoRoute: RtiPlanoRoute,

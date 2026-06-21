@@ -1520,6 +1520,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      rti_snapshots: {
+        Row: {
+          id: string;
+          org_id: string;
+          report_id: string;
+          snapshot_date: string;
+          payload: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          report_id: string;
+          snapshot_date: string;
+          payload: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          org_id?: string;
+          report_id?: string;
+          snapshot_date?: string;
+          payload?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       training_certificates: {
         Row: {
           id: string;

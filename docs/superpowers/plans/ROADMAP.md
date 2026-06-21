@@ -1,7 +1,7 @@
 # ROADMAP — gestão_nr10 (handoff entre sessões)
 
 > Documento de continuidade. Permite retomar o trabalho numa nova sessão de IA
-> sem o contexto desta. Última atualização: 2026-06-20.
+> sem o contexto desta. Última atualização: 2026-06-21.
 
 ## ⏱️ O QUE FALTA FAZER AGORA (checklist ordenado)
 
@@ -302,6 +302,28 @@ plano: [`2026-06-19-ui-gestao-empresas.md`](2026-06-19-ui-gestao-empresas.md).
     `tipo !== "unidade"`.
 
 ### Fases posteriores (registrar, não construir ainda)
+- ✅ **MVP polish — menu/home por papel + RTI Evolução mensal — ENTREGUE
+  (2026-06-21, migration
+  [`20260621000000_rti_snapshots_evolucao.sql`](../../../supabase/migrations/20260621000000_rti_snapshots_evolucao.sql),
+  aplicada via MCP).** Spec:
+  [`2026-06-21-mvp-menu-home-rti-evolucao-design.md`](../specs/2026-06-21-mvp-menu-home-rti-evolucao-design.md).
+  **(A) Menu por papel:** `isPlatformAdmin` (dono) vê tudo; demais níveis
+  (consultor/cliente) só veem **RTI + Pessoas** no menu (desktop + Sheet mobile);
+  RAC/NR-10/Inspeções/EPIs escondidos do menu. **(B) Home por papel:** `/`
+  redireciona usuário logado não-dono pro módulo principal (`/rti`, ou
+  `/qualificacoes` sem RTI); dono/público/viewer ficam no painel atual (LOTO).
+  **(C) RTI Evolução mensal:** tabela `rti_snapshots` (grão **org+relatório+mês**)
+  capturada por **`pg_cron`** (`fn_capture_rti_snapshots`, `0 3 1 * *`; backfill do
+  mês corrente no deploy). RLS reusa `fn_report_delivery_visible` → cliente só vê
+  histórico de relatório **entregue**; "Todos" soma os visíveis. Rota
+  [`/rti/evolucao`](../../../src/routes/rti.evolucao.tsx) com filtro Todos↔relatório
+  + gráficos (ações por status, % concluída, custo planejado×realizado×em aberto).
+  Pura [`aggregateSnapshotsByMonth`](../../../src/lib/rti-snapshots.ts) testada.
+  - ⏳ **Revisitar (merece detalhamento próprio):** **home NR-10 dedicada** (cards
+    de módulos + KPIs por papel) — adiada no item B; só o redirect foi entregue.
+  - ⏳ **Diferido:** histórico RTI **não** é reconstruído (cresce a partir do
+    deploy); bloqueio **por rota** para não-dono fora do MVP (menu esconde, RLS
+    filtra o dado); snapshot por unidade herda o limite de 1 nível.
 - ✅ **Visibilidade por entrega (inspeção/RTI só aparece ao cliente após entregue)
   — ENTREGUE (2026-06-20, migration
   [`20260620100000_visibilidade_por_entrega.sql`](../../../supabase/migrations/20260620100000_visibilidade_por_entrega.sql),

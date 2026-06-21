@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import type { RtiArea, RtiNc, RtiNcEvidencia, RtiNcHistorico, RtiReport } from "./rti";
+import type { RtiSnapshotRow } from "./rti-snapshots";
 
 export const rtiKeys = {
   reports: ["rti_reports"] as const,
@@ -46,6 +47,26 @@ export function useRtiReports() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as RtiReport[];
+    },
+  });
+}
+
+/** Snapshots mensais do plano de ação (Evolução). RLS filtra por org + entrega:
+ * cliente só recebe o histórico de relatórios já entregues. A agregação por mês
+ * / filtro por relatório acontece no cliente (aggregateSnapshotsByMonth). */
+export function useRtiSnapshots() {
+  const { currentOrgId } = useAuth();
+  return useQuery({
+    queryKey: ["rti_snapshots", currentOrgId],
+    enabled: !!currentOrgId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rti_snapshots")
+        .select("id, org_id, report_id, snapshot_date, payload")
+        .eq("org_id", currentOrgId!)
+        .order("snapshot_date", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as RtiSnapshotRow[];
     },
   });
 }
@@ -117,7 +138,9 @@ export function useDeleteRtiReport() {
         .eq("id", reportId);
       if (error) throw error;
       if ((count ?? 0) === 0)
-        throw new Error("Sem permissão para excluir este relatório. Relatórios entregues por consultor externo só podem ser removidos pelo próprio consultor.");
+        throw new Error(
+          "Sem permissão para excluir este relatório. Relatórios entregues por consultor externo só podem ser removidos pelo próprio consultor.",
+        );
     },
     onSuccess: () => qc.invalidateQueries(),
   });
