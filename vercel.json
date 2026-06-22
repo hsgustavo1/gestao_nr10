@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/client",
+  "installCommand": "npm ci",
+  "functions": {
+    "api/server.ts": {
+      "includeFiles": "dist/server/**"
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/server" }
+  ],
+  "headers": [
+    {
+      "source": "/_build/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}
