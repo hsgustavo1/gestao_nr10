@@ -10,7 +10,8 @@ const PWA_BASE = process.env.VITE_PWA_BASE ?? "/campo-pwa/";
 export default defineConfig({
   base: PWA_BASE,
   server: {
-    port: parseInt(process.env.PORT ?? "8082"),
+    port: 57011,
+    strictPort: true,
     host: true,
   },
   resolve: {

@@ -19,7 +19,7 @@ export type EmpresaRow = Org & { ativa: boolean; entitlements: string[] };
  * consultor vê a consultoria + clientes ativos geridos) com seus entitlements. */
 export async function fetchEmpresas(): Promise<EmpresaRow[]> {
   const [orgRes, entRes] = await Promise.all([
-    sb.from("organizations").select("id, nome, tipo, parent_org_id, managed_by_org_id, ativa"),
+    sb.from("organizations").select("id, nome, tipo, parent_org_id, managed_by_org_id, is_root, ativa"),
     sb.from("org_entitlements").select("org_id, module"),
   ]);
   if (orgRes.error) throw new Error(orgRes.error.message);
@@ -37,6 +37,7 @@ export async function fetchEmpresas(): Promise<EmpresaRow[]> {
     tipo: o.tipo,
     parent_org_id: o.parent_org_id,
     managed_by_org_id: o.managed_by_org_id,
+    is_root: o.is_root,
     ativa: o.ativa ?? true,
     entitlements: entMap.get(o.id) ?? [],
   }));

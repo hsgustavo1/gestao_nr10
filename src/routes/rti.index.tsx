@@ -62,7 +62,7 @@ const STATUS_COLORS: Record<RtiNcStatus, string> = {
   concluida: "#10b981",
 };
 
-const TIPO_COLORS = { os: "#0A2D48", investimento: "#F79220" } as const;
+const TIPO_COLORS = { os: "#0C3326", investimento: "#F59E0B" } as const;
 
 function RtiDashboardPage() {
   const auth = useAuth();
@@ -539,7 +539,7 @@ function RtiDashboardPage() {
                       <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                       <Bar
                         dataKey="Total"
-                        fill="#0A2D48"
+                        fill="#059669"
                         radius={[4, 4, 0, 0]}
                         className="cursor-pointer"
                         onClick={(d: { custo?: string }) =>
@@ -548,7 +548,7 @@ function RtiDashboardPage() {
                       />
                       <Bar
                         dataKey="Concluídas"
-                        fill="#10b981"
+                        fill="#34D399"
                         radius={[4, 4, 0, 0]}
                         className="cursor-pointer"
                         onClick={(d: { custo?: string }) =>
@@ -651,7 +651,7 @@ function RtiDashboardPage() {
                     <Tooltip formatter={(v: number) => [`${v} NCs abertas`, ""]} />
                     <Bar
                       dataKey="count"
-                      fill="#E35D12"
+                      fill="#059669"
                       radius={[0, 4, 4, 0]}
                       className="cursor-pointer"
                       onClick={(d: { nome?: string }) => d.nome && gotoPlano({ area: d.nome })}
@@ -690,7 +690,7 @@ function RtiDashboardPage() {
                     <Tooltip formatter={(v: number) => [`${v} NCs abertas`, ""]} />
                     <Bar
                       dataKey="count"
-                      fill="#0A2D48"
+                      fill="#059669"
                       radius={[0, 4, 4, 0]}
                       className="cursor-pointer"
                       onClick={(d: { nome?: string }) => {
