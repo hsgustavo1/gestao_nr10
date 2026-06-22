@@ -36,9 +36,9 @@ export const Route = createFileRoute("/relatorio/")({
 });
 
 const TREND_SERIES = [
-  { key: "overall", label: "Índice global", color: "#0A2D48", width: 2.5 },
+  { key: "overall", label: "Índice global", color: "#0C3326", width: 2.5 },
   { key: "capacitacao_basico", label: "NR-10 Básico", color: "#3b82f6", width: 1.5 },
-  { key: "autorizacoes", label: "Autorizações", color: "#E35D12", width: 1.5 },
+  { key: "autorizacoes", label: "Autorizações", color: "#059669", width: 1.5 },
   { key: "asos", label: "ASOs", color: "#8b5cf6", width: 1.5 },
   { key: "prontuario", label: "Prontuário", color: "#10b981", width: 1.5 },
   { key: "epis", label: "EPIs", color: "#f59e0b", width: 1.5 },

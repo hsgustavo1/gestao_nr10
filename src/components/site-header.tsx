@@ -25,9 +25,9 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 /**
- * Topbar Atvos — fundo azul-marinho fixo (#0A2D48), wordmark "atvos."
- * com ponto laranja, nav horizontal com underline laranja no item ativo,
- * pill do usuário (avatar com iniciais em gradiente laranja + nome + cargo).
+ * Topbar Conforme — fundo pinho fixo (#0C3326), wordmark "Gestão NR-10",
+ * nav horizontal com underline esmeralda→verde no item ativo,
+ * pill do usuário (avatar com iniciais em gradiente verde + nome + cargo).
  * Régua decorativa de 3px renderizada logo abaixo (no PageShell).
  */
 export function SiteHeader() {
@@ -65,7 +65,7 @@ export function SiteHeader() {
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0 bg-[#0A2D48] text-white border-r-0">
+            <SheetContent side="left" className="w-72 p-0 bg-[#0C3326] text-white border-r-0">
               <SheetHeader className="px-4 py-4 border-b border-white/10">
                 <SheetTitle className="text-white text-sm uppercase tracking-wider">
                   Gestão NR-10
@@ -330,7 +330,7 @@ export function SiteHeader() {
               <Link
                 to="/login"
                 onClick={() => exitViewerMode()}
-                className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-br from-[#F79220] to-[#E35D12] px-4 py-1.5 text-xs font-semibold text-white shadow-brand hover:opacity-95 transition-opacity"
+                className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-br from-[#34D399] to-[#059669] px-4 py-1.5 text-xs font-semibold text-white shadow-brand hover:opacity-95 transition-opacity"
               >
                 <LogIn className="h-3.5 w-3.5" /> Entrar
               </Link>
@@ -338,7 +338,7 @@ export function SiteHeader() {
           ) : (
             <Link
               to="/login"
-              className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-br from-[#F79220] to-[#E35D12] px-4 py-1.5 text-xs font-semibold text-white shadow-brand hover:opacity-95 transition-opacity"
+              className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-br from-[#34D399] to-[#059669] px-4 py-1.5 text-xs font-semibold text-white shadow-brand hover:opacity-95 transition-opacity"
             >
               <LogIn className="h-3.5 w-3.5" /> Entrar
             </Link>
@@ -474,7 +474,7 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
       className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors"
       activeProps={{
         className:
-          "text-white after:content-[''] after:absolute after:left-3 after:right-3 after:-bottom-[18px] after:h-[3px] after:rounded-t-sm after:bg-gradient-to-r after:from-[#F79220] after:to-[#E35D12]",
+          "text-white after:content-[''] after:absolute after:left-3 after:right-3 after:-bottom-[18px] after:h-[3px] after:rounded-t-sm after:bg-gradient-to-r after:from-[#34D399] after:to-[#059669]",
       }}
     >
       {children}
@@ -608,7 +608,7 @@ function VencimentosBell() {
     >
       <BellRing className="h-4 w-4" />
       {count > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 grid min-w-[16px] h-4 place-items-center rounded-full bg-gradient-to-br from-[#F79220] to-[#E35D12] px-1 text-[10px] font-bold text-white">
+        <span className="absolute -top-0.5 -right-0.5 grid min-w-[16px] h-4 place-items-center rounded-full bg-gradient-to-br from-[#34D399] to-[#059669] px-1 text-[10px] font-bold text-white">
           {count > 99 ? "99+" : count}
         </span>
       )}

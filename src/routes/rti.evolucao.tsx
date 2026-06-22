@@ -40,8 +40,8 @@ const STATUS_COLORS = {
   concluida: "#10b981",
 } as const;
 
-const PLANEJADO_COLOR = "#0A2D48";
-const REALIZADO_COLOR = "#F79220";
+const PLANEJADO_COLOR = "#0C3326";
+const REALIZADO_COLOR = "#34D399";
 const EM_ABERTO_COLOR = "#64748b";
 
 function kfmt(v: number) {

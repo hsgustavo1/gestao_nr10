@@ -103,7 +103,7 @@ function DashboardPage() {
             <StatCard
               label="Total"
               value={padlocks.length}
-              accent="bg-[#0D3A5C]"
+              accent="bg-[#0C3326]"
               icon={<Lock className="h-5 w-5" />}
               to="/cadeados"
               search={{ status: "all" }}
@@ -244,7 +244,7 @@ function DashboardPage() {
                           className="h-full rounded-full"
                           style={{
                             width: `${pct}%`,
-                            background: "linear-gradient(90deg, #F79220, #E35D12)",
+                            background: "linear-gradient(90deg, #34D399, #059669)",
                           }}
                         />
                       </div>

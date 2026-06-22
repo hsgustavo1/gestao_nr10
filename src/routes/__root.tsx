@@ -36,36 +36,25 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Gestão NR-10 — Atvos" },
+      { title: "Gestão NR-10" },
       {
         name: "description",
         content:
-          "Bloqueio de energias perigosas: controle de dispositivos, auditoria e monitoramento de bloqueios.",
+          "Sistema de gestão NR-10: qualificações, inspeções de campo e conformidade regulamentar.",
       },
-      { name: "author", content: "Atvos" },
-      { property: "og:title", content: "Gestão NR-10 — Atvos" },
+      { property: "og:title", content: "Gestão NR-10" },
       {
         property: "og:description",
         content:
-          "Bloqueio de energias perigosas: controle de dispositivos, auditoria e monitoramento de bloqueios.",
+          "Sistema de gestão NR-10: qualificações, inspeções de campo e conformidade regulamentar.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Gestão NR-10 — Atvos" },
+      { name: "twitter:title", content: "Gestão NR-10" },
       {
         name: "twitter:description",
         content:
-          "Bloqueio de energias perigosas: controle de dispositivos, auditoria e monitoramento de bloqueios.",
-      },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9b08b1f6-bcbe-441a-b433-8e81434ad420/id-preview-ab6999c6--d316b9a2-2e74-4d8b-b8c0-fc90d0efc33f.lovable.app-1776962901455.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9b08b1f6-bcbe-441a-b433-8e81434ad420/id-preview-ab6999c6--d316b9a2-2e74-4d8b-b8c0-fc90d0efc33f.lovable.app-1776962901455.png",
+          "Sistema de gestão NR-10: qualificações, inspeções de campo e conformidade regulamentar.",
       },
     ],
     links: [
@@ -77,7 +66,8 @@ export const Route = createRootRoute({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap",
+        // Hanken Grotesk (principal) + JetBrains Mono (mono)
+        href: "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap",
       },
     ],
   }),

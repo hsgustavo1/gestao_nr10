@@ -97,7 +97,7 @@ function CarteirinhaPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const url = `${window.location.origin}/carteirinha/${matricula}`;
-    QRCode.toDataURL(url, { width: 180, margin: 1, color: { dark: "#0A2D48" } })
+    QRCode.toDataURL(url, { width: 180, margin: 1, color: { dark: "#0C3326" } })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null));
   }, [matricula]);

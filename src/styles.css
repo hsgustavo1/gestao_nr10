@@ -5,269 +5,294 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * Design system definition — Gestão NR-10 / Conforme
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * Fonte principal : Hanken Grotesk (substituiu Manrope)
+ * Fonte mono      : JetBrains Mono (mantida)
+ * Paleta          : pinho-esmeralda (sem resíduos laranja/Atvos)
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * Para adicionar nova cor semântica:
+ *   1. Declarar em :root (valor light) e .dark (valor dark)
+ *   2. Registrar em @theme inline como --color-<name>: var(--<name>)
  */
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* ---- Radius ---- */
+  --radius-sm:  calc(var(--radius) - 4px);
+  --radius-md:  calc(var(--radius) - 2px);
+  --radius-lg:  var(--radius);
+  --radius-xl:  calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
+
+  /* ---- Semantic colors ---- */
+  --color-background:         var(--background);
+  --color-foreground:         var(--foreground);
+  --color-card:               var(--card);
+  --color-card-foreground:    var(--card-foreground);
+  --color-popover:            var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
+  --color-primary:            var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
+  --color-secondary:          var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
+  --color-muted:              var(--muted);
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-accent:             var(--accent);
+  --color-accent-foreground:  var(--accent-foreground);
+  --color-destructive:        var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  --color-success:            var(--success);
+  --color-warning:            var(--warning);
+  --color-border:             var(--border);
+  --color-input:              var(--input);
+  --color-ring:               var(--ring);
   --color-ring-offset-background: var(--background);
+
+  /* ---- Charts ---- */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
+
+  /* ---- Sidebar ---- */
+  --color-sidebar:                    var(--sidebar);
+  --color-sidebar-foreground:         var(--sidebar-foreground);
+  --color-sidebar-primary:            var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-accent:             var(--sidebar-accent);
+  --color-sidebar-accent-foreground:  var(--sidebar-accent-foreground);
+  --color-sidebar-border:             var(--sidebar-border);
+  --color-sidebar-ring:               var(--sidebar-ring);
+
+  /* ---- Brand primitives expostos como utilities ---- */
+  --color-pine:    var(--conforme-pine);
+  --color-emerald: var(--conforme-emerald);
 }
 
+/* ================================================================
+ * :root — light theme
+ * ================================================================ */
 :root {
-  /* === Atvos LOTO design tokens === */
-  --radius: 0.625rem;
+  --radius: 0.75rem;   /* 12 px — design system base */
 
-  /* Brand */
-  --atvos-blue: oklch(0.30 0.06 245);          /* #0A2D48 */
-  --atvos-blue-soft: oklch(0.40 0.07 245);
-  --atvos-orange: oklch(0.68 0.18 45);         /* #E35D12 */
-  --atvos-orange-mid: oklch(0.74 0.17 55);     /* #F47920 */
-  --atvos-yellow: oklch(0.86 0.16 85);         /* #FAC800 */
+  /* ---- Brand primitives ---- */
+  --conforme-pine:        oklch(0.22 0.07 162);   /* #0C3326 — cabeçalho */
+  --conforme-pine-soft:   oklch(0.30 0.07 162);   /* #174830 */
+  --conforme-green:       oklch(0.60 0.15 161);   /* #059669 — ação primária */
+  --conforme-emerald:     oklch(0.76 0.15 162);   /* #34D399 — destaque */
+  --conforme-green-dark:  oklch(0.50 0.14 162);   /* #047857 — texto sobre fundo claro */
 
-  --gradient-accent: linear-gradient(135deg, var(--atvos-orange) 0%, var(--atvos-orange-mid) 50%, var(--atvos-yellow) 100%);
-  --gradient-blue: linear-gradient(160deg, var(--atvos-blue) 0%, var(--atvos-blue-soft) 100%);
-  --shadow-brand: 0 14px 40px -16px color-mix(in oklab, var(--atvos-orange) 55%, transparent);
-  --shadow-card: 0 6px 24px -10px color-mix(in oklab, var(--atvos-blue) 35%, transparent);
+  /* ---- Gradients & shadows ---- */
+  --gradient-accent: linear-gradient(135deg, var(--conforme-green) 0%, var(--conforme-emerald) 100%);
+  --gradient-pine:   linear-gradient(160deg, var(--conforme-pine) 0%, var(--conforme-pine-soft) 100%);
+  --gradient-rule:   linear-gradient(90deg, #34D399 0%, #059669 100%);
+  --shadow-brand:    0 14px 40px -16px color-mix(in oklab, var(--conforme-green) 55%, transparent);
+  --shadow-card:     0 6px 24px -10px color-mix(in oklab, var(--conforme-pine) 35%, transparent);
 
-  /* Light theme — clean, branded */
-  --background: oklch(0.985 0.005 240);
-  --foreground: var(--atvos-blue);
-  --card: oklch(1 0 0);
-  --card-foreground: var(--atvos-blue);
-  --popover: oklch(1 0 0);
-  --popover-foreground: var(--atvos-blue);
-  --primary: var(--atvos-blue);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.95 0.015 240);
-  --secondary-foreground: var(--atvos-blue);
-  --muted: oklch(0.95 0.01 240);
-  --muted-foreground: oklch(0.50 0.03 245);
-  --accent: var(--atvos-orange-mid);
-  --accent-foreground: oklch(0.99 0 0);
-  --destructive: oklch(0.58 0.22 25);
+  /* ---- Semantic surfaces ---- */
+  --background:           oklch(0.973 0.008 162);
+  --foreground:           oklch(0.15  0.04  162);
+  --card:                 oklch(1 0 0);
+  --card-foreground:      oklch(0.15  0.04  162);
+  --popover:              oklch(1 0 0);
+  --popover-foreground:   oklch(0.15  0.04  162);
+  --primary:              var(--conforme-green);
+  --primary-foreground:   oklch(0.99 0 0);
+  --secondary:            oklch(0.94 0.016 162);
+  --secondary-foreground: oklch(0.15  0.04  162);
+  --muted:                oklch(0.95 0.012 162);
+  --muted-foreground:     oklch(0.50 0.04  162);
+  --accent:               var(--conforme-emerald);
+  --accent-foreground:    oklch(0.15  0.04  162);
+  --destructive:          oklch(0.63 0.22  25);
   --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.65 0.15 150);
-  --warning: var(--atvos-yellow);
-  --border: oklch(0.90 0.02 240);
-  --input: oklch(0.92 0.02 240);
-  --ring: var(--atvos-orange-mid);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --success:              var(--conforme-green);
+  --warning:              oklch(0.78 0.16  72);   /* âmbar #F59E0B */
+  --border:               oklch(0.88 0.025 162);
+  --input:                oklch(0.88 0.025 162);
+  --ring:                 var(--conforme-green);
+
+  /* ---- Charts ---- */
+  --chart-1: var(--conforme-green);
+  --chart-2: var(--conforme-emerald);
+  --chart-3: oklch(0.78 0.16 72);
+  --chart-4: oklch(0.63 0.22 25);
+  --chart-5: oklch(0.55 0.10 162);
+
+  /* ---- Sidebar (pine-based) ---- */
+  --sidebar:                    oklch(0.97 0.006 162);
+  --sidebar-foreground:         oklch(0.15 0.04  162);
+  --sidebar-primary:            var(--conforme-green);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent:             oklch(0.93 0.018 162);
+  --sidebar-accent-foreground:  oklch(0.15 0.04  162);
+  --sidebar-border:             oklch(0.88 0.025 162);
+  --sidebar-ring:               var(--conforme-green);
+
+  /* ---- Risk / Tension levels ---- */
+  --risk-bt: #059669;   /* Baixa Tensão  <1 kV  — verde */
+  --risk-mt: #F59E0B;   /* Média Tensão 1–36 kV — âmbar */
+  --risk-at: #EF4444;   /* Alta Tensão   >36 kV — vermelho */
+
+  /* ---- LOTO lock-color badges ---- */
+  --lock-azul-bg:     #E2EEFA;  --lock-azul-fg:     #0B4A8A;  --lock-azul-dot:     #2174C9;
+  --lock-amarelo-bg:  #FFF4D6;  --lock-amarelo-fg:  #7A5500;  --lock-amarelo-dot:  #E8B800;
+  --lock-vermelho-bg: #FFE3DF;  --lock-vermelho-fg: #8B1A0E;  --lock-vermelho-dot: #D42E1B;
+  --lock-latao-bg:    #F0EDE3;  --lock-latao-fg:    #5A5236;  --lock-latao-dot:    #A89660;
 }
 
+/* ================================================================
+ * .dark theme
+ * ================================================================ */
 .dark {
-  --background: var(--atvos-blue);
-  --foreground: oklch(0.98 0.005 240);
-  --card: oklch(0.34 0.05 245);
-  --card-foreground: oklch(0.98 0.005 240);
-  --popover: oklch(0.34 0.05 245);
-  --popover-foreground: oklch(0.98 0.005 240);
-  --primary: var(--atvos-orange-mid);
-  --primary-foreground: oklch(0.18 0.04 245);
-  --secondary: oklch(0.38 0.05 245);
-  --secondary-foreground: oklch(0.98 0.005 240);
-  --muted: oklch(0.36 0.04 245);
-  --muted-foreground: oklch(0.78 0.02 240);
-  --accent: var(--atvos-orange-mid);
-  --accent-foreground: oklch(0.18 0.04 245);
-  --destructive: oklch(0.65 0.22 25);
+  --background:           var(--conforme-pine);
+  --foreground:           oklch(0.98 0.005 162);
+  --card:                 oklch(0.30 0.06 162);
+  --card-foreground:      oklch(0.98 0.005 162);
+  --popover:              oklch(0.30 0.06 162);
+  --popover-foreground:   oklch(0.98 0.005 162);
+  --primary:              var(--conforme-emerald);
+  --primary-foreground:   oklch(0.15 0.04 162);
+  --secondary:            oklch(0.34 0.06 162);
+  --secondary-foreground: oklch(0.98 0.005 162);
+  --muted:                oklch(0.32 0.05 162);
+  --muted-foreground:     oklch(0.78 0.03 162);
+  --accent:               var(--conforme-emerald);
+  --accent-foreground:    oklch(0.15 0.04 162);
+  --destructive:          oklch(0.65 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: var(--atvos-yellow);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.26 0.05 245);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --success:              var(--conforme-emerald);
+  --warning:              oklch(0.82 0.16 72);
+  --border:               oklch(1 0 0 / 12%);
+  --input:                oklch(1 0 0 / 15%);
+  --ring:                 var(--conforme-emerald);
+  --chart-1: var(--conforme-green);
+  --chart-2: var(--conforme-emerald);
+  --chart-3: oklch(0.82 0.16 72);
+  --chart-4: oklch(0.65 0.22 25);
+  --chart-5: oklch(0.60 0.10 162);
+  --sidebar:                    oklch(0.26 0.06 162);
+  --sidebar-foreground:         oklch(0.98 0.005 162);
+  --sidebar-primary:            var(--conforme-emerald);
+  --sidebar-primary-foreground: oklch(0.15 0.04 162);
+  --sidebar-accent:             oklch(0.30 0.06 162);
+  --sidebar-accent-foreground:  oklch(0.98 0.005 162);
+  --sidebar-border:             oklch(1 0 0 / 10%);
+  --sidebar-ring:               var(--conforme-emerald);
 }
 
+/* ================================================================
+ * @layer base
+ * ================================================================ */
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
+  * { border-color: var(--color-border); }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    font-feature-settings: "ss01", "cv11";
+    font-family: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-feature-settings: "ss01";
+    -webkit-font-smoothing: antialiased;
   }
 
-  .font-mono,
-  code,
-  kbd,
-  pre,
-  samp {
-    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  .font-mono, code, kbd, pre, samp {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 }
 
-@utility bg-brand-gradient {
-  background: var(--gradient-accent);
-}
-@utility bg-brand-blue {
-  background: var(--gradient-blue);
-}
+/* ================================================================
+ * @utility — Brand utilities
+ * Mantidos com prefixo "atvos-" para retrocompatibilidade com os
+ * componentes existentes. Aliases "brand-" adicionados para novos.
+ * ================================================================ */
+
+/* Gradiente de fundo (esmeralda → verde) */
+@utility bg-brand-gradient { background: var(--gradient-accent); }
+@utility bg-brand-pine     { background: var(--gradient-pine); }
+
+/* Texto com gradiente */
 @utility text-brand-gradient {
   background: var(--gradient-accent);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-@utility shadow-brand {
-  box-shadow: var(--shadow-brand);
-}
-@utility shadow-card-soft {
-  box-shadow: var(--shadow-card);
-}
-@utility border-brand {
-  border-color: var(--atvos-orange-mid);
-}
 
-/* === Atvos brand utilities === */
+/* Sombras */
+@utility shadow-brand     { box-shadow: var(--shadow-brand); }
+@utility shadow-card-soft { box-shadow: var(--shadow-card); }
 
-/* Topbar fixa azul-marinho Atvos (sempre dark, mesmo em tema claro) */
-@utility atvos-topbar {
-  background-color: #0A2D48;
-  color: #ffffff;
-}
+/* ---- Topbar fixa pinho (sempre dark, qualquer tema) ---- */
+@utility atvos-topbar  { background-color: #0C3326; color: #ffffff; }
+@utility brand-topbar  { background-color: #0C3326; color: #ffffff; }
 
-/* Régua decorativa: faixa horizontal 3px com gradiente laranja → amarelo.
-   Assinatura visual obrigatória do manual Atvos. */
+/* ---- Régua decorativa 3 px esmeralda → verde ---- */
 @utility atvos-rule {
   height: 3px;
-  background: linear-gradient(
-    90deg,
-    #E35D12 0%,
-    #F47920 35%,
-    #F79220 65%,
-    #FAC800 100%
-  );
+  background: var(--gradient-rule);
+}
+@utility brand-rule {
+  height: 3px;
+  background: var(--gradient-rule);
 }
 
-/* Wordmark "atvos." — branco com ponto laranja, peso 800, tracking apertado */
+/* ---- Wordmark ---- */
 @utility atvos-wordmark {
-  font-family: "Manrope", sans-serif;
+  font-family: "Hanken Grotesk", sans-serif;
   font-weight: 800;
-  letter-spacing: -0.04em;
-  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #ffffff;
+}
+@utility brand-wordmark {
+  font-family: "Hanken Grotesk", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: 1;
   color: #ffffff;
 }
 
-/* Avatar com iniciais (gradiente laranja) */
+/* ---- Avatar com iniciais — gradiente verde ---- */
 @utility atvos-avatar {
-  background: linear-gradient(135deg, #F79220, #E35D12);
+  background: linear-gradient(135deg, #34D399, #059669);
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+@utility brand-avatar {
+  background: linear-gradient(135deg, #34D399, #059669);
   color: #ffffff;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
-/* Underline laranja para item de nav ativo */
-@utility nav-active-underline {
-  position: relative;
-}
+/* ---- Nav link ativo: underline verde ---- */
+@utility nav-active-underline { position: relative; }
 .nav-active-underline::after {
   content: "";
   position: absolute;
-  left: 0.75rem;
-  right: 0.75rem;
+  left: 0.75rem; right: 0.75rem;
   bottom: -0.25rem;
   height: 2px;
   border-radius: 2px;
-  background: linear-gradient(90deg, #F79220, #E35D12);
+  background: linear-gradient(90deg, #34D399, #059669);
 }
 
-/* Badges de cor de cadeado — paleta exata do manual */
-.badge-azul {
-  background-color: #E2EEFA;
-  color: #0B4A8A;
-}
-.badge-azul-dot { background-color: #2174C9; }
+/* ================================================================
+ * Badges de cor de cadeado LOTO (paleta de segurança fixa)
+ * ================================================================ */
+.badge-azul     { background-color: var(--lock-azul-bg);     color: var(--lock-azul-fg); }
+.badge-azul-dot { background-color: var(--lock-azul-dot); }
 
-.badge-amarelo {
-  background-color: #FFF4D6;
-  color: #7A5500;
-}
-.badge-amarelo-dot { background-color: #E8B800; }
+.badge-amarelo     { background-color: var(--lock-amarelo-bg);  color: var(--lock-amarelo-fg); }
+.badge-amarelo-dot { background-color: var(--lock-amarelo-dot); }
 
-.badge-vermelho {
-  background-color: #FFE3DF;
-  color: #8B1A0E;
-}
-.badge-vermelho-dot { background-color: #D42E1B; }
+.badge-vermelho     { background-color: var(--lock-vermelho-bg); color: var(--lock-vermelho-fg); }
+.badge-vermelho-dot { background-color: var(--lock-vermelho-dot); }
 
-.badge-latao {
-  background-color: #F0EDE3;
-  color: #5A5236;
-}
-.badge-latao-dot { background-color: #A89660; }
-
+.badge-latao     { background-color: var(--lock-latao-bg);    color: var(--lock-latao-fg); }
+.badge-latao-dot { background-color: var(--lock-latao-dot); }

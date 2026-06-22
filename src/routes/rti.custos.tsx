@@ -49,8 +49,8 @@ export const Route = createFileRoute("/rti/custos")({
   head: () => ({ meta: [{ title: "Análise de Custos — RTI — Gestão NR-10" }] }),
 });
 
-const PLANEJADO_COLOR = "#0A2D48";
-const REALIZADO_COLOR = "#F79220";
+const PLANEJADO_COLOR = "#0C3326";
+const REALIZADO_COLOR = "#34D399";
 const EM_ABERTO_COLOR = "#64748b";
 
 type Agg = { planejado: number; realizado: number; qtd: number };

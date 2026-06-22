@@ -62,8 +62,8 @@ const COLORS = {
   A0: "#6b7280",
   A1: "#3b82f6",
   A2: "#8b5cf6",
-  A3: "#E35D12",
-  A4: "#0A2D48",
+  A3: "#059669",
+  A4: "#0C3326",
   "Sem auth.": "#d1d5db",
 } as const;
 
@@ -512,7 +512,7 @@ function QualificacoesHub() {
                 </p>
                 <p className="text-3xl font-bold mt-1">{filteredEmployees.length}</p>
               </div>
-              <div className="rounded-full p-2.5 bg-[#0A2D48]">
+              <div className="rounded-full p-2.5 bg-[#0C3326]">
                 <Users className="h-5 w-5 text-white" />
               </div>
             </div>
@@ -586,7 +586,7 @@ function QualificacoesHub() {
                   </span>
                 </p>
               </div>
-              <div className="rounded-full p-2.5 flex-shrink-0 bg-[#E35D12]">
+              <div className="rounded-full p-2.5 flex-shrink-0 bg-[#059669]">
                 <ShieldCheck className="h-5 w-5 text-white" />
               </div>
             </div>

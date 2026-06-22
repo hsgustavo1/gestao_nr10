@@ -13,11 +13,10 @@ export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: "RAC - Bloqueio de energias perigosas" },
+      { title: "Gestão NR-10" },
       {
         name: "description",
-        content:
-          "Bloqueio de energias perigosas: controle de dispositivos, auditoria e monitoramento de bloqueios.",
+        content: "Sistema de gestão NR-10: qualificações, inspeções de campo e conformidade regulamentar.",
       },
     ],
   }),
@@ -32,15 +31,17 @@ function HomePage() {
     byColor: { azul: 0, amarelo: 0, latao: 0, vermelho: 0 },
   });
 
-  // Home por papel: o dono do app (platform admin), o público e o modo consulta
-  // ficam neste painel (legado do LOTO). Demais níveis logados (consultor/cliente)
-  // são levados direto ao módulo principal — o MVP entrega RTI + Pessoas.
-  const redirectTo =
-    !auth.loading && auth.user && !auth.isPlatformAdmin
-      ? canViewRti
-        ? "/rti"
-        : "/qualificacoes"
-      : null;
+  // Usuário não autenticado e não em modo consulta → login
+  // Usuários logados sem ser platform admin → módulo principal (RTI ou qualificações)
+  const redirectTo = !auth.loading
+    ? !auth.user && !auth.isViewer
+      ? "/login"
+      : auth.user && !auth.isPlatformAdmin
+        ? canViewRti
+          ? "/rti"
+          : "/qualificacoes"
+        : null
+    : null;
 
   useEffect(() => {
     if (redirectTo) navigate({ to: redirectTo, replace: true });
@@ -71,7 +72,7 @@ function HomePage() {
   return (
     <PageShell>
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-brand-blue text-white shadow-card-soft">
+      <section className="relative overflow-hidden rounded-3xl border border-border text-white shadow-card-soft" style={{ background: "linear-gradient(160deg, #0C3326 0%, #174830 100%)" }}>
         <div className="absolute inset-y-0 left-0 w-1.5 bg-brand-gradient" />
         <div className="grid gap-8 p-8 md:p-12 md:grid-cols-[1.5fr_1fr] items-center">
           <div>

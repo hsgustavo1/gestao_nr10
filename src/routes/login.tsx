@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Lock, Eye, ShieldCheck, ArrowRight } from "lucide-react";
+import { ShieldCheck, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
-  head: () => ({ meta: [{ title: "Entrar — Bloqueio de energias perigosas" }] }),
+  head: () => ({ meta: [{ title: "Entrar — Gestão NR-10" }] }),
 });
 
 const schema = z.object({
@@ -52,7 +52,7 @@ function LoginPage() {
         if (error) throw error;
         await refreshRoles();
         toast.success("Bem-vindo!");
-        navigate({ to: "/cadeados" });
+        navigate({ to: "/" });
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -76,38 +76,48 @@ function LoginPage() {
   function onViewer() {
     enterViewerMode();
     toast.success("Modo visualização ativado.");
-    navigate({ to: "/cadeados" });
+    navigate({ to: "/" });
   }
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
-      {/* Hero azul Atvos */}
-      <aside className="relative hidden lg:flex flex-col justify-between bg-brand-blue text-white p-12 overflow-hidden">
+      {/* Hero pinho */}
+      <aside className="relative hidden lg:flex flex-col justify-between text-white p-12 overflow-hidden" style={{ background: "linear-gradient(160deg, #0C3326 0%, #174830 100%)" }}>
         <div className="absolute inset-y-0 right-0 w-1.5 bg-brand-gradient" />
-        <Link to="/" className="flex items-center gap-0">
-          <span className="text-[14px] font-bold uppercase tracking-[0.05em] text-white"></span>
-        </Link>
+        {/* Círculos decorativos */}
+        <div className="absolute right-[-80px] top-[-80px] w-80 h-80 rounded-full border border-white/10" />
+        <div className="absolute right-[-40px] top-[-40px] w-48 h-48 rounded-full border border-white/10" />
 
-        <div className="relative z-10 max-w-md">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wider">
-            <ShieldCheck className="h-3.5 w-3.5" />
-          </span>
-          <h1 className="mt-4 text-4xl font-bold leading-tight">
-            Bloqueio de energias perigosas <span className="text-brand-gradient">salva vidas.</span>
-          </h1>
-          <p className="mt-4 text-white/75 text-sm leading-relaxed"></p>
+        <div className="text-[22px] font-extrabold tracking-tight text-white relative z-10">
+          Gestão<span style={{ color: "var(--conforme-emerald)" }}>.</span>
         </div>
 
-        <div className="text-[11px] uppercase tracking-wider text-white/45"></div>
+        <div className="relative z-10 max-w-md">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider mb-5">
+            <ShieldCheck className="h-3.5 w-3.5" style={{ color: "var(--conforme-emerald)" }} />
+            <span style={{ color: "var(--conforme-emerald)" }}>NR-10 · SEP</span>
+          </span>
+          <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
+            Segurança elétrica e conformidade{" "}
+            <span style={{ color: "var(--conforme-emerald)" }}>regulamentar.</span>
+          </h1>
+          <p className="mt-4 text-white/65 text-sm leading-relaxed">
+            Gestão integrada de qualificações NR-10, inspeções de campo e conformidade regulamentar.
+          </p>
+        </div>
+
+        <div className="text-[11px] uppercase tracking-wider text-white/35 font-mono">
+          Gestão normativa · NR-10
+        </div>
       </aside>
 
       {/* Formulário */}
       <main className="flex flex-col justify-center px-6 py-10 sm:px-12 lg:px-16">
         <div className="mx-auto w-full max-w-md">
           {/* Brand mobile */}
-          <Link to="/" className="lg:hidden flex items-center gap-0 mb-8">
-            <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#0A2D48]"></span>
-          </Link>
+          <div className="lg:hidden mb-8 text-[18px] font-extrabold tracking-tight text-foreground">
+            Gestão<span style={{ color: "var(--conforme-green)" }}>.</span>
+          </div>
 
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-foreground">
@@ -121,8 +131,8 @@ function LoginPage() {
               {mode === "forgot"
                 ? "Informe seu e-mail e enviaremos um link para redefinir a senha."
                 : mode === "signup"
-                  ? "Após o cadastro, um Admin precisa aprovar seu perfil."
-                  : "Acesso para Dono de RAC e Apoios. A consulta é aberta para todos os Integrantes."}
+                  ? "Após o cadastro, um administrador precisa aprovar seu perfil."
+                  : "Acesso ao sistema de gestão NR-10."}
             </p>
           </div>
 
@@ -195,7 +205,7 @@ function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand-gradient text-white shadow-brand hover:opacity-95"
+              className="w-full bg-brand-gradient text-white shadow-brand hover:opacity-95 mt-1"
             >
               {loading
                 ? "Aguarde..."
@@ -227,21 +237,11 @@ function LoginPage() {
 
           {/* Modo visualização */}
           <Button type="button" variant="outline" onClick={onViewer} className="w-full border-2">
-            <Eye className="h-4 w-4" /> Acesso somente consulta
+            Acesso somente consulta
           </Button>
           <p className="mt-2 text-[11px] text-center text-muted-foreground">
-            Sem login, você pode consultar dispositivos e o dashboard, além de imprimir etiquetas,
-            mas não pode cadastrar novos dispositivos.
+            Visualize informações sem necessidade de login, mas sem permissão para registrar dados.
           </p>
-
-          <div className="mt-8 text-center">
-            <Link
-              to="/"
-              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-            >
-              <Lock className="h-3 w-3" /> Voltar à página inicial
-            </Link>
-          </div>
         </div>
       </main>
     </div>
