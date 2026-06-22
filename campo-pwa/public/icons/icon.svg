@@ -1,4 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="24" fill="#1e293b"/>
-  <text x="96" y="120" font-size="80" text-anchor="middle" fill="#f8fafc">⚡</text>
+  <!-- Background pine -->
+  <rect width="192" height="192" rx="36" fill="#0C3326"/>
+
+  <!-- Clipboard body -->
+  <rect x="40" y="60" width="112" height="110" rx="10" fill="white" fill-opacity="0.10"/>
+  <rect x="40" y="60" width="112" height="110" rx="10" fill="none" stroke="white" stroke-width="5" stroke-opacity="0.85"/>
+
+  <!-- Clipboard clip (emerald) -->
+  <rect x="70" y="46" width="52" height="24" rx="8" fill="#34D399"/>
+  <rect x="82" y="53" width="28" height="10" rx="5" fill="#0C3326"/>
+
+  <!-- Lightning bolt (emerald) -->
+  <path d="M109 72 L79 112 L98 112 L83 144 L117 104 L98 104 Z" fill="#34D399"/>
 </svg>

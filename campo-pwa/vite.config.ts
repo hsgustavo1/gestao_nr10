@@ -11,7 +11,6 @@ export default defineConfig({
   base: PWA_BASE,
   server: {
     port: 57011,
-    strictPort: true,
     host: true,
   },
   resolve: {
@@ -27,11 +26,11 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["icons/*.svg", "icons/*.png"],
       manifest: {
-        name: "Campo NR-10",
-        short_name: "Campo",
+        name: "Conforme Campo",
+        short_name: "Conforme",
         description: "Coleta de inspeção elétrica em campo",
-        theme_color: "#1e293b",
-        background_color: "#0f172a",
+        theme_color: "#0C3326",
+        background_color: "#0C3326",
         display: "standalone",
         orientation: "portrait",
         start_url: PWA_BASE,
