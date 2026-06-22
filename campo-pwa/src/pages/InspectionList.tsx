@@ -62,18 +62,18 @@ export default function InspectionList() {
               type="button"
               onClick={sync}
               disabled={syncState === "syncing" || !isOnline}
-              className="p-2 rounded-lg hover:bg-slate-800 disabled:opacity-40"
+              className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 disabled:opacity-40 flex items-center justify-center"
               aria-label="Atualizar"
             >
-              <RefreshCw className={`h-4 w-4 ${syncState === "syncing" ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-5 w-5 ${syncState === "syncing" ? "animate-spin" : ""}`} />
             </button>
             <button
               type="button"
               onClick={handleLogout}
-              className="p-2 rounded-lg hover:bg-slate-800"
+              className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 flex items-center justify-center"
               aria-label="Sair"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-5 w-5" />
             </button>
           </div>
         </div>

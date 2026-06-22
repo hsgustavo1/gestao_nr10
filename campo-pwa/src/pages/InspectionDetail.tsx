@@ -299,7 +299,7 @@ export default function InspectionDetail() {
         <button
           type="button"
           onClick={() => navigate("/inspecoes")}
-          className="p-2 -m-1 rounded-lg hover:bg-slate-800"
+          className="p-2.5 -m-1 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 flex items-center justify-center"
           aria-label="Voltar"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -317,7 +317,7 @@ export default function InspectionDetail() {
             type="button"
             onClick={handleReopen}
             disabled={reopening}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 text-xs font-semibold disabled:opacity-40 shrink-0"
+            className="flex items-center gap-1 px-3 min-h-[44px] rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 text-xs font-semibold disabled:opacity-40 shrink-0"
             aria-label="Reabrir inspeção para edição"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -327,19 +327,19 @@ export default function InspectionDetail() {
           <button
             type="button"
             onClick={() => setShowEditMeta(true)}
-            className="p-2 rounded-lg hover:bg-slate-800 shrink-0"
+            className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 shrink-0 flex items-center justify-center"
             aria-label="Editar inspeção"
           >
-            <Pencil className="h-4 w-4 text-slate-400" />
+            <Pencil className="h-5 w-5 text-slate-400" />
           </button>
         )}
         <button
           type="button"
           onClick={() => setShowArchiveConfirm(true)}
-          className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-amber-400 shrink-0"
+          className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 text-slate-400 hover:text-amber-400 shrink-0 flex items-center justify-center"
           aria-label="Arquivar no campo"
         >
-          <Archive className="h-4 w-4" />
+          <Archive className="h-5 w-5" />
         </button>
         {!inspection._synced && (
           <span className="text-xs text-yellow-500 shrink-0">● não sync</span>
@@ -359,17 +359,17 @@ export default function InspectionDetail() {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Breadcrumb — drill up */}
-        <nav className="flex items-center gap-1 text-sm overflow-x-auto whitespace-nowrap pb-1">
+        <nav className="flex items-center gap-1 text-sm overflow-x-auto whitespace-nowrap pb-1 min-h-[44px]">
           <button
             type="button"
             onClick={() => setCurrentNodeId(null)}
-            className={`inline-flex items-center gap-1 rounded-lg px-2 py-1.5 ${
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 min-h-[40px] ${
               currentNodeId === null
                 ? "font-semibold text-slate-100 bg-slate-800"
                 : "text-slate-400 active:bg-slate-800"
             }`}
           >
-            <Home className="h-4 w-4" /> Setores
+            <Home className="h-4 w-4 shrink-0" /> Setores
           </button>
           {path.map((n, i) => {
             const ultimo = i === path.length - 1;
@@ -379,7 +379,7 @@ export default function InspectionDetail() {
                 <button
                   type="button"
                   onClick={() => setCurrentNodeId(n.id)}
-                  className={`rounded-lg px-2 py-1.5 ${
+                  className={`rounded-lg px-2.5 min-h-[40px] ${
                     ultimo
                       ? "font-semibold text-slate-100 bg-slate-800"
                       : "text-slate-400 active:bg-slate-800"
@@ -421,24 +421,9 @@ export default function InspectionDetail() {
               <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 {labelDoTipo(childLevel)}s{children.length > 0 ? ` (${children.length})` : ""}
               </h2>
-              {!isReadOnly && (
-                <button
-                  onClick={() => setShowAddNode(true)}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-blue-400 active:bg-slate-800"
-                >
-                  <Plus className="h-4 w-4" />
-                  {labelDoTipo(childLevel)}
-                </button>
-              )}
             </div>
 
-            {children.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-slate-700 bg-slate-800/30 p-4 text-center text-xs text-slate-500">
-                Nenhum {labelDoTipo(childLevel).toLowerCase()} aqui.
-                {!isReadOnly && " Toque em + para adicionar."}
-              </p>
-            ) : (
-              <div className="space-y-2">
+            <div className="space-y-2">
                 {children.map((n) => {
                   const c = contagem(n.id);
                   return (
@@ -446,12 +431,12 @@ export default function InspectionDetail() {
                       key={n.id}
                       type="button"
                       onClick={() => setCurrentNodeId(n.id)}
-                      className="w-full flex items-center gap-3 rounded-xl bg-slate-800 hover:bg-slate-700/70 active:bg-slate-700 p-3 text-left"
+                      className="w-full flex items-center gap-3 rounded-xl bg-slate-800 hover:bg-slate-700/70 active:bg-slate-700 active:scale-[0.98] transition-all p-3 text-left"
                     >
                       <FolderTree className="h-5 w-5 text-blue-400 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="font-medium leading-tight truncate">{n.nome}</div>
-                        <div className="text-[11px] text-slate-400">
+                        <div className="text-xs text-slate-400">
                           {c.pontos} ponto{c.pontos !== 1 ? "s" : ""} · {c.achados} achado
                           {c.achados !== 1 ? "s" : ""}
                         </div>
@@ -461,7 +446,15 @@ export default function InspectionDetail() {
                   );
                 })}
               </div>
-            )}
+              {!isReadOnly && (
+                <button
+                  onClick={() => setShowAddNode(true)}
+                  className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-600 hover:border-blue-500 hover:bg-slate-800/60 active:bg-slate-800 py-3 text-sm font-medium text-slate-400 hover:text-blue-400 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar {labelDoTipo(childLevel)}
+                </button>
+              )}
           </section>
         )}
 
@@ -483,13 +476,13 @@ export default function InspectionDetail() {
                     <Link
                       key={pt.id}
                       to={`/inspecoes/${id}/ponto/${pt.id}`}
-                      className="flex items-center gap-3 rounded-xl bg-slate-700 hover:bg-slate-600/70 active:bg-slate-600 p-3"
+                      className="flex items-center gap-3 rounded-xl bg-slate-700 hover:bg-slate-600/70 active:bg-slate-600 active:scale-[0.98] transition-all p-3"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="font-medium leading-tight truncate">
                           {pt.titulo ?? `Ponto ${pt.ordem + 1}`}
                         </div>
-                        <div className="text-[11px] text-slate-400">
+                        <div className="text-xs text-slate-400">
                           {nAchados} achado{nAchados !== 1 ? "s" : ""}
                           {!pt._synced && <span className="text-yellow-500"> · não sync</span>}
                         </div>

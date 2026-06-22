@@ -17,3 +17,13 @@ body {
   font-family: system-ui, sans-serif;
   min-height: 100dvh;
 }
+
+/* Elimina o delay de 300ms em todos os elementos interativos */
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+label {
+  touch-action: manipulation;
+}
