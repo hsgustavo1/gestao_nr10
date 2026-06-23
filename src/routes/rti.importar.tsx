@@ -275,6 +275,20 @@ function RtiImportarPage() {
   const actorName =
     (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || null;
 
+  if (auth.currentOrg?.is_root) {
+    return (
+      <PageShell>
+        <Card className="mt-8">
+          <CardContent className="p-10 text-center text-sm text-muted-foreground">
+            A organização <strong className="text-foreground">{auth.currentOrg.nome}</strong> é a
+            plataforma e não recebe RTIs. Selecione uma organização cliente ou consultoria no menu
+            superior.
+          </CardContent>
+        </Card>
+      </PageShell>
+    );
+  }
+
   if (!canEdit) {
     return (
       <PageShell>

@@ -67,6 +67,7 @@ const TIPO_COLORS = { os: "#0C3326", investimento: "#F59E0B" } as const;
 function RtiDashboardPage() {
   const auth = useAuth();
   const { canEdit } = getRtiCampoAccess(auth);
+  const isRootOrg = auth.currentOrg?.is_root ?? false;
   const navigate = useNavigate();
   const { data: reports = [], isLoading: loadingReports } = useRtiReports();
 
@@ -253,7 +254,7 @@ function RtiDashboardPage() {
               </Link>
             </Button>
           )}
-          {canEdit && (
+          {canEdit && !isRootOrg && (
             <Button asChild variant="outline">
               <Link to="/rti/importar">
                 <FileSpreadsheet className="h-4 w-4" /> Novo / Importar
@@ -280,7 +281,7 @@ function RtiDashboardPage() {
               Nenhum relatório de inspeção cadastrado ainda.
               {canEdit ? " Importe a planilha do plano de ação para começar." : ""}
             </p>
-            {canEdit && (
+            {canEdit && !isRootOrg && (
               <Button asChild className="bg-brand-gradient text-white shadow-brand">
                 <Link to="/rti/importar">
                   <FileSpreadsheet className="h-4 w-4" /> Importar planilha

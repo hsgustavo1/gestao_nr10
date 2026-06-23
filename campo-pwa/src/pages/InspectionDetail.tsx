@@ -119,6 +119,7 @@ export default function InspectionDetail() {
   );
   const [exporting, setExporting] = useState(false);
   const [exportResult, setExportResult] = useState<string | null>(null);
+  const [manualExportMsg, setManualExportMsg] = useState<string | null>(null);
   const prevSetorRef = useRef<string | null>(null);
   const promptedSetoresRef = useRef<Set<string>>(new Set());
 
@@ -249,6 +250,23 @@ export default function InspectionDetail() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSetorId]);
+
+  async function handleManualExport() {
+    if (!currentSetorId || !inspection || exporting) return;
+    setExporting(true);
+    setManualExportMsg(null);
+    try {
+      const r = await exportSetorFotos({ inspection, setorNodeId: currentSetorId, allNodes: nodes });
+      setManualExportMsg(
+        `${r.fotos} foto${r.fotos !== 1 ? "s" : ""} exportada${r.fotos !== 1 ? "s" : ""}` +
+          (r.faltando > 0 ? ` · ${r.faltando} indisponível(is)` : ""),
+      );
+    } catch {
+      setManualExportMsg("Falha ao exportar. Tente novamente.");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function handleExportSetor() {
     if (!exportPrompt || !inspection || exporting) return;
@@ -452,6 +470,32 @@ export default function InspectionDetail() {
             );
           })}
         </nav>
+
+        {/* Botão de backup manual de fotos — sempre visível dentro de um setor */}
+        {currentSetorId && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between rounded-lg bg-slate-800/60 px-3 py-2">
+              <span className="text-xs text-slate-400">
+                Setor:{" "}
+                <span className="font-medium text-slate-300">
+                  {nodes.find((n) => n.id === currentSetorId)?.nome ?? "—"}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={handleManualExport}
+                disabled={exporting}
+                className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 active:text-blue-200 disabled:opacity-40 min-h-[36px] px-2"
+              >
+                <Download className="h-3.5 w-3.5" />
+                {exporting ? "Exportando…" : "Exportar fotos"}
+              </button>
+            </div>
+            {manualExportMsg && (
+              <p className="text-xs text-emerald-400 px-1">{manualExportMsg}</p>
+            )}
+          </div>
+        )}
 
         {/* Ação primária — coletar no nó atual */}
         {!isReadOnly && (
