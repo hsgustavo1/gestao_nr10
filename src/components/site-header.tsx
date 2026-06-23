@@ -32,7 +32,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
  */
 export function SiteHeader() {
   const auth = useAuth();
-  const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode, hasOrgRole } = auth;
+  const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode, hasOrgRole, hasEntitlement, displayName } = auth;
   const { canView: canViewRtiCampo, canEdit: canEditRtiCampo } = getRtiCampoAccess(auth);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,8 +45,6 @@ export function SiteHeader() {
   const canManageEmpresas =
     isPlatformAdmin || (hasOrgRole("admin") && currentOrg?.tipo === "consultoria");
   const cargo = isAdmin ? "Dono de RAC (Admin)" : isStaff ? "Apoio" : "Consulta";
-  const displayName =
-    (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || "";
   const initials = getInitials(displayName);
 
   return (
@@ -237,7 +235,7 @@ export function SiteHeader() {
                   </MobileNavGroup>
                 )}
 
-                <MobileNavGroup
+                {(isPlatformAdmin || hasEntitlement("pessoas")) && <MobileNavGroup
                   label="Pessoas"
                   prefixes={["/qualificacoes", "/admin/qualificacoes"]}
                 >
@@ -267,7 +265,7 @@ export function SiteHeader() {
                       Importar xlsx
                     </MobileNavLink>
                   )}
-                </MobileNavGroup>
+                </MobileNavGroup>}
 
                 {isPlatformAdmin && (
                   <MobileNavLink to="/epis" onNav={() => setMenuOpen(false)}>
@@ -292,7 +290,7 @@ export function SiteHeader() {
             {isPlatformAdmin && <NR10Dropdown />}
             <RTIDropdown />
             {isPlatformAdmin && <InspecoesDropdown />}
-            <QualDropdown />
+            {(isPlatformAdmin || hasEntitlement("pessoas")) && <QualDropdown />}
             {isPlatformAdmin && <NavLink to="/epis">EPIs</NavLink>}
             {isPlatformAdmin && <VencimentosBell />}
           </nav>
@@ -430,7 +428,8 @@ function UserMenu({
 function OrgSwitcher() {
   const { orgs, currentOrg, setCurrentOrg } = useAuth();
   if (orgs.length <= 1) return null;
-  const tree = buildOrgTree(orgs);
+  const sorted = [...orgs].sort((a, b) => (b.is_root ? 1 : 0) - (a.is_root ? 1 : 0));
+  const tree = buildOrgTree(sorted);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

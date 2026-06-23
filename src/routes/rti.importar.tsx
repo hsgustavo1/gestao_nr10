@@ -34,7 +34,7 @@ import {
 
 export const Route = createFileRoute("/rti/importar")({
   component: RtiImportarPage,
-  head: () => ({ meta: [{ title: "Importar Plano de Ação — RTI — Gestão NR-10" }] }),
+  head: () => ({ meta: [{ title: "Novo RTI — Gestão NR-10" }] }),
 });
 
 // ── Helpers de parsing ────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ function RtiImportarPage() {
   const upsertReport = useUpsertRtiReport();
 
   // Metadados do relatório
-  const [titulo, setTitulo] = useState(`Plano de Ação RTI ${new Date().getFullYear()}`);
+  const [titulo, setTitulo] = useState(`RTI ${new Date().getFullYear()}`);
   const [empresaAuditora, setEmpresaAuditora] = useState("");
   const [responsavelAuditoria, setResponsavelAuditoria] = useState("");
   const [responsavelPlano, setResponsavelPlano] = useState("");
@@ -394,7 +394,7 @@ function RtiImportarPage() {
       <div>
         <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 leading-tight">
           <FileSpreadsheet className="h-5 w-5 shrink-0 text-primary" />
-          RTI — Importar Plano de Ação
+          Novo RTI
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground">
           Importe a planilha do plano de ação (uma aba por área auditada) ou crie um relatório em
@@ -466,7 +466,7 @@ function RtiImportarPage() {
                 value={empresaAuditora}
                 onChange={(e) => setEmpresaAuditora(e.target.value)}
                 maxLength={150}
-                placeholder="Ex.: DIAGNERG"
+                placeholder="Ex.: Empresa"
               />
             </div>
             <div className="space-y-1.5">

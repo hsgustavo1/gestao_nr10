@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
   ShieldCheck,
@@ -11,6 +11,8 @@ import {
   Pencil,
   Building2,
   Eye,
+  UserCheck,
+  Loader2,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,10 +65,8 @@ export const Route = createFileRoute("/admin/usuarios")({
 // por org (níveis Administrador/Visualização) via edge function.
 const PRINCIPAL_ORG_ID = "00000000-0000-0000-0000-000000000001";
 
-// Nível de cliente oferecido na criação por org. Grosso de propósito no MVP; o nível
-// "operador restrito" (edita operação, mas prioridades/NCs travadas) está no ROADMAP.
-// "owner" (admin geral) foi removido da UI — apenas platform admin pode defini-lo.
-type ClientOrgRole = Extract<OrgRole, "admin" | "viewer">;
+// Papel de org disponível na UI. "owner" só aparece para platform admin.
+type ClientOrgRole = Extract<OrgRole, "owner" | "admin" | "viewer">;
 
 type Profile = { id: string; email: string | null; display_name: string | null };
 type Row = Profile & { roles: AppRole[]; org_role: OrgRole | null };
@@ -99,7 +99,7 @@ function orgRoleLabel(r: OrgRole | null): string {
 }
 
 function AdminUsersPage() {
-  const { isAdmin, loading, user, orgs, currentOrg, currentOrgId, hasOrgRole } = useAuth();
+  const { isAdmin, loading, user, orgs, currentOrg, currentOrgId, hasOrgRole, isPlatformAdmin } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [openInvite, setOpenInvite] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Row | null>(null);
@@ -404,12 +404,14 @@ function AdminUsersPage() {
         onOpenChange={setOpenInvite}
         onCreated={reload}
         isPrincipal={isPrincipal}
+        isPlatformAdmin={isPlatformAdmin}
         orgId={currentOrgId}
         orgName={currentOrg?.nome ?? null}
       />
       <EditUserDialog
         row={editing}
         isPrincipal={isPrincipal}
+        isPlatformAdmin={isPlatformAdmin}
         orgId={currentOrgId}
         onOpenChange={(o) => !o && setEditing(null)}
         onSaved={() => {
@@ -470,11 +472,14 @@ function RoleToggle({
   );
 }
 
+type ExistingUser = { id: string; display_name: string | null };
+
 function InviteUserDialog({
   open,
   onOpenChange,
   onCreated,
   isPrincipal,
+  isPlatformAdmin,
   orgId,
   orgName,
 }: {
@@ -482,6 +487,7 @@ function InviteUserDialog({
   onOpenChange: (o: boolean) => void;
   onCreated: () => void;
   isPrincipal: boolean;
+  isPlatformAdmin: boolean;
   orgId: string | null;
   orgName: string | null;
 }) {
@@ -492,6 +498,13 @@ function InviteUserDialog({
   const [orgRole, setOrgRole] = useState<ClientOrgRole>("admin");
   const [loading, setLoading] = useState(false);
 
+  // Lookup: undefined = sem email válido, null = não encontrado, objeto = encontrado
+  const [existingUser, setExistingUser] = useState<ExistingUser | null | undefined>(undefined);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isLinking = existingUser != null; // usuário já existe, só vamos vincular
+
   function reset() {
     setEmail("");
     setName("");
@@ -499,12 +512,32 @@ function InviteUserDialog({
     setRole("apoio");
     setOrgRole("admin");
     setLoading(false);
+    setExistingUser(undefined);
+    setLookupLoading(false);
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+  }
+
+  function handleEmailChange(val: string) {
+    setEmail(val);
+    setExistingUser(undefined);
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+    const trimmed = val.trim().toLowerCase();
+    if (!trimmed.includes("@") || trimmed.length < 5) return;
+    setLookupLoading(true);
+    lookupTimer.current = setTimeout(async () => {
+      const { data } = await supabase.functions.invoke("admin-users", {
+        body: { type: "lookup", email: trimmed, ...(orgId ? { org_id: orgId } : {}) },
+      });
+      setLookupLoading(false);
+      const res = data as { found?: boolean; user?: ExistingUser } | null;
+      setExistingUser(res?.found ? (res.user ?? null) : null);
+    }, 500);
   }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!email.includes("@")) return toast.error("E-mail inválido");
-    if (password.length < 8) return toast.error("Senha deve ter ao menos 8 caracteres");
+    if (!isLinking && password.length < 8) return toast.error("Senha deve ter ao menos 8 caracteres");
     if (!isPrincipal && !orgId) return toast.error("Nenhuma empresa selecionada");
     setLoading(true);
     const body = isPrincipal
@@ -512,24 +545,32 @@ function InviteUserDialog({
       : {
           type: "create",
           email,
-          password,
-          display_name: name || undefined,
+          ...(isLinking ? {} : { password, display_name: name || undefined }),
           org_id: orgId,
           org_role: orgRole,
         };
     const { data, error } = await supabase.functions.invoke("admin-users", { body });
     setLoading(false);
     if (error || (data && (data as { error?: string }).error)) {
-      const raw =
-        (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao cadastrar";
+      let raw = (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao cadastrar";
+      // tenta extrair o body real de respostas non-2xx
+      if (!raw || raw === error?.message) {
+        try {
+          const body = await (error as unknown as { context?: { json?: () => Promise<{ error?: string }> } }).context?.json?.();
+          if (body?.error) raw = body.error;
+        } catch { /* ignora */ }
+      }
       return toast.error(apiErrorMsg(raw));
     }
+    const linked = (data as { linked_existing?: boolean } | null)?.linked_existing;
     const levelLabel = isPrincipal
-      ? role === "admin"
-        ? "Dono de RAC (Admin)"
-        : "Apoio"
+      ? role === "admin" ? "Dono de RAC (Admin)" : "Apoio"
       : orgRoleLabel(orgRole);
-    toast.success(`Usuário ${email} cadastrado como ${levelLabel}`);
+    toast.success(
+      linked
+        ? `${existingUser?.display_name ?? email} vinculado a ${orgName ?? "esta empresa"} como ${levelLabel}`
+        : `Usuário ${email} cadastrado como ${levelLabel}`,
+    );
     reset();
     onOpenChange(false);
     onCreated();
@@ -548,54 +589,76 @@ function InviteUserDialog({
           <DialogTitle>Novo Acesso</DialogTitle>
           <DialogDescription>
             {isPrincipal
-              ? "Crie a conta diretamente — o usuário poderá entrar imediatamente com a senha definida e redefini-la depois pelo fluxo de “Esqueci minha senha”."
-              : `O usuário será vinculado a ${orgName ?? "esta empresa"} e poderá entrar imediatamente com a senha definida.`}
+              ? "Crie a conta diretamente — o usuário poderá entrar imediatamente com a senha definida."
+              : `Vincule a ${orgName ?? "esta empresa"}. Se o e-mail já tiver conta no sistema, ela será reutilizada — sem nova senha.`}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="iname">Nome</Label>
-            <Input
-              id="iname"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex.: Maria Silva"
-              maxLength={120}
-            />
-          </div>
+          {/* E-mail primeiro — dispara o lookup */}
           <div className="space-y-1.5">
             <Label htmlFor="iemail">E-mail</Label>
-            <Input
-              id="iemail"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="off"
-            />
+            <div className="relative">
+              <Input
+                id="iemail"
+                type="email"
+                value={email}
+                onChange={(e) => handleEmailChange(e.target.value)}
+                required
+                autoComplete="off"
+                className={isLinking ? "pr-8 border-green-500 focus-visible:ring-green-500" : "pr-8"}
+              />
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                {lookupLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                {!lookupLoading && isLinking && <UserCheck className="h-3.5 w-3.5 text-green-600" />}
+              </div>
+            </div>
+            {isLinking && (
+              <p className="text-[11px] text-green-700 dark:text-green-400 flex items-center gap-1">
+                <UserCheck className="h-3 w-3" />
+                Conta existente: <strong>{existingUser?.display_name ?? email}</strong> — será vinculada, sem nova senha.
+              </p>
+            )}
+            {existingUser === null && (
+              <p className="text-[11px] text-muted-foreground">Novo usuário — defina nome e senha abaixo.</p>
+            )}
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ipass">Senha provisória</Label>
-            <Input
-              id="ipass"
-              type="text"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              placeholder="Mínimo 8 caracteres"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Compartilhe pessoalmente. O usuário pode trocá-la em "Esqueci minha senha".
-            </p>
-          </div>
+
+          {/* Nome e senha só para novos usuários */}
+          {!isLinking && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="iname">Nome</Label>
+                <Input
+                  id="iname"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex.: Maria Silva"
+                  maxLength={120}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ipass">Senha provisória</Label>
+                <Input
+                  id="ipass"
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required={!isLinking}
+                  minLength={8}
+                  placeholder="Mínimo 8 caracteres"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Compartilhe pessoalmente. O usuário pode trocá-la em "Esqueci minha senha".
+                </p>
+              </div>
+            </>
+          )}
+
           <div className="space-y-1.5">
             <Label>{isPrincipal ? "Perfil inicial" : "Nível de acesso"}</Label>
             {isPrincipal ? (
               <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="apoio">Apoio</SelectItem>
                   <SelectItem value="admin">Dono de RAC (Admin)</SelectItem>
@@ -603,10 +666,11 @@ function InviteUserDialog({
               </Select>
             ) : (
               <Select value={orgRole} onValueChange={(v) => setOrgRole(v as ClientOrgRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  {isPlatformAdmin && (
+                    <SelectItem value="owner">Admin geral (acesso total)</SelectItem>
+                  )}
                   <SelectItem value="admin">Administrador (gestão de rotina)</SelectItem>
                   <SelectItem value="viewer">Visualização (somente leitura)</SelectItem>
                 </SelectContent>
@@ -619,10 +683,12 @@ function InviteUserDialog({
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || lookupLoading}
               className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
             >
-              {loading ? "Criando..." : "Liberar Acesso"}
+              {loading
+                ? isLinking ? "Vinculando..." : "Criando..."
+                : isLinking ? "Vincular Acesso" : "Liberar Acesso"}
             </Button>
           </DialogFooter>
         </form>
@@ -634,12 +700,14 @@ function InviteUserDialog({
 function EditUserDialog({
   row,
   isPrincipal,
+  isPlatformAdmin,
   orgId,
   onOpenChange,
   onSaved,
 }: {
   row: Row | null;
   isPrincipal: boolean;
+  isPlatformAdmin: boolean;
   orgId: string | null;
   onOpenChange: (o: boolean) => void;
   onSaved: () => void;
@@ -655,9 +723,9 @@ function EditUserDialog({
       setName(row.display_name ?? "");
       setEmail(row.email ?? "");
       setPassword("");
-      // Níveis legados (member/owner) caem em "viewer" no seletor; salvar normaliza.
-      // owner não é mais oferecido na UI; existentes são tratados como admin.
-      setOrgRole(row.org_role === "admin" ? "admin" : "viewer");
+      setOrgRole(
+        row.org_role === "owner" ? "owner" : row.org_role === "admin" ? "admin" : "viewer",
+      );
     }
   }, [row]);
 
@@ -734,6 +802,9 @@ function EditUserDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  {isPlatformAdmin && (
+                    <SelectItem value="owner">Admin geral (acesso total)</SelectItem>
+                  )}
                   <SelectItem value="admin">Administrador (gestão de rotina)</SelectItem>
                   <SelectItem value="viewer">Visualização (somente leitura)</SelectItem>
                 </SelectContent>

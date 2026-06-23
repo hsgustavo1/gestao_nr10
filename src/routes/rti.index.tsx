@@ -53,7 +53,7 @@ import { useRtiAreas, useRtiNcs, useRtiReports } from "@/lib/rti-queries";
 
 export const Route = createFileRoute("/rti/")({
   component: RtiDashboardPage,
-  head: () => ({ meta: [{ title: "RTI — Plano de Ação NR-10 — Gestão NR-10" }] }),
+  head: () => ({ meta: [{ title: "RTI — Relatório Técnico de Inspeção das Instalações Elétricas — Gestão NR-10" }] }),
 });
 
 const STATUS_COLORS: Record<RtiNcStatus, string> = {
@@ -147,7 +147,7 @@ function RtiDashboardPage() {
   }, [ncs, areas]);
 
   const responsavelChart = useMemo(() => {
-    const SEM = "Sem responsável";
+    const SEM = "Responsável não definido";
     const abertas = new Map<string, number>();
     for (const nc of ncs) {
       if (nc.status === "concluida") continue;
@@ -203,7 +203,7 @@ function RtiDashboardPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 leading-tight">
             <ShieldAlert className="h-5 w-5 shrink-0 text-primary" />
-            RTI — Plano de Ação NR-10
+            RTI — Relatório Técnico de Inspeção das Instalações Elétricas
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             {activeReport ? (
@@ -256,7 +256,7 @@ function RtiDashboardPage() {
           {canEdit && (
             <Button asChild variant="outline">
               <Link to="/rti/importar">
-                <FileSpreadsheet className="h-4 w-4" /> Importar / Relatórios
+                <FileSpreadsheet className="h-4 w-4" /> Novo / Importar
               </Link>
             </Button>
           )}

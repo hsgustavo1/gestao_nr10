@@ -434,7 +434,7 @@ function QualificacoesCargaPage() {
           </Card>
 
           <div className="flex justify-end">
-            <Button variant="outline" size="sm" onClick={downloadTemplate}>
+            <Button variant="outline" size="sm" onClick={() => setTimeout(downloadTemplate, 0)}>
               <Download className="h-4 w-4" />
               Baixar Modelo
             </Button>

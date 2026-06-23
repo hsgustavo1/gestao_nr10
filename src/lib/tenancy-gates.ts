@@ -14,9 +14,11 @@ export type ScopedAccess = {
 };
 
 export function getRtiCampoAccess(ctx: ScopedGateContext): ScopedAccess {
-  const hasRtiEntitlement = ctx.hasEntitlement("rti_pwa") || ctx.hasEntitlement("gestao_completa");
+  const legacy = ctx.hasEntitlement("rti_pwa"); // retrocompatibilidade
+  const hasRtiEntitlement = legacy || ctx.hasEntitlement("rti") || ctx.hasEntitlement("gestao_completa");
+  const hasCampoEntitlement = legacy || ctx.hasEntitlement("campo_pwa") || ctx.hasEntitlement("gestao_completa");
   const canView = ctx.isStaff || hasRtiEntitlement;
-  const canEdit = canView && (ctx.isStaff || ctx.hasOrgRole("member"));
+  const canEdit = canView && (ctx.isStaff || hasCampoEntitlement) && (ctx.isStaff || ctx.hasOrgRole("member"));
   const canAdmin = canView && (ctx.isAdmin || ctx.hasOrgRole("admin"));
 
   return { canView, canEdit, canAdmin };
@@ -52,7 +54,7 @@ export type RecordAccess = {
 };
 
 export function getRecordAccess(ctx: SealActor, record: SealedRecord): RecordAccess {
-  const hasRti = ctx.hasEntitlement("rti_pwa") || ctx.hasEntitlement("gestao_completa");
+  const hasRti = ctx.hasEntitlement("rti_pwa") || ctx.hasEntitlement("rti") || ctx.hasEntitlement("gestao_completa");
   const canView = ctx.isStaff || ctx.isPlatformAdmin || hasRti;
 
   const editRank = Math.max(rank(ctx.directOrgRole), rank(ctx.managerOrgRole));

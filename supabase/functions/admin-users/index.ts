@@ -16,20 +16,14 @@ type Action =
   | {
       type: "create";
       email: string;
-      password: string;
+      password?: string; // opcional quando o usuário já existe
       display_name?: string;
-      // Papel global legado (single-tenant). Opcional quando org_id é informado.
       role?: "admin" | "apoio";
-      // Multi-tenancy: vincula o novo usuário a uma org com um papel de org.
       org_id?: string;
       org_role?: OrgRole;
     }
-  // Lista os usuários de uma org (membros + profiles + papéis globais). Privilegiado
-  // porque o RLS de `profiles` (shares_org) esconde usuários de orgs que o caller
-  // gerencia mas não é co-membro (caso do consultor sobre o cliente).
+  | { type: "lookup"; email: string } // verifica se e-mail já tem conta
   | { type: "list"; org_id: string }
-  // org_id opcional em delete/reset/update: quando presente, a autz é por org
-  // (org_role_at_least admin) + verificação de que o alvo pertence à org.
   | { type: "delete"; user_id: string; org_id?: string }
   | { type: "reset_password"; email: string; redirect_to?: string; org_id?: string }
   | {
@@ -39,7 +33,6 @@ type Action =
       display_name?: string;
       password?: string;
       org_id?: string;
-      // Troca de papel na org (admin↔viewer pela UI). Só aplica com org_id.
       org_role?: OrgRole;
     };
 
@@ -66,7 +59,6 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Missing Authorization header" }, 401);
 
-    // Cliente "as caller" — valida o JWT do solicitante
     const userClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -76,12 +68,6 @@ Deno.serve(async (req) => {
 
     const action = (await req.json()) as Action;
 
-    // Autorização escopada por org:
-    //  - platform admin pode tudo (cross-tenant);
-    //  - criar usuário PARA uma org exige org_role_at_least(admin) naquela org
-    //    (cobre consultor que gerencia o cliente, via can_access/org_role_at_least);
-    //  - sem org_id, cai no papel global legado (has_role admin) — compat single-tenant.
-    // org_id escopa a autorização em qualquer ação que o aceite.
     const actionOrgId = "org_id" in action ? (action as { org_id?: string }).org_id : undefined;
 
     const { data: platformAdmin } = await userClient.rpc("is_platform_admin", { _uid: callerId });
@@ -106,14 +92,10 @@ Deno.serve(async (req) => {
     }
     if (!authorized) return json({ error: "Forbidden: admin role required" }, 403);
 
-    // Cliente admin com service role para operações privilegiadas
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
     });
 
-    // Quando a autz é por org (não platform admin), o usuário-alvo precisa pertencer
-    // à org — senão um admin de org A poderia mirar um usuário de outra org só passando
-    // o org_id que administra. Platform admin e caminho global legado pulam a checagem.
     const targetMustBeInOrg = Boolean(actionOrgId) && platformAdmin !== true;
     async function assertUserInOrg(targetUserId: string): Promise<boolean> {
       if (!targetMustBeInOrg) return true;
@@ -126,6 +108,20 @@ Deno.serve(async (req) => {
       return Boolean(data);
     }
 
+    // ── lookup ────────────────────────────────────────────────────────────────
+    // Verifica se um e-mail já tem conta sem expor dados sensíveis.
+    if (action.type === "lookup") {
+      const email = (action.email ?? "").trim().toLowerCase();
+      if (!email) return json({ ok: true, found: false, user: null });
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("id, display_name")
+        .eq("email", email)
+        .maybeSingle();
+      return json({ ok: true, found: !!profile, user: profile ?? null });
+    }
+
+    // ── list ──────────────────────────────────────────────────────────────────
     if (action.type === "list") {
       if (!actionOrgId) return json({ error: "org_id é obrigatório" }, 400);
       const { data: mems, error: memErr } = await admin
@@ -169,6 +165,9 @@ Deno.serve(async (req) => {
       return json({ ok: true, users });
     }
 
+    // ── create ────────────────────────────────────────────────────────────────
+    // Se o e-mail já existe no sistema → apenas vincula à org (sem criar conta).
+    // Se é novo → cria a conta no auth e vincula.
     if (action.type === "create") {
       const email = (action.email ?? "").trim().toLowerCase();
       const password = action.password ?? "";
@@ -176,62 +175,98 @@ Deno.serve(async (req) => {
       const role = action.role;
       const orgId = action.org_id;
       const orgRole = action.org_role ?? "member";
-      if (!email || !password) return json({ error: "Email e senha são obrigatórios" }, 400);
-      if (password.length < 8)
-        return json({ error: "A senha deve ter pelo menos 8 caracteres" }, 400);
-      // Papel global é opcional agora (multi-tenancy usa org_role). Se vier, valida.
-      if (role !== undefined && role !== "admin" && role !== "apoio") {
-        return json({ error: "Role inválida" }, 400);
-      }
+
+      if (!email) return json({ error: "E-mail é obrigatório" }, 400);
       if (!orgId && !role) {
         return json({ error: "Informe org_id (multi-tenant) ou role (global)" }, 400);
+      }
+      if (role !== undefined && role !== "admin" && role !== "apoio") {
+        return json({ error: "Role inválida" }, 400);
       }
       const validOrgRoles = ["owner", "admin", "member", "viewer"];
       if (action.org_role !== undefined && !validOrgRoles.includes(action.org_role)) {
         return json({ error: "org_role inválido" }, 400);
       }
-      // Só platform admin pode criar nível 'owner' (admin-geral). Sem isto, um
-      // admin-padrão do cliente criaria um owner e bypassaria o selo de entrega.
       if (platformAdmin !== true && action.org_role === "owner") {
         return json({ error: "Sem permissão para definir o nível 'owner'" }, 403);
       }
 
-      const { data: created, error: createErr } = await admin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { display_name: displayName },
-      });
-      if (createErr || !created.user)
-        return json({ error: createErr?.message ?? "Erro ao criar" }, 400);
+      // Verifica se o usuário já existe pelo e-mail
+      const { data: existingProfile } = await admin
+        .from("profiles")
+        .select("id, display_name")
+        .eq("email", email)
+        .maybeSingle();
 
-      // Garante profile (trigger handle_new_user já cuida, mas reforçamos display_name)
-      await admin.from("profiles").upsert({
-        id: created.user.id,
-        email,
-        display_name: displayName,
-      });
+      let userId: string;
+      const isExisting = !!existingProfile;
 
-      // Papel global legado (opcional). Mantém compat com o painel single-tenant.
-      if (role) {
-        await admin.from("user_roles").insert({ user_id: created.user.id, role });
+      if (isExisting) {
+        // Usuário já existe → só vincula, senha não é necessária
+        userId = existingProfile!.id;
+      } else {
+        // Novo usuário → senha obrigatória
+        if (!password) return json({ error: "Senha é obrigatória para novos usuários" }, 400);
+        if (password.length < 8)
+          return json({ error: "A senha deve ter pelo menos 8 caracteres" }, 400);
+
+        const { data: created, error: createErr } = await admin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { display_name: displayName },
+        });
+        if (createErr || !created.user)
+          return json({ error: createErr?.message ?? "Erro ao criar" }, 400);
+
+        userId = created.user.id;
+
+        await admin.from("profiles").upsert({
+          id: userId,
+          email,
+          display_name: displayName,
+        });
+
+        if (role) {
+          await admin.from("user_roles").insert({ user_id: userId, role });
+        }
       }
 
-      // Multi-tenancy: vincula o novo usuário à org informada.
+      // Vincula à org (se informada)
       if (orgId) {
+        // Evita duplicar membership
+        const { data: alreadyMember } = await admin
+          .from("org_memberships")
+          .select("org_id")
+          .eq("user_id", userId)
+          .eq("org_id", orgId)
+          .maybeSingle();
+
+        if (alreadyMember) {
+          return json({ error: "Este usuário já é membro desta empresa" }, 400);
+        }
+
         const { error: memErr } = await admin
           .from("org_memberships")
-          .insert({ user_id: created.user.id, org_id: orgId, org_role: orgRole });
+          .insert({ user_id: userId, org_id: orgId, org_role: orgRole });
         if (memErr)
           return json(
-            { error: "Usuário criado, mas falhou o vínculo de org: " + memErr.message },
+            {
+              error: (isExisting ? "Usuário localizado" : "Usuário criado") +
+                ", mas falhou o vínculo de org: " + memErr.message,
+            },
             500,
           );
       }
 
-      return json({ ok: true, user: { id: created.user.id, email, org_id: orgId ?? null } });
+      return json({
+        ok: true,
+        user: { id: userId, email, org_id: orgId ?? null },
+        linked_existing: isExisting,
+      });
     }
 
+    // ── delete ────────────────────────────────────────────────────────────────
     if (action.type === "delete") {
       if (!action.user_id) return json({ error: "user_id é obrigatório" }, 400);
       if (action.user_id === userRes.user.id) {
@@ -241,9 +276,6 @@ Deno.serve(async (req) => {
         return json({ error: "Usuário não pertence a esta organização" }, 403);
       }
 
-      // Delete escopado por org (consultor/admin de org): remove só o vínculo daquela
-      // org. Só apaga o usuário do auth se ele não sobrar em nenhuma outra org nem
-      // tiver papel global — evita derrubar um usuário multi-org de outro tenant.
       if (targetMustBeInOrg) {
         await admin
           .from("org_memberships")
@@ -263,7 +295,6 @@ Deno.serve(async (req) => {
         return json({ ok: true, removed_from_org: true, deleted_user: orphan });
       }
 
-      // Delete global legado (platform admin / admin global): remove tudo.
       await admin.from("user_roles").delete().eq("user_id", action.user_id);
       await admin.from("org_memberships").delete().eq("user_id", action.user_id);
       await admin.from("profiles").delete().eq("id", action.user_id);
@@ -272,9 +303,9 @@ Deno.serve(async (req) => {
       return json({ ok: true, deleted_user: true });
     }
 
+    // ── reset_password ────────────────────────────────────────────────────────
     if (action.type === "reset_password") {
       if (!action.email) return json({ error: "email é obrigatório" }, 400);
-      // Escopo por org: o alvo (por e-mail) precisa pertencer à org.
       if (targetMustBeInOrg) {
         const { data: prof } = await admin
           .from("profiles")
@@ -285,7 +316,6 @@ Deno.serve(async (req) => {
           return json({ error: "Usuário não pertence a esta organização" }, 403);
         }
       }
-      // Usa o cliente público para DISPARAR o e-mail (generateLink só gera link, não envia)
       const publicClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
         auth: { persistSession: false },
       });
@@ -297,6 +327,7 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    // ── update ────────────────────────────────────────────────────────────────
     if (action.type === "update") {
       if (!action.user_id) return json({ error: "user_id é obrigatório" }, 400);
       if (!(await assertUserInOrg(action.user_id))) {
@@ -327,10 +358,6 @@ Deno.serve(async (req) => {
         await admin.from("profiles").update(profilePatch).eq("id", action.user_id);
       }
 
-      // Troca de papel na org (somente no escopo de uma org). Guardas:
-      //  - exige org_id (papel é por org, não global);
-      //  - não pode alterar o próprio nível (evita auto-lockout);
-      //  - quem não é platform admin não pode promover a 'owner' (sem escalonamento).
       if (action.org_role !== undefined) {
         if (!actionOrgId) return json({ error: "org_id é obrigatório para trocar o nível" }, 400);
         const validOrgRoles = ["owner", "admin", "member", "viewer"];

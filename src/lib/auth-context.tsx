@@ -43,6 +43,7 @@ interface AuthState {
   isApoio: boolean;
   isStaff: boolean;
   isViewer: boolean;
+  displayName: string;
   // --- multi-tenancy ---
   orgs: Org[];
   currentOrg: Org | null;
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [entitlements, setEntitlements] = useState<string[]>([]);
+  const [profileName, setProfileName] = useState<string | null>(null);
 
   const loadRoles = async (userId: string | undefined) => {
     if (!userId) {
@@ -87,22 +89,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles((data ?? []).map((r) => r.role as AppRole));
   };
 
-  // Carrega orgs/memberships/platform-admin. Tolerante a falha (migração ausente).
+  // Carrega orgs/memberships/platform-admin/profile. Tolerante a falha (migração ausente).
   const loadOrgContext = async (userId: string | undefined) => {
     if (!userId) {
       setOrgs([]);
       setMemberships([]);
       setIsPlatformAdmin(false);
       setCurrentOrgId(null);
+      setProfileName(null);
       return;
     }
     try {
       // RLS em organizations já retorna exatamente as orgs acessíveis
       // (membro direto + filhas via parent + clientes via managed_by).
-      const [orgRes, memRes, paRes] = await Promise.all([
+      const [orgRes, memRes, paRes, profRes] = await Promise.all([
         sb.from("organizations").select("id, nome, tipo, parent_org_id, managed_by_org_id, is_root"),
         sb.from("org_memberships").select("org_id, org_role").eq("user_id", userId),
         sb.from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle(),
+        sb.from("profiles").select("display_name").eq("id", userId).maybeSingle(),
       ]);
 
       const loadedOrgs: Org[] = (orgRes?.data ?? []) as Org[];
@@ -110,11 +114,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setOrgs(loadedOrgs);
       setMemberships(loadedMems);
       setIsPlatformAdmin(Boolean(paRes?.data));
+      setProfileName((profRes?.data as { display_name?: string } | null)?.display_name ?? null);
 
-      // Define a org ativa: localStorage se ainda válida, senão a 1ª.
-      const stored = typeof window !== "undefined" ? localStorage.getItem(CURRENT_ORG_KEY) : null;
-      const valid = stored && loadedOrgs.some((o) => o.id === stored) ? stored : null;
-      const fallback = loadedOrgs[0]?.id ?? null;
+      // Define a org ativa: localStorage por usuário se ainda válida, senão a 1ª org
+      // com membership direto (evita herdar preferência de outro usuário no mesmo browser).
+      const userKey = `${CURRENT_ORG_KEY}-${userId}`;
+      const stored = typeof window !== "undefined" ? localStorage.getItem(userKey) : null;
+      const valid = stored && loadedOrgs.some((o: Org) => o.id === stored) ? stored : null;
+      const directOrgIds = new Set(loadedMems.map((m: Membership) => m.org_id));
+      const directOrg = loadedOrgs.find((o: Org) => directOrgIds.has(o.id));
+      const fallback = directOrg?.id ?? loadedOrgs[0]?.id ?? null;
       setCurrentOrgId(valid ?? fallback);
     } catch {
       // Migração ainda não aplicada — segue com papéis legados.
@@ -122,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setMemberships([]);
       setIsPlatformAdmin(false);
       setCurrentOrgId(null);
+      setProfileName(null);
     }
   };
 
@@ -177,11 +187,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = roles.includes("admin");
   const isApoio = roles.includes("apoio");
   const isStaff = isAdmin || isApoio;
+  const displayName =
+    profileName ||
+    (user?.user_metadata?.display_name as string | undefined) ||
+    user?.email?.split("@")[0] ||
+    "";
 
   const currentOrg = orgs.find((o) => o.id === currentOrgId) ?? null;
 
   const setCurrentOrg = (orgId: string) => {
-    if (typeof window !== "undefined") localStorage.setItem(CURRENT_ORG_KEY, orgId);
+    if (typeof window !== "undefined" && user?.id) {
+      localStorage.setItem(`${CURRENT_ORG_KEY}-${user.id}`, orgId);
+    }
     setCurrentOrgId(orgId);
   };
 
@@ -243,6 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isApoio,
         isStaff,
         isViewer,
+        displayName,
         orgs,
         currentOrg,
         currentOrgId,
@@ -257,9 +275,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         enterViewerMode,
         exitViewerMode,
         signOut: async () => {
+          if (typeof window !== "undefined" && user?.id) {
+            localStorage.removeItem(`${CURRENT_ORG_KEY}-${user.id}`);
+          }
           await supabase.auth.signOut();
           exitViewerMode();
-          if (typeof window !== "undefined") localStorage.removeItem(CURRENT_ORG_KEY);
         },
         refreshRoles: async () => {
           await Promise.all([loadRoles(user?.id), loadOrgContext(user?.id)]);

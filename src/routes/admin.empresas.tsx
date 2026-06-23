@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Building2,
@@ -10,6 +10,8 @@ import {
   CornerDownRight,
   Power,
   Trash2,
+  UserCheck,
+  Loader2,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,7 +66,7 @@ export const Route = createFileRoute("/admin/empresas")({
 });
 
 function AdminEmpresasPage() {
-  const { isPlatformAdmin, hasOrgRole, loading, setCurrentOrg } = useAuth();
+  const { isPlatformAdmin, hasOrgRole, loading, setCurrentOrg, refreshRoles } = useAuth();
   const navigate = useNavigate();
   const access = getEmpresaAdminAccess({ isPlatformAdmin, hasOrgRole });
 
@@ -161,7 +163,7 @@ function AdminEmpresasPage() {
                 <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="font-medium truncate">{org.nome}</span>
                 <span className="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {TIPO_LABEL[org.tipo]}
+                  {org.is_root ? "Plataforma" : TIPO_LABEL[org.tipo]}
                 </span>
                 <div className="flex gap-1 flex-wrap">
                   {org.entitlements.map((m) => (
@@ -212,6 +214,7 @@ function AdminEmpresasPage() {
           onCreated={() => {
             setWizardOpen(false);
             void reload();
+            void refreshRoles();
           }}
         />
       )}
@@ -254,13 +257,20 @@ function NovaEmpresaWizard({
   const [tipo, setTipo] = useState<OrgTipo>("cliente");
   const [managedBy, setManagedBy] = useState<string>(""); // "" = cliente direto
   const [parent, setParent] = useState<string>("");
-  const [modules, setModules] = useState<string[]>(["rti_pwa"]);
+  const [modules, setModules] = useState<string[]>(["rti"]);
   // passo 4 (opcional)
   const [email, setEmail] = useState("");
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [orgRole, setOrgRole] = useState<Extract<OrgRole, "owner" | "admin" | "viewer">>("admin");
   const [saving, setSaving] = useState(false);
+
+  // Lookup: undefined = sem email, null = nao encontrado, objeto = encontrado
+  type ExistingUser = { id: string; display_name: string | null };
+  const [existingUser, setExistingUser] = useState<ExistingUser | null | undefined>(undefined);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLinking = existingUser != null;
 
   const consultorias = empresas.filter((e) => e.tipo === "consultoria" && e.ativa);
   const possiveisMaes = empresas.filter((e) => e.id && e.ativa);
@@ -271,12 +281,32 @@ function NovaEmpresaWizard({
     setTipo("cliente");
     setManagedBy("");
     setParent("");
-    setModules(["rti_pwa"]);
+    setModules(["rti"]);
     setEmail("");
     setUserName("");
     setPassword("");
     setOrgRole("admin");
     setSaving(false);
+    setExistingUser(undefined);
+    setLookupLoading(false);
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+  }
+
+  function handleEmailChange(val: string) {
+    setEmail(val);
+    setExistingUser(undefined);
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+    const trimmed = val.trim().toLowerCase();
+    if (!trimmed.includes("@") || trimmed.length < 5) return;
+    setLookupLoading(true);
+    lookupTimer.current = setTimeout(async () => {
+      const { data } = await supabase.functions.invoke("admin-users", {
+        body: { type: "lookup", email: trimmed },
+      });
+      setLookupLoading(false);
+      const res = data as { found?: boolean; user?: ExistingUser } | null;
+      setExistingUser(res?.found ? (res.user ?? null) : null);
+    }, 500);
   }
 
   function close(o: boolean) {
@@ -303,8 +333,8 @@ function NovaEmpresaWizard({
   // Cria a empresa (passos 1–3) e, se preenchido, o 1º usuário (passo 4, opcional).
   async function finish(withUser: boolean) {
     if (withUser) {
-      if (!email.includes("@")) return toast.error("E-mail inválido");
-      if (password.length < 8) return toast.error("Senha deve ter ao menos 8 caracteres");
+      if (!email.includes("@")) return toast.error("E-mail invalido");
+      if (!isLinking && password.length < 8) return toast.error("Senha deve ter ao menos 8 caracteres");
     }
     setSaving(true);
     let newId: string;
@@ -326,15 +356,22 @@ function NovaEmpresaWizard({
         body: {
           type: "create",
           email,
-          password,
-          display_name: userName || undefined,
+          ...(isLinking ? {} : { password, display_name: userName || undefined }),
           org_id: newId,
           org_role: orgRole,
         },
       });
-      if (error || (data as { error?: string } | null)?.error) {
-        const msg =
-          (data as { error?: string } | null)?.error ?? error?.message ?? "Erro ao criar usuário";
+      const bodyErr = (data as { error?: string } | null)?.error;
+      let invokeErr = error?.message;
+      if (error && !bodyErr) {
+        // non-2xx: o corpo real está em error.context
+        try {
+          const body = await (error as unknown as { context?: { json?: () => Promise<{ error?: string }> } }).context?.json?.();
+          if (body?.error) invokeErr = body.error;
+        } catch { /* ignora */ }
+      }
+      if (bodyErr || invokeErr) {
+        const msg = bodyErr ?? invokeErr ?? "Erro ao criar usuário";
         setSaving(false);
         toast.error(
           `Empresa criada, mas falhou ao criar o usuário: ${msg}. Defina depois em Controle de acessos.`,
@@ -453,41 +490,67 @@ function NovaEmpresaWizard({
         )}
 
         {step === 4 && (
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="emp-uname">Nome do usuário</Label>
-              <Input
-                id="emp-uname"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                maxLength={120}
-              />
+          <div className="space-y-2">
+            {/* E-mail primeiro — dispara lookup */}
+            <div className="space-y-1">
+              <Label htmlFor="emp-email" className="text-xs">E-mail</Label>
+              <div className="relative">
+                <Input
+                  id="emp-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  autoComplete="off"
+                  className={`h-8 text-sm pr-7 ${isLinking ? "border-green-500 focus-visible:ring-green-500" : ""}`}
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                  {lookupLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                  {!lookupLoading && isLinking && <UserCheck className="h-3 w-3 text-green-600" />}
+                </div>
+              </div>
+              {isLinking && (
+                <p className="text-[11px] text-green-700 dark:text-green-400 flex items-center gap-1">
+                  <UserCheck className="h-3 w-3" />
+                  Conta existente: <strong>{existingUser?.display_name ?? email}</strong> — sera vinculada.
+                </p>
+              )}
+              {existingUser === null && (
+                <p className="text-[11px] text-muted-foreground">Novo usuario — preencha nome e senha.</p>
+              )}
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="emp-email">E-mail</Label>
-              <Input
-                id="emp-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="off"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="emp-pass">Senha provisória</Label>
-              <Input
-                id="emp-pass"
-                type="text"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                minLength={8}
-                placeholder="Mínimo 8 caracteres"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Nível de acesso</Label>
+
+            {/* Nome e senha so para novos usuarios */}
+            {!isLinking && (
+              <>
+                <div className="space-y-1">
+                  <Label htmlFor="emp-uname" className="text-xs">Nome do usuario</Label>
+                  <Input
+                    id="emp-uname"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    maxLength={120}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="emp-pass" className="text-xs">Senha provisoria</Label>
+                  <Input
+                    id="emp-pass"
+                    type="text"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    minLength={8}
+                    placeholder="Minimo 8 caracteres"
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="space-y-1">
+              <Label className="text-xs">Nível de acesso</Label>
               <Select value={orgRole} onValueChange={(v) => setOrgRole(v as typeof orgRole)}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -533,24 +596,25 @@ function NovaEmpresaWizard({
             </Button>
           )}
           {step === 4 && (
-            <>
+            <div className="flex flex-col gap-2 w-full">
+              <Button
+                type="button"
+                onClick={() => void finish(true)}
+                disabled={saving}
+                className="bg-brand-gradient text-white shadow-brand hover:opacity-95 w-full"
+              >
+                {saving ? "Criando..." : "Criar empresa + usuário"}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => void finish(false)}
                 disabled={saving}
+                className="w-full"
               >
                 Pular — definir depois
               </Button>
-              <Button
-                type="button"
-                onClick={() => void finish(true)}
-                disabled={saving}
-                className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
-              >
-                {saving ? "Criando..." : "Criar empresa + usuário"}
-              </Button>
-            </>
+            </div>
           )}
         </DialogFooter>
       </DialogContent>
@@ -585,7 +649,7 @@ function EditarEmpresaPanel({
       setNome(row.nome);
       setManagedBy(row.managed_by_org_id ?? "");
       setParent(row.parent_org_id ?? "");
-      setModules(row.entitlements);
+      setModules(row.entitlements.filter((e) => MODULES.some((m) => m.key === e)));
     }
   }, [row]);
 
@@ -743,110 +807,119 @@ function EditarEmpresaPanel({
             )}
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            {canDeactivateThis && (
+          <DialogFooter className="flex items-center justify-between gap-2 flex-row">
+            <div className="flex gap-2">
+              {canDeactivateThis && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConfirmToggle(true)}
+                  disabled={saving}
+                  className={row.ativa ? "text-destructive hover:text-destructive" : ""}
+                >
+                  <Power className="h-3.5 w-3.5" /> {row.ativa ? "Desativar" : "Reativar"}
+                </Button>
+              )}
+              {access.canDelete && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={saving}
+                  className="text-destructive hover:text-destructive"
+                  title="Excluir permanentemente"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Excluir
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => setConfirmToggle(true)}
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
                 disabled={saving}
-                className={row.ativa ? "text-destructive hover:text-destructive" : ""}
               >
-                <Power className="h-3.5 w-3.5" /> {row.ativa ? "Desativar" : "Reativar"}
+                Cancelar
               </Button>
-            )}
-            {access.canDelete && (
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => setConfirmDelete(true)}
+                size="sm"
+                onClick={() => void save()}
                 disabled={saving}
-                className="text-destructive hover:text-destructive"
-                title="Excluir permanentemente"
+                className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
               >
-                <Trash2 className="h-3.5 w-3.5" /> Excluir
+                {saving ? "Salvando..." : "Salvar"}
               </Button>
-            )}
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              disabled={saving}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={() => void save()}
-              disabled={saving}
-              className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
-            >
-              {saving ? "Salvando..." : "Salvar"}
-            </Button>
+            </div>
           </DialogFooter>
+
+          {/* AlertDialogs dentro do DialogContent para evitar conflito de focus trap */}
+          <AlertDialog open={confirmToggle} onOpenChange={setConfirmToggle}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {row.ativa ? "Desativar" : "Reativar"} {row.nome}?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {row.ativa
+                    ? `A empresa some para os usuários comuns; os dados são preservados e você pode reativá-la. ${
+                        row.tipo === "consultoria" && clientesGeridos > 0
+                          ? `Atenção: esta consultoria gere ${clientesGeridos} cliente(s) — eles NÃO são desativados automaticamente.`
+                          : ""
+                      }`
+                    : "A empresa volta a ficar acessível aos usuários vinculados."}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => void toggleActive()}
+                  className={
+                    row.ativa
+                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      : ""
+                  }
+                >
+                  {row.ativa ? "Desativar" : "Reativar"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir {row.nome} permanentemente?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação é irreversível e remove a empresa de vez. Só é permitida se ela não
+                  tiver unidades, clientes geridos ou dados (inspeções, RTI, EPIs…). Se tiver,
+                  prefira <strong>desativar</strong>, que preserva tudo.
+                  {row.tipo === "consultoria" && clientesGeridos > 0 && (
+                    <>
+                      {" "}
+                      Esta consultoria gere {clientesGeridos} cliente(s) — a exclusão será
+                      bloqueada até desvinculá-los.
+                    </>
+                  )}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => void removeOrg()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={confirmToggle} onOpenChange={setConfirmToggle}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {row.ativa ? "Desativar" : "Reativar"} {row.nome}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {row.ativa
-                ? `A empresa some para os usuários comuns; os dados são preservados e você pode reativá-la. ${
-                    row.tipo === "consultoria" && clientesGeridos > 0
-                      ? `Atenção: esta consultoria gere ${clientesGeridos} cliente(s) — eles NÃO são desativados automaticamente.`
-                      : ""
-                  }`
-                : "A empresa volta a ficar acessível aos usuários vinculados."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => void toggleActive()}
-              className={
-                row.ativa
-                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  : ""
-              }
-            >
-              {row.ativa ? "Desativar" : "Reativar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir {row.nome} permanentemente?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação é irreversível e remove a empresa de vez. Só é permitida se ela não tiver
-              unidades, clientes geridos ou dados (inspeções, RTI, EPIs…). Se tiver, prefira
-              <strong> desativar</strong>, que preserva tudo.
-              {row.tipo === "consultoria" && clientesGeridos > 0 && (
-                <>
-                  {" "}
-                  Esta consultoria gere {clientesGeridos} cliente(s) — a exclusão será bloqueada até
-                  desvinculá-los.
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => void removeOrg()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
