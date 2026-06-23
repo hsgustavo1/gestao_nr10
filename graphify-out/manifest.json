@@ -1,8 +1,8 @@
 {
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\package.json": {
-    "mtime": 1781205529.7378576,
-    "ast_hash": "48699a63f6f8eca179a3453921c720a4",
-    "semantic_hash": "48699a63f6f8eca179a3453921c720a4"
+    "mtime": 1782155923.7077372,
+    "ast_hash": "df128fc69a922a7d1a4ffea40bc068af",
+    "semantic_hash": "df128fc69a922a7d1a4ffea40bc068af"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\tsconfig.app.json": {
     "mtime": 1781380389.0236175,
@@ -15,14 +15,14 @@
     "semantic_hash": "7bbef11e7b0c4b6a3c3dfd3932cde8ce"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\vite.config.ts": {
-    "mtime": 1781458734.3145447,
-    "ast_hash": "39339c592adb0167d83f907c82d507fd",
-    "semantic_hash": "39339c592adb0167d83f907c82d507fd"
+    "mtime": 1782155981.6604533,
+    "ast_hash": "b5b603488759b95fec20833d528fc39a",
+    "semantic_hash": "b5b603488759b95fec20833d528fc39a"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\main.tsx": {
-    "mtime": 1781216032.9961817,
-    "ast_hash": "09aec98c1e6ce5dacd2a13ac41fd4c2e",
-    "semantic_hash": "09aec98c1e6ce5dacd2a13ac41fd4c2e"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "3dd80c1dbb7831bc8b6147a85633c08b",
+    "semantic_hash": "3dd80c1dbb7831bc8b6147a85633c08b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\vite-env.d.ts": {
     "mtime": 1781205559.9262674,
@@ -30,454 +30,454 @@
     "semantic_hash": "11ecfcbd6f7344db8ce9e9ae76e70a6c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\components\\CreateInspectionModal.tsx": {
-    "mtime": 1781380145.452927,
-    "ast_hash": "2130289d8f8e060ba3f1f1332497086d",
-    "semantic_hash": "2130289d8f8e060ba3f1f1332497086d"
+    "mtime": 1781991287.2840157,
+    "ast_hash": "1b0e7bc9c13cd30593479a6ad4efb532",
+    "semantic_hash": "1b0e7bc9c13cd30593479a6ad4efb532"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\components\\EditMetadataModal.tsx": {
-    "mtime": 1781380111.075051,
-    "ast_hash": "c6a3c80fe099423d76869b78091fb0e3",
-    "semantic_hash": "c6a3c80fe099423d76869b78091fb0e3"
+    "mtime": 1781494601.9149747,
+    "ast_hash": "d6b96e88ade8473c6a6793ee096abe17",
+    "semantic_hash": "d6b96e88ade8473c6a6793ee096abe17"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\components\\Layout.tsx": {
-    "mtime": 1781385484.9919758,
-    "ast_hash": "3e0a69a55d5f1014a6ba637584da5f93",
-    "semantic_hash": "3e0a69a55d5f1014a6ba637584da5f93"
+    "mtime": 1781494601.9149747,
+    "ast_hash": "afae4fbebe219e4ec94e3d1be44f5548",
+    "semantic_hash": "afae4fbebe219e4ec94e3d1be44f5548"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\components\\SyncStatus.tsx": {
-    "mtime": 1781448505.1976707,
-    "ast_hash": "bbf7df35e769b5ba02676b6c51cb7653",
-    "semantic_hash": "bbf7df35e769b5ba02676b6c51cb7653"
+    "mtime": 1781494601.9159753,
+    "ast_hash": "47081d08544152bc80d7c20f452067ae",
+    "semantic_hash": "47081d08544152bc80d7c20f452067ae"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\db\\dexie.ts": {
-    "mtime": 1781366704.7368836,
-    "ast_hash": "ff05b3f2820c3e14f12aabf29ace9130",
-    "semantic_hash": "ff05b3f2820c3e14f12aabf29ace9130"
+    "mtime": 1781494601.9159753,
+    "ast_hash": "99dca4a8a5402c76d5e03d67f7425168",
+    "semantic_hash": "99dca4a8a5402c76d5e03d67f7425168"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\hooks\\useSyncStatus.ts": {
-    "mtime": 1781385528.4047954,
-    "ast_hash": "e3c08b69de819e5b7563587c8012ae63",
-    "semantic_hash": "e3c08b69de819e5b7563587c8012ae63"
+    "mtime": 1781494601.9159753,
+    "ast_hash": "9ea2361c24967b678eab9c07da047406",
+    "semantic_hash": "9ea2361c24967b678eab9c07da047406"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\lib\\campo.ts": {
-    "mtime": 1781380470.9864852,
-    "ast_hash": "7f20cb6eb83aba48c13d50259ef18280",
-    "semantic_hash": "7f20cb6eb83aba48c13d50259ef18280"
+    "mtime": 1781494601.9159753,
+    "ast_hash": "82da9ef4a57a96dc567eade849d22ea2",
+    "semantic_hash": "82da9ef4a57a96dc567eade849d22ea2"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\lib\\supabase.ts": {
-    "mtime": 1781205927.6798446,
-    "ast_hash": "c92fc58f852a19855e197912abaabd0f",
-    "semantic_hash": "c92fc58f852a19855e197912abaabd0f"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "f6546e21a61aa28c0a37340e37705605",
+    "semantic_hash": "f6546e21a61aa28c0a37340e37705605"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\lib\\types.ts": {
-    "mtime": 1781380397.681909,
-    "ast_hash": "9e62d43b16eb19908aaf314832830c8b",
-    "semantic_hash": "9e62d43b16eb19908aaf314832830c8b"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "5aef306e00af34bd124486f31cd5d010",
+    "semantic_hash": "5aef306e00af34bd124486f31cd5d010"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\lib\\uuid.ts": {
-    "mtime": 1781366881.2812307,
-    "ast_hash": "554263ab7ebb9b654a88075e9d8d914e",
-    "semantic_hash": "554263ab7ebb9b654a88075e9d8d914e"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "ed3ab95dfdb4de110928fa58e0a07c59",
+    "semantic_hash": "ed3ab95dfdb4de110928fa58e0a07c59"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\pages\\InspectionDetail.tsx": {
-    "mtime": 1781461037.0027752,
-    "ast_hash": "b607cc6fd8900265405358afd3fae838",
-    "semantic_hash": "b607cc6fd8900265405358afd3fae838"
+    "mtime": 1782093795.283283,
+    "ast_hash": "60efb45a2f5780f5ab64ce07e96480a3",
+    "semantic_hash": "60efb45a2f5780f5ab64ce07e96480a3"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\pages\\InspectionList.tsx": {
-    "mtime": 1781460993.922247,
-    "ast_hash": "d660d64c02a8a1403059c279f571099a",
-    "semantic_hash": "d660d64c02a8a1403059c279f571099a"
+    "mtime": 1782093739.058249,
+    "ast_hash": "723d1d8a9c8b7cfa7d0c2d59800b1979",
+    "semantic_hash": "723d1d8a9c8b7cfa7d0c2d59800b1979"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\pages\\Login.tsx": {
-    "mtime": 1781384785.476575,
-    "ast_hash": "32c071187c8828d265cba7b72e06068f",
-    "semantic_hash": "32c071187c8828d265cba7b72e06068f"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "e358530043cb90b2d1ec7603cfbf56d4",
+    "semantic_hash": "e358530043cb90b2d1ec7603cfbf56d4"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\pages\\PointCapture.tsx": {
-    "mtime": 1781449643.0728862,
-    "ast_hash": "f53e7d2b71f573e2665083971e4faeaf",
-    "semantic_hash": "f53e7d2b71f573e2665083971e4faeaf"
+    "mtime": 1782093831.746796,
+    "ast_hash": "e6820e2239043c6524f8c665cf027f1b",
+    "semantic_hash": "e6820e2239043c6524f8c665cf027f1b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\sync\\engine.ts": {
-    "mtime": 1781460987.2376502,
-    "ast_hash": "e908c3a0bf46cf0e7227a6799c9f48db",
-    "semantic_hash": "e908c3a0bf46cf0e7227a6799c9f48db"
+    "mtime": 1782004665.798779,
+    "ast_hash": "d432ca10c5f848305b092c34e99a070f",
+    "semantic_hash": "d432ca10c5f848305b092c34e99a070f"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\client.tsx": {
-    "mtime": 1780952599.502687,
-    "ast_hash": "9ee903267fdbcee0e33df269594cd607",
-    "semantic_hash": "9ee903267fdbcee0e33df269594cd607"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "4510c75de5bbd65b4e96685fabc03f01",
+    "semantic_hash": "4510c75de5bbd65b4e96685fabc03f01"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\router.tsx": {
-    "mtime": 1780952599.5496535,
-    "ast_hash": "38a5f8fe24eff7aa6443a99adad2d45f",
-    "semantic_hash": "38a5f8fe24eff7aa6443a99adad2d45f"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "6a1e6174d8d6d84a82771f965695f260",
+    "semantic_hash": "6a1e6174d8d6d84a82771f965695f260"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routeTree.gen.ts": {
-    "mtime": 1781400256.3479445,
-    "ast_hash": "dd5771ea6f19835680c508d7e6974ed0",
-    "semantic_hash": "dd5771ea6f19835680c508d7e6974ed0"
+    "mtime": 1782062562.80158,
+    "ast_hash": "330b5f9b1806c24d82890b145d10237b",
+    "semantic_hash": "330b5f9b1806c24d82890b145d10237b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\assets\\atvosLogo.ts": {
-    "mtime": 1780952599.5016522,
-    "ast_hash": "bed55c72b45ce1ea26952ccb225013a1",
-    "semantic_hash": "bed55c72b45ce1ea26952ccb225013a1"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "42f82a74e18d4a7ce5e1c525131695a1",
+    "semantic_hash": "42f82a74e18d4a7ce5e1c525131695a1"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\authorization-dialog.tsx": {
-    "mtime": 1780955331.8780308,
-    "ast_hash": "91de3acb93691080733c99dac8bd6453",
-    "semantic_hash": "91de3acb93691080733c99dac8bd6453"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "83ecb4a9a95cca9a14b0a7da683a83ab",
+    "semantic_hash": "83ecb4a9a95cca9a14b0a7da683a83ab"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\authorization-print-dialog.tsx": {
-    "mtime": 1780972443.5871668,
-    "ast_hash": "53b0585f621efb905a227bb9c349f00a",
-    "semantic_hash": "53b0585f621efb905a227bb9c349f00a"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "dae42663b963eb5d9ca3007ac13df14c",
+    "semantic_hash": "dae42663b963eb5d9ca3007ac13df14c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\cancel-padlock-dialog.tsx": {
-    "mtime": 1780952599.503654,
-    "ast_hash": "dbabcb867087c799cb3986fb84d3792f",
-    "semantic_hash": "dbabcb867087c799cb3986fb84d3792f"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "05ec2667e92bc4f1ba2d31547f4b339c",
+    "semantic_hash": "05ec2667e92bc4f1ba2d31547f4b339c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\delete-padlock-dialog.tsx": {
-    "mtime": 1780952599.5046513,
-    "ast_hash": "24efbfeda7649e588817643890eca7eb",
-    "semantic_hash": "24efbfeda7649e588817643890eca7eb"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "d6d342552af4691a30128be2efb8f602",
+    "semantic_hash": "d6d342552af4691a30128be2efb8f602"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\employee-dialog.tsx": {
-    "mtime": 1781114998.1330507,
-    "ast_hash": "faded69862fc1978928300a016a2d676",
-    "semantic_hash": "faded69862fc1978928300a016a2d676"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "e3079239c63f6654b5f38357dd04573e",
+    "semantic_hash": "e3079239c63f6654b5f38357dd04573e"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\etiqueta-loto.tsx": {
-    "mtime": 1780952599.5056593,
-    "ast_hash": "ae8c97cfb44c87a799bd4001016b1a92",
-    "semantic_hash": "ae8c97cfb44c87a799bd4001016b1a92"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "43a2a2dfaa71d0ce1b360bba4ab4a7b1",
+    "semantic_hash": "43a2a2dfaa71d0ce1b360bba4ab4a7b1"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\inspecoes-page.tsx": {
-    "mtime": 1781036176.5569448,
-    "ast_hash": "762060c9b0fc7ec0670c6bd632d4dbcc",
-    "semantic_hash": "762060c9b0fc7ec0670c6bd632d4dbcc"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "38c22577bcad6f24a6064714e6d17aff",
+    "semantic_hash": "38c22577bcad6f24a6064714e6d17aff"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\instruction-dialog.tsx": {
-    "mtime": 1781237622.4814856,
-    "ast_hash": "62fed460a8ed2390c1277c45d03a6768",
-    "semantic_hash": "62fed460a8ed2390c1277c45d03a6768"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "b20bbd554f1c4ef3c73831c3f358cabe",
+    "semantic_hash": "b20bbd554f1c4ef3c73831c3f358cabe"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\it-training-dialog.tsx": {
-    "mtime": 1781237641.4238892,
-    "ast_hash": "25d26c899b381c16112308204a83d93e",
-    "semantic_hash": "25d26c899b381c16112308204a83d93e"
+    "mtime": 1781609534.3659656,
+    "ast_hash": "c80d3089f0097da27027f00001fb970b",
+    "semantic_hash": "c80d3089f0097da27027f00001fb970b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\new-padlock-dialog.tsx": {
-    "mtime": 1780952599.5056593,
-    "ast_hash": "5ff16662673d70b843daf36665d9a72e",
-    "semantic_hash": "5ff16662673d70b843daf36665d9a72e"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "78012e957dbe2b0eacc5f1c0e3588daf",
+    "semantic_hash": "78012e957dbe2b0eacc5f1c0e3588daf"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\nr10-training-dialog.tsx": {
-    "mtime": 1781114996.2489858,
-    "ast_hash": "fd18d8d75de017e633bb4ecd23abf9db",
-    "semantic_hash": "fd18d8d75de017e633bb4ecd23abf9db"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "19d7f9e125921b69c09a7dd52b4916a0",
+    "semantic_hash": "19d7f9e125921b69c09a7dd52b4916a0"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\nr10-turma-dialog.tsx": {
-    "mtime": 1781114315.875148,
-    "ast_hash": "f80844bcd96ac911f379a9f40bd9228a",
-    "semantic_hash": "f80844bcd96ac911f379a9f40bd9228a"
+    "mtime": 1781494601.9175012,
+    "ast_hash": "e8f392bce3cc18703188fc6c4fed285d",
+    "semantic_hash": "e8f392bce3cc18703188fc6c4fed285d"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\page-shell.tsx": {
-    "mtime": 1780952599.506654,
-    "ast_hash": "a6017af279a2a485a4f5a2b6c3263b69",
-    "semantic_hash": "a6017af279a2a485a4f5a2b6c3263b69"
+    "mtime": 1782167738.9470859,
+    "ast_hash": "84894fbac92b8dbf5a35088a068aa224",
+    "semantic_hash": "84894fbac92b8dbf5a35088a068aa224"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\print-label-dialog.tsx": {
-    "mtime": 1780952599.5076885,
-    "ast_hash": "dfbf9cc6a73261a03639ceb53469c907",
-    "semantic_hash": "dfbf9cc6a73261a03639ceb53469c907"
+    "mtime": 1781548702.2399807,
+    "ast_hash": "bc9e81ad1c188087e11c4dcf2d529017",
+    "semantic_hash": "bc9e81ad1c188087e11c4dcf2d529017"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\report-inconsistency-dialog.tsx": {
-    "mtime": 1780952599.508655,
-    "ast_hash": "fd25441c76aa3fe201d77737f381b90f",
-    "semantic_hash": "fd25441c76aa3fe201d77737f381b90f"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "bfd80915a43ab90072e2c5609c54b2da",
+    "semantic_hash": "bfd80915a43ab90072e2c5609c54b2da"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\sector-select.tsx": {
-    "mtime": 1780952599.5096526,
-    "ast_hash": "4762a5ccfce86f1d8c35b211e2dcd889",
-    "semantic_hash": "4762a5ccfce86f1d8c35b211e2dcd889"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "53b7f2ad4ec690d362905f542290d023",
+    "semantic_hash": "53b7f2ad4ec690d362905f542290d023"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\site-header.tsx": {
-    "mtime": 1781400287.9229205,
-    "ast_hash": "4f51606d5af487e3df9f80f64da76188",
-    "semantic_hash": "4f51606d5af487e3df9f80f64da76188"
+    "mtime": 1782137820.559497,
+    "ast_hash": "b39a4649db6976a89cee5d9e0ae8535a",
+    "semantic_hash": "b39a4649db6976a89cee5d9e0ae8535a"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\accordion.tsx": {
-    "mtime": 1780952599.510653,
-    "ast_hash": "ce37963180fea4c5b9615b930afad90a",
-    "semantic_hash": "ce37963180fea4c5b9615b930afad90a"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "1152021ea2d7f6dbffa8a9c49b4fc657",
+    "semantic_hash": "1152021ea2d7f6dbffa8a9c49b4fc657"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\alert-dialog.tsx": {
-    "mtime": 1780952599.5116527,
-    "ast_hash": "6ce59b995dca29004ff35c52113478db",
-    "semantic_hash": "6ce59b995dca29004ff35c52113478db"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "6c6d8c338274d9ea9213cb3f846aa441",
+    "semantic_hash": "6c6d8c338274d9ea9213cb3f846aa441"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\alert.tsx": {
-    "mtime": 1780952599.5116527,
-    "ast_hash": "5a6d7c9719435e87ba5605fb5e7b0dc9",
-    "semantic_hash": "5a6d7c9719435e87ba5605fb5e7b0dc9"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "f993d7e96b1e25ce50e68ed97e11d2a8",
+    "semantic_hash": "f993d7e96b1e25ce50e68ed97e11d2a8"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\aspect-ratio.tsx": {
-    "mtime": 1780952599.5116527,
-    "ast_hash": "14c12661aad8c80328c86a18b506c088",
-    "semantic_hash": "14c12661aad8c80328c86a18b506c088"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "c5c364545e1b25a94e9e752cd67ad048",
+    "semantic_hash": "c5c364545e1b25a94e9e752cd67ad048"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\avatar.tsx": {
-    "mtime": 1780952599.5126538,
-    "ast_hash": "1c3bd25e3806bbc82f9513b789b14a30",
-    "semantic_hash": "1c3bd25e3806bbc82f9513b789b14a30"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "72989cd32f72c4122802540ef32525a5",
+    "semantic_hash": "72989cd32f72c4122802540ef32525a5"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\badge.tsx": {
-    "mtime": 1780952599.5136552,
-    "ast_hash": "f712eba47d4263bea5f224eacc090cb0",
-    "semantic_hash": "f712eba47d4263bea5f224eacc090cb0"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "81cade001fc4260f9943e18dcd79449b",
+    "semantic_hash": "81cade001fc4260f9943e18dcd79449b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\breadcrumb.tsx": {
-    "mtime": 1780952599.5146554,
-    "ast_hash": "53f1ec4c38907530050142e3afa85cc7",
-    "semantic_hash": "53f1ec4c38907530050142e3afa85cc7"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "bb9ac254f12662b20d5d50b84308bf3a",
+    "semantic_hash": "bb9ac254f12662b20d5d50b84308bf3a"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\button.tsx": {
-    "mtime": 1780952599.5146554,
-    "ast_hash": "95aab63d268813e24494b1d958de5858",
-    "semantic_hash": "95aab63d268813e24494b1d958de5858"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "434e2246779e00db69f6440214b55294",
+    "semantic_hash": "434e2246779e00db69f6440214b55294"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\calendar.tsx": {
-    "mtime": 1780952599.5156531,
-    "ast_hash": "96e6b176a517edb8b0facbb922a8c78c",
-    "semantic_hash": "96e6b176a517edb8b0facbb922a8c78c"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "415d91d7006d4cc654e27620fca340f6",
+    "semantic_hash": "415d91d7006d4cc654e27620fca340f6"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\card.tsx": {
-    "mtime": 1780952599.5156531,
-    "ast_hash": "053803f00d677727a20ac1af41ee599c",
-    "semantic_hash": "053803f00d677727a20ac1af41ee599c"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "d6c48ea36221b9cdc3576d305d12d5d5",
+    "semantic_hash": "d6c48ea36221b9cdc3576d305d12d5d5"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\carousel.tsx": {
-    "mtime": 1780952599.5166552,
-    "ast_hash": "36dd085e09dbc3fe793c1708a6821204",
-    "semantic_hash": "36dd085e09dbc3fe793c1708a6821204"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "e324c68ae00cd5aed49317638abd429a",
+    "semantic_hash": "e324c68ae00cd5aed49317638abd429a"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\chart.tsx": {
-    "mtime": 1780952599.517651,
-    "ast_hash": "e5bff896623339713c67d40cd8b8a74a",
-    "semantic_hash": "e5bff896623339713c67d40cd8b8a74a"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "6a3baf94f2e89f1f97d4d7a28f3622d2",
+    "semantic_hash": "6a3baf94f2e89f1f97d4d7a28f3622d2"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\checkbox.tsx": {
-    "mtime": 1780952599.517651,
-    "ast_hash": "bc80ca5f0cad47c8a942a5d3c95895d8",
-    "semantic_hash": "bc80ca5f0cad47c8a942a5d3c95895d8"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "142bf28afc40346e352be4b29aad7d55",
+    "semantic_hash": "142bf28afc40346e352be4b29aad7d55"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\collapsible.tsx": {
-    "mtime": 1780952599.5186534,
-    "ast_hash": "eda123bd06c97202f8cf1483e62d1580",
-    "semantic_hash": "eda123bd06c97202f8cf1483e62d1580"
+    "mtime": 1781494601.9185007,
+    "ast_hash": "767631bbc344945c236f185f4078d71d",
+    "semantic_hash": "767631bbc344945c236f185f4078d71d"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\command.tsx": {
-    "mtime": 1780952599.5186534,
-    "ast_hash": "9eba05d7f5d3fcfd642d9affb10b75c7",
-    "semantic_hash": "9eba05d7f5d3fcfd642d9affb10b75c7"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "014782599cc838b021ec68b07ad4ea02",
+    "semantic_hash": "014782599cc838b021ec68b07ad4ea02"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\context-menu.tsx": {
-    "mtime": 1780952599.5196526,
-    "ast_hash": "69270233091977e4dc575681b1ba3e87",
-    "semantic_hash": "69270233091977e4dc575681b1ba3e87"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "e9d689beb53d9adb63165bfe64838bf6",
+    "semantic_hash": "e9d689beb53d9adb63165bfe64838bf6"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\dialog.tsx": {
-    "mtime": 1780952599.520658,
-    "ast_hash": "7e55b1b152cacc0989a65d803afd06ce",
-    "semantic_hash": "7e55b1b152cacc0989a65d803afd06ce"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "a0d6d69945d63d58f9bfe8a9facb6f62",
+    "semantic_hash": "a0d6d69945d63d58f9bfe8a9facb6f62"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\drawer.tsx": {
-    "mtime": 1780952599.5216527,
-    "ast_hash": "ec99714627829d4a2ce0b03f3e2b3335",
-    "semantic_hash": "ec99714627829d4a2ce0b03f3e2b3335"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "8be333e8fd8e42576b1b5f72f07f4337",
+    "semantic_hash": "8be333e8fd8e42576b1b5f72f07f4337"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\dropdown-menu.tsx": {
-    "mtime": 1780952599.5226572,
-    "ast_hash": "1ae2005dbe29a013829fea9a6f1c67a6",
-    "semantic_hash": "1ae2005dbe29a013829fea9a6f1c67a6"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "32156e221f3473280114c80fdb818829",
+    "semantic_hash": "32156e221f3473280114c80fdb818829"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\form.tsx": {
-    "mtime": 1780952599.5226572,
-    "ast_hash": "5a003832fca7d213e5b805ec214d819c",
-    "semantic_hash": "5a003832fca7d213e5b805ec214d819c"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "1b0aa6302b9017ea2a1307c22a1d2983",
+    "semantic_hash": "1b0aa6302b9017ea2a1307c22a1d2983"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\hover-card.tsx": {
-    "mtime": 1780952599.5246582,
-    "ast_hash": "82b2422c27dad853935c901f46966914",
-    "semantic_hash": "82b2422c27dad853935c901f46966914"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "1442794c5ca2a78d69e4e613b315ed3d",
+    "semantic_hash": "1442794c5ca2a78d69e4e613b315ed3d"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\input-otp.tsx": {
-    "mtime": 1780952599.5256507,
-    "ast_hash": "d2323e8455e70b784db91ae646529481",
-    "semantic_hash": "d2323e8455e70b784db91ae646529481"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "58cff10c8942cac8483c0bcd65d39d3c",
+    "semantic_hash": "58cff10c8942cac8483c0bcd65d39d3c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\input.tsx": {
-    "mtime": 1780952599.5256507,
-    "ast_hash": "bc58ae801e789ef86349bf93809c3534",
-    "semantic_hash": "bc58ae801e789ef86349bf93809c3534"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "1d4cc52a4cd8afb3e18e45bda942bb8a",
+    "semantic_hash": "1d4cc52a4cd8afb3e18e45bda942bb8a"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\label.tsx": {
-    "mtime": 1780952599.5266514,
-    "ast_hash": "919969cdd3255dc8aaed6ea15dc75166",
-    "semantic_hash": "919969cdd3255dc8aaed6ea15dc75166"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "7e35df4ca8edd0835efd97ca7937ef92",
+    "semantic_hash": "7e35df4ca8edd0835efd97ca7937ef92"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\menubar.tsx": {
-    "mtime": 1780952599.5266514,
-    "ast_hash": "ac230528a1a992f476ed8f5706a10763",
-    "semantic_hash": "ac230528a1a992f476ed8f5706a10763"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "5870465653e12c3d0e35a2fad6f9faa9",
+    "semantic_hash": "5870465653e12c3d0e35a2fad6f9faa9"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\navigation-menu.tsx": {
-    "mtime": 1780952599.5276515,
-    "ast_hash": "aaca5c27cd551ff9744fc89bd3044b41",
-    "semantic_hash": "aaca5c27cd551ff9744fc89bd3044b41"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "169a6451373dc5e17c1b3da2e646d0f2",
+    "semantic_hash": "169a6451373dc5e17c1b3da2e646d0f2"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\pagination.tsx": {
-    "mtime": 1780952599.5276515,
-    "ast_hash": "0e8f9422cf3b259d1cfa8ff36bf8363c",
-    "semantic_hash": "0e8f9422cf3b259d1cfa8ff36bf8363c"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "fac6cdbb4bbf78b273d85cd36d6cbb49",
+    "semantic_hash": "fac6cdbb4bbf78b273d85cd36d6cbb49"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\popover.tsx": {
-    "mtime": 1780952599.5286534,
-    "ast_hash": "4db76837576da0621b5810d9bea6767f",
-    "semantic_hash": "4db76837576da0621b5810d9bea6767f"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "f18aa1da2144f25ee60795c539c51bcd",
+    "semantic_hash": "f18aa1da2144f25ee60795c539c51bcd"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\progress.tsx": {
-    "mtime": 1780952599.5286534,
-    "ast_hash": "77b2feba9a66fc89497a042b982bf7a1",
-    "semantic_hash": "77b2feba9a66fc89497a042b982bf7a1"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "55c462e5c9dd678dcf2c0c510b014ac4",
+    "semantic_hash": "55c462e5c9dd678dcf2c0c510b014ac4"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\radio-group.tsx": {
-    "mtime": 1780952599.529652,
-    "ast_hash": "0a7af4a8f2e0243992af81c8e8c58860",
-    "semantic_hash": "0a7af4a8f2e0243992af81c8e8c58860"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "357bc630a588800655147312e167ac54",
+    "semantic_hash": "357bc630a588800655147312e167ac54"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\resizable.tsx": {
-    "mtime": 1780952599.529652,
-    "ast_hash": "1f93a1a9c4b1e770e17a34dcf67e939b",
-    "semantic_hash": "1f93a1a9c4b1e770e17a34dcf67e939b"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "d9fcb9203c749fcab4e125a99bb12a86",
+    "semantic_hash": "d9fcb9203c749fcab4e125a99bb12a86"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\scroll-area.tsx": {
-    "mtime": 1780952599.530656,
-    "ast_hash": "004b51b8d40b7518596df3be92da6a17",
-    "semantic_hash": "004b51b8d40b7518596df3be92da6a17"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "87b65d3eb26f2b02ff35a7acea585ba5",
+    "semantic_hash": "87b65d3eb26f2b02ff35a7acea585ba5"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\select.tsx": {
-    "mtime": 1780952599.530656,
-    "ast_hash": "077d570384d4ae231dd4bf4b25909fd5",
-    "semantic_hash": "077d570384d4ae231dd4bf4b25909fd5"
+    "mtime": 1781494601.9194994,
+    "ast_hash": "ec00ac14b94b6272d12a6ae6c380aa9c",
+    "semantic_hash": "ec00ac14b94b6272d12a6ae6c380aa9c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\separator.tsx": {
-    "mtime": 1780952599.531652,
-    "ast_hash": "81c2922b4be835b7455accbff8ec0ecd",
-    "semantic_hash": "81c2922b4be835b7455accbff8ec0ecd"
+    "mtime": 1781494601.920504,
+    "ast_hash": "433d163c4ffa00b59398a0c293198b5e",
+    "semantic_hash": "433d163c4ffa00b59398a0c293198b5e"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\sheet.tsx": {
-    "mtime": 1780952599.531652,
-    "ast_hash": "491b02a12606645844c308fe85c2734b",
-    "semantic_hash": "491b02a12606645844c308fe85c2734b"
+    "mtime": 1781494601.920504,
+    "ast_hash": "f9dab8daf0021ef0481f3913acb1dc4e",
+    "semantic_hash": "f9dab8daf0021ef0481f3913acb1dc4e"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\sidebar.tsx": {
-    "mtime": 1780952599.53265,
-    "ast_hash": "b3cbfec1edf2cdd652b7bd70e4a6b2c8",
-    "semantic_hash": "b3cbfec1edf2cdd652b7bd70e4a6b2c8"
+    "mtime": 1781494601.920504,
+    "ast_hash": "1569d08f4b4c4e139d4b6d070f0e05e3",
+    "semantic_hash": "1569d08f4b4c4e139d4b6d070f0e05e3"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\skeleton.tsx": {
-    "mtime": 1780952599.5336537,
-    "ast_hash": "07675852ac2c3e4380129369a31cb44d",
-    "semantic_hash": "07675852ac2c3e4380129369a31cb44d"
+    "mtime": 1781494601.920504,
+    "ast_hash": "41b182e6e2fc3805960d41e767d4a972",
+    "semantic_hash": "41b182e6e2fc3805960d41e767d4a972"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\slider.tsx": {
-    "mtime": 1780952599.5336537,
-    "ast_hash": "f51437b9ee04349e8af16e6366c28fee",
-    "semantic_hash": "f51437b9ee04349e8af16e6366c28fee"
+    "mtime": 1781494601.920504,
+    "ast_hash": "4752f1bfa26426988d325599e01c335b",
+    "semantic_hash": "4752f1bfa26426988d325599e01c335b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\sonner.tsx": {
-    "mtime": 1780952599.534654,
-    "ast_hash": "bdd1b9b20e6cd7b6977d371849d4c1e9",
-    "semantic_hash": "bdd1b9b20e6cd7b6977d371849d4c1e9"
+    "mtime": 1781494601.920504,
+    "ast_hash": "97f59f60be3413196d095fcbf7383216",
+    "semantic_hash": "97f59f60be3413196d095fcbf7383216"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\switch.tsx": {
-    "mtime": 1780952599.534654,
-    "ast_hash": "e36f4816956e06b38f81a563297acb8f",
-    "semantic_hash": "e36f4816956e06b38f81a563297acb8f"
+    "mtime": 1781494601.920504,
+    "ast_hash": "82f5d8b0c59bb7ff305caa9f502e79ff",
+    "semantic_hash": "82f5d8b0c59bb7ff305caa9f502e79ff"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\table.tsx": {
-    "mtime": 1780952599.5356538,
-    "ast_hash": "51562ced5e90e7352ed2694c903bd0d3",
-    "semantic_hash": "51562ced5e90e7352ed2694c903bd0d3"
+    "mtime": 1781494601.920504,
+    "ast_hash": "7cc889989d53894b659903c73aded96e",
+    "semantic_hash": "7cc889989d53894b659903c73aded96e"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\tabs.tsx": {
-    "mtime": 1780952599.5366554,
-    "ast_hash": "fa10a19c8fe9d457725fec9da0a12bed",
-    "semantic_hash": "fa10a19c8fe9d457725fec9da0a12bed"
+    "mtime": 1781494601.920504,
+    "ast_hash": "e3558f35f8b847fee9f67da1120a7bce",
+    "semantic_hash": "e3558f35f8b847fee9f67da1120a7bce"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\textarea.tsx": {
-    "mtime": 1780952599.5376654,
-    "ast_hash": "1b230007443ef12f365fbd94d443ea5c",
-    "semantic_hash": "1b230007443ef12f365fbd94d443ea5c"
+    "mtime": 1781494601.920504,
+    "ast_hash": "c7aad96fb9545210d53135a96c76ed6b",
+    "semantic_hash": "c7aad96fb9545210d53135a96c76ed6b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\toggle-group.tsx": {
-    "mtime": 1780952599.5376654,
-    "ast_hash": "e1a2ed5eafef66716f034692f9ad46f4",
-    "semantic_hash": "e1a2ed5eafef66716f034692f9ad46f4"
+    "mtime": 1781494601.920504,
+    "ast_hash": "ac26383acf721d116ca8e3ab5c5355d5",
+    "semantic_hash": "ac26383acf721d116ca8e3ab5c5355d5"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\toggle.tsx": {
-    "mtime": 1780952599.5386536,
-    "ast_hash": "465e435f8ca359dce972ee90e7b898cf",
-    "semantic_hash": "465e435f8ca359dce972ee90e7b898cf"
+    "mtime": 1781494601.920504,
+    "ast_hash": "b98a69052f115695d2a9455da07632be",
+    "semantic_hash": "b98a69052f115695d2a9455da07632be"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\components\\ui\\tooltip.tsx": {
-    "mtime": 1780952599.539654,
-    "ast_hash": "6dd894a539d5f97a0615c049be79a355",
-    "semantic_hash": "6dd894a539d5f97a0615c049be79a355"
+    "mtime": 1781494601.920504,
+    "ast_hash": "67d71db5a1ab935695d1def497f5b8a6",
+    "semantic_hash": "67d71db5a1ab935695d1def497f5b8a6"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\hooks\\use-debounce.ts": {
-    "mtime": 1780952599.5406535,
-    "ast_hash": "dbf634f14cea16f7ad777d54d725bb91",
-    "semantic_hash": "dbf634f14cea16f7ad777d54d725bb91"
+    "mtime": 1781494601.920504,
+    "ast_hash": "f642c31ff2bccf02ed2130b608210ce0",
+    "semantic_hash": "f642c31ff2bccf02ed2130b608210ce0"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\hooks\\use-mobile.tsx": {
-    "mtime": 1780952599.5416582,
-    "ast_hash": "1bb3ebac7752b497a78d34e341975bbd",
-    "semantic_hash": "1bb3ebac7752b497a78d34e341975bbd"
+    "mtime": 1781494601.920504,
+    "ast_hash": "c0a0bdd4638c391a1dd06ac82074e60b",
+    "semantic_hash": "c0a0bdd4638c391a1dd06ac82074e60b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\integrations\\supabase\\auth-attacher.ts": {
-    "mtime": 1780952599.5426524,
-    "ast_hash": "c229b19c0b170ba70e2fe39a5b6e192f",
-    "semantic_hash": "c229b19c0b170ba70e2fe39a5b6e192f"
+    "mtime": 1781494601.920504,
+    "ast_hash": "a1347245a102b51d9e2f2796ab806dc5",
+    "semantic_hash": "a1347245a102b51d9e2f2796ab806dc5"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\integrations\\supabase\\auth-middleware.ts": {
-    "mtime": 1780952599.5436506,
-    "ast_hash": "3aaca53db607ec83f98a551d625aec0a",
-    "semantic_hash": "3aaca53db607ec83f98a551d625aec0a"
+    "mtime": 1781494601.920504,
+    "ast_hash": "0e775945b988c804f1cc02166ba48e32",
+    "semantic_hash": "0e775945b988c804f1cc02166ba48e32"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\integrations\\supabase\\client.server.ts": {
-    "mtime": 1780952599.5446906,
-    "ast_hash": "04b88bf4db8b868fe91bcf8aa11e6ab8",
-    "semantic_hash": "04b88bf4db8b868fe91bcf8aa11e6ab8"
+    "mtime": 1781494601.9215002,
+    "ast_hash": "9afe34beca1f4129a16ee429802bb9c0",
+    "semantic_hash": "9afe34beca1f4129a16ee429802bb9c0"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\integrations\\supabase\\client.ts": {
-    "mtime": 1780952599.5446906,
-    "ast_hash": "b45291a38241a8080e9e7be84ea93735",
-    "semantic_hash": "b45291a38241a8080e9e7be84ea93735"
+    "mtime": 1781494601.9215002,
+    "ast_hash": "689ce1cc3477b8c5950d01e7ac1378d7",
+    "semantic_hash": "689ce1cc3477b8c5950d01e7ac1378d7"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\integrations\\supabase\\types.ts": {
-    "mtime": 1781384114.907442,
-    "ast_hash": "743fe4ccaafcd194de0915ad2af54f33",
-    "semantic_hash": "743fe4ccaafcd194de0915ad2af54f33"
+    "mtime": 1782062447.3242457,
+    "ast_hash": "8943f242be77260d03f039256ca2011c",
+    "semantic_hash": "8943f242be77260d03f039256ca2011c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\aptidao.ts": {
-    "mtime": 1781113376.3837235,
-    "ast_hash": "dd62d5b77f27a01302080d8168cb6ec2",
-    "semantic_hash": "dd62d5b77f27a01302080d8168cb6ec2"
+    "mtime": 1781494601.9215002,
+    "ast_hash": "332284fa99142428e1cb6d8cd6eff114",
+    "semantic_hash": "332284fa99142428e1cb6d8cd6eff114"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\asos-queries.ts": {
     "mtime": 1781113344.1032548,
@@ -485,39 +485,39 @@
     "semantic_hash": "330bfb55f21c76358025e2cad43b04c5"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\asos.ts": {
-    "mtime": 1781113374.6089034,
-    "ast_hash": "d8acf66c92c86004b72234e51bd6dd93",
-    "semantic_hash": "d8acf66c92c86004b72234e51bd6dd93"
+    "mtime": 1781494601.9215002,
+    "ast_hash": "54c6cbc8fdf083d17b296bf37312e240",
+    "semantic_hash": "54c6cbc8fdf083d17b296bf37312e240"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\auth-context.tsx": {
-    "mtime": 1780952599.5466912,
-    "ast_hash": "8ebaf9ac489e6152bdbaddab67eea1bb",
-    "semantic_hash": "8ebaf9ac489e6152bdbaddab67eea1bb"
+    "mtime": 1781987021.4987617,
+    "ast_hash": "a190de08a1779772925586ea677ade49",
+    "semantic_hash": "a190de08a1779772925586ea677ade49"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\campo-queries.ts": {
-    "mtime": 1781461104.9081762,
-    "ast_hash": "0f5f9d4a6474f7a7d0ffe770e43ed7ed",
-    "semantic_hash": "0f5f9d4a6474f7a7d0ffe770e43ed7ed"
+    "mtime": 1782005817.2909846,
+    "ast_hash": "83968915cdf91596450505b564583243",
+    "semantic_hash": "83968915cdf91596450505b564583243"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\campo.ts": {
-    "mtime": 1781382739.7416406,
-    "ast_hash": "df6ba23e6dfc677aa84f80881b2bce37",
-    "semantic_hash": "df6ba23e6dfc677aa84f80881b2bce37"
+    "mtime": 1782005826.2478669,
+    "ast_hash": "3cb1c3c446febda600d3bb5ba7ee7959",
+    "semantic_hash": "3cb1c3c446febda600d3bb5ba7ee7959"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\conformidade.ts": {
-    "mtime": 1781113775.001467,
-    "ast_hash": "7a5a839e24acbd3066f57207c46b80bd",
-    "semantic_hash": "7a5a839e24acbd3066f57207c46b80bd"
+    "mtime": 1781494601.9220104,
+    "ast_hash": "7069c7f577f588805102734da45631d4",
+    "semantic_hash": "7069c7f577f588805102734da45631d4"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\epis-queries.ts": {
-    "mtime": 1781036345.3378084,
-    "ast_hash": "3bacacdf07d1ebe345979c98500491b0",
-    "semantic_hash": "3bacacdf07d1ebe345979c98500491b0"
+    "mtime": 1781494601.976881,
+    "ast_hash": "675b262a1bfca174ce92514cc85c4c4b",
+    "semantic_hash": "675b262a1bfca174ce92514cc85c4c4b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\epis.ts": {
-    "mtime": 1781036329.368561,
-    "ast_hash": "3f724c225fbf561325c5548898a9803a",
-    "semantic_hash": "3f724c225fbf561325c5548898a9803a"
+    "mtime": 1781494601.976881,
+    "ast_hash": "4a3c05ffa9a1c57f710fba35683e7a70",
+    "semantic_hash": "4a3c05ffa9a1c57f710fba35683e7a70"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\incidentes-queries.ts": {
     "mtime": 1781113817.776184,
@@ -525,79 +525,79 @@
     "semantic_hash": "a445f3a8d9dec2f7164df5d17e9714b6"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\incidentes.ts": {
-    "mtime": 1781113810.2301235,
-    "ast_hash": "417817789278ae0d6f6db76e295a4c77",
-    "semantic_hash": "417817789278ae0d6f6db76e295a4c77"
+    "mtime": 1781494601.9778829,
+    "ast_hash": "38ac7978248e8a78cd4f4b90e9020430",
+    "semantic_hash": "38ac7978248e8a78cd4f4b90e9020430"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\inspecoes-queries.ts": {
-    "mtime": 1781035710.6044302,
-    "ast_hash": "2c745b65615694121ff4195a794a482e",
-    "semantic_hash": "2c745b65615694121ff4195a794a482e"
+    "mtime": 1781494601.9778829,
+    "ast_hash": "d9ed23d03a3321dcf11485e0c5d8f810",
+    "semantic_hash": "d9ed23d03a3321dcf11485e0c5d8f810"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\inspecoes.ts": {
-    "mtime": 1781035617.2402518,
-    "ast_hash": "3b1700a887b471b8560ffbc10f855fac",
-    "semantic_hash": "3b1700a887b471b8560ffbc10f855fac"
+    "mtime": 1781494601.9778829,
+    "ast_hash": "630ab4b0be827e061124bf39320e07df",
+    "semantic_hash": "630ab4b0be827e061124bf39320e07df"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\padlocks.ts": {
-    "mtime": 1780952599.5476522,
-    "ast_hash": "951f316bd9de64258a1ea2b863154948",
-    "semantic_hash": "951f316bd9de64258a1ea2b863154948"
+    "mtime": 1781494601.9778829,
+    "ast_hash": "acddaa168243bd5fac020a4fd3627c72",
+    "semantic_hash": "acddaa168243bd5fac020a4fd3627c72"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\prontuario-queries.ts": {
-    "mtime": 1781114417.386233,
-    "ast_hash": "1d9d2d937fbb41821123bee47d933f0b",
-    "semantic_hash": "1d9d2d937fbb41821123bee47d933f0b"
+    "mtime": 1781494601.9778829,
+    "ast_hash": "b718ff8cc40d618ff6b02bacbb8b29d8",
+    "semantic_hash": "b718ff8cc40d618ff6b02bacbb8b29d8"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\prontuario.ts": {
-    "mtime": 1781035030.9405785,
-    "ast_hash": "1b1320b70127bcf12a29b850447c811b",
-    "semantic_hash": "1b1320b70127bcf12a29b850447c811b"
+    "mtime": 1781494601.9778829,
+    "ast_hash": "066e8a23124f9ed4e5becc570cb181dd",
+    "semantic_hash": "066e8a23124f9ed4e5becc570cb181dd"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\qualificacoes-queries.ts": {
-    "mtime": 1781237597.851827,
-    "ast_hash": "6dccbb13686e6faa3a184311bc3429f1",
-    "semantic_hash": "6dccbb13686e6faa3a184311bc3429f1"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "78600586171a43d8397445dd108b7e87",
+    "semantic_hash": "78600586171a43d8397445dd108b7e87"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\qualificacoes.ts": {
-    "mtime": 1781114080.841419,
-    "ast_hash": "f551c9f1ba9c233d92e50a8ae6049eef",
-    "semantic_hash": "f551c9f1ba9c233d92e50a8ae6049eef"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "6967d45b95690b5065701bdab8c85dbd",
+    "semantic_hash": "6967d45b95690b5065701bdab8c85dbd"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\queries.ts": {
-    "mtime": 1780952599.5476522,
-    "ast_hash": "22363f43796b7adeea7e12662b96c225",
-    "semantic_hash": "22363f43796b7adeea7e12662b96c225"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "e2627baf734736667fe917803ff327de",
+    "semantic_hash": "e2627baf734736667fe917803ff327de"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\rti-queries.ts": {
-    "mtime": 1781133611.0540843,
-    "ast_hash": "298711a7003ea9d82caec62cbffb058f",
-    "semantic_hash": "298711a7003ea9d82caec62cbffb058f"
+    "mtime": 1782062822.6210697,
+    "ast_hash": "69b8ced84918504cea3066c732c053ea",
+    "semantic_hash": "69b8ced84918504cea3066c732c053ea"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\rti.ts": {
-    "mtime": 1781383986.3275144,
-    "ast_hash": "e5be423e1716359556b301b4b642f1de",
-    "semantic_hash": "e5be423e1716359556b301b4b642f1de"
+    "mtime": 1781875511.38486,
+    "ast_hash": "70c18209f9a96dbf22c7097b6f15726f",
+    "semantic_hash": "70c18209f9a96dbf22c7097b6f15726f"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\snapshots.ts": {
-    "mtime": 1781113795.4826436,
-    "ast_hash": "84f1a2e5afe3b2ff6362749d8544c8db",
-    "semantic_hash": "84f1a2e5afe3b2ff6362749d8544c8db"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "94db0d081e51f3ebad8529b81fdc61c3",
+    "semantic_hash": "94db0d081e51f3ebad8529b81fdc61c3"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\utils.ts": {
-    "mtime": 1780952599.5486536,
-    "ast_hash": "e3f848f1b39f863e6164cf58b5a8e752",
-    "semantic_hash": "e3f848f1b39f863e6164cf58b5a8e752"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "d9837f38cc05303254571985e3164050",
+    "semantic_hash": "d9837f38cc05303254571985e3164050"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\vencimentos.ts": {
-    "mtime": 1781236553.089816,
-    "ast_hash": "75748b10633736ed2f2c3edda0acf894",
-    "semantic_hash": "75748b10633736ed2f2c3edda0acf894"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "5798c7e386e9fe7f16655d787dffdbfe",
+    "semantic_hash": "5798c7e386e9fe7f16655d787dffdbfe"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\__tests__\\campo-arvore.test.ts": {
-    "mtime": 1781183481.9894435,
-    "ast_hash": "9bbd7c8c72df86fcb83cb40bd94c29c7",
-    "semantic_hash": "9bbd7c8c72df86fcb83cb40bd94c29c7"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "c286785fcd8ace86d54d1e510840bfc3",
+    "semantic_hash": "c286785fcd8ace86d54d1e510840bfc3"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\__tests__\\conformidade.test.ts": {
     "mtime": 1781236013.9932544,
@@ -605,79 +605,79 @@
     "semantic_hash": "769125fde0bb95a8bccd5a16c6df16db"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\__tests__\\regras-nr10.test.ts": {
-    "mtime": 1781235954.0473356,
-    "ast_hash": "d4fd6dc5e76befb303009ee1c0a315bf",
-    "semantic_hash": "d4fd6dc5e76befb303009ee1c0a315bf"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "71eedf5ec71c888cf54faf8fb997a3be",
+    "semantic_hash": "71eedf5ec71c888cf54faf8fb997a3be"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\__tests__\\vencimentos.test.ts": {
-    "mtime": 1781236861.9895997,
-    "ast_hash": "e62e729591ecd7ca9144cc8ec878d432",
-    "semantic_hash": "e62e729591ecd7ca9144cc8ec878d432"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "16bf2c80ef1e13c045a2ed7c3d676c32",
+    "semantic_hash": "16bf2c80ef1e13c045a2ed7c3d676c32"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\admin.auditoria.tsx": {
-    "mtime": 1781115000.0441995,
-    "ast_hash": "3b5e01d17f0a9c5ab5567196958f85af",
-    "semantic_hash": "3b5e01d17f0a9c5ab5567196958f85af"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "890218dbc750a266f113b585862683b2",
+    "semantic_hash": "890218dbc750a266f113b585862683b2"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\admin.carga.tsx": {
-    "mtime": 1780952599.5516522,
-    "ast_hash": "fb25dfcc9dc5f53747d3d6ff72ce905a",
-    "semantic_hash": "fb25dfcc9dc5f53747d3d6ff72ce905a"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "6305d6e8cd4c2b9f0cd774cde9baada7",
+    "semantic_hash": "6305d6e8cd4c2b9f0cd774cde9baada7"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\admin.certificados.importar.tsx": {
-    "mtime": 1780972280.7172065,
-    "ast_hash": "835b9cc6d4af7d241340e8114ed0106f",
-    "semantic_hash": "835b9cc6d4af7d241340e8114ed0106f"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "bfce604db12aad9d2fd362d345fb76c5",
+    "semantic_hash": "bfce604db12aad9d2fd362d345fb76c5"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\admin.qualificacoes.carga.tsx": {
-    "mtime": 1780958379.1674669,
-    "ast_hash": "23be3c012f71f07865d5c53ee8852e94",
-    "semantic_hash": "23be3c012f71f07865d5c53ee8852e94"
+    "mtime": 1781609804.7395804,
+    "ast_hash": "954223fbb5e6c59c5dcea515ccc738af",
+    "semantic_hash": "954223fbb5e6c59c5dcea515ccc738af"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\admin.reports.tsx": {
-    "mtime": 1780952599.5516522,
-    "ast_hash": "5fcb1dac3ebf5fdf4dce9d3990751e9f",
-    "semantic_hash": "5fcb1dac3ebf5fdf4dce9d3990751e9f"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "6e606a99d6929f7a6ab8c48d24f1bfdf",
+    "semantic_hash": "6e606a99d6929f7a6ab8c48d24f1bfdf"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\admin.usuarios.tsx": {
-    "mtime": 1780952599.5526552,
-    "ast_hash": "898a5ae3891a4a1e4ee4602e694ca28f",
-    "semantic_hash": "898a5ae3891a4a1e4ee4602e694ca28f"
+    "mtime": 1781965700.7439592,
+    "ast_hash": "5024680a8ce83814a13c6b897f43d49d",
+    "semantic_hash": "5024680a8ce83814a13c6b897f43d49d"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\cadeados.$codigo.tsx": {
-    "mtime": 1780952599.553654,
-    "ast_hash": "09ed94644d107b13bba898dbcf9140e0",
-    "semantic_hash": "09ed94644d107b13bba898dbcf9140e0"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "790b36e06d35d89939093d23bdd4ce94",
+    "semantic_hash": "790b36e06d35d89939093d23bdd4ce94"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\cadeados.index.tsx": {
-    "mtime": 1781237411.2464225,
-    "ast_hash": "b5800267614c964d95b85c9161753409",
-    "semantic_hash": "b5800267614c964d95b85c9161753409"
+    "mtime": 1781494601.9788816,
+    "ast_hash": "b5824c30309a61a903c6573a95ed909f",
+    "semantic_hash": "b5824c30309a61a903c6573a95ed909f"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\campo.index.tsx": {
-    "mtime": 1781461142.2552576,
-    "ast_hash": "d8f01c9fb62c90d0066d61d1b3ad0104",
-    "semantic_hash": "d8f01c9fb62c90d0066d61d1b3ad0104"
+    "mtime": 1781640205.3068538,
+    "ast_hash": "d73c6b421878119afd39c1e45e9b974d",
+    "semantic_hash": "d73c6b421878119afd39c1e45e9b974d"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\campo.inspecao.$id.tsx": {
-    "mtime": 1781461195.0469685,
-    "ast_hash": "48d91861ed83585dbfec06a98acaadcc",
-    "semantic_hash": "48d91861ed83585dbfec06a98acaadcc"
+    "mtime": 1782005889.592334,
+    "ast_hash": "9a1ba50f99690623c50b745fe64a9224",
+    "semantic_hash": "9a1ba50f99690623c50b745fe64a9224"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\campo.modos.tsx": {
-    "mtime": 1781175435.5198176,
-    "ast_hash": "5750b884000dcbfbe09e4ae04d949eaa",
-    "semantic_hash": "5750b884000dcbfbe09e4ae04d949eaa"
+    "mtime": 1781987168.87865,
+    "ast_hash": "59bc221a4fc898bdc591a06ffda6efa9",
+    "semantic_hash": "59bc221a4fc898bdc591a06ffda6efa9"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\campo.ponto.$id.tsx": {
-    "mtime": 1781403503.167277,
-    "ast_hash": "bc5c4a2edf0d11dae3164799fe90e5a8",
-    "semantic_hash": "bc5c4a2edf0d11dae3164799fe90e5a8"
+    "mtime": 1781640242.3548572,
+    "ast_hash": "7b4f7aa4561b8ca3426fcd1302963584",
+    "semantic_hash": "7b4f7aa4561b8ca3426fcd1302963584"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\carteirinha.$matricula.tsx": {
-    "mtime": 1781113660.3118765,
-    "ast_hash": "4da24688663fd4b512a0839788f91ddc",
-    "semantic_hash": "4da24688663fd4b512a0839788f91ddc"
+    "mtime": 1782137898.105129,
+    "ast_hash": "f0c104165ebc59cb7610f3bf960793ef",
+    "semantic_hash": "f0c104165ebc59cb7610f3bf960793ef"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\cercon.index.tsx": {
     "mtime": 1781036208.2329102,
@@ -685,119 +685,119 @@
     "semantic_hash": "db259e00c630dfba91367a44789ab0a7"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\dashboard.tsx": {
-    "mtime": 1780955646.1897311,
-    "ast_hash": "5c5fdeeed6200ad065f7bc47ad90c210",
-    "semantic_hash": "5c5fdeeed6200ad065f7bc47ad90c210"
+    "mtime": 1782139641.9261458,
+    "ast_hash": "3e57523ae1a8b1baf9fd2e8692bebd42",
+    "semantic_hash": "3e57523ae1a8b1baf9fd2e8692bebd42"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\epis.index.tsx": {
-    "mtime": 1781036443.988091,
-    "ast_hash": "15050caef198a7bb6148ca4fcc1e0d3d",
-    "semantic_hash": "15050caef198a7bb6148ca4fcc1e0d3d"
+    "mtime": 1781494601.9803886,
+    "ast_hash": "fc070b8da532fbddc69bdbaa40c9c441",
+    "semantic_hash": "fc070b8da532fbddc69bdbaa40c9c441"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\incidentes.index.tsx": {
-    "mtime": 1781114553.7845812,
-    "ast_hash": "01937e0d3104621f7a95ad2bab321f07",
-    "semantic_hash": "01937e0d3104621f7a95ad2bab321f07"
+    "mtime": 1781494601.9803886,
+    "ast_hash": "afa2a9649e719b9a216846a62c75a593",
+    "semantic_hash": "afa2a9649e719b9a216846a62c75a593"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\index.tsx": {
-    "mtime": 1780952599.5566573,
-    "ast_hash": "bc177fa5997ecbf38ce711091cdc0555",
-    "semantic_hash": "bc177fa5997ecbf38ce711091cdc0555"
+    "mtime": 1782140257.6808755,
+    "ast_hash": "206284949575f41aec72999432ce1b8c",
+    "semantic_hash": "206284949575f41aec72999432ce1b8c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\login.tsx": {
-    "mtime": 1780952599.5566573,
-    "ast_hash": "ae57b36cf0bccfdd75b7cd2a2199ffb0",
-    "semantic_hash": "ae57b36cf0bccfdd75b7cd2a2199ffb0"
+    "mtime": 1782139640.8983896,
+    "ast_hash": "bf325bbeafa477fee7e52689f5d90061",
+    "semantic_hash": "bf325bbeafa477fee7e52689f5d90061"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\nr10.index.tsx": {
-    "mtime": 1781114469.4260693,
-    "ast_hash": "6d7805b2e055ee17073fb39a97ff16c5",
-    "semantic_hash": "6d7805b2e055ee17073fb39a97ff16c5"
+    "mtime": 1781494601.9803886,
+    "ast_hash": "d048b796ff720e8bf9ae4038eee6faaf",
+    "semantic_hash": "d048b796ff720e8bf9ae4038eee6faaf"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\qualificacoes.asos.tsx": {
-    "mtime": 1781113471.0149496,
-    "ast_hash": "84ac4c237ff70589ebec86ce7d0a2b8c",
-    "semantic_hash": "84ac4c237ff70589ebec86ce7d0a2b8c"
+    "mtime": 1781494601.9803886,
+    "ast_hash": "b94a7a07cc99b7bc64fb20bbd6b9b4ad",
+    "semantic_hash": "b94a7a07cc99b7bc64fb20bbd6b9b4ad"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\qualificacoes.autorizacoes.tsx": {
-    "mtime": 1781114091.9031117,
-    "ast_hash": "ee3ec09bd613608861c5618a5fd2fa8b",
-    "semantic_hash": "ee3ec09bd613608861c5618a5fd2fa8b"
+    "mtime": 1781494601.9803886,
+    "ast_hash": "e4cce72b62112925dd18e771265c4bca",
+    "semantic_hash": "e4cce72b62112925dd18e771265c4bca"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\qualificacoes.colaborador.$id.tsx": {
-    "mtime": 1781114047.9602838,
-    "ast_hash": "2fb15724d515d624b987a395c58c66b1",
-    "semantic_hash": "2fb15724d515d624b987a395c58c66b1"
+    "mtime": 1781494601.9803886,
+    "ast_hash": "8b43c4e445f43b825fa6c82810663b1c",
+    "semantic_hash": "8b43c4e445f43b825fa6c82810663b1c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\qualificacoes.colaboradores.tsx": {
-    "mtime": 1781114116.8279724,
-    "ast_hash": "50031e5355d970d7a7a036ebb3239cd6",
-    "semantic_hash": "50031e5355d970d7a7a036ebb3239cd6"
+    "mtime": 1781494601.9814003,
+    "ast_hash": "a26c75b68f867409aa3b469942f651a5",
+    "semantic_hash": "a26c75b68f867409aa3b469942f651a5"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\qualificacoes.index.tsx": {
-    "mtime": 1781113566.0474424,
-    "ast_hash": "8f875ff600f7c2c7c213cbd253e1f577",
-    "semantic_hash": "8f875ff600f7c2c7c213cbd253e1f577"
+    "mtime": 1782137893.0824695,
+    "ast_hash": "c5509f06b869caf091a845a058e177fe",
+    "semantic_hash": "c5509f06b869caf091a845a058e177fe"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\qualificacoes.instrucoes.tsx": {
-    "mtime": 1781003630.8091958,
-    "ast_hash": "66e25ec2b15c26fa5842d4828e043a6c",
-    "semantic_hash": "66e25ec2b15c26fa5842d4828e043a6c"
+    "mtime": 1781494601.9814003,
+    "ast_hash": "def83dbc6ec4cdfa91a2a2ea0e411f7c",
+    "semantic_hash": "def83dbc6ec4cdfa91a2a2ea0e411f7c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\qualificacoes.nr10.tsx": {
-    "mtime": 1781114657.1347253,
-    "ast_hash": "e0398a65c94e388cd38bb46c61b3c45c",
-    "semantic_hash": "e0398a65c94e388cd38bb46c61b3c45c"
+    "mtime": 1781494601.9814003,
+    "ast_hash": "deacb7dcd287e77c8a24c1cae1ca82b7",
+    "semantic_hash": "deacb7dcd287e77c8a24c1cae1ca82b7"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\qualificacoes.plh.tsx": {
-    "mtime": 1780971354.2820938,
-    "ast_hash": "e8b8d71d084d166bc5d4c5670baddd22",
-    "semantic_hash": "e8b8d71d084d166bc5d4c5670baddd22"
+    "mtime": 1781494601.9814003,
+    "ast_hash": "224a72ec8f70984a20a11b93c0d4a2fc",
+    "semantic_hash": "224a72ec8f70984a20a11b93c0d4a2fc"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\relatorio.dossie.tsx": {
-    "mtime": 1781113982.969561,
-    "ast_hash": "2d244450c6adba2ce1f01091d69e07c7",
-    "semantic_hash": "2d244450c6adba2ce1f01091d69e07c7"
+    "mtime": 1781494601.9814003,
+    "ast_hash": "3c831d7a43048a01429e1dd15be48e05",
+    "semantic_hash": "3c831d7a43048a01429e1dd15be48e05"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\relatorio.index.tsx": {
-    "mtime": 1781113863.945898,
-    "ast_hash": "149366c6f9b66187985f93d13d3efbaf",
-    "semantic_hash": "149366c6f9b66187985f93d13d3efbaf"
+    "mtime": 1782137887.608672,
+    "ast_hash": "f3179b0e68bdeca57eed705ba4a41ac1",
+    "semantic_hash": "f3179b0e68bdeca57eed705ba4a41ac1"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\rti.custos.tsx": {
-    "mtime": 1781133595.1646051,
-    "ast_hash": "12f695816f89a97a81ece72883dd7c35",
-    "semantic_hash": "12f695816f89a97a81ece72883dd7c35"
+    "mtime": 1782137894.5496275,
+    "ast_hash": "489be76c2d194ee231f0eb3498f45b94",
+    "semantic_hash": "489be76c2d194ee231f0eb3498f45b94"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\rti.evidencias.tsx": {
-    "mtime": 1781064629.1724577,
-    "ast_hash": "cb88dfa965a91c3da40cf9f434eaeb04",
-    "semantic_hash": "cb88dfa965a91c3da40cf9f434eaeb04"
+    "mtime": 1781640190.0452554,
+    "ast_hash": "018eae0d6324980bd763d6ab1d08b93a",
+    "semantic_hash": "018eae0d6324980bd763d6ab1d08b93a"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\rti.gestao.tsx": {
-    "mtime": 1781400255.5028155,
-    "ast_hash": "f9bf75e044e680f9fe9c28866bf3944d",
-    "semantic_hash": "f9bf75e044e680f9fe9c28866bf3944d"
+    "mtime": 1781640189.7594378,
+    "ast_hash": "4344b81b143c7d5f9f30fe10a02d0163",
+    "semantic_hash": "4344b81b143c7d5f9f30fe10a02d0163"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\rti.importar.tsx": {
-    "mtime": 1781102255.2319252,
-    "ast_hash": "2a3b4658570f04b259d3997f80787a22",
-    "semantic_hash": "2a3b4658570f04b259d3997f80787a22"
+    "mtime": 1781640189.457529,
+    "ast_hash": "dbdcc2aedcbb2d78054d8e43ade955e4",
+    "semantic_hash": "dbdcc2aedcbb2d78054d8e43ade955e4"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\rti.index.tsx": {
-    "mtime": 1781402561.704492,
-    "ast_hash": "a52b101b5f888fd43a183a3cbb78a193",
-    "semantic_hash": "a52b101b5f888fd43a183a3cbb78a193"
+    "mtime": 1782094562.195258,
+    "ast_hash": "5b754ee8d1bef6715e7513f4a47b0f03",
+    "semantic_hash": "5b754ee8d1bef6715e7513f4a47b0f03"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\rti.nc.$ncId.tsx": {
-    "mtime": 1781133777.708719,
-    "ast_hash": "6a20f0a6cf79a402d9b2a8ffd6c60741",
-    "semantic_hash": "6a20f0a6cf79a402d9b2a8ffd6c60741"
+    "mtime": 1781965797.232477,
+    "ast_hash": "9218bccd46485d90942bef301ef18ec9",
+    "semantic_hash": "9218bccd46485d90942bef301ef18ec9"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\rti.plano.tsx": {
-    "mtime": 1781384130.212085,
-    "ast_hash": "2968493ecf3aa685f76b93d33327d6ef",
-    "semantic_hash": "2968493ecf3aa685f76b93d33327d6ef"
+    "mtime": 1781876214.5517707,
+    "ast_hash": "a2293f3713a13d1952a59a0d0c0b8f55",
+    "semantic_hash": "a2293f3713a13d1952a59a0d0c0b8f55"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\spda.index.tsx": {
     "mtime": 1781036206.7447793,
@@ -810,29 +810,29 @@
     "semantic_hash": "f48ba8093bd460c76c2ed59182b87c65"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\vencimentos.index.tsx": {
-    "mtime": 1781036537.5024507,
-    "ast_hash": "599b66524918ca8b45774c953c93ec3c",
-    "semantic_hash": "599b66524918ca8b45774c953c93ec3c"
+    "mtime": 1781494601.9814003,
+    "ast_hash": "b499071bc600218f52dfbdbf77a68eae",
+    "semantic_hash": "b499071bc600218f52dfbdbf77a68eae"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\violacoes.tsx": {
-    "mtime": 1780952599.5586572,
-    "ast_hash": "65eb485d6b71025debba1ec703263dd3",
-    "semantic_hash": "65eb485d6b71025debba1ec703263dd3"
+    "mtime": 1781494601.9814003,
+    "ast_hash": "f5e26ba62e53323cc011909285cf4413",
+    "semantic_hash": "f5e26ba62e53323cc011909285cf4413"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\__root.tsx": {
-    "mtime": 1780955640.7446923,
-    "ast_hash": "e3b73d62f3c80b93aa474e208078c2e6",
-    "semantic_hash": "e3b73d62f3c80b93aa474e208078c2e6"
+    "mtime": 1782137798.0782151,
+    "ast_hash": "c1011b875476a25175e4e0d98915a4f1",
+    "semantic_hash": "c1011b875476a25175e4e0d98915a4f1"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\functions\\admin-users\\index.ts": {
-    "mtime": 1780952599.5606856,
-    "ast_hash": "c180b86aaefbc03353fd900fa9528e63",
-    "semantic_hash": "c180b86aaefbc03353fd900fa9528e63"
+    "mtime": 1781876941.7033055,
+    "ast_hash": "d2135cbe1827404836ffae494caf6eae",
+    "semantic_hash": "d2135cbe1827404836ffae494caf6eae"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\functions\\vencimentos-email\\index.ts": {
-    "mtime": 1781114161.5908005,
-    "ast_hash": "52637ddf1ebd061339019605c655cc99",
-    "semantic_hash": "52637ddf1ebd061339019605c655cc99"
+    "mtime": 1781494601.9824016,
+    "ast_hash": "8a5acc292ad8c1d67590bd4ddd87e46c",
+    "semantic_hash": "8a5acc292ad8c1d67590bd4ddd87e46c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260423164152_14820dce-430e-4ced-8360-d5daf40d9e28.sql": {
     "mtime": 1780952599.5616667,
@@ -1020,19 +1020,19 @@
     "semantic_hash": "2cc08e3bf9d4bb83442fb2c9f3e1b73f"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\public\\icons\\icon-192.png": {
-    "mtime": 1781217565.4443476,
-    "ast_hash": "8d56910bdfb0ab56d24716f7a374d930",
-    "semantic_hash": "8d56910bdfb0ab56d24716f7a374d930"
+    "mtime": 1782155972.0794294,
+    "ast_hash": "043e539c64a948d0ebe33f76de6a4c0d",
+    "semantic_hash": "043e539c64a948d0ebe33f76de6a4c0d"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\public\\icons\\icon-512.png": {
-    "mtime": 1781217565.4493065,
-    "ast_hash": "2f7ded3a7b80769b49c9c47e2c4a4bed",
-    "semantic_hash": "2f7ded3a7b80769b49c9c47e2c4a4bed"
+    "mtime": 1782155972.3090641,
+    "ast_hash": "c5fdbebcbd304623c92f955138b3fdc1",
+    "semantic_hash": "c5fdbebcbd304623c92f955138b3fdc1"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\public\\icons\\icon.svg": {
-    "mtime": 1781205564.204386,
-    "ast_hash": "d2b0068457c240fb62e963bdaaaf993d",
-    "semantic_hash": "d2b0068457c240fb62e963bdaaaf993d"
+    "mtime": 1782155936.3170342,
+    "ast_hash": "a3b625e70dfba7e824599d1001be418c",
+    "semantic_hash": "a3b625e70dfba7e824599d1001be418c"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\components.json": {
     "mtime": 1780952599.497652,
@@ -1040,9 +1040,9 @@
     "semantic_hash": "d9a5358de725b840c808a17fa6638620"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\eslint.config.js": {
-    "mtime": 1780952599.497652,
-    "ast_hash": "a9a4087c724d4ea288991f8330c0f5a5",
-    "semantic_hash": "a9a4087c724d4ea288991f8330c0f5a5"
+    "mtime": 1781494793.3099642,
+    "ast_hash": "23844a5401c0508859ba5be5a746412b",
+    "semantic_hash": "23844a5401c0508859ba5be5a746412b"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\package.json": {
     "mtime": 1781258227.0104308,
@@ -1055,9 +1055,9 @@
     "semantic_hash": "d0947ca1bb228bec3e8a08735924b8ac"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\vite.config.ts": {
-    "mtime": 1781458698.969903,
-    "ast_hash": "9bec6e6488a2229e6d2b36eb16539e45",
-    "semantic_hash": "9bec6e6488a2229e6d2b36eb16539e45"
+    "mtime": 1782143856.6090612,
+    "ast_hash": "fa3b80d2939e77a2f41c4814c7df9fa5",
+    "semantic_hash": "fa3b80d2939e77a2f41c4814c7df9fa5"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\.agent\\skills\\ui-ux-pro-max\\scripts\\core.py": {
     "mtime": 1781446346.811576,
@@ -1130,24 +1130,24 @@
     "semantic_hash": "ed96ce01a011a73b50cc2ed197afd904"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\packages\\campo-core\\src\\helpers.ts": {
-    "mtime": 1781380775.9872115,
-    "ast_hash": "b110b126ddc3fa9a4535ba0f5de88d4f",
-    "semantic_hash": "b110b126ddc3fa9a4535ba0f5de88d4f"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "ab4f646f05dde6d99ac17ad959ed2e7f",
+    "semantic_hash": "ab4f646f05dde6d99ac17ad959ed2e7f"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\packages\\campo-core\\src\\index.ts": {
-    "mtime": 1781380374.522227,
-    "ast_hash": "aff79a1f1a759ff3c1d56d1c1aa22a9f",
-    "semantic_hash": "aff79a1f1a759ff3c1d56d1c1aa22a9f"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "79f32afd6730ba29c4bf5e80a7e6d799",
+    "semantic_hash": "79f32afd6730ba29c4bf5e80a7e6d799"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\packages\\campo-core\\src\\types.ts": {
-    "mtime": 1781460977.3041368,
-    "ast_hash": "8ca07add60c56a7cf2af271849e3ff0d",
-    "semantic_hash": "8ca07add60c56a7cf2af271849e3ff0d"
+    "mtime": 1781494601.9164858,
+    "ast_hash": "36880449ca45e60c3207c1f5b90daa0a",
+    "semantic_hash": "36880449ca45e60c3207c1f5b90daa0a"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\CLAUDE.md": {
-    "mtime": 1781445714.7052417,
-    "ast_hash": "5b24ad3a5ab0af30cc74fd2dca0d4b14",
-    "semantic_hash": "5b24ad3a5ab0af30cc74fd2dca0d4b14"
+    "mtime": 1782140331.048496,
+    "ast_hash": "fbcebf6b7b0d9135c4f7f42aa7c90bbb",
+    "semantic_hash": "fbcebf6b7b0d9135c4f7f42aa7c90bbb"
   },
   "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\.agent\\skills\\ui-ux-pro-max\\SKILL.md": {
     "mtime": 1781446420.8373177,
@@ -1188,5 +1188,255 @@
     "mtime": 1781200510.1068902,
     "ast_hash": "922d59f560b1a03f9de8b68c5a761519",
     "semantic_hash": "922d59f560b1a03f9de8b68c5a761519"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\vercel.json": {
+    "mtime": 1782141075.064565,
+    "ast_hash": "9bb77eab8f70b02de39c92b1e753ba01",
+    "semantic_hash": "9bb77eab8f70b02de39c92b1e753ba01"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\api\\server.ts": {
+    "mtime": 1782141062.4916966,
+    "ast_hash": "e5f88aa6b6e7bcbc23efa9bda67ddcc5",
+    "semantic_hash": "e5f88aa6b6e7bcbc23efa9bda67ddcc5"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\vercel.json": {
+    "mtime": 1781464635.503167,
+    "ast_hash": "4a4d48bdb42e0c1c55d9db432f3c7fc1",
+    "semantic_hash": "4a4d48bdb42e0c1c55d9db432f3c7fc1"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\scripts\\gen-icons.mjs": {
+    "mtime": 1782155957.9137278,
+    "ast_hash": "de6ef478801cdd490f0f673752673d22",
+    "semantic_hash": "de6ef478801cdd490f0f673752673d22"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\campo-pwa\\src\\lib\\org.ts": {
+    "mtime": 1782004656.3557982,
+    "ast_hash": "7634df0e3b5faf82f8eeb6779d2f9c69",
+    "semantic_hash": "7634df0e3b5faf82f8eeb6779d2f9c69"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\empresas-labels.ts": {
+    "mtime": 1781903453.50801,
+    "ast_hash": "b97c5e989e59e73482c19f7c8c7f770a",
+    "semantic_hash": "b97c5e989e59e73482c19f7c8c7f770a"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\empresas-queries.ts": {
+    "mtime": 1782082849.8937466,
+    "ast_hash": "c7131ee162b82e06ced7ab0fe23b485f",
+    "semantic_hash": "c7131ee162b82e06ced7ab0fe23b485f"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\org-tree.ts": {
+    "mtime": 1781903034.4542642,
+    "ast_hash": "0cae9ba93a39813f1edfa7553c573149",
+    "semantic_hash": "0cae9ba93a39813f1edfa7553c573149"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\rti-snapshots.ts": {
+    "mtime": 1782062481.6863701,
+    "ast_hash": "2f6f3f2d130e15754f50c7237aa57e68",
+    "semantic_hash": "2f6f3f2d130e15754f50c7237aa57e68"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\tenancy-gates.ts": {
+    "mtime": 1781910641.2435167,
+    "ast_hash": "58501227ef3d1c9e6135f916db597e48",
+    "semantic_hash": "58501227ef3d1c9e6135f916db597e48"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\__tests__\\rti-custos.test.ts": {
+    "mtime": 1781821915.1651688,
+    "ast_hash": "0671d8f805ce9779f322ca6ccfa0c9ab",
+    "semantic_hash": "0671d8f805ce9779f322ca6ccfa0c9ab"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\__tests__\\rti-snapshots.test.ts": {
+    "mtime": 1782062822.6606317,
+    "ast_hash": "31fad729cf87dca425f467da61ae782a",
+    "semantic_hash": "31fad729cf87dca425f467da61ae782a"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\lib\\__tests__\\tenancy-gates.test.ts": {
+    "mtime": 1781910515.373197,
+    "ast_hash": "5d4524c91d25f50d01f06c3f3c40bd91",
+    "semantic_hash": "5d4524c91d25f50d01f06c3f3c40bd91"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\admin.empresas.tsx": {
+    "mtime": 1781970191.061717,
+    "ast_hash": "ba9674aefdaddc33e03f099e5622933c",
+    "semantic_hash": "ba9674aefdaddc33e03f099e5622933c"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\src\\routes\\rti.evolucao.tsx": {
+    "mtime": 1782137896.124047,
+    "ast_hash": "3eb9ff9d83d5b5d02bc4371225801495",
+    "semantic_hash": "3eb9ff9d83d5b5d02bc4371225801495"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260614000000_multitenancy_foundation.sql": {
+    "mtime": 1781477865.240162,
+    "ast_hash": "e570fdcd707064d6a2cd38923f00124a",
+    "semantic_hash": "e570fdcd707064d6a2cd38923f00124a"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260614010000_org_id_cascade.sql": {
+    "mtime": 1781485126.1442263,
+    "ast_hash": "8eb7bafd95f91c13e45a8d5ae29504c2",
+    "semantic_hash": "8eb7bafd95f91c13e45a8d5ae29504c2"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260614020000_seed_consultor_demo.sql": {
+    "mtime": 1781486392.4154823,
+    "ast_hash": "91bbef5e579f52c9a8fc026768df4c2c",
+    "semantic_hash": "91bbef5e579f52c9a8fc026768df4c2c"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260618000000_fix_org_inherit_precedence.sql": {
+    "mtime": 1781825279.1950567,
+    "ast_hash": "f19e94f78bcd5d3c0b35b3b7cfb21810",
+    "semantic_hash": "f19e94f78bcd5d3c0b35b3b7cfb21810"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260619000000_seal_schema.sql": {
+    "mtime": 1781878200.7839472,
+    "ast_hash": "b8a734ef5110bea45467fd00f542fca6",
+    "semantic_hash": "b8a734ef5110bea45467fd00f542fca6"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260619001000_seal_entregar_rpc.sql": {
+    "mtime": 1781874955.3278866,
+    "ast_hash": "5750593e8d0a90547d330ae5208ee70d",
+    "semantic_hash": "5750593e8d0a90547d330ae5208ee70d"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260619002000_seal_enforce_triggers.sql": {
+    "mtime": 1781877841.7633555,
+    "ast_hash": "55f9c9bc2019779ce474f039484d1249",
+    "semantic_hash": "55f9c9bc2019779ce474f039484d1249"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260619200000_empresas_management.sql": {
+    "mtime": 1781902765.4613976,
+    "ast_hash": "9a00f42b52545ceb8c03269e461175c6",
+    "semantic_hash": "9a00f42b52545ceb8c03269e461175c6"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260619210000_empresas_delete.sql": {
+    "mtime": 1781910428.4753087,
+    "ast_hash": "520503eaad453720823515b1e7e9c0c9",
+    "semantic_hash": "520503eaad453720823515b1e7e9c0c9"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260620000000_rbac_permissions_fixes.sql": {
+    "mtime": 1781965588.5579522,
+    "ast_hash": "665fe519dc3b12a52b2b730231ab18fc",
+    "semantic_hash": "665fe519dc3b12a52b2b730231ab18fc"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260620010000_consultor_deactivate_managed_orgs.sql": {
+    "mtime": 1781970202.950968,
+    "ast_hash": "95f231fbf8385987344f17fc08348098",
+    "semantic_hash": "95f231fbf8385987344f17fc08348098"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260620020000_modos_falha_restrict_to_consultoria.sql": {
+    "mtime": 1781975570.447243,
+    "ast_hash": "f29dee3bad496b51ed46a68210239037",
+    "semantic_hash": "f29dee3bad496b51ed46a68210239037"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260620030000_modos_falha_org_scoped.sql": {
+    "mtime": 1781976236.4169793,
+    "ast_hash": "45c0a706993f62ff9c5db01e05bf9233",
+    "semantic_hash": "45c0a706993f62ff9c5db01e05bf9233"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260620040000_modos_falha_insert_pa_bypass.sql": {
+    "mtime": 1781977353.626889,
+    "ast_hash": "6ac26bbc6ec817be4f5c930259ef865a",
+    "semantic_hash": "6ac26bbc6ec817be4f5c930259ef865a"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260620050000_modos_falha_select_managing_org.sql": {
+    "mtime": 1781977839.1284158,
+    "ast_hash": "1c7e2deb38165df4586fe2c9018f1478",
+    "semantic_hash": "1c7e2deb38165df4586fe2c9018f1478"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260620060000_modos_falha_pa_bypass_update_delete.sql": {
+    "mtime": 1781984249.2456038,
+    "ast_hash": "d5700c0f1b8b7e28f0da13dd77f969d3",
+    "semantic_hash": "d5700c0f1b8b7e28f0da13dd77f969d3"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260620070000_modos_falha_escopo_publico.sql": {
+    "mtime": 1781986927.3340178,
+    "ast_hash": "9001081b6ca1c020dca4b3591d93b122",
+    "semantic_hash": "9001081b6ca1c020dca4b3591d93b122"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260620100000_visibilidade_por_entrega.sql": {
+    "mtime": 1782005579.9238281,
+    "ast_hash": "869b0a399ec67c89f3daa2860d42f027",
+    "semantic_hash": "869b0a399ec67c89f3daa2860d42f027"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\migrations\\20260621000000_rti_snapshots_evolucao.sql": {
+    "mtime": 1782062360.9138534,
+    "ast_hash": "3a8f8be0f938e85a4bedd4c538dc6920",
+    "semantic_hash": "3a8f8be0f938e85a4bedd4c538dc6920"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\tests\\empresas_rpc_test.sql": {
+    "mtime": 1781910579.310613,
+    "ast_hash": "2ad25d0c8554bf158339bbd074a3eed0",
+    "semantic_hash": "2ad25d0c8554bf158339bbd074a3eed0"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\tests\\fase2_isolation_test.sql": {
+    "mtime": 1781539699.32619,
+    "ast_hash": "95244318aff1b44265d4014933537f34",
+    "semantic_hash": "95244318aff1b44265d4014933537f34"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\supabase\\tests\\visibilidade_entrega_test.sql": {
+    "mtime": 1782006042.3457265,
+    "ast_hash": "ab3c3965f851cdbabaa0703d9ecf0d5b",
+    "semantic_hash": "ab3c3965f851cdbabaa0703d9ecf0d5b"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\.github\\workflows\\ci.yml": {
+    "mtime": 1781464534.883747,
+    "ast_hash": "32438edf07ea5fbd5657689f3f2de2ec",
+    "semantic_hash": "32438edf07ea5fbd5657689f3f2de2ec"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\DEPLOY.md": {
+    "mtime": 1781470692.9940825,
+    "ast_hash": "817f7a449f09cbdb447063d1d873319d",
+    "semantic_hash": "817f7a449f09cbdb447063d1d873319d"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\plans\\2026-06-16-rti-campo-gates.md": {
+    "mtime": 1781639865.2828958,
+    "ast_hash": "266064d290b523362ff26e9b177f092d",
+    "semantic_hash": "266064d290b523362ff26e9b177f092d"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\plans\\2026-06-19-selo-entrega-rti.md": {
+    "mtime": 1781874199.9822652,
+    "ast_hash": "9ca98da0ede1b3cb0ab5ea902b914ae0",
+    "semantic_hash": "9ca98da0ede1b3cb0ab5ea902b914ae0"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\plans\\2026-06-19-ui-gestao-empresas.md": {
+    "mtime": 1781902706.588397,
+    "ast_hash": "e46cc6e881b256008f5d1b68556aee51",
+    "semantic_hash": "e46cc6e881b256008f5d1b68556aee51"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\plans\\ROADMAP.md": {
+    "mtime": 1782062805.521974,
+    "ast_hash": "5dd4786cff66f263cfb5d68d7f61155e",
+    "semantic_hash": "5dd4786cff66f263cfb5d68d7f61155e"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\specs\\2026-06-15-painel-usuarios-por-org-design.md": {
+    "mtime": 1781561557.5036654,
+    "ast_hash": "c67e17b8c2a6d1d2c230f254f43b605b",
+    "semantic_hash": "c67e17b8c2a6d1d2c230f254f43b605b"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\specs\\2026-06-16-rti-analise-custos-design.md": {
+    "mtime": 1781610956.1339118,
+    "ast_hash": "460ddc10b06f98b0d0b6b58bfbcf2155",
+    "semantic_hash": "460ddc10b06f98b0d0b6b58bfbcf2155"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\specs\\2026-06-16-rti-campo-gates-design.md": {
+    "mtime": 1781639864.9919617,
+    "ast_hash": "82c0cecb4b9f17fc05e77220f8f8b6f7",
+    "semantic_hash": "82c0cecb4b9f17fc05e77220f8f8b6f7"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\specs\\2026-06-19-selo-entrega-rti-design.md": {
+    "mtime": 1781877851.7327118,
+    "ast_hash": "21b98e1523263d9008fbd7ce58c8d2d6",
+    "semantic_hash": "21b98e1523263d9008fbd7ce58c8d2d6"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\specs\\2026-06-19-ui-gestao-empresas-design.md": {
+    "mtime": 1781901898.0286536,
+    "ast_hash": "0f2790429cdfe1b48d25b41e9a8571e6",
+    "semantic_hash": "0f2790429cdfe1b48d25b41e9a8571e6"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\specs\\2026-06-20-visibilidade-por-entrega-design.md": {
+    "mtime": 1782006088.7907214,
+    "ast_hash": "9069eb5ae25589e014fb8c3627ab881f",
+    "semantic_hash": "9069eb5ae25589e014fb8c3627ab881f"
+  },
+  "C:\\Users\\hsgus\\OneDrive\\Claude Code\\gestao_nr10\\docs\\superpowers\\specs\\2026-06-21-mvp-menu-home-rti-evolucao-design.md": {
+    "mtime": 1782062812.2830672,
+    "ast_hash": "3eefe6e9a87a99d723535b14f3d555a3",
+    "semantic_hash": "3eefe6e9a87a99d723535b14f3d555a3"
   }
 }

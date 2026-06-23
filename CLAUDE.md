@@ -30,9 +30,10 @@ Este relatório foi gerado pelo graphify e contém o mapa estrutural completo do
 
 ### God Nodes (mudanças de alto impacto)
 
-- `useAuth()` — 82 arestas (afeta o sistema inteiro)
-- `cn()` — 72 arestas (utilitário de classes CSS)
-- `Button` — 53 arestas
+- `useAuth()` — 96 arestas (afeta o sistema inteiro)
+- `cn()` — 80 arestas (utilitário de classes CSS)
+- `Button` — 54 arestas
+- `PageShell()` — 41 arestas (novo god node — layout global)
 - `formatDatePtBR()` — 37 arestas
 
 ## Stack
