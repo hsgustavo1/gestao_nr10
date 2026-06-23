@@ -5,6 +5,7 @@ import type { LocalFinding, LocalPhoto } from "@/db/dexie";
 import type { RtiModoFalha, RtiTipoExecucao } from "@/lib/types";
 import { enqueue } from "@/sync/engine";
 import { modosPorCategoria } from "@/lib/campo";
+import { compressPhoto } from "@/lib/image";
 import { ArrowLeft, Camera, Plus, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { generateId } from "@/lib/uuid";
@@ -259,6 +260,10 @@ export default function PointCapture() {
     const file = e.target.files?.[0];
     if (!file || !nodeId) return;
 
+    // Comprime antes de persistir: o original full-res fica só na galeria do aparelho;
+    // o app e o Supabase guardam a versão leve. Falha de compressão cai no original.
+    const blob = await compressPhoto(file);
+
     const photoId = generateId();
     const now = new Date().toISOString();
     const existingCount = await db.photos.where("point_id").equals(nodeId).count();
@@ -269,7 +274,7 @@ export default function PointCapture() {
       file_name: file.name,
       legenda: legendaInput.trim() || null,
       ordem: existingCount,
-      blob: file,
+      blob,
       created_at: now,
       _synced: false,
     };

@@ -309,7 +309,10 @@ async function uploadPhoto(localId: string): Promise<void> {
   });
   if (dbError) throw dbError;
 
-  await db.photos.update(localId, { file_path: remotePath, _synced: true });
+  // Opção A (decidida em 2026-06-23): após subir, descarta o blob do IndexedDB.
+  // O comprimido já está no Supabase e o original full-res permanece na galeria do
+  // aparelho. Evita o IndexedDB inchar/sofrer eviction com fotos já sincronizadas.
+  await db.photos.update(localId, { file_path: remotePath, _synced: true, blob: null });
 }
 
 // ── Connectivity watcher ──────────────────────────────────────────────────────

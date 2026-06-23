@@ -3,20 +3,22 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { db } from "@/db/dexie";
 import type { LocalNode } from "@/db/dexie";
 import { enqueue } from "@/sync/engine";
-import { filhosDoNo, labelDoTipo, nodePath, proximoNivel } from "@/lib/campo";
+import { filhosDoNo, labelDoTipo, nodePath, proximoNivel, setorDoNo } from "@/lib/campo";
+import { exportSetorFotos } from "@/lib/export-fotos";
 import {
   AlertTriangle,
   Archive,
   ArrowLeft,
   Camera,
   ChevronRight,
+  Download,
   FolderTree,
   Home,
   Pencil,
   Plus,
   RotateCcw,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { generateId } from "@/lib/uuid";
 import { EditMetadataModal } from "@/components/EditMetadataModal";
 
@@ -109,6 +111,16 @@ export default function InspectionDetail() {
   const [reopening, setReopening] = useState(false);
   const [addingPoint, setAddingPoint] = useState(false);
   const [archiving, setArchiving] = useState(false);
+
+  // Backup por setor: ao trocar de setor, sugere exportar as fotos zipadas para o
+  // aparelho (backup alternativo). Não interfere no upload ao Supabase.
+  const [exportPrompt, setExportPrompt] = useState<{ setorId: string; setorNome: string } | null>(
+    null,
+  );
+  const [exporting, setExporting] = useState(false);
+  const [exportResult, setExportResult] = useState<string | null>(null);
+  const prevSetorRef = useRef<string | null>(null);
+  const promptedSetoresRef = useRef<Set<string>>(new Set());
 
   const inspection = useLiveQuery(() => (id ? db.inspections.get(id) : undefined), [id]);
   const allNodes = useLiveQuery(
@@ -211,6 +223,54 @@ export default function InspectionDetail() {
 
   const isReadOnly = inspection?.status !== "em_andamento";
   const podeColetar = !!currentNodeId && !isReadOnly;
+
+  // Setor (raiz do caminho) do nó atual. Ao mudar de setor, se o setor anterior
+  // tinha fotos, sugere o backup zipado uma única vez por setor na sessão.
+  const currentSetorId = currentNodeId ? (setorDoNo(currentNodeId, nodes)?.id ?? null) : null;
+  useEffect(() => {
+    const prev = prevSetorRef.current;
+    prevSetorRef.current = currentSetorId;
+    if (!prev || prev === currentSetorId) return;
+    if (promptedSetoresRef.current.has(prev)) return;
+    let cancelled = false;
+    (async () => {
+      const setorPointIds = allPoints
+        .filter((p) => setorDoNo(p.node_id, nodes)?.id === prev)
+        .map((p) => p.id);
+      if (setorPointIds.length === 0) return;
+      const count = await db.photos.where("point_id").anyOf(setorPointIds).count();
+      if (cancelled || count === 0) return;
+      promptedSetoresRef.current.add(prev);
+      setExportResult(null);
+      setExportPrompt({ setorId: prev, setorNome: nodes.find((n) => n.id === prev)?.nome ?? "setor" });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSetorId]);
+
+  async function handleExportSetor() {
+    if (!exportPrompt || !inspection || exporting) return;
+    setExporting(true);
+    setExportResult(null);
+    try {
+      const r = await exportSetorFotos({
+        inspection,
+        setorNodeId: exportPrompt.setorId,
+        allNodes: nodes,
+      });
+      setExportResult(
+        `${r.fotos} foto${r.fotos !== 1 ? "s" : ""} exportada${r.fotos !== 1 ? "s" : ""}` +
+          (r.faltando > 0 ? ` · ${r.faltando} indisponível(is)` : ""),
+      );
+    } catch (e) {
+      console.error("Falha ao exportar fotos do setor:", e);
+      setExportResult("Falha ao exportar. Tente novamente.");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   // Persiste o nível atual para sobreviver à navegação de ida/volta ao PointCapture.
   useEffect(() => {
@@ -507,6 +567,45 @@ export default function InspectionDetail() {
       )}
       {showEditMeta && (
         <EditMetadataModal inspection={inspection} onClose={() => setShowEditMeta(false)} />
+      )}
+      {exportPrompt && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-8">
+          <div className="w-full max-w-sm rounded-2xl bg-slate-800 p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <Download className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+              <div>
+                <h2 className="font-semibold">Fazer backup das fotos?</h2>
+                <p className="text-sm text-slate-400 mt-1">
+                  Você saiu do setor{" "}
+                  <span className="text-slate-200 font-medium">{exportPrompt.setorNome}</span>. Quer
+                  exportar as fotos dele zipadas para o aparelho? É um backup à parte — o envio ao
+                  RTI continua normal.
+                </p>
+                {exportResult && (
+                  <p className="text-xs text-emerald-400 mt-2">{exportResult}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setExportPrompt(null)}
+                disabled={exporting}
+                className="flex-1 rounded-lg border border-slate-600 py-3 text-sm disabled:opacity-40"
+              >
+                {exportResult ? "Fechar" : "Agora não"}
+              </button>
+              {!exportResult && (
+                <button
+                  onClick={handleExportSetor}
+                  disabled={exporting}
+                  className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 py-3 text-sm font-semibold"
+                >
+                  {exporting ? "Exportando…" : "Exportar .zip"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
       {showArchiveConfirm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-8">

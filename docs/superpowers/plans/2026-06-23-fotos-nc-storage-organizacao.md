@@ -164,3 +164,39 @@ const comprimido = await imageCompression(file, opts);
 - **OneDrive/GDrive como storage**: descartado (sem RLS por tenant; reintroduz servidor e complexidade).
 
 **Antes de executar:** responder às 4 decisões da §7.
+
+---
+
+## 10. Execução — 2026-06-23
+
+Decisões do usuário aplicadas: **(1) opção A** (descarta blob após sync), **(2) compressão 0,6 MB**, **(3) sem migração de legado — apagar órfãos**, **(4) Capacitor fica no roadmap com prioridade baixíssima**.
+
+### Entregue
+
+- **Fase 1 — Compressão no cliente** ✓
+  - `campo-pwa/src/lib/image.ts` (`compressPhoto`): `browser-image-compression`, alvo 0,6 MB, `maxWidthOrHeight 2048`, web worker, **fallback ao original** em qualquer falha; pula recompressão se já ≤ 0,6 MB.
+  - `PointCapture.tsx` `handlePhoto`: comprime antes de gravar no Dexie.
+- **Descarte de blob pós-sync (opção A)** ✓ — `sync/engine.ts` `uploadPhoto` grava `blob: null` após `_synced=true`. Original full-res permanece na galeria do aparelho.
+- **Numeração de NC** ✓ — já era contínua por relatório no `comporRti` (app, `src/lib/campo-queries.ts`); o backup espelha a regra (`buildNcNumbering`): NC sequencial na ordem dos pontos, **não reinicia por setor**; ponto com várias fotos → `NC_001_1`, `NC_001_2`…; ponto com vários achados → `NC_001-002`.
+- **Backup por setor (.zip)** ✓ — `campo-pwa/src/lib/export-fotos.ts` (`exportSetorFotos`): zip das fotos do setor a partir dos blobs do Dexie (fallback: download do Supabase se já sincronizada), nomeadas por NC, com `resumo.csv`. Usa Web Share (salvar em Arquivos/Drive) com fallback para download. `jszip` em chunk dinâmico.
+  - **Alerta ao trocar de setor** ✓ — `InspectionDetail.tsx`: ao sair de um setor com fotos, sugere o backup (uma vez por setor/sessão). **Não altera o upload ao Supabase.**
+- **Limpeza de órfãos** — script pronto: `scripts/cleanup-orphan-evidencias.mjs`.
+
+### ⚠️ Pendência operacional (precisa de 1 ação sua)
+
+Achado: o bucket `rti-evidencias` tinha **383 imagens órfãs (~867 MB)** — zero linhas em `field_photos`/`rti_nc_evidencias` (relatórios de teste apagados sem limpar o Storage). O Supabase **bloqueia DELETE direto** em `storage.objects` (trigger `protect_delete`); a remoção exige a **service-role key** via Storage API, que não está no ambiente local. Tentar burlar o trigger foi (corretamente) negado.
+
+**Para liberar os ~867 MB**, rode na raiz do projeto com a sua service-role key (Dashboard → Settings → API):
+```powershell
+$env:SUPABASE_URL="https://fumwovtzyhxrjhkjzujs.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY="<service-role key>"
+node scripts/cleanup-orphan-evidencias.mjs           # dry-run (lista)
+node scripts/cleanup-orphan-evidencias.mjs --apply   # remove
+```
+O script só apaga objetos **sem referência no banco** (dupla checagem).
+
+### Ainda no roadmap (não executado)
+
+- **Fase 2 — Galeria organizada no PWA** (visualizador por inspeção/setor/ponto). O backup por setor já cobre a necessidade imediata de revisão/segurança.
+- **Fase 4 — Capacitor** (álbuns nativos) — prioridade baixíssima.
+- **Calibrar compressão** com fotos reais de campo (placas/terminais) antes de fixar 0,6 MB.
