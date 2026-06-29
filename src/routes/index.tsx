@@ -39,7 +39,7 @@ function HomePage() {
   const redirectTo = !auth.loading
     ? !auth.user && !auth.isViewer
       ? "/login"
-      : auth.user
+      : auth.user && !auth.isPlatformAdmin
         ? canViewRti
           ? "/rti"
           : "/qualificacoes"
