@@ -368,6 +368,7 @@ function downloadTemplate() {
 function QualificacoesCargaPage() {
   const auth = useAuth();
   const { canEdit } = getPessoasAccess(auth);
+  const orgId = auth.currentOrg?.id;
   const [parsed, setParsed] = useState<ParsedData | null>(null);
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
@@ -406,10 +407,16 @@ function QualificacoesCargaPage() {
   }
 
   async function handleImport() {
-    if (!parsed) return;
+    if (!parsed || !orgId) return;
     setImporting(true);
     try {
-      await batchImportQualificacoes(parsed);
+      await batchImportQualificacoes({
+        ...parsed,
+        employees: parsed.employees.map((e) => ({ ...e, org_id: orgId })),
+        nr10Trainings: parsed.nr10Trainings.map((t) => ({ ...t, org_id: orgId })),
+        authorizations: parsed.authorizations.map((a) => ({ ...a, org_id: orgId })),
+        itTrainings: parsed.itTrainings.map((t) => ({ ...t, org_id: orgId })),
+      });
       setDone(true);
       toast.success("Importação concluída com sucesso!");
     } catch (err) {

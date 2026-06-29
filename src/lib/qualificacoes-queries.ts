@@ -305,12 +305,13 @@ export async function batchImportQualificacoes(payload: {
     instructionCode: string;
     status: string;
     conclusao_date: string | null;
+    org_id: string;
   }[];
 }) {
   // Step 1: upsert employees, get back IDs mapped by matricula
   const { data: empData, error: empErr } = await supabase
     .from("employees")
-    .upsert(payload.employees, { onConflict: "matricula" })
+    .upsert(payload.employees, { onConflict: "matricula,org_id" })
     .select("id, matricula");
   if (empErr) throw empErr;
 
@@ -374,6 +375,7 @@ export async function batchImportQualificacoes(payload: {
       instruction_id: codeToId[t.instructionCode],
       status: t.status,
       conclusao_date: t.conclusao_date,
+      org_id: t.org_id,
     }));
   if (itRows.length > 0) {
     const { error } = await supabase
