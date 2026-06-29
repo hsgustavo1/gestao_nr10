@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
+import { getPessoasAccess } from "@/lib/tenancy-gates";
 import { useEmployees, useDeleteEmployee } from "@/lib/qualificacoes-queries";
 import { EmployeeDialog } from "@/components/employee-dialog";
 import type { Employee } from "@/lib/qualificacoes";
@@ -39,7 +40,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function ColaboradoresPage() {
-  const { isStaff } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const [statusFilter, setStatusFilter] = useState<"ativo" | "afastado" | "desligado" | "all">(
     "ativo",
   );
@@ -100,7 +102,7 @@ function ColaboradoresPage() {
             Cadastro e dados dos colaboradores habilitados NR-10.
           </p>
         </div>
-        {isStaff && (
+        {canEdit && (
           <Button
             onClick={() => {
               setEditing(undefined);
@@ -177,7 +179,7 @@ function ColaboradoresPage() {
               <th className="py-2.5 px-3 font-medium">Função</th>
               <th className="py-2.5 px-3 font-medium">Classificação</th>
               <th className="py-2.5 px-3 font-medium">Status</th>
-              {isStaff && <th className="py-2.5 px-3 font-medium">Ações</th>}
+              {canEdit && <th className="py-2.5 px-3 font-medium">Ações</th>}
             </tr>
           </thead>
           <tbody>
@@ -230,7 +232,7 @@ function ColaboradoresPage() {
                           {EMPLOYEE_STATUS_LABELS[status]}
                         </span>
                       </td>
-                      {isStaff && (
+                      {canEdit && (
                         <td className="py-3 px-3">
                           <div className="flex gap-1">
                             <Button

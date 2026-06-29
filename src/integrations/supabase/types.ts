@@ -19,6 +19,7 @@ export type Database = {
           id: string;
           medico: string | null;
           notes: string | null;
+          org_id: string;
           restricoes: string | null;
           resultado: string;
           tipo: string;
@@ -35,6 +36,7 @@ export type Database = {
           id?: string;
           medico?: string | null;
           notes?: string | null;
+          org_id?: string;
           restricoes?: string | null;
           resultado?: string;
           tipo?: string;
@@ -51,6 +53,7 @@ export type Database = {
           id?: string;
           medico?: string | null;
           notes?: string | null;
+          org_id?: string;
           restricoes?: string | null;
           resultado?: string;
           tipo?: string;
@@ -216,6 +219,7 @@ export type Database = {
           setor: string | null;
           status: string;
           updated_at: string;
+          org_id: string;
         };
         Insert: {
           active?: boolean;
@@ -230,6 +234,7 @@ export type Database = {
           id?: string;
           matricula: string;
           name: string;
+          org_id?: string;
           reciclagem_motivo?: string | null;
           reciclagem_requerida?: boolean;
           retorno_em?: string | null;
@@ -250,6 +255,7 @@ export type Database = {
           id?: string;
           matricula?: string;
           name?: string;
+          org_id?: string;
           reciclagem_motivo?: string | null;
           reciclagem_requerida?: boolean;
           retorno_em?: string | null;
@@ -732,6 +738,7 @@ export type Database = {
           employee_id: string;
           id: string;
           instruction_id: string;
+          org_id: string;
           status: string;
           updated_at: string;
         };
@@ -741,6 +748,7 @@ export type Database = {
           employee_id: string;
           id?: string;
           instruction_id: string;
+          org_id?: string;
           status?: string;
           updated_at?: string;
         };
@@ -750,6 +758,7 @@ export type Database = {
           employee_id?: string;
           id?: string;
           instruction_id?: string;
+          org_id?: string;
           status?: string;
           updated_at?: string;
         };
@@ -862,6 +871,7 @@ export type Database = {
       nr10_trainings: {
         Row: {
           art: string | null;
+          art_arquivo_url: string | null;
           carga_horaria: number | null;
           category: string;
           conteudo_programatico: string | null;
@@ -870,6 +880,7 @@ export type Database = {
           entidade: string | null;
           id: string;
           instrutor: string | null;
+          org_id: string;
           responsavel_tecnico: string | null;
           training_date: string | null;
           training_type: string;
@@ -878,6 +889,7 @@ export type Database = {
         };
         Insert: {
           art?: string | null;
+          art_arquivo_url?: string | null;
           carga_horaria?: number | null;
           category: string;
           conteudo_programatico?: string | null;
@@ -886,6 +898,7 @@ export type Database = {
           entidade?: string | null;
           id?: string;
           instrutor?: string | null;
+          org_id?: string;
           responsavel_tecnico?: string | null;
           training_date?: string | null;
           training_type: string;
@@ -894,6 +907,7 @@ export type Database = {
         };
         Update: {
           art?: string | null;
+          art_arquivo_url?: string | null;
           carga_horaria?: number | null;
           category?: string;
           conteudo_programatico?: string | null;
@@ -902,6 +916,7 @@ export type Database = {
           entidade?: string | null;
           id?: string;
           instrutor?: string | null;
+          org_id?: string;
           responsavel_tecnico?: string | null;
           training_date?: string | null;
           training_type?: string;
@@ -1619,6 +1634,7 @@ export type Database = {
           id: string;
           is_current: boolean;
           level: string;
+          org_id: string;
           updated_at: string;
           valid: boolean;
         };
@@ -1631,6 +1647,7 @@ export type Database = {
           id?: string;
           is_current?: boolean;
           level: string;
+          org_id?: string;
           updated_at?: string;
           valid?: boolean;
         };
@@ -1643,6 +1660,7 @@ export type Database = {
           id?: string;
           is_current?: boolean;
           level?: string;
+          org_id?: string;
           updated_at?: string;
           valid?: boolean;
         };
@@ -1661,6 +1679,7 @@ export type Database = {
           code: string;
           created_at: string;
           id: string;
+          org_id: string;
           title: string | null;
           updated_at: string;
           validity_months: number;
@@ -1669,6 +1688,7 @@ export type Database = {
           code: string;
           created_at?: string;
           id?: string;
+          org_id?: string;
           title?: string | null;
           updated_at?: string;
           validity_months?: number;
@@ -1677,6 +1697,7 @@ export type Database = {
           code?: string;
           created_at?: string;
           id?: string;
+          org_id?: string;
           title?: string | null;
           updated_at?: string;
           validity_months?: number;

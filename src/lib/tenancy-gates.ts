@@ -13,6 +13,14 @@ export type ScopedAccess = {
   canAdmin: boolean;
 };
 
+export function getPessoasAccess(ctx: ScopedGateContext): ScopedAccess {
+  const hasGestao = ctx.hasEntitlement("gestao_completa");
+  const canView = ctx.isStaff || hasGestao;
+  const canEdit = canView && (ctx.isStaff || ctx.hasOrgRole("member"));
+  const canAdmin = canView && (ctx.isAdmin || ctx.hasOrgRole("admin"));
+  return { canView, canEdit, canAdmin };
+}
+
 export function getRtiCampoAccess(ctx: ScopedGateContext): ScopedAccess {
   const legacy = ctx.hasEntitlement("rti_pwa"); // retrocompatibilidade
   const hasRtiEntitlement = legacy || ctx.hasEntitlement("rti") || ctx.hasEntitlement("gestao_completa");

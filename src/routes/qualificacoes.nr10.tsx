@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
+import { getPessoasAccess } from "@/lib/tenancy-gates";
 import { useEmployees, useNR10Trainings } from "@/lib/qualificacoes-queries";
 import { NR10TrainingDialog } from "@/components/nr10-training-dialog";
 import { NR10TurmaDialog } from "@/components/nr10-turma-dialog";
@@ -84,8 +85,9 @@ function ReciclagemCell({
   hasCertificate?: boolean;
   onClick: () => void;
 }) {
-  const { isStaff } = useAuth();
-  const tdClass = cn("py-2 px-3 text-center", isStaff && "cursor-pointer hover:bg-muted/40");
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
+  const tdClass = cn("py-2 px-3 text-center", canEdit && "cursor-pointer hover:bg-muted/40");
 
   if (reciclagemDate) {
     // Reciclagem realizada
@@ -94,7 +96,7 @@ function ReciclagemCell({
     if (status === "ok") {
       const noCert = hasCertificate === false;
       return (
-        <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+        <td onClick={canEdit ? onClick : undefined} className={tdClass}>
           <span title={`${formatDatePtBR(reciclagemDate)}${certSuffix}`} className="flex justify-center">
             <CheckCircle2 className={`h-4 w-4 ${noCert ? "text-amber-500" : "text-emerald-500"}`} />
           </span>
@@ -103,7 +105,7 @@ function ReciclagemCell({
     }
     if (status === "expiring") {
       return (
-        <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+        <td onClick={canEdit ? onClick : undefined} className={tdClass}>
           <span title={`${formatDatePtBR(reciclagemDate)} · Vence em breve${certSuffix}`} className="flex justify-center">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
           </span>
@@ -112,7 +114,7 @@ function ReciclagemCell({
     }
     // expired
     return (
-      <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+      <td onClick={canEdit ? onClick : undefined} className={tdClass}>
         <span title={`${formatDatePtBR(reciclagemDate)} · Vencida${certSuffix}`} className="flex justify-center">
           <XCircle className="h-4 w-4 text-destructive" />
         </span>
@@ -126,7 +128,7 @@ function ReciclagemCell({
     const venc = vencimentoStr(formacaoDate);
     if (status === "expired") {
       return (
-        <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+        <td onClick={canEdit ? onClick : undefined} className={tdClass}>
           <span title={`Reciclagem vencida · base: ${formatDatePtBR(formacaoDate)}`} className="flex justify-center">
             <XCircle className="h-4 w-4 text-destructive" />
           </span>
@@ -135,7 +137,7 @@ function ReciclagemCell({
     }
     const color = status === "expiring" ? "text-amber-500" : "text-emerald-500";
     return (
-      <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+      <td onClick={canEdit ? onClick : undefined} className={tdClass}>
         <span title={`Sem reciclagem · válido pela formação até ${venc}`} className="flex justify-center">
           <Clock className={`h-4 w-4 ${color}`} />
         </span>
@@ -144,7 +146,7 @@ function ReciclagemCell({
   }
 
   return (
-    <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+    <td onClick={canEdit ? onClick : undefined} className={tdClass}>
       <span title="Sem registro" className="flex justify-center">
         <MinusCircle className="h-4 w-4 text-muted-foreground/40" />
       </span>
@@ -154,11 +156,12 @@ function ReciclagemCell({
 
 /** Célula para treinamento não obrigatório (ex: GER + Áreas Classificadas). */
 function NaoObrigatorioCell({ hasTraining, date, onClick }: { hasTraining: boolean; date?: string | null; onClick: () => void }) {
-  const { isStaff } = useAuth();
-  const tdClass = cn("py-2 px-3 text-center", isStaff && "cursor-pointer hover:bg-muted/40");
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
+  const tdClass = cn("py-2 px-3 text-center", canEdit && "cursor-pointer hover:bg-muted/40");
   if (hasTraining && date) {
     return (
-      <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+      <td onClick={canEdit ? onClick : undefined} className={tdClass}>
         <span title={`${formatDatePtBR(date)} · Não obrigatório para esta equipe`} className="flex justify-center">
           <CheckCircle2 className="h-4 w-4 text-emerald-500/60" />
         </span>
@@ -182,11 +185,12 @@ function FormacaoCell({
   training?: NR10Training;
   onClick: () => void;
 }) {
-  const { isStaff } = useAuth();
-  const tdClass = cn("py-2 px-3 text-center", isStaff && "cursor-pointer hover:bg-muted/40");
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
+  const tdClass = cn("py-2 px-3 text-center", canEdit && "cursor-pointer hover:bg-muted/40");
   const hasCertificate = training ? !!training.art_arquivo_url : undefined;
   return (
-    <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+    <td onClick={canEdit ? onClick : undefined} className={tdClass}>
       <FormacaoIcon date={training?.training_date} hasCertificate={hasCertificate} />
     </td>
   );
@@ -215,7 +219,8 @@ type EmployeeRow = {
 };
 
 function NR10Page() {
-  const { isStaff, isAdmin } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit, canAdmin } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const { data: employees = [], isLoading: empLoading } = useEmployees();
   const { data: trainings = [], isLoading: trLoading } = useNR10Trainings();
   const isLoading = empLoading || trLoading;
@@ -312,19 +317,19 @@ function NR10Page() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold">Capacitações NR-10</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {isStaff
+            {canEdit
               ? "Clique em uma célula para registrar ou editar o treinamento."
               : "Visão geral dos treinamentos NR-10."}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isStaff && (
+          {canEdit && (
             <Button variant="outline" className="gap-1.5" onClick={() => setTurmaOpen(true)}>
               <Users className="h-4 w-4" />
               Registrar turma
             </Button>
           )}
-          {isAdmin && (
+          {canAdmin && (
             <Button
               asChild
               className="bg-brand-gradient text-white shadow-brand hover:opacity-95 gap-1.5"
@@ -556,7 +561,7 @@ function NR10Page() {
         />
       )}
 
-      {isStaff && turmaOpen && <NR10TurmaDialog open={turmaOpen} onOpenChange={setTurmaOpen} />}
+      {canEdit && turmaOpen && <NR10TurmaDialog open={turmaOpen} onOpenChange={setTurmaOpen} />}
     </PageShell>
   );
 }

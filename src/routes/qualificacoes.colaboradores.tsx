@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
+import { getPessoasAccess } from "@/lib/tenancy-gates";
 import { useEmployees, useDeleteEmployee } from "@/lib/qualificacoes-queries";
 import { EmployeeDialog } from "@/components/employee-dialog";
 import type { Employee } from "@/lib/qualificacoes";
@@ -25,7 +26,8 @@ export const Route = createFileRoute("/qualificacoes/colaboradores")({
 });
 
 function ColaboradoresPage() {
-  const { isStaff } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const [statusFilter, setStatusFilter] = useState<"ativo" | "afastado" | "desligado" | "all">(
     "ativo",
   );
@@ -62,7 +64,7 @@ function ColaboradoresPage() {
             Formação e qualificação dos integrantes NR-10.
           </p>
         </div>
-        {isStaff && (
+        {canEdit && (
           <Button
             onClick={() => {
               setEditing(undefined);
@@ -125,7 +127,7 @@ function ColaboradoresPage() {
               <th className="py-2 pr-4 font-medium">Escolaridade</th>
               <th className="py-2 pr-4 font-medium">Diploma</th>
               <th className="py-2 pr-4 font-medium">Conclusão</th>
-              {isStaff && <th className="py-2 font-medium">Ações</th>}
+              {canEdit && <th className="py-2 font-medium">Ações</th>}
             </tr>
           </thead>
           <tbody>
@@ -169,7 +171,7 @@ function ColaboradoresPage() {
                     <td className="py-3 pr-4 text-muted-foreground">
                       {formatDatePtBR(emp.diploma_conclusao)}
                     </td>
-                    {isStaff && (
+                    {canEdit && (
                       <td className="py-3">
                         <div className="flex gap-1">
                           <Button
@@ -217,7 +219,7 @@ function ColaboradoresPage() {
         {!isLoading && filteredEmployees.length === 0 && (
           <p className="py-12 text-center text-muted-foreground text-sm">
             Nenhum colaborador cadastrado.{" "}
-            {isStaff && "Use o botão acima para adicionar ou importe a planilha."}
+            {canEdit && "Use o botão acima para adicionar ou importe a planilha."}
           </p>
         )}
       </div>

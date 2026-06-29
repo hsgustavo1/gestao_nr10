@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
+import { getPessoasAccess } from "@/lib/tenancy-gates";
 import {
   useEmployees,
   useWorkAuthorizations,
@@ -70,7 +71,8 @@ function HistoryRow({ employeeId, colSpan }: { employeeId: string; colSpan: numb
 }
 
 function AutorizacoesPage() {
-  const { isStaff } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const { data: employees = [], isLoading: empLoading } = useEmployees();
   const { data: authorizations = [], isLoading: authLoading } = useWorkAuthorizations();
   const { data: trainings = [] } = useNR10Trainings();
@@ -147,7 +149,7 @@ function AutorizacoesPage() {
     });
   }, [employees, nameSearch, setorFilter, levelFilter, validFilter, authByEmployee]);
 
-  const colSpan = isStaff ? 8 : 7;
+  const colSpan = canEdit ? 8 : 7;
 
   return (
     <PageShell>
@@ -243,7 +245,7 @@ function AutorizacoesPage() {
                 <th className="py-2 pr-4 font-medium">Data autorização</th>
                 <th className="py-2 pr-4 font-medium">Válida</th>
                 <th className="py-2 pr-4 font-medium">Aptidão</th>
-                {isStaff && <th className="py-2 font-medium">Ações</th>}
+                {canEdit && <th className="py-2 font-medium">Ações</th>}
               </tr>
             </thead>
             <tbody>
@@ -321,7 +323,7 @@ function AutorizacoesPage() {
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
-                          {isStaff && (
+                          {canEdit && (
                             <td className="py-3">
                               <div className="flex items-center gap-0.5">
                                 {auth && (

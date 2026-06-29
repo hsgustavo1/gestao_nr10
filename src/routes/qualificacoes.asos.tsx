@@ -32,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth-context";
+import { getPessoasAccess } from "@/lib/tenancy-gates";
 import {
   ASO_RESULTADO_LABELS,
   ASO_RESULTADOS,
@@ -81,7 +82,8 @@ function statusBadge(status: ASOStatus) {
 }
 
 function ASOsPage() {
-  const { isStaff } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const { data: employees = [], isLoading: loadingEmp } = useEmployees("ativo");
   const { data: asos = [], isLoading: loadingAsos } = useASOs();
   const isLoading = loadingEmp || loadingAsos;
@@ -323,7 +325,7 @@ function ASOsPage() {
           onOpenChange={(o) => {
             if (!o) setHistoryFor(null);
           }}
-          canEdit={isStaff}
+          canEdit={canEdit}
         />
       )}
     </PageShell>
@@ -366,7 +368,8 @@ function ASOHistoryDialog({
   onOpenChange: (o: boolean) => void;
   canEdit: boolean;
 }) {
-  const { isAdmin, user } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole, user } = useAuth();
+  const { canAdmin } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const { data: asos = [], isLoading } = useASOs(employee.id);
   const upsert = useUpsertASO();
   const deleteASO = useDeleteASO();
@@ -494,7 +497,7 @@ function ASOHistoryDialog({
                     </a>
                   </Button>
                 )}
-                {isAdmin && (
+                {canAdmin && (
                   <Button
                     size="sm"
                     variant="ghost"

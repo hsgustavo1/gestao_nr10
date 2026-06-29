@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import type { ASO } from "./asos";
 
 export const asoKeys = {
@@ -11,10 +12,15 @@ export type ASOWithEmployee = ASO & {
 };
 
 export function useASOs(employeeId?: string) {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: asoKeys.asos(employeeId),
+    queryKey: [...asoKeys.asos(employeeId), currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
-      let q = supabase.from("asos").select("*, employees(name, matricula, setor)");
+      let q = supabase
+        .from("asos")
+        .select("*, employees(name, matricula, setor)")
+        .eq("org_id", currentOrgId!);
       if (employeeId) q = q.eq("employee_id", employeeId);
       const { data, error } = await q.order("exam_date", { ascending: false });
       if (error) throw error;

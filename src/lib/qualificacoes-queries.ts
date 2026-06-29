@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import type {
   Employee,
   NR10Training,
@@ -21,10 +22,12 @@ export const qualKeys = {
 
 // ── Employees ────────────────────────────────────────────────────────────────
 export function useEmployees(statusFilter: "ativo" | "afastado" | "desligado" | "all" = "ativo") {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: [...qualKeys.employees, statusFilter],
+    queryKey: [...qualKeys.employees, statusFilter, currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
-      let q = supabase.from("employees").select("*");
+      let q = supabase.from("employees").select("*").eq("org_id", currentOrgId!);
       if (statusFilter !== "all") {
         q = q.eq("status", statusFilter);
       }
@@ -64,10 +67,12 @@ export function useDeleteEmployee() {
 
 // ── NR-10 Trainings ──────────────────────────────────────────────────────────
 export function useNR10Trainings(employeeId?: string) {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: qualKeys.nr10(employeeId),
+    queryKey: [...qualKeys.nr10(employeeId), currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
-      let q = supabase.from("nr10_trainings").select("*");
+      let q = supabase.from("nr10_trainings").select("*").eq("org_id", currentOrgId!);
       if (employeeId) q = q.eq("employee_id", employeeId);
       const { data, error } = await q;
       if (error) throw error;
@@ -143,10 +148,15 @@ export function useRegistrarTurma() {
 // Until then, we cast through unknown to satisfy the type checker.
 
 export function useWorkAuthorizations() {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: qualKeys.authorizations,
+    queryKey: [...qualKeys.authorizations, currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
-      const q = supabase.from("work_authorizations").select("*, employees(name, matricula, setor)");
+      const q = supabase
+        .from("work_authorizations")
+        .select("*, employees(name, matricula, setor)")
+        .eq("org_id", currentOrgId!);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (q as any).eq("is_current", true);
       if (error) throw error;
@@ -204,10 +214,16 @@ export function useAuthorizationHistory(employeeId: string) {
 
 // ── Work Instructions ─────────────────────────────────────────────────────────
 export function useWorkInstructions() {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: qualKeys.instructions,
+    queryKey: [...qualKeys.instructions, currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("work_instructions").select("*").order("code");
+      const { data, error } = await supabase
+        .from("work_instructions")
+        .select("*")
+        .eq("org_id", currentOrgId!)
+        .order("code");
       if (error) throw error;
       return data as WorkInstruction[];
     },
@@ -232,10 +248,15 @@ export function useUpsertInstruction() {
 
 // ── IT Trainings ──────────────────────────────────────────────────────────────
 export function useITTrainings(employeeId?: string) {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: qualKeys.itTrainings(employeeId),
+    queryKey: [...qualKeys.itTrainings(employeeId), currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
-      let q = supabase.from("it_trainings").select("*, work_instructions(code, title)");
+      let q = supabase
+        .from("it_trainings")
+        .select("*, work_instructions(code, title)")
+        .eq("org_id", currentOrgId!);
       if (employeeId) q = q.eq("employee_id", employeeId);
       const { data, error } = await q;
       if (error) throw error;

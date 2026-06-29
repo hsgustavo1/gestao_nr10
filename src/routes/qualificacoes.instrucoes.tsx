@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
+import { getPessoasAccess } from "@/lib/tenancy-gates";
 import { useEmployees, useWorkInstructions, useITTrainings } from "@/lib/qualificacoes-queries";
 import { InstructionDialog } from "@/components/instruction-dialog";
 import { ITTrainingDialog } from "@/components/it-training-dialog";
@@ -47,7 +48,8 @@ type EmpSummary = {
 };
 
 function InstrucoesPage() {
-  const { isStaff, isAdmin } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit, canAdmin } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const { data: employees = [], isLoading: empLoading } = useEmployees();
   const { data: instructions = [], isLoading: instrLoading } = useWorkInstructions();
   const { data: itTrainings = [], isLoading: itLoading } = useITTrainings();
@@ -147,7 +149,7 @@ function InstrucoesPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold">Instruções de Trabalho</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {isStaff
+            {canEdit
               ? "Clique em uma célula para registrar a conclusão."
               : "Matriz de conclusão por colaborador."}
           </p>
@@ -170,7 +172,7 @@ function InstrucoesPage() {
               Por Integrante
             </button>
           </div>
-          {isAdmin && (
+          {canAdmin && (
             <Button
               onClick={() => setInstrDialog({ open: true, instruction: undefined })}
               variant="outline"
@@ -192,7 +194,7 @@ function InstrucoesPage() {
             >
               <span className="font-mono">{it.code}</span>
               {it.title && <span className="text-muted-foreground">— {it.title}</span>}
-              {isAdmin && (
+              {canAdmin && (
                 <button
                   type="button"
                   className="ml-1 text-muted-foreground hover:text-foreground transition-colors"
@@ -263,7 +265,7 @@ function InstrucoesPage() {
                             key={it.id}
                             className={cn(
                               "py-2 px-3 text-center",
-                              isStaff && "cursor-pointer hover:bg-muted/40",
+                              canEdit && "cursor-pointer hover:bg-muted/40",
                             )}
                             title={
                               record?.conclusao_date
@@ -271,7 +273,7 @@ function InstrucoesPage() {
                                 : "Sem registro"
                             }
                             onClick={
-                              isStaff
+                              canEdit
                                 ? () =>
                                     setItDialog({
                                       open: true,
@@ -301,7 +303,7 @@ function InstrucoesPage() {
           </table>
           {!isLoading && instructions.length === 0 && (
             <p className="py-12 text-center text-muted-foreground text-sm">
-              {isAdmin
+              {canAdmin
                 ? 'Nenhuma instrução cadastrada. Use "Nova IT" para adicionar ou importe a planilha.'
                 : "Nenhuma instrução de trabalho cadastrada."}
             </p>
@@ -388,7 +390,7 @@ function InstrucoesPage() {
                   <th className="py-2 px-3 text-center font-medium text-muted-foreground">
                     Status
                   </th>
-                  {isStaff && <th className="py-2 w-10" />}
+                  {canEdit && <th className="py-2 w-10" />}
                 </tr>
               </thead>
               <tbody>
@@ -405,7 +407,7 @@ function InstrucoesPage() {
                 ) : tableData.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={isStaff ? 9 : 8}
+                      colSpan={canEdit ? 9 : 8}
                       className="py-12 text-center text-muted-foreground"
                     >
                       Nenhum integrante encontrado com os filtros selecionados.
@@ -472,7 +474,7 @@ function InstrucoesPage() {
                             {overallLabel}
                           </Badge>
                         </td>
-                        {isStaff && (
+                        {canEdit && (
                           <td className="py-2 px-2">
                             <Button
                               size="icon"
