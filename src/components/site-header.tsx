@@ -74,7 +74,7 @@ export function SiteHeader() {
                 <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
                   <span
                     aria-hidden
-                    className="brand-avatar grid h-9 w-9 place-items-center rounded-full text-xs"
+                    className="brand-avatar grid h-9 w-9 place-items-center rounded-md text-xs"
                   >
                     {initials}
                   </span>
@@ -367,11 +367,11 @@ function UserMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="hidden sm:flex items-center gap-2.5 rounded-full bg-white/8 pr-2.5 pl-1 py-1 ring-1 ring-white/10 hover:bg-white/15 transition-colors"
+          className="hidden sm:flex items-center gap-2.5 rounded-md bg-white/8 pr-2.5 pl-1 py-1 ring-1 ring-white/10 hover:bg-white/15 transition-colors"
         >
           <span
             aria-hidden
-            className="brand-avatar grid h-8 w-8 place-items-center rounded-full text-xs"
+            className="brand-avatar grid h-8 w-8 place-items-center rounded-md text-xs"
           >
             {initials}
           </span>
