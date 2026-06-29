@@ -689,7 +689,7 @@ function RtiPlanoPage() {
                         </TableCell>
                         <TableCell>
                           <span
-                            className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[11px] font-bold ${RTI_PRIORIDADE_BADGE[clampPrioridade(nc.prioridade)]}`}
+                            className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-bold ${RTI_PRIORIDADE_BADGE[clampPrioridade(nc.prioridade)]}`}
                             title={RTI_PRIORIDADE_LABELS[clampPrioridade(nc.prioridade)]}
                           >
                             P{nc.prioridade}
@@ -719,7 +719,7 @@ function RtiPlanoPage() {
                                 onValueChange={(v) => quickStatus(nc, v as RtiNcStatus)}
                               >
                                 <SelectTrigger
-                                  className={`h-7 w-36 text-xs border rounded-full px-2.5 ${RTI_NC_STATUS_BADGE[nc.status]}`}
+                                  className={`h-7 w-36 text-xs border rounded-md px-2.5 ${RTI_NC_STATUS_BADGE[nc.status]}`}
                                 >
                                   <SelectValue />
                                 </SelectTrigger>
@@ -737,7 +737,7 @@ function RtiPlanoPage() {
                             </div>
                           ) : (
                             <span
-                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${RTI_NC_STATUS_BADGE[nc.status]}`}
+                              className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${RTI_NC_STATUS_BADGE[nc.status]}`}
                             >
                               {RTI_NC_STATUS_LABELS[nc.status]}
                               {nc.status === "em_andamento" ? ` ${nc.progresso}%` : ""}
