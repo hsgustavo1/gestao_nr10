@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { colorLabel, type Padlock } from "@/lib/padlocks";
 import { EtiquetaLOTO, type EtiquetaCor } from "@/components/etiqueta-loto";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 const BUCKET = "padlock-photos";
 
@@ -44,6 +45,8 @@ export function PrintLabelDialog({
   onOpenChange: (o: boolean) => void;
   padlock: Padlock;
 }) {
+  const { currentOrg } = useAuth();
+  const orgNome = currentOrg?.nome;
   const [fotoSrc, setFotoSrc] = useState<string | null>(null);
   const [etiquetaGerada, setEtiquetaGerada] = useState(false);
   const [loadingFoto, setLoadingFoto] = useState(false);
@@ -207,7 +210,7 @@ export function PrintLabelDialog({
           },
         };
         return `<div class="label">${renderToStaticMarkup(
-          <EtiquetaLOTO cadeado={cd} fotoSrc={fotoSrc} scale={1} />,
+          <EtiquetaLOTO cadeado={cd} fotoSrc={fotoSrc} scale={1} orgNome={orgNome} />,
         )}</div>`;
       })
       .join("\n");
@@ -385,7 +388,7 @@ export function PrintLabelDialog({
         {etiquetaGerada && (
           <div style={{ background: "#CBD2D8", padding: 16, borderRadius: 8, overflow: "auto" }}>
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <EtiquetaLOTO cadeado={cadeado} fotoSrc={fotoSrc} scale={1.25} />
+              <EtiquetaLOTO cadeado={cadeado} fotoSrc={fotoSrc} scale={1.25} orgNome={orgNome} />
             </div>
           </div>
         )}

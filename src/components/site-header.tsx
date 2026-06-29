@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { getRtiCampoAccess, getGestaoCompletaAccess, getLotoAccess } from "@/lib/tenancy-gates";
+import { getRtiCampoAccess, getGestaoCompletaAccess, getLotoAccess, getPessoasAccess } from "@/lib/tenancy-gates";
 import { buildOrgTree } from "@/lib/org-tree";
 import { useVencimentosBadge } from "@/lib/vencimentos";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -36,6 +36,7 @@ export function SiteHeader() {
   const { canView: canViewRtiCampo, canEdit: canEditRtiCampo } = getRtiCampoAccess(auth);
   const { canView: canViewGestao } = getGestaoCompletaAccess(auth);
   const { canView: canViewLoto } = getLotoAccess(auth);
+  const { canEdit: canEditPessoas } = getPessoasAccess(auth);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -46,7 +47,13 @@ export function SiteHeader() {
   const { isPlatformAdmin, currentOrg } = auth;
   const canManageEmpresas =
     isPlatformAdmin || (hasOrgRole("admin") && currentOrg?.tipo === "consultoria");
-  const cargo = isAdmin ? "Dono de RAC (Admin)" : isStaff ? "Apoio" : "Consulta";
+  const cargo = isAdmin
+    ? "Administrador"
+    : isStaff
+      ? "Apoio"
+      : auth.managerOrgRole != null
+        ? "Consultor"
+        : "Membro";
   const initials = getInitials(displayName);
 
   return (
@@ -104,7 +111,7 @@ export function SiteHeader() {
               <nav className="flex flex-col p-2 gap-0.5">
                 {canViewLoto && (
                   <MobileNavGroup
-                    label="RAC — Bloqueio"
+                    label="LOTO"
                     prefixes={[
                       "/dashboard",
                       "/cadeados",
@@ -265,7 +272,7 @@ export function SiteHeader() {
                   <MobileNavLink to="/qualificacoes/plh" onNav={() => setMenuOpen(false)}>
                     PLH
                   </MobileNavLink>
-                  {isAdmin && (
+                  {canEditPessoas && (
                     <MobileNavLink to="/admin/qualificacoes/carga" onNav={() => setMenuOpen(false)}>
                       Importar xlsx
                     </MobileNavLink>
@@ -731,7 +738,7 @@ function RACDropdown() {
           type="button"
           className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors inline-flex items-center gap-1"
         >
-          RAC — Bloqueio <ChevronDown className="h-3.5 w-3.5" />
+          LOTO <ChevronDown className="h-3.5 w-3.5" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[220px]">
@@ -777,7 +784,8 @@ function RACDropdown() {
 }
 
 function QualDropdown() {
-  const { isAdmin } = useAuth();
+  const auth = useAuth();
+  const { canEdit: canEditPessoas } = getPessoasAccess(auth);
 
   const items = [
     { to: "/qualificacoes/integrantes", label: "Colaboradores" },
@@ -813,7 +821,7 @@ function QualDropdown() {
             </Link>
           </DropdownMenuItem>
         ))}
-        {isAdmin && (
+        {canEditPessoas && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

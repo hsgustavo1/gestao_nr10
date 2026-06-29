@@ -1,5 +1,3 @@
-import { ATVOS_LOGO_BASE64 } from "@/assets/atvosLogo";
-
 export type EtiquetaCor = "azul" | "amarelo" | "vermelho" | "latao";
 
 export interface EtiquetaLOTOProps {
@@ -17,6 +15,7 @@ export interface EtiquetaLOTOProps {
   };
   fotoSrc?: string | null;
   scale: number;
+  orgNome?: string;
 }
 
 const px = (n: number, scale: number) => `${Math.round(n * scale)}px`;
@@ -41,7 +40,7 @@ function ouTraco(v?: string): string {
   return v && v.trim() ? v : "—";
 }
 
-export function EtiquetaLOTO({ cadeado, fotoSrc, scale }: EtiquetaLOTOProps) {
+export function EtiquetaLOTO({ cadeado, fotoSrc, scale, orgNome }: EtiquetaLOTOProps) {
   const dono = cadeado.donoAtual ?? {};
   const corLabel = COR_LABEL[cadeado.cor];
   const setorExibido = ouTraco(dono.setor || cadeado.setor);
@@ -104,16 +103,17 @@ export function EtiquetaLOTO({ cadeado, fotoSrc, scale }: EtiquetaLOTOProps) {
             flexShrink: 0,
           }}
         >
-          <img
-            src={ATVOS_LOGO_BASE64}
-            alt="Atvos"
+          <span
             style={{
-              height: px(26, scale),
-              maxWidth: px(110, scale),
-              objectFit: "contain",
-              display: "block",
+              fontSize: px(11, scale),
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "#1a1a1a",
             }}
-          />
+          >
+            {orgNome ?? "Gestão NR-10"}
+          </span>
         </div>
 
         {/* Área principal */}

@@ -29,7 +29,7 @@ export function AuthorizationPrintDialog({ open, onOpenChange, authorization, em
         <div id="print-content" className="space-y-4 text-sm">
           <div className="text-center border-b pb-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">
-              Atvos — Gestão NR-10
+              Gestão NR-10
             </p>
             <h2 className="text-lg font-bold mt-1">AUTORIZAÇÃO DE TRABALHO</h2>
             <p className="text-xs text-muted-foreground">

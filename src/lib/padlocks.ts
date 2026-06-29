@@ -23,7 +23,6 @@ export const colorSwatch: Record<PadlockColor, string> = {
 };
 
 export const colorBadge: Record<PadlockColor, string> = {
-  // Cores extraídas do Manual de Sinalização Atvos
   azul: "bg-[#E2EEFA] text-[#0B4A8A] border-[#2174C9]/40",
   amarelo: "bg-[#FFF4D6] text-[#7A5500] border-[#E8B800]/50",
   latao: "bg-[#F0EDE3] text-[#5A5236] border-[#A89660]/50",

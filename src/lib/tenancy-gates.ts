@@ -5,6 +5,8 @@ type ScopedGateContext = {
   isAdmin: boolean;
   hasEntitlement: (module: string) => boolean;
   hasOrgRole: (min: OrgRole) => boolean;
+  /** Papel do usuário na org gestora (consultora/mãe) da org ativa. Non-null = consultor. */
+  managerOrgRole?: OrgRole | null;
 };
 
 export type ScopedAccess = {
@@ -30,12 +32,26 @@ export function getLotoAccess(ctx: ScopedGateContext): ScopedAccess {
   return { canView, canEdit, canAdmin };
 }
 
-export function getPessoasAccess(ctx: ScopedGateContext): ScopedAccess {
-  const hasGestao = ctx.hasEntitlement("gestao_completa");
+export function getPessoasAccess(ctx: ScopedGateContext): ScopedAccess & {
+  canEditEmployee: (emp: { created_by_org_id?: string | null; org_id?: string | null }) => boolean;
+} {
+  const hasGestao = ctx.hasEntitlement("gestao_completa") || ctx.hasEntitlement("pessoas");
   const canView = ctx.isStaff || hasGestao;
   const canEdit = canView && (ctx.isStaff || ctx.hasOrgRole("member"));
   const canAdmin = canView && (ctx.isAdmin || ctx.hasOrgRole("admin"));
-  return { canView, canEdit, canAdmin };
+
+  // Consultor (gestor da org-cliente) tem managerOrgRole != null. Pode editar qualquer registro.
+  // Membro-cliente direto só edita registros criados pela própria org (created_by_org_id = org_id).
+  const isManager = ctx.isStaff || ctx.managerOrgRole != null;
+
+  function canEditEmployee(emp: { created_by_org_id?: string | null; org_id?: string | null }): boolean {
+    if (!canEdit) return false;
+    if (isManager) return true;
+    // Registro sem created_by_org_id (legado) ou criado pela própria org → editável
+    return emp.created_by_org_id == null || emp.created_by_org_id === emp.org_id;
+  }
+
+  return { canView, canEdit, canAdmin, canEditEmployee };
 }
 
 export function getRtiCampoAccess(ctx: ScopedGateContext): ScopedAccess {
