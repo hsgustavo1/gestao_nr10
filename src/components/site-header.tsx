@@ -57,7 +57,7 @@ export function SiteHeader() {
   const initials = getInitials(displayName);
 
   return (
-    <header className="sticky top-0 z-40 atvos-topbar shadow-[0_2px_0_rgba(0,0,0,0.05)]">
+    <header className="sticky top-0 z-40 brand-topbar shadow-[0_2px_0_rgba(0,0,0,0.05)]">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-3 sm:px-4 gap-2">
         {/* Wordmark + nav */}
         <div className="flex items-center gap-2 sm:gap-8 min-w-0">
@@ -82,7 +82,7 @@ export function SiteHeader() {
                 <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
                   <span
                     aria-hidden
-                    className="atvos-avatar grid h-9 w-9 place-items-center rounded-full text-xs"
+                    className="brand-avatar grid h-9 w-9 place-items-center rounded-full text-xs"
                   >
                     {initials}
                   </span>
@@ -385,7 +385,7 @@ function UserMenu({
         >
           <span
             aria-hidden
-            className="atvos-avatar grid h-8 w-8 place-items-center rounded-full text-xs"
+            className="brand-avatar grid h-8 w-8 place-items-center rounded-full text-xs"
           >
             {initials}
           </span>

@@ -205,8 +205,6 @@
 
 /* ================================================================
  * @utility — Brand utilities
- * Mantidos com prefixo "atvos-" para retrocompatibilidade com os
- * componentes existentes. Aliases "brand-" adicionados para novos.
  * ================================================================ */
 
 /* Gradiente de fundo (esmeralda → verde) */
@@ -226,28 +224,15 @@
 @utility shadow-card-soft { box-shadow: var(--shadow-card); }
 
 /* ---- Topbar fixa pinho (sempre dark, qualquer tema) ---- */
-@utility atvos-topbar  { background-color: #0C3326; color: #ffffff; }
 @utility brand-topbar  { background-color: #0C3326; color: #ffffff; }
 
 /* ---- Régua decorativa 3 px esmeralda → verde ---- */
-@utility atvos-rule {
-  height: 3px;
-  background: var(--gradient-rule);
-}
 @utility brand-rule {
   height: 3px;
   background: var(--gradient-rule);
 }
 
 /* ---- Wordmark ---- */
-@utility atvos-wordmark {
-  font-family: "Hanken Grotesk", sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  font-size: 1.25rem;
-  line-height: 1;
-  color: #ffffff;
-}
 @utility brand-wordmark {
   font-family: "Hanken Grotesk", sans-serif;
   font-weight: 800;
@@ -257,12 +242,6 @@
 }
 
 /* ---- Avatar com iniciais — gradiente verde ---- */
-@utility atvos-avatar {
-  background: linear-gradient(135deg, #34D399, #059669);
-  color: #ffffff;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
 @utility brand-avatar {
   background: linear-gradient(135deg, #34D399, #059669);
   color: #ffffff;
