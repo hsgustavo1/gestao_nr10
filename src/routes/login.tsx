@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
-  head: () => ({ meta: [{ title: "Entrar — Gestão NR-10" }] }),
+  head: () => ({ meta: [{ title: "Entrar — Conforme." }] }),
 });
 
 const schema = z.object({
@@ -89,7 +89,7 @@ function LoginPage() {
         <div className="absolute right-[-40px] top-[-40px] w-48 h-48 rounded-full border border-white/10" />
 
         <div className="text-[22px] font-extrabold tracking-tight text-white relative z-10">
-          Gestão<span style={{ color: "var(--conforme-emerald)" }}>.</span>
+          Conforme<span style={{ color: "var(--conforme-emerald)" }}>.</span>
         </div>
 
         <div className="relative z-10 max-w-md">
@@ -102,12 +102,12 @@ function LoginPage() {
             <span style={{ color: "var(--conforme-emerald)" }}>sistemas elétricos</span>
           </h1>
           <p className="mt-4 text-white/65 text-sm leading-relaxed">
-            Gestão integrada de NR-10.
+            Controle técnico. Conformidade garantida.
           </p>
         </div>
 
         <div className="text-[11px] uppercase tracking-wider text-white/35 font-mono">
-          Gestão normativa · NR-10
+          Conforme. · NR-10
         </div>
       </aside>
 
@@ -116,7 +116,7 @@ function LoginPage() {
         <div className="mx-auto w-full max-w-md">
           {/* Brand mobile */}
           <div className="lg:hidden mb-8 text-[18px] font-extrabold tracking-tight text-foreground">
-            Gestão<span style={{ color: "var(--conforme-green)" }}>.</span>
+            Conforme<span style={{ color: "var(--conforme-green)" }}>.</span>
           </div>
 
           <div className="mb-6">
