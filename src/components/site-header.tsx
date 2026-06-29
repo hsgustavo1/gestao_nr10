@@ -74,8 +74,9 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0 bg-[#0C3326] text-white border-r-0">
               <SheetHeader className="px-4 py-4 border-b border-white/10">
-                <SheetTitle className="text-white text-sm uppercase tracking-wider">
-                  Gestão NR-10
+                <SheetTitle className="flex items-center gap-2">
+                  <img src="/logo-mark-white.svg" alt="" aria-hidden className="h-6 w-6" />
+                  <span className="brand-wordmark text-[14px] text-white">Conforme.</span>
                 </SheetTitle>
               </SheetHeader>
               {user && (
@@ -288,10 +289,15 @@ export function SiteHeader() {
             </SheetContent>
           </Sheet>
 
-          <Link to="/" className="flex items-center gap-0 min-w-0">
-            <span className="text-[12px] sm:text-[14px] font-bold uppercase tracking-[0.05em] text-white truncate">
-              <span className="hidden sm:inline">Gestão NR-10&nbsp;&nbsp;</span>
-              <span className="sm:hidden">Gestão NR-10</span>
+          <Link to="/" className="flex items-center gap-2 min-w-0">
+            <img
+              src="/logo-mark-white.svg"
+              alt=""
+              aria-hidden
+              className="h-7 w-7 shrink-0"
+            />
+            <span className="brand-wordmark text-[15px] text-white truncate">
+              Conforme.
             </span>
           </Link>
 

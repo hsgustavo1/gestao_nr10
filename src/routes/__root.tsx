@@ -36,25 +36,22 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Gestão NR-10" },
+      { title: "Conforme." },
       {
         name: "description",
-        content:
-          "Sistema de gestão NR-10: qualificações, inspeções de campo e conformidade regulamentar.",
+        content: "Controle técnico. Conformidade garantida.",
       },
-      { property: "og:title", content: "Gestão NR-10" },
+      { property: "og:title", content: "Conforme." },
       {
         property: "og:description",
-        content:
-          "Sistema de gestão NR-10: qualificações, inspeções de campo e conformidade regulamentar.",
+        content: "Controle técnico. Conformidade garantida.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Gestão NR-10" },
+      { name: "twitter:title", content: "Conforme." },
       {
         name: "twitter:description",
-        content:
-          "Sistema de gestão NR-10: qualificações, inspeções de campo e conformidade regulamentar.",
+        content: "Controle técnico. Conformidade garantida.",
       },
     ],
     links: [
@@ -66,8 +63,7 @@ export const Route = createRootRoute({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        // Hanken Grotesk (principal) + JetBrains Mono (mono)
-        href: "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap",
       },
     ],
   }),

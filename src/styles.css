@@ -5,15 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition — Gestão NR-10 / Conforme
+ * Design system — Conforme
  *
- * Fonte principal : Hanken Grotesk (substituiu Manrope)
- * Fonte mono      : JetBrains Mono (mantida)
- * Paleta          : pinho-esmeralda (sem resíduos laranja/Atvos)
- *
- * Para adicionar nova cor semântica:
- *   1. Declarar em :root (valor light) e .dark (valor dark)
- *   2. Registrar em @theme inline como --color-<name>: var(--<name>)
+ * Fonte principal : Plus Jakarta Sans
+ * Fonte mono      : DM Mono (fallback: JetBrains Mono)
+ * Paleta          : pinho-verde (brand) + slate-neutral (superfícies)
  */
 
 @theme inline {
@@ -93,26 +89,26 @@
   --shadow-card:     0 6px 24px -10px color-mix(in oklab, var(--conforme-pine) 35%, transparent);
 
   /* ---- Semantic surfaces ---- */
-  --background:           oklch(0.973 0.008 162);
-  --foreground:           oklch(0.15  0.04  162);
-  --card:                 oklch(1 0 0);
-  --card-foreground:      oklch(0.15  0.04  162);
-  --popover:              oklch(1 0 0);
-  --popover-foreground:   oklch(0.15  0.04  162);
+  --background:           #F4F5F7;                /* slate-neutral — sem tint verde */
+  --foreground:           #0F172A;                /* slate-900 */
+  --card:                 #FFFFFF;
+  --card-foreground:      #0F172A;
+  --popover:              #FFFFFF;
+  --popover-foreground:   #0F172A;
   --primary:              var(--conforme-green);
-  --primary-foreground:   oklch(0.99 0 0);
-  --secondary:            oklch(0.94 0.016 162);
-  --secondary-foreground: oklch(0.15  0.04  162);
-  --muted:                oklch(0.95 0.012 162);
-  --muted-foreground:     oklch(0.50 0.04  162);
+  --primary-foreground:   #FFFFFF;
+  --secondary:            #F1F5F9;                /* slate-50 — hover / ativo */
+  --secondary-foreground: #0F172A;
+  --muted:                #F8FAFC;                /* slate-50 mais claro */
+  --muted-foreground:     #94A3B8;                /* slate-400 */
   --accent:               var(--conforme-emerald);
-  --accent-foreground:    oklch(0.15  0.04  162);
-  --destructive:          oklch(0.63 0.22  25);
-  --destructive-foreground: oklch(0.99 0 0);
+  --accent-foreground:    #0F172A;
+  --destructive:          #DC2626;
+  --destructive-foreground: #FFFFFF;
   --success:              var(--conforme-green);
-  --warning:              oklch(0.78 0.16  72);   /* âmbar #F59E0B */
-  --border:               oklch(0.88 0.025 162);
-  --input:                oklch(0.88 0.025 162);
+  --warning:              #F59E0B;
+  --border:               #DDE1E6;                /* slate/gray — sem tint verde */
+  --input:                #DDE1E6;
   --ring:                 var(--conforme-green);
 
   /* ---- Charts ---- */
@@ -122,14 +118,14 @@
   --chart-4: oklch(0.63 0.22 25);
   --chart-5: oklch(0.55 0.10 162);
 
-  /* ---- Sidebar (pine-based) ---- */
-  --sidebar:                    oklch(0.97 0.006 162);
-  --sidebar-foreground:         oklch(0.15 0.04  162);
+  /* ---- Sidebar ---- */
+  --sidebar:                    #FFFFFF;
+  --sidebar-foreground:         #0F172A;
   --sidebar-primary:            var(--conforme-green);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent:             oklch(0.93 0.018 162);
-  --sidebar-accent-foreground:  oklch(0.15 0.04  162);
-  --sidebar-border:             oklch(0.88 0.025 162);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent:             #F1F5F9;
+  --sidebar-accent-foreground:  #0F172A;
+  --sidebar-border:             #DDE1E6;
   --sidebar-ring:               var(--conforme-green);
 
   /* ---- Risk / Tension levels ---- */
@@ -193,13 +189,12 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-feature-settings: "ss01";
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
   .font-mono, code, kbd, pre, samp {
-    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: "DM Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 }
 
@@ -234,9 +229,9 @@
 
 /* ---- Wordmark ---- */
 @utility brand-wordmark {
-  font-family: "Hanken Grotesk", sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.025em;
   line-height: 1;
   color: #ffffff;
 }
