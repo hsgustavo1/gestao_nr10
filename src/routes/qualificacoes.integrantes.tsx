@@ -164,7 +164,7 @@ function ColaboradoresPage() {
           </SelectContent>
         </Select>
         <span className="text-xs text-muted-foreground ml-auto">
-          {filtered.length} colaborador{filtered.length !== 1 ? "s" : ""}
+          {filtered.length} colaborador{filtered.length !== 1 ? "es" : ""}
         </span>
       </div>
 
