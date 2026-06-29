@@ -24,12 +24,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-/**
- * Topbar Conforme — fundo pinho fixo (#0C3326), wordmark "Gestão NR-10",
- * nav horizontal com underline esmeralda→verde no item ativo,
- * pill do usuário (avatar com iniciais em gradiente verde + nome + cargo).
- * Régua decorativa de 3px renderizada logo abaixo (no PageShell).
- */
 export function SiteHeader() {
   const auth = useAuth();
   const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode, hasOrgRole, hasEntitlement, displayName } = auth;
@@ -40,10 +34,7 @@ export function SiteHeader() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Quem gerencia acessos: admin global (legado) OU admin/owner na org ativa
-  // (cobre o consultor que gerencia o cliente via managed_by).
   const canManageUsers = isAdmin || hasOrgRole("admin");
-  // Gestão de empresas: dono da plataforma ou admin de org do tipo consultoria.
   const { isPlatformAdmin, currentOrg } = auth;
   const canManageEmpresas =
     isPlatformAdmin || (hasOrgRole("admin") && currentOrg?.tipo === "consultoria");
@@ -58,9 +49,9 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 brand-topbar shadow-[0_2px_0_rgba(0,0,0,0.05)]">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-3 sm:px-4 gap-2">
-        {/* Wordmark + nav */}
-        <div className="flex items-center gap-2 sm:gap-8 min-w-0">
+      <div className="flex h-[52px] items-center justify-between px-4 gap-2">
+        {/* Esquerda: hambúrguer (mobile) + wordmark + org */}
+        <div className="flex items-center gap-2 min-w-0">
           {/* Hambúrguer (mobile/tablet) */}
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
@@ -289,34 +280,24 @@ export function SiteHeader() {
             </SheetContent>
           </Sheet>
 
-          <Link to="/" className="flex items-center gap-2 min-w-0">
-            <img
-              src="/logo-mark-white.svg"
-              alt=""
-              aria-hidden
-              className="h-7 w-7 shrink-0"
-            />
-            <span className="brand-wordmark text-[15px] text-white truncate">
-              Conforme.
-            </span>
+          <Link to="/" className="flex items-center gap-2 min-w-0 shrink-0">
+            <img src="/logo-mark-white.svg" alt="" aria-hidden className="h-[22px] w-[22px] shrink-0" />
+            <span className="brand-wordmark text-[14px] text-white truncate">Conforme.</span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1">
-            {canViewLoto && <RACDropdown />}
-            {canViewGestao && <NR10Dropdown />}
-            <RTIDropdown />
-            {isPlatformAdmin && <InspecoesDropdown />}
-            {(isPlatformAdmin || hasEntitlement("pessoas")) && <QualDropdown />}
-            {canViewGestao && <NavLink to="/epis">EPIs</NavLink>}
-            {canViewGestao && <VencimentosBell />}
-          </nav>
+          {currentOrg && (
+            <>
+              <div className="w-px h-4 bg-white/20 mx-0.5 shrink-0" />
+              <OrgSwitcher />
+            </>
+          )}
         </div>
 
-        {/* Pill usuário ou botão Entrar */}
-        <div className="flex items-center gap-2 shrink-0">
-          <OrgSwitcher />
+        {/* Direita: vencimentos + conta */}
+        <div className="flex items-center gap-1 shrink-0">
+          {user && <VencimentosBell />}
           {user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <UserMenu
                 displayName={displayName}
                 initials={initials}
@@ -324,7 +305,6 @@ export function SiteHeader() {
                 canManageUsers={canManageUsers}
                 canManageEmpresas={canManageEmpresas}
               />
-              {/* Logout sempre acessível no mobile (onde o pill/menu fica oculto). */}
               <button
                 type="button"
                 onClick={async () => {
@@ -437,13 +417,18 @@ function UserMenu({
   );
 }
 
-/** Seletor de organização ativa. Só aparece quando o usuário tem 2+ orgs
- * (consultor entre clientes, empresa-mãe entre unidades). Antes da migração
- * de tenancy estar aplicada/semeada, `orgs` fica vazio e este componente
- * não renderiza nada — comportamento atual preservado. */
 function OrgSwitcher() {
   const { orgs, currentOrg, setCurrentOrg } = useAuth();
-  if (orgs.length <= 1) return null;
+  if (!currentOrg) return null;
+
+  if (orgs.length <= 1) {
+    return (
+      <span className="text-[12px] font-medium text-white/75 max-w-[140px] truncate hidden sm:block">
+        {currentOrg.nome}
+      </span>
+    );
+  }
+
   const sorted = [...orgs].sort((a, b) => (b.is_root ? 1 : 0) - (a.is_root ? 1 : 0));
   const tree = buildOrgTree(sorted);
   return (
@@ -451,16 +436,13 @@ function OrgSwitcher() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded-md bg-white/8 ring-1 ring-white/10 px-3 py-1.5 text-xs font-medium text-white/85 hover:bg-white/15 transition-colors"
+          className="hidden sm:inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors"
         >
-          <Building2 className="h-3.5 w-3.5" />
-          <span className="max-w-[120px] sm:max-w-[160px] truncate">
-            {currentOrg?.nome ?? "Selecionar"}
-          </span>
-          <ChevronDown className="h-3.5 w-3.5" />
+          <span className="max-w-[140px] truncate">{currentOrg.nome}</span>
+          <ChevronDown className="h-3 w-3 shrink-0" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[240px]">
+      <DropdownMenuContent align="start" className="min-w-[240px]">
         {tree.map(({ org, depth }) => (
           <DropdownMenuItem
             key={org.id}
@@ -479,21 +461,6 @@ function OrgSwitcher() {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
-  return (
-    <Link
-      to={to}
-      className="relative rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors"
-      activeProps={{
-        className:
-          "text-white after:content-[''] after:absolute after:left-3 after:right-3 after:-bottom-[18px] after:h-[3px] after:rounded-t-sm after:bg-gradient-to-r after:from-[#34D399] after:to-[#059669]",
-      }}
-    >
-      {children}
-    </Link>
   );
 }
 
