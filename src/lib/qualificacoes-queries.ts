@@ -323,7 +323,7 @@ export async function batchImportQualificacoes(payload: {
   if (payload.instructions.length > 0) {
     const { error } = await supabase
       .from("work_instructions")
-      .upsert(payload.instructions, { onConflict: "code" });
+      .upsert(payload.instructions, { onConflict: "code,org_id" });
     if (error) throw error;
   }
 

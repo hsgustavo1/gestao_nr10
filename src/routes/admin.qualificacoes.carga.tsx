@@ -415,6 +415,7 @@ function QualificacoesCargaPage() {
         employees: parsed.employees.map((e) => ({ ...e, org_id: orgId })),
         nr10Trainings: parsed.nr10Trainings.map((t) => ({ ...t, org_id: orgId })),
         authorizations: parsed.authorizations.map((a) => ({ ...a, org_id: orgId })),
+        instructions: parsed.instructions.map((i) => ({ ...i, org_id: orgId })),
         itTrainings: parsed.itTrainings.map((t) => ({ ...t, org_id: orgId })),
       });
       setDone(true);
