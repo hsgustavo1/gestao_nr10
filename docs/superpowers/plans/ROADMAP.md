@@ -29,16 +29,16 @@ Pendências (todas opcionais agora):
 3. *(Opcional, prova final)* Logar no app/PWA como cada usuário de teste e ver só
    os dados da própria org.
 
-**👉 FASE 1.5 EM ANDAMENTO (gates por papel/entitlement + filtro de dados por org):**
-- ✅ **RTI + Campo migrados (2026-06-18, commits `238c9e3` + `01e02d0`).** Gates
-  centralizados em `src/lib/tenancy-gates.ts` (`getRtiCampoAccess` → canView/canEdit/
-  canAdmin, com entitlement `rti_pwa`/`gestao_completa` + papel de org + fallback legado).
-  Menu esconde o grupo RTI para org sem entitlement. Dados RTI (`useRtiReports`/
-  `useAllRtiNcs`) filtrados por org. Um cliente `member` com `rti_pwa` já opera o fluxo
-  RTI/Campo **sem** papel global.
-- ⏳ **Falta:** replicar o padrão de gate aos demais módulos (NR-10, EPIs, qualificações,
-  LOTO, incidentes, ASOs, prontuário + restante do `site-header`) e filtrar os outros
-  `*-queries.ts` por org (só RTI está filtrado). Detalhe na seção "Fase 1.5".
+✅ **FASE 1.5 CONCLUÍDA (2026-06-29, commit `d6a9959`):**
+- ✅ **RTI + Campo (2026-06-18, `238c9e3`/`01e02d0`)** — gates + filtros de org.
+- ✅ **Demais módulos (2026-06-29, `d6a9959`):** `getGestaoCompletaAccess` (NR-10, EPIs,
+  incidentes, prontuário, inspeções) e `getLotoAccess` (LOTO/RAC) adicionados em
+  `tenancy-gates.ts`. Rotas atualizadas: `epis.index`, `incidentes.index`, `nr10.index`,
+  `dashboard`, `violacoes`. Queries filtradas por `currentOrgId`: `epis-queries`,
+  `incidentes-queries`, `inspecoes-queries`, `prontuario-queries`. `site-header.tsx`:
+  NR-10/EPIs por `canViewGestao`; RAC/LOTO por `canViewLoto` (Inspeções permanece
+  `isPlatformAdmin`). `types.ts`: `org_id` adicionado em `electrical_incidents`, `epis`,
+  `inspections`, `nr10_documents`. 125 testes; typecheck 0 erros.
 
 ✅ **Selo de Entrega — controle por provença (2026-06-19, commits `81bf31f`→`5be8a9c`).**
 Terceiro nível de autorização (entre admin e visualização): ao **entregar** um RTI, o
