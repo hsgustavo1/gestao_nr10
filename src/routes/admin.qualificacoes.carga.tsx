@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { getPessoasAccess } from "@/lib/tenancy-gates";
 import * as XLSX from "xlsx";
 import { Upload, FileSpreadsheet, CheckCircle2, Download } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
@@ -364,10 +366,22 @@ function downloadTemplate() {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 function QualificacoesCargaPage() {
+  const auth = useAuth();
+  const { canEdit } = getPessoasAccess(auth);
   const [parsed, setParsed] = useState<ParsedData | null>(null);
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  if (!canEdit) {
+    return (
+      <PageShell>
+        <p className="py-16 text-center text-muted-foreground text-sm">
+          Acesso restrito. Você não tem permissão para importar dados.
+        </p>
+      </PageShell>
+    );
+  }
 
   async function handleFile(file: File) {
     try {

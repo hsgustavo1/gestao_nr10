@@ -26,8 +26,8 @@ export const Route = createFileRoute("/qualificacoes/colaboradores")({
 });
 
 function ColaboradoresPage() {
-  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
-  const { canEdit } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole, managerOrgRole } = useAuth();
+  const { canEdit, canEditEmployee } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole, managerOrgRole });
   const [statusFilter, setStatusFilter] = useState<"ativo" | "afastado" | "desligado" | "all">(
     "ativo",
   );
@@ -128,6 +128,7 @@ function ColaboradoresPage() {
               <th className="py-2 pr-4 font-medium">Diploma</th>
               <th className="py-2 pr-4 font-medium">Conclusão</th>
               {canEdit && <th className="py-2 font-medium">Ações</th>}
+
             </tr>
           </thead>
           <tbody>
@@ -173,43 +174,47 @@ function ColaboradoresPage() {
                     </td>
                     {canEdit && (
                       <td className="py-3">
-                        <div className="flex gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                            title="Anexar diploma"
-                            onClick={() => toast.info("Anexo de documentos em breve")}
-                          >
-                            <Paperclip className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                            title="Anexar histórico escolar"
-                            onClick={() => toast.info("Anexo de documentos em breve")}
-                          >
-                            <FileText className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={() => handleEdit(emp)}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            title="Desligar colaborador"
-                            onClick={() => handleDelete(emp)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                        {canEditEmployee(emp) ? (
+                          <div className="flex gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                              title="Anexar diploma"
+                              onClick={() => toast.info("Anexo de documentos em breve")}
+                            >
+                              <Paperclip className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                              title="Anexar histórico escolar"
+                              onClick={() => toast.info("Anexo de documentos em breve")}
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => handleEdit(emp)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              title="Desligar colaborador"
+                              onClick={() => handleDelete(emp)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground px-1" title="Gerenciado pelo consultor">—</span>
+                        )}
                       </td>
                     )}
                   </tr>

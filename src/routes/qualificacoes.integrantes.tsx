@@ -40,8 +40,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function ColaboradoresPage() {
-  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
-  const { canEdit } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole, managerOrgRole } = useAuth();
+  const { canEdit, canEditEmployee } = getPessoasAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole, managerOrgRole });
   const [statusFilter, setStatusFilter] = useState<"ativo" | "afastado" | "desligado" | "all">(
     "ativo",
   );
@@ -234,26 +234,30 @@ function ColaboradoresPage() {
                       </td>
                       {canEdit && (
                         <td className="py-3 px-3">
-                          <div className="flex gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7"
-                              title="Editar dados"
-                              onClick={() => handleEdit(emp)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              title="Remover colaborador"
-                              onClick={() => handleDelete(emp)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
+                          {canEditEmployee(emp) ? (
+                            <div className="flex gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                title="Editar dados"
+                                onClick={() => handleEdit(emp)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                title="Remover colaborador"
+                                onClick={() => handleDelete(emp)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground px-1" title="Gerenciado pelo consultor">—</span>
+                          )}
                         </td>
                       )}
                     </tr>

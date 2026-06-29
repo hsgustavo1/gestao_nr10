@@ -67,6 +67,8 @@ export type Employee = {
   retorno_em?: string | null;
   reciclagem_requerida?: boolean;
   reciclagem_motivo?: string | null;
+  org_id?: string;
+  created_by_org_id?: string | null;
   created_at: string;
   updated_at: string;
 };
