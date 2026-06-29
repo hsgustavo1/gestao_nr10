@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import type { NR10Document } from "./prontuario";
 
 export const prontuarioKeys = {
@@ -7,12 +8,15 @@ export const prontuarioKeys = {
 };
 
 export function useNR10Documents() {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: prontuarioKeys.documents,
+    queryKey: [...prontuarioKeys.documents, currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("nr10_documents")
         .select("*")
+        .eq("org_id", currentOrgId!)
         .order("category")
         .order("validity_date", { ascending: true, nullsFirst: false });
       if (error) throw error;

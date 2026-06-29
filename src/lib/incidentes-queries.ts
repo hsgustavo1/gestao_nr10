@@ -1,14 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import type { ElectricalIncident } from "./incidentes";
 
 export function useIncidents() {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: ["electrical_incidents"],
+    queryKey: ["electrical_incidents", currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("electrical_incidents")
         .select("*")
+        .eq("org_id", currentOrgId!)
         .order("occurred_at", { ascending: false });
       if (error) throw error;
       return data as unknown as ElectricalIncident[];

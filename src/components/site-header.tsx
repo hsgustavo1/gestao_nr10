@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { getRtiCampoAccess } from "@/lib/tenancy-gates";
+import { getRtiCampoAccess, getGestaoCompletaAccess, getLotoAccess } from "@/lib/tenancy-gates";
 import { buildOrgTree } from "@/lib/org-tree";
 import { useVencimentosBadge } from "@/lib/vencimentos";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -34,6 +34,8 @@ export function SiteHeader() {
   const auth = useAuth();
   const { user, isAdmin, isStaff, isViewer, signOut, exitViewerMode, hasOrgRole, hasEntitlement, displayName } = auth;
   const { canView: canViewRtiCampo, canEdit: canEditRtiCampo } = getRtiCampoAccess(auth);
+  const { canView: canViewGestao } = getGestaoCompletaAccess(auth);
+  const { canView: canViewLoto } = getLotoAccess(auth);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -100,80 +102,80 @@ export function SiteHeader() {
                 </div>
               )}
               <nav className="flex flex-col p-2 gap-0.5">
-                {isPlatformAdmin && (
-                  <>
-                    <MobileNavGroup
-                      label="RAC — Bloqueio"
-                      prefixes={[
-                        "/dashboard",
-                        "/cadeados",
-                        "/violacoes",
-                        "/admin/reports",
-                        "/admin/carga",
-                        "/admin/certificados",
-                      ]}
-                    >
-                      <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>
-                        Dashboard
+                {canViewLoto && (
+                  <MobileNavGroup
+                    label="RAC — Bloqueio"
+                    prefixes={[
+                      "/dashboard",
+                      "/cadeados",
+                      "/violacoes",
+                      "/admin/reports",
+                      "/admin/carga",
+                      "/admin/certificados",
+                    ]}
+                  >
+                    <MobileNavLink to="/dashboard" onNav={() => setMenuOpen(false)}>
+                      Dashboard
+                    </MobileNavLink>
+                    <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>
+                      Base de dados
+                    </MobileNavLink>
+                    <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>
+                      Violações
+                    </MobileNavLink>
+                    {isAdmin && (
+                      <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>
+                        Inconsistências
                       </MobileNavLink>
-                      <MobileNavLink to="/cadeados" onNav={() => setMenuOpen(false)}>
-                        Base de dados
+                    )}
+                    {isAdmin && (
+                      <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>
+                        Carga
                       </MobileNavLink>
-                      <MobileNavLink to="/violacoes" onNav={() => setMenuOpen(false)}>
-                        Violações
+                    )}
+                    {isAdmin && (
+                      <MobileNavLink
+                        to="/admin/certificados/importar"
+                        onNav={() => setMenuOpen(false)}
+                      >
+                        Importar Certificados
                       </MobileNavLink>
-                      {isAdmin && (
-                        <MobileNavLink to="/admin/reports" onNav={() => setMenuOpen(false)}>
-                          Inconsistências
-                        </MobileNavLink>
-                      )}
-                      {isAdmin && (
-                        <MobileNavLink to="/admin/carga" onNav={() => setMenuOpen(false)}>
-                          Carga
-                        </MobileNavLink>
-                      )}
-                      {isAdmin && (
-                        <MobileNavLink
-                          to="/admin/certificados/importar"
-                          onNav={() => setMenuOpen(false)}
-                        >
-                          Importar Certificados
-                        </MobileNavLink>
-                      )}
-                    </MobileNavGroup>
+                    )}
+                  </MobileNavGroup>
+                )}
 
-                    <MobileNavGroup
-                      label="NR-10"
-                      prefixes={[
-                        "/nr10",
-                        "/relatorio",
-                        "/vencimentos",
-                        "/incidentes",
-                        "/admin/auditoria",
-                      ]}
-                    >
-                      <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>
-                        Prontuário (PIE)
+                {canViewGestao && (
+                  <MobileNavGroup
+                    label="NR-10"
+                    prefixes={[
+                      "/nr10",
+                      "/relatorio",
+                      "/vencimentos",
+                      "/incidentes",
+                      "/admin/auditoria",
+                    ]}
+                  >
+                    <MobileNavLink to="/nr10" onNav={() => setMenuOpen(false)}>
+                      Prontuário (PIE)
+                    </MobileNavLink>
+                    <MobileNavLink to="/relatorio" onNav={() => setMenuOpen(false)}>
+                      Relatório de Conformidade
+                    </MobileNavLink>
+                    <MobileNavLink to="/relatorio/dossie" onNav={() => setMenuOpen(false)}>
+                      Dossiê de Fiscalização
+                    </MobileNavLink>
+                    <MobileNavLink to="/vencimentos" onNav={() => setMenuOpen(false)}>
+                      Central de Vencimentos
+                    </MobileNavLink>
+                    <MobileNavLink to="/incidentes" onNav={() => setMenuOpen(false)}>
+                      Incidentes Elétricos
+                    </MobileNavLink>
+                    {isAdmin && (
+                      <MobileNavLink to="/admin/auditoria" onNav={() => setMenuOpen(false)}>
+                        Auditoria
                       </MobileNavLink>
-                      <MobileNavLink to="/relatorio" onNav={() => setMenuOpen(false)}>
-                        Relatório de Conformidade
-                      </MobileNavLink>
-                      <MobileNavLink to="/relatorio/dossie" onNav={() => setMenuOpen(false)}>
-                        Dossiê de Fiscalização
-                      </MobileNavLink>
-                      <MobileNavLink to="/vencimentos" onNav={() => setMenuOpen(false)}>
-                        Central de Vencimentos
-                      </MobileNavLink>
-                      <MobileNavLink to="/incidentes" onNav={() => setMenuOpen(false)}>
-                        Incidentes Elétricos
-                      </MobileNavLink>
-                      {isAdmin && (
-                        <MobileNavLink to="/admin/auditoria" onNav={() => setMenuOpen(false)}>
-                          Auditoria
-                        </MobileNavLink>
-                      )}
-                    </MobileNavGroup>
-                  </>
+                    )}
+                  </MobileNavGroup>
                 )}
 
                 {canViewRtiCampo && (
@@ -270,7 +272,7 @@ export function SiteHeader() {
                   )}
                 </MobileNavGroup>}
 
-                {isPlatformAdmin && (
+                {canViewGestao && (
                   <MobileNavLink to="/epis" onNav={() => setMenuOpen(false)}>
                     EPIs e EPCs
                   </MobileNavLink>
@@ -286,16 +288,14 @@ export function SiteHeader() {
             </span>
           </Link>
 
-          {/* Dono do app (platform admin) vê tudo. Demais níveis (consultor/cliente)
-              só compram RTI + Pessoas no MVP — o resto some do menu. */}
           <nav className="hidden lg:flex items-center gap-1">
-            {isPlatformAdmin && <RACDropdown />}
-            {isPlatformAdmin && <NR10Dropdown />}
+            {canViewLoto && <RACDropdown />}
+            {canViewGestao && <NR10Dropdown />}
             <RTIDropdown />
             {isPlatformAdmin && <InspecoesDropdown />}
             {(isPlatformAdmin || hasEntitlement("pessoas")) && <QualDropdown />}
-            {isPlatformAdmin && <NavLink to="/epis">EPIs</NavLink>}
-            {isPlatformAdmin && <VencimentosBell />}
+            {canViewGestao && <NavLink to="/epis">EPIs</NavLink>}
+            {canViewGestao && <VencimentosBell />}
           </nav>
         </div>
 

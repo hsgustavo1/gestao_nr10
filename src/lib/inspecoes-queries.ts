@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import type { Inspection, InspectionAction, InspectionType } from "./inspecoes";
 
 export const inspecaoKeys = {
@@ -8,10 +9,12 @@ export const inspecaoKeys = {
 };
 
 export function useInspections(type?: InspectionType) {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: inspecaoKeys.inspections(type),
+    queryKey: [...inspecaoKeys.inspections(type), currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
-      let q = supabase.from("inspections").select("*");
+      let q = supabase.from("inspections").select("*").eq("org_id", currentOrgId!);
       if (type) q = q.eq("inspection_type", type);
       const { data, error } = await q.order("inspection_date", { ascending: false });
       if (error) throw error;

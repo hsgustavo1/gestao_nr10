@@ -158,6 +158,7 @@ export type Database = {
           id: string;
           local: string | null;
           occurred_at: string;
+          org_id: string;
           setor: string | null;
           status: string;
           tipo: string;
@@ -175,6 +176,7 @@ export type Database = {
           id?: string;
           local?: string | null;
           occurred_at: string;
+          org_id?: string;
           setor?: string | null;
           status?: string;
           tipo: string;
@@ -192,6 +194,7 @@ export type Database = {
           id?: string;
           local?: string | null;
           occurred_at?: string;
+          org_id?: string;
           setor?: string | null;
           status?: string;
           tipo?: string;
@@ -318,6 +321,7 @@ export type Database = {
           epi_type: string;
           id: string;
           notes: string | null;
+          org_id: string;
           sector: string | null;
           serial_number: string | null;
           test_interval_months: number;
@@ -334,6 +338,7 @@ export type Database = {
           epi_type: string;
           id?: string;
           notes?: string | null;
+          org_id?: string;
           sector?: string | null;
           serial_number?: string | null;
           test_interval_months?: number;
@@ -350,6 +355,7 @@ export type Database = {
           epi_type?: string;
           id?: string;
           notes?: string | null;
+          org_id?: string;
           sector?: string | null;
           serial_number?: string | null;
           test_interval_months?: number;
@@ -688,6 +694,7 @@ export type Database = {
           inspection_date: string;
           inspection_type: string;
           notes: string | null;
+          org_id: string;
           report_path: string | null;
           responsavel: string | null;
           result: string;
@@ -705,6 +712,7 @@ export type Database = {
           inspection_date: string;
           inspection_type: string;
           notes?: string | null;
+          org_id?: string;
           report_path?: string | null;
           responsavel?: string | null;
           result?: string;
@@ -722,6 +730,7 @@ export type Database = {
           inspection_date?: string;
           inspection_type?: string;
           notes?: string | null;
+          org_id?: string;
           report_path?: string | null;
           responsavel?: string | null;
           result?: string;
@@ -790,6 +799,7 @@ export type Database = {
           document_date: string | null;
           file_path: string | null;
           id: string;
+          org_id: string;
           responsavel: string | null;
           title: string;
           updated_at: string;
@@ -805,6 +815,7 @@ export type Database = {
           document_date?: string | null;
           file_path?: string | null;
           id?: string;
+          org_id?: string;
           responsavel?: string | null;
           title: string;
           updated_at?: string;
@@ -820,6 +831,7 @@ export type Database = {
           document_date?: string | null;
           file_path?: string | null;
           id?: string;
+          org_id?: string;
           responsavel?: string | null;
           title?: string;
           updated_at?: string;

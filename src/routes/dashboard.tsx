@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
+import { getLotoAccess } from "@/lib/tenancy-gates";
 import { NewPadlockDialog } from "@/components/new-padlock-dialog";
 import { useDashboardData, useQueryClient } from "@/lib/queries";
 import {
@@ -37,7 +38,8 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
-  const { isStaff } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit } = getLotoAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const queryClient = useQueryClient();
   const { padlocks, events, violations, isLoading } = useDashboardData();
   const [openNew, setOpenNew] = useState(false);
@@ -80,7 +82,7 @@ function DashboardPage() {
             Visão geral do bloqueio de energias perigosas.
           </p>
         </div>
-        {isStaff && (
+        {canEdit && (
           <Button
             onClick={() => setOpenNew(true)}
             className="bg-brand-gradient text-white shadow-brand hover:opacity-95 w-full sm:w-auto"

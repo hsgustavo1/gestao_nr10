@@ -33,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth-context";
+import { getGestaoCompletaAccess } from "@/lib/tenancy-gates";
 import { SectorSelect } from "@/components/sector-select";
 import {
   INCIDENT_GRAVIDADE_LABELS,
@@ -115,7 +116,8 @@ function formatDateTime(iso: string): string {
 }
 
 function IncidentesPage() {
-  const { isStaff, isAdmin } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit, canAdmin } = getGestaoCompletaAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const { data: incidents = [], isLoading } = useIncidents();
   const deleteIncident = useDeleteIncident();
 
@@ -182,7 +184,7 @@ function IncidentesPage() {
               : `${incidents.length} ${incidents.length === 1 ? "registro" : "registros"}`}
           </p>
         </div>
-        {isStaff && (
+        {canEdit && (
           <Button
             onClick={() => {
               setEditing(null);
@@ -338,7 +340,7 @@ function IncidentesPage() {
                               </a>
                             </Button>
                           )}
-                          {isStaff && (
+                          {canEdit && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -351,7 +353,7 @@ function IncidentesPage() {
                               <Pencil className="h-4 w-4" />
                             </Button>
                           )}
-                          {isAdmin && (
+                          {canAdmin && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -373,7 +375,7 @@ function IncidentesPage() {
         </CardContent>
       </Card>
 
-      {isStaff && dialogOpen && (
+      {canEdit && dialogOpen && (
         <IncidentDialog
           open={dialogOpen}
           onOpenChange={(o) => {

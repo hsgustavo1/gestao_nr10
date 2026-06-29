@@ -46,6 +46,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth-context";
+import { getGestaoCompletaAccess } from "@/lib/tenancy-gates";
 import {
   PIE_CATEGORIES,
   PIE_CATEGORY_LABELS,
@@ -101,7 +102,8 @@ function statusBadge(status: DocExpiryStatus) {
 }
 
 function ProntuarioPage() {
-  const { isStaff, isAdmin, user } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole, user } = useAuth();
+  const { canEdit, canAdmin } = getGestaoCompletaAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const { data: docs = [], isLoading } = useNR10Documents();
   const deleteDoc = useDeleteNR10Document();
 
@@ -162,7 +164,7 @@ function ProntuarioPage() {
               : `${docs.length} ${docs.length === 1 ? "documento" : "documentos"}`}
           </p>
         </div>
-        {isStaff && (
+        {canEdit && (
           <Button
             onClick={() => openCreate()}
             className="bg-brand-gradient text-white shadow-brand"
@@ -210,7 +212,7 @@ function ProntuarioPage() {
                         <Users className="h-3 w-3" /> Integrado ao módulo Pessoas
                       </Link>
                     ) : !covered ? (
-                      isStaff ? (
+                      canEdit ? (
                         <button
                           type="button"
                           onClick={() => openCreate(cat)}
@@ -351,7 +353,7 @@ function ProntuarioPage() {
                                 </a>
                               </Button>
                             )}
-                            {isStaff && (
+                            {canEdit && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -364,7 +366,7 @@ function ProntuarioPage() {
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             )}
-                            {isAdmin && (
+                            {canAdmin && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -387,7 +389,7 @@ function ProntuarioPage() {
         </CardContent>
       </Card>
 
-      {isStaff && dialogOpen && (
+      {canEdit && dialogOpen && (
         <DocumentDialog
           open={dialogOpen}
           onOpenChange={(o) => {

@@ -26,6 +26,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { getLotoAccess } from "@/lib/tenancy-gates";
 import { useViolations, useQueryClient, type Violation } from "@/lib/queries";
 import { formatDateTime } from "@/lib/padlocks";
 
@@ -44,7 +45,8 @@ export const Route = createFileRoute("/violacoes")({
 });
 
 function ViolacoesPage() {
-  const { isStaff, isAdmin, user } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole, user } = useAuth();
+  const { canEdit, canAdmin } = getLotoAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const queryClient = useQueryClient();
   const { data: items = [], isLoading } = useViolations();
   const { data: sectors = [] } = useQuery({
@@ -115,7 +117,7 @@ function ViolacoesPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          {isStaff && (
+          {canEdit && (
             <Button
               onClick={() => setOpen(true)}
               className="bg-brand-gradient text-white shadow-brand w-full sm:w-auto"
@@ -170,7 +172,7 @@ function ViolacoesPage() {
                         <Download className="h-4 w-4" /> Termo (PDF)
                       </a>
                     </Button>
-                    {isAdmin && (
+                    {canAdmin && (
                       <Button size="sm" variant="outline" onClick={() => setEditing(v)}>
                         <Pencil className="h-4 w-4" /> Editar
                       </Button>
@@ -190,7 +192,7 @@ function ViolacoesPage() {
           ))}
       </div>
 
-      {isStaff && (
+      {canEdit && (
         <ViolationDialog
           open={open}
           onOpenChange={setOpen}
@@ -207,7 +209,7 @@ function ViolacoesPage() {
           }}
         />
       )}
-      {isAdmin && editing && (
+      {canAdmin && editing && (
         <ViolationDialog
           open={!!editing}
           onOpenChange={(o) => {

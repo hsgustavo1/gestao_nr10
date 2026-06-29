@@ -43,6 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth-context";
+import { getGestaoCompletaAccess } from "@/lib/tenancy-gates";
 import {
   EPI_STATUS_LABELS,
   EPI_TYPES,
@@ -102,7 +103,8 @@ function statusBadge(status: EPITestStatus) {
 }
 
 function EPIsPage() {
-  const { isStaff, isAdmin } = useAuth();
+  const { isStaff, isAdmin, hasEntitlement, hasOrgRole } = useAuth();
+  const { canEdit, canAdmin } = getGestaoCompletaAccess({ isStaff, isAdmin, hasEntitlement, hasOrgRole });
   const { data: epis = [], isLoading } = useEPIs();
   const { data: allTests = [] } = useEPITests();
   const deleteEPI = useDeleteEPI();
@@ -183,7 +185,7 @@ function EPIsPage() {
               : `${epis.length} ${epis.length === 1 ? "item ativo" : "itens ativos"}`}
           </p>
         </div>
-        {isStaff && (
+        {canEdit && (
           <Button
             onClick={() => {
               setEditing(null);
@@ -365,7 +367,7 @@ function EPIsPage() {
                             >
                               <FlaskConical className="h-4 w-4" />
                             </Button>
-                            {isStaff && (
+                            {canEdit && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -378,7 +380,7 @@ function EPIsPage() {
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             )}
-                            {isAdmin && (
+                            {canAdmin && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -401,7 +403,7 @@ function EPIsPage() {
         </CardContent>
       </Card>
 
-      {isStaff && dialogOpen && (
+      {canEdit && dialogOpen && (
         <EPIDialog
           open={dialogOpen}
           onOpenChange={(o) => {
@@ -418,8 +420,8 @@ function EPIsPage() {
           onOpenChange={(o) => {
             if (!o) setTestsFor(null);
           }}
-          canEdit={isStaff}
-          canDelete={isAdmin}
+          canEdit={canEdit}
+          canDelete={canAdmin}
         />
       )}
     </PageShell>

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import type { EPI, EPITest } from "./epis";
 
 export const epiKeys = {
@@ -12,10 +13,15 @@ export type EPIWithEmployee = EPI & {
 };
 
 export function useEPIs(includeInactive = false) {
+  const { currentOrgId } = useAuth();
   return useQuery({
-    queryKey: [...epiKeys.epis, includeInactive],
+    queryKey: [...epiKeys.epis, includeInactive, currentOrgId],
+    enabled: !!currentOrgId,
     queryFn: async () => {
-      let q = supabase.from("epis").select("*, employees(name, matricula, setor)");
+      let q = supabase
+        .from("epis")
+        .select("*, employees(name, matricula, setor)")
+        .eq("org_id", currentOrgId!);
       if (!includeInactive) q = q.eq("active", true);
       const { data, error } = await q.order("epi_type").order("serial_number");
       if (error) throw error;
