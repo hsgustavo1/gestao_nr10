@@ -101,24 +101,30 @@ export function buildVencimentos(
 
   const employeeById = new Map(employees.map((e) => [e.id, e]));
 
-  // 1) Capacitações NR-10: validade de 2 anos sobre a data mais recente
-  //    (formação ou reciclagem) por colaborador e tipo de treinamento.
-  const latestByEmpType = new Map<string, string>();
+  // 1) Capacitações NR-10: formação é perene (nunca vence). Alertar apenas
+  //    quando reciclagem bienal está devida — ou seja, 2 anos após a formação
+  //    (sem reciclagem) ou 2 anos após a última reciclagem.
+  const formacaoByEmpType = new Map<string, string>(); // key: empId|type → data mais recente
+  const reciclagemByEmpType = new Map<string, string>();
   for (const t of trainings) {
     if (!t.training_date) continue;
     const key = `${t.employee_id}|${t.training_type}`;
-    const current = latestByEmpType.get(key);
-    if (!current || t.training_date > current) latestByEmpType.set(key, t.training_date);
+    const map = t.category === "formacao" ? formacaoByEmpType : reciclagemByEmpType;
+    const current = map.get(key);
+    if (!current || t.training_date > current) map.set(key, t.training_date);
   }
-  for (const [key, trainingDate] of latestByEmpType) {
+  for (const [key, formDate] of formacaoByEmpType) {
     const [employeeId, trainingType] = key.split("|");
     const emp = employeeById.get(employeeId);
-    if (!emp) continue; // só colaboradores ativos
-    const due = format(addYears(new Date(trainingDate + "T12:00:00"), 2), "yyyy-MM-dd");
+    if (!emp) continue;
+    const recDate = reciclagemByEmpType.get(key) ?? null;
+    // Data-base para o prazo bienal: reciclagem mais recente, ou formação quando não há reciclagem
+    const baseDate = recDate ?? formDate;
+    const due = format(addYears(new Date(baseDate + "T12:00:00"), 2), "yyyy-MM-dd");
     push({
       id: `nr10-${key}`,
       kind: "treinamento",
-      title: TRAINING_LABELS[trainingType as TrainingType] ?? trainingType,
+      title: `${TRAINING_LABELS[trainingType as TrainingType] ?? trainingType} — Reciclagem`,
       subject: emp.name,
       detail: emp.setor ? `Mat. ${emp.matricula} · ${emp.setor}` : `Mat. ${emp.matricula}`,
       dueDate: due,

@@ -160,9 +160,14 @@ export function EmployeeDialog({ open, onOpenChange, employee }: Props) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {["ELE", "GER", "INS", "MEC", "ADM", "OPE", "OUT"].map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
+                        {([
+                          ["ELE", "ELE — Elétrica"],
+                          ["INS", "INS — Instrumentação"],
+                          ["GER", "GER — Geração de energia"],
+                          ["ADM", "ADM — Administrativo"],
+                        ] as [string, string][]).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -26,7 +26,7 @@ import { latestASOByEmployee } from "@/lib/asos";
 import { computeAptidao, type Aptidao } from "@/lib/aptidao";
 import { AuthorizationDialog } from "@/components/authorization-dialog";
 import { AuthorizationPrintDialog } from "@/components/authorization-print-dialog";
-import { formatDatePtBR } from "@/lib/qualificacoes";
+import { formatDatePtBR, SETOR_FULL_NAMES } from "@/lib/qualificacoes";
 import type { WorkAuthorization } from "@/lib/qualificacoes";
 
 const autorizacoesSearchSchema = z.object({
@@ -276,7 +276,7 @@ function AutorizacoesPage() {
                           </td>
                           <td className="py-3 pr-4 text-muted-foreground">{emp.matricula}</td>
                           <td className="py-3 pr-4">
-                            {emp.setor && <Badge variant="outline">{emp.setor}</Badge>}
+                            {emp.setor && <Badge variant="outline" title={SETOR_FULL_NAMES[emp.setor] ?? emp.setor}>{emp.setor}</Badge>}
                           </td>
                           <td className="py-3 pr-4">
                             {auth?.level ? (

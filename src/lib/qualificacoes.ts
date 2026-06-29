@@ -8,9 +8,25 @@ export type TrainingType = (typeof TRAINING_TYPES)[number];
 
 export const TRAINING_LABELS: Record<TrainingType, string> = {
   nr10_basico: "NR-10 Básico",
-  nr10_areas_classificadas: "NR-10 Áreas Classificadas",
-  sep: "SEP",
+  nr10_areas_classificadas: "Áreas Classificadas",
+  sep: "NR-10 Complementar - SEP",
 };
+
+export const SETOR_FULL_NAMES: Record<string, string> = {
+  ELE: "ELE — Elétrica",
+  INS: "INS — Instrumentação",
+  GER: "GER — Geração de energia",
+  ADM: "ADM — Administrativo",
+};
+
+/**
+ * Retorna os tipos de treinamento NR-10 exigidos para uma equipe.
+ * GER (Geração de energia) não exige Áreas Classificadas — somente NR-10 Básico + SEP.
+ */
+export function requiredTrainings(setor: string | null): TrainingType[] {
+  if (setor === "GER") return ["nr10_basico", "sep"];
+  return [...TRAINING_TYPES];
+}
 
 export const AUTHORIZATION_LEVELS = ["A0", "A1", "A2", "A3", "A4"] as const;
 export type AuthorizationLevel = (typeof AUTHORIZATION_LEVELS)[number];
@@ -76,6 +92,7 @@ export type NR10Training = {
   category: "formacao" | "reciclagem";
   training_date: string | null;
   art: string | null;
+  art_arquivo_url?: string | null;
   responsavel_tecnico: string | null;
   // Registro completo p/ fiscalização — opcionais para compatibilidade com
   // fluxos existentes de upsert/importação.
@@ -148,6 +165,28 @@ export function trainingExpiryStatus(
   if (daysLeft < 0) return "expired";
   if (daysLeft <= 90) return "expiring";
   return "ok";
+}
+
+/**
+ * Status de uma formação: perene após realizada — nunca vence.
+ * Retorna "ok" se há data registrada, "none" caso contrário.
+ */
+export function formacaoStatus(date: string | null): "ok" | "none" {
+  return date ? "ok" : "none";
+}
+
+/**
+ * Status da reciclagem bienal. Se há reciclagem registrada, usa sua data.
+ * Se não há reciclagem mas há formação, a contagem de 2 anos parte da formação
+ * (o trabalhador deve reciclar antes de completar 2 anos da formação/última reciclagem).
+ */
+export function reciclagemStatus(
+  reciclagemDate: string | null,
+  formacaoDate: string | null = null,
+): "ok" | "expiring" | "expired" | "none" {
+  if (reciclagemDate) return trainingExpiryStatus(reciclagemDate);
+  if (!formacaoDate) return "none";
+  return trainingExpiryStatus(formacaoDate);
 }
 
 export type TrainingCertificate = {

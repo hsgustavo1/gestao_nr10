@@ -1,13 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Lock, ShieldCheck, History, ArrowRight, Fingerprint } from "lucide-react";
+import { useEffect } from "react";
+import {
+  ShieldCheck,
+  ClipboardList,
+  Users,
+  Smartphone,
+  Lock,
+  Zap,
+  AlertTriangle,
+  BarChart3,
+  Settings,
+  ArrowRight,
+} from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getRtiCampoAccess } from "@/lib/tenancy-gates";
-import { PADLOCK_COLORS, colorLabel, colorSwatch, type PadlockColor } from "@/lib/padlocks";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -16,7 +25,7 @@ export const Route = createFileRoute("/")({
       { title: "Gestão NR-10" },
       {
         name: "description",
-        content: "Sistema de gestão NR-10: qualificações, inspeções de campo e conformidade regulamentar.",
+        content: "Plataforma de conformidade NR-10: qualificações, inspeções de campo e gestão de não conformidades.",
       },
     ],
   }),
@@ -26,13 +35,7 @@ function HomePage() {
   const auth = useAuth();
   const navigate = useNavigate();
   const { canView: canViewRti } = getRtiCampoAccess(auth);
-  const [counts, setCounts] = useState<{ total: number; byColor: Record<PadlockColor, number> }>({
-    total: 0,
-    byColor: { azul: 0, amarelo: 0, latao: 0, vermelho: 0 },
-  });
 
-  // Usuário não autenticado e não em modo consulta → login
-  // Usuários logados sem ser platform admin → módulo principal (RTI ou qualificações)
   const redirectTo = !auth.loading
     ? !auth.user && !auth.isViewer
       ? "/login"
@@ -47,55 +50,38 @@ function HomePage() {
     if (redirectTo) navigate({ to: redirectTo, replace: true });
   }, [redirectTo, navigate]);
 
-  useEffect(() => {
-    supabase
-      .from("padlocks")
-      .select("color")
-      .then(({ data }) => {
-        const list = data ?? [];
-        const byColor: Record<PadlockColor, number> = {
-          azul: 0,
-          amarelo: 0,
-          latao: 0,
-          vermelho: 0,
-        };
-        list.forEach((p) => {
-          byColor[p.color] += 1;
-        });
-        setCounts({ total: list.length, byColor });
-      });
-  }, []);
-
-  // Evita o flash do painel de LOTO enquanto auth resolve ou antes do redirect.
   if (auth.loading || redirectTo) return null;
 
   return (
     <PageShell>
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-border text-white shadow-card-soft" style={{ background: "linear-gradient(160deg, #0C3326 0%, #174830 100%)" }}>
+      <section
+        className="relative overflow-hidden rounded-3xl border border-border text-white shadow-card-soft"
+        style={{ background: "linear-gradient(160deg, #0C3326 0%, #174830 100%)" }}
+      >
         <div className="absolute inset-y-0 left-0 w-1.5 bg-brand-gradient" />
         <div className="grid gap-8 p-8 md:p-12 md:grid-cols-[1.5fr_1fr] items-center">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wider">
-              <ShieldCheck className="h-3.5 w-3.5" /> Bloqueio de energias perigosas
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="text-emerald-400">NR-10</span>
             </span>
             <h1 className="mt-4 text-3xl md:text-4xl font-bold leading-tight">
-              Controle de dispositivos{" "}
-              <span className="text-brand-gradient">Requisitos para Atividades Críticas</span>
+              Conformidade legal e Segurança{" "}
+              <span style={{ color: "var(--conforme-emerald)" }}>de sistemas elétricos</span>
             </h1>
-            <p className="mt-4 max-w-xl text-white/80 text-base whitespace-pre-line">
-              Registro único por dispositivo, auditoria imutável de cada transferência e baixa, além
-              visibilidade em tempo real para todo o time.
-              {"\n"}Consulta aberta / Operação com login restrito ao Dono de RAC e Apoios.
+            <p className="mt-4 max-w-xl text-white/75 text-base leading-relaxed">
+              Gestão integrada de qualificações NR-10, inspeções de campo, não conformidades e
+              dispositivos de bloqueio — tudo em um só lugar.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button
                 asChild
                 size="lg"
-                className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
+                className="bg-gradient-to-br from-[#34D399] to-[#059669] text-white shadow-brand hover:opacity-95"
               >
-                <Link to="/dashboard">
-                  Ver dashboard <ArrowRight className="h-4 w-4" />
+                <Link to="/rti">
+                  Abrir RTI <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button
@@ -104,88 +90,121 @@ function HomePage() {
                 size="lg"
                 className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white"
               >
-                <Link to="/cadeados">Base de dados</Link>
+                <Link to="/qualificacoes">Qualificações</Link>
               </Button>
             </div>
           </div>
           <div className="relative grid place-items-center">
-            <div className="relative grid h-44 w-44 place-items-center rounded-3xl bg-brand-gradient shadow-brand">
-              <Lock className="h-20 w-20 text-white" strokeWidth={1.5} />
+            <div className="relative grid h-44 w-44 place-items-center rounded-3xl bg-gradient-to-br from-[#34D399] to-[#059669] shadow-brand">
+              <ShieldCheck className="h-20 w-20 text-white" strokeWidth={1.5} />
             </div>
           </div>
         </div>
       </section>
 
-      {/* KPIs */}
-      <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Kpi label="Total" value={counts.total} icon={<Lock className="h-5 w-5" />} />
-        {PADLOCK_COLORS.map((c) => (
-          <Kpi key={c} label={colorLabel[c]} value={counts.byColor[c]} swatch={c} />
-        ))}
+      {/* Módulos principais */}
+      <section className="mt-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+          Módulos
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ModuleCard
+            icon={<ClipboardList className="h-5 w-5" />}
+            title="RTI — Não Conformidades"
+            desc="Registro, acompanhamento e encerramento de NCs. Plano de ação, custos e evidências fotográficas."
+            to="/rti"
+          />
+          <ModuleCard
+            icon={<Users className="h-5 w-5" />}
+            title="Qualificações NR-10"
+            desc="Treinamentos, autorizações, ASOs e carteirinhas dos colaboradores habilitados."
+            to="/qualificacoes"
+          />
+          <ModuleCard
+            icon={<Smartphone className="h-5 w-5" />}
+            title="Inspeções de Campo"
+            desc="App offline para inspeções em campo. Sincronização automática ao retornar à rede."
+            to="/campo"
+          />
+          <ModuleCard
+            icon={<Lock className="h-5 w-5" />}
+            title="Cadeados LOTO"
+            desc="Controle de dispositivos de bloqueio com auditoria imutável de cada movimentação."
+            to="/cadeados"
+          />
+          <ModuleCard
+            icon={<Zap className="h-5 w-5" />}
+            title="EPIs Dielétricos"
+            desc="Gestão de luvas, detectores e equipamentos dielétricos com rastreio de testes."
+            to="/epis"
+          />
+          <ModuleCard
+            icon={<AlertTriangle className="h-5 w-5" />}
+            title="Vencimentos"
+            desc="Alertas de vencimento de qualificações, EPIs e documentos regulatórios."
+            to="/vencimentos"
+          />
+        </div>
       </section>
 
-      {/* Features */}
-      <section className="mt-10 grid gap-4 md:grid-cols-3">
-        <Feature
-          icon={<History className="h-5 w-5" />}
-          title="Linha do tempo"
-          desc="Cada registro, transferência ou baixa de dispositivo fica registrado com responsável, data e observações — auditoria imutável por item."
-        />
-        <Feature
-          icon={<ShieldCheck className="h-5 w-5" />}
-          title="3 níveis de acesso"
-          desc="Consulta e impressão de etiquetas (público), Apoios (cadastra e transfere), Dono de RAC (controle total)."
-        />
-        <Feature
-          icon={<Fingerprint className="h-5 w-5" />}
-          title="Rastreabilidade e confiabilidade"
-          desc="Cada dispositivo possui identificação única e histórico completo de movimentações, garantindo controle confiável e rastreável de ponta a ponta."
-        />
+      {/* Administração */}
+      <section className="mt-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+          Administração
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ModuleCard
+            icon={<BarChart3 className="h-5 w-5" />}
+            title="Relatórios"
+            desc="Dossiês, relatórios de conformidade e exportações para auditorias externas."
+            to="/relatorio"
+            muted
+          />
+          <ModuleCard
+            icon={<Settings className="h-5 w-5" />}
+            title="Administração"
+            desc="Usuários, empresas, carga de dados e auditoria do sistema."
+            to="/admin/usuarios"
+            muted
+          />
+        </div>
       </section>
     </PageShell>
   );
 }
 
-function Kpi({
-  label,
-  value,
+function ModuleCard({
   icon,
-  swatch,
+  title,
+  desc,
+  to,
+  muted = false,
 }: {
-  label: string;
-  value: number;
-  icon?: React.ReactNode;
-  swatch?: PadlockColor;
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  to: string;
+  muted?: boolean;
 }) {
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-          {swatch ? (
-            <div className={`h-7 w-7 rounded-full border-2 ${colorSwatch[swatch]}`} />
-          ) : (
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-secondary text-foreground">
-              {icon}
-            </div>
-          )}
-        </div>
-        <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-gradient text-white shadow-brand">
-          {icon}
-        </div>
-        <h3 className="mt-4 font-semibold text-foreground">{title}</h3>
-        <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
-      </CardContent>
-    </Card>
+    <Link to={to} className="block group">
+      <Card className="h-full transition-shadow hover:shadow-card-soft">
+        <CardContent className="p-6">
+          <div
+            className={`grid h-10 w-10 place-items-center rounded-xl text-white shadow-brand ${
+              muted
+                ? "bg-secondary text-foreground shadow-none"
+                : "bg-gradient-to-br from-[#34D399] to-[#059669]"
+            }`}
+          >
+            {icon}
+          </div>
+          <h3 className="mt-4 font-semibold text-foreground group-hover:text-[#059669] transition-colors">
+            {title}
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{desc}</p>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

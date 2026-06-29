@@ -237,7 +237,11 @@ function ColaboradorDossiePage() {
               <p className="text-sm text-muted-foreground">Nenhuma capacitação registrada.</p>
             )}
             {trainingRows.map((t) => {
-              const st = trainingExpiryStatus(t.training_date);
+              // formação é perene — não vence; só reciclagem tem prazo bienal
+              const st =
+                t.category === "formacao"
+                  ? (t.training_date ? ("ok" as const) : ("none" as const))
+                  : trainingExpiryStatus(t.training_date);
               const certs = certificates.filter((c) => c.nr10_training_id === t.id);
               return (
                 <div key={t.id} className="rounded-md border p-3">

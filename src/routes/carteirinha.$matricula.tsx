@@ -13,6 +13,7 @@ import {
   TRAINING_TYPES,
   formatDatePtBR,
   trainingExpiryStatus,
+  reciclagemStatus,
   type Employee,
   type NR10Training,
   type TrainingType,
@@ -105,8 +106,20 @@ function CarteirinhaPage() {
   const summary = useMemo(() => {
     if (!data) return null;
     const rows = TRAINING_TYPES.map((type) => {
-      const date = latestTrainingDate(data.trainings, type);
-      return { type, date, status: trainingExpiryStatus(date) };
+      let formDate: string | null = null;
+      let recDate: string | null = null;
+      for (const t of data.trainings) {
+        if (t.training_type !== type || !t.training_date) continue;
+        if (t.category === "formacao") {
+          if (!formDate || t.training_date > formDate) formDate = t.training_date;
+        } else {
+          if (!recDate || t.training_date > recDate) recDate = t.training_date;
+        }
+      }
+      const date = recDate ?? formDate;
+      // formação é perene; status reflete vencimento da reciclagem bienal
+      const status = reciclagemStatus(recDate, formDate);
+      return { type, date, status };
     }).filter((r) => r.date !== null || r.type === "nr10_basico");
     // Motor de aptidão: autorização vigente + NR-10 Básico válido + ASO válido
     // + nenhuma reciclagem extraordinária pendente (NR-10 10.8).
@@ -239,9 +252,19 @@ function CarteirinhaPage() {
                     Capacitações NR-10 (validade 2 anos)
                   </div>
                   {TRAINING_TYPES.map((type) => {
-                    const date = latestTrainingDate(data.trainings, type);
+                    let formDate: string | null = null;
+                    let recDate: string | null = null;
+                    for (const t of data.trainings) {
+                      if (t.training_type !== type || !t.training_date) continue;
+                      if (t.category === "formacao") {
+                        if (!formDate || t.training_date > formDate) formDate = t.training_date;
+                      } else {
+                        if (!recDate || t.training_date > recDate) recDate = t.training_date;
+                      }
+                    }
+                    const date = recDate ?? formDate;
                     if (!date && type !== "nr10_basico") return null;
-                    const status = trainingExpiryStatus(date);
+                    const status = reciclagemStatus(recDate, formDate);
                     const cls =
                       status === "ok"
                         ? "text-emerald-600"

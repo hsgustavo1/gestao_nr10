@@ -95,14 +95,14 @@ function LoginPage() {
         <div className="relative z-10 max-w-md">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider mb-5">
             <ShieldCheck className="h-3.5 w-3.5" style={{ color: "var(--conforme-emerald)" }} />
-            <span style={{ color: "var(--conforme-emerald)" }}>NR-10 · SEP</span>
+            <span style={{ color: "var(--conforme-emerald)" }}>NR-10</span>
           </span>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
-            Segurança elétrica e conformidade{" "}
-            <span style={{ color: "var(--conforme-emerald)" }}>regulamentar.</span>
+            Conformidade legal e Segurança de{" "}
+            <span style={{ color: "var(--conforme-emerald)" }}>sistemas elétricos</span>
           </h1>
           <p className="mt-4 text-white/65 text-sm leading-relaxed">
-            Gestão integrada de qualificações NR-10, inspeções de campo e conformidade regulamentar.
+            Gestão integrada de NR-10.
           </p>
         </div>
 

@@ -277,14 +277,20 @@ function RtiCustosPage() {
       ) : (
         <>
           {/* Cards financeiros (reagem ao filtro) */}
-          <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="mt-4 grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <ResumoCard
+              label="Planejado"
+              value={formatBRL(budget.planejadoTotal)}
+              sub={`${counts.comCusto} NC(s) com custo informado`}
+              onClick={() => navigate({ to: "/rti/plano", search: planoSearch })}
+            />
             <ResumoCard
               label="Realizado"
               value={formatBRL(budget.realizado)}
               sub={
-                budget.realizadoAInformar > 0
-                  ? `${budget.realizadoAInformar} concluída(s) sem realizado`
-                  : "custo já registrado"
+                budget.concluidasComCusto > 0 || budget.concluidasCustoZero > 0
+                  ? `${budget.concluidasComCusto} com custo · ${budget.concluidasCustoZero} custo zero`
+                  : "nenhuma concluída"
               }
               onClick={() => navigate({ to: "/rti/plano", search: planoSearch })}
             />

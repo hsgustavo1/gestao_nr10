@@ -1,6 +1,7 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { GraduationCap, Search } from "lucide-react";
+import { GraduationCap, Paperclip, Plus, Search, Trash2, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -41,9 +42,11 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
   const [trainingDate, setTrainingDate] = useState(new Date().toISOString().slice(0, 10));
   const [cargaHoraria, setCargaHoraria] = useState("");
   const [entidade, setEntidade] = useState("");
-  const [instrutor, setInstrutor] = useState("");
+  const [instrutores, setInstrutores] = useState<string[]>([""]);
   const [conteudo, setConteudo] = useState("");
   const [art, setArt] = useState("");
+  const [artArquivo, setArtArquivo] = useState<File | null>(null);
+  const artInputRef = useRef<HTMLInputElement>(null);
   const [responsavelTecnico, setResponsavelTecnico] = useState("");
   const [search, setSearch] = useState("");
   const [setorFilter, setSetorFilter] = useState("todos");
@@ -89,10 +92,24 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
     e.preventDefault();
     if (selected.size === 0) return toast.error("Selecione ao menos um colaborador.");
     if (!trainingDate) return toast.error("Informe a data do treinamento.");
+    if (!responsavelTecnico.trim()) return toast.error("Informe o responsável técnico.");
 
     setBusy(true);
     try {
       const carga = cargaHoraria.trim();
+
+      let artArquivoUrl: string | null = null;
+      if (artArquivo) {
+        const ext = artArquivo.name.split(".").pop() ?? "pdf";
+        const path = `art/${crypto.randomUUID()}-${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("nr10-docs")
+          .upload(path, artArquivo, { cacheControl: "3600", upsert: false });
+        if (uploadError) throw uploadError;
+        const { data } = supabase.storage.from("nr10-docs").getPublicUrl(path);
+        artArquivoUrl = data.publicUrl;
+      }
+
       await registrar.mutateAsync({
         employeeIds: Array.from(selected),
         training: {
@@ -100,16 +117,19 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
           category: category as "formacao" | "reciclagem",
           training_date: trainingDate,
           art: art.trim() || null,
+          art_arquivo_url: artArquivoUrl,
           responsavel_tecnico: responsavelTecnico.trim() || null,
           carga_horaria: carga ? parseInt(carga, 10) : null,
           entidade: entidade.trim() || null,
-          instrutor: instrutor.trim() || null,
+          instrutor: instrutores.map((s) => s.trim()).filter(Boolean).join(" · ") || null,
           conteudo_programatico: conteudo.trim() || null,
           valid: true,
         },
       });
       toast.success(`Turma registrada para ${selected.size} colaborador(es).`);
       setSelected(new Set());
+      setInstrutores([""]);
+      setArtArquivo(null);
       onOpenChange(false);
     } catch (err) {
       toast.error("Falha ao registrar turma: " + (err as Error).message);
@@ -172,7 +192,7 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
               />
             </div>
           </div>
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="turma-carga">Carga horária (h)</Label>
               <Input
@@ -193,19 +213,57 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
                 maxLength={150}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="turma-instrutor">Instrutor</Label>
-              <Input
-                id="turma-instrutor"
-                value={instrutor}
-                onChange={(e) => setInstrutor(e.target.value)}
-                maxLength={150}
-              />
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label>Instrutores</Label>
+              <button
+                type="button"
+                onClick={() => setInstrutores((prev) => [...prev, ""])}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <Plus className="h-3 w-3" /> Adicionar instrutor
+              </button>
+            </div>
+            <div className="space-y-2">
+              {instrutores.map((inst, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Input
+                    value={inst}
+                    onChange={(e) =>
+                      setInstrutores((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))
+                    }
+                    placeholder={`Instrutor ${i + 1}`}
+                    maxLength={150}
+                  />
+                  {instrutores.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setInstrutores((prev) => prev.filter((_, j) => j !== i))}
+                      className="text-muted-foreground hover:text-destructive shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="turma-art">ART (opcional)</Label>
+              <Label htmlFor="turma-resp">
+                Responsável técnico <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="turma-resp"
+                value={responsavelTecnico}
+                onChange={(e) => setResponsavelTecnico(e.target.value)}
+                maxLength={150}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="turma-art">Nº ART (opcional)</Label>
               <Input
                 id="turma-art"
                 value={art}
@@ -213,15 +271,38 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
                 maxLength={60}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="turma-resp">Responsável técnico (opcional)</Label>
-              <Input
-                id="turma-resp"
-                value={responsavelTecnico}
-                onChange={(e) => setResponsavelTecnico(e.target.value)}
-                maxLength={150}
-              />
-            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Anexar ART (PDF, opcional)</Label>
+            <input
+              ref={artInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              className="hidden"
+              onChange={(e) => setArtArquivo(e.target.files?.[0] ?? null)}
+            />
+            {artArquivo ? (
+              <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+                <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="flex-1 truncate">{artArquivo.name}</span>
+                <button
+                  type="button"
+                  onClick={() => { setArtArquivo(null); if (artInputRef.current) artInputRef.current.value = ""; }}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => artInputRef.current?.click()}
+              >
+                <Paperclip className="h-4 w-4" /> Selecionar arquivo
+              </Button>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="turma-conteudo">Conteúdo programático (resumo, opcional)</Label>

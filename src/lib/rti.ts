@@ -271,9 +271,9 @@ export function matchCustoFiltro(
 // Só entram NCs com custo planejado informado (custo zero conta como 0).
 
 export type RtiBudget = {
-  /** Σ custo_realizado das concluídas com realizado informado (dinheiro gasto). */
+  /** Σ custo_realizado efetivo das concluídas (null→planejado) + não-concluídas com real. */
   realizado: number;
-  /** Σ custo_planejado das não-concluídas (previsto a gastar). */
+  /** Σ custo_planejado das não-concluídas sem realizado (previsto a gastar). */
   emAberto: number;
   /** Σ max(0, realizado − planejado) nas concluídas. */
   estourado: number;
@@ -281,14 +281,16 @@ export type RtiBudget = {
   economizado: number;
   /** estourado − economizado (>0 estouro, <0 economia). */
   saldoLiquido: number;
-  /** Σ custo_planejado de todas as NCs informadas. */
+  /** Σ custo_planejado efetivo de todas as NCs consideradas. */
   planejadoTotal: number;
-  /** realizado + emAberto + planejado das concluídas-sem-realizado. */
+  /** realizado + emAberto. */
   projecaoTotal: number;
   /** projecaoTotal − planejadoTotal. */
   desvioProjecao: number;
-  /** nº de concluídas informadas sem custo_realizado (fora do saldo). */
-  realizadoAInformar: number;
+  /** nº de concluídas com custo efetivo > 0. */
+  concluidasComCusto: number;
+  /** nº de concluídas com custo efetivo = 0 (planejado e real ambos zero). */
+  concluidasCustoZero: number;
 };
 
 export function computeBudget(
@@ -299,33 +301,41 @@ export function computeBudget(
   let estourado = 0;
   let economizado = 0;
   let planejadoTotal = 0;
-  let concluidasSemRealizado = 0; // soma de planejado, para a projeção
-  let realizadoAInformar = 0;
+  let concluidasComCusto = 0;
+  let concluidasCustoZero = 0;
 
   for (const nc of ncs) {
-    const planejado = nc.custo_planejado;
-    if (planejado == null) continue;
+    const isConcluida = nc.status === "concluida";
+
+    // Planejado efetivo: concluída sem planejado → assume 0; não-concluída sem planejado → pula
+    let planejado = nc.custo_planejado;
+    if (planejado == null) {
+      if (!isConcluida) continue;
+      planejado = 0;
+    }
     planejadoTotal += planejado;
 
-    const real = nc.custo_realizado;
+    // Real efetivo: concluída sem real → assume real = planejado
+    let real = nc.custo_realizado;
+    if (real == null && isConcluida) real = planejado;
+
     if (real != null) {
-      // Custo registrado → conta como realizado independente do status
       realizado += real;
       const desvio = real - planejado;
       if (desvio > 0) estourado += desvio;
       else economizado += -desvio;
-    } else if (nc.status === "concluida") {
-      // Concluída sem realizado → "a informar"; projeção usa o planejado
-      realizadoAInformar += 1;
-      concluidasSemRealizado += planejado;
+      if (isConcluida) {
+        if (real === 0 && planejado === 0) concluidasCustoZero += 1;
+        else concluidasComCusto += 1;
+      }
     } else {
-      // Não concluída e sem realizado → previsto a executar
+      // Não concluída, sem real → em aberto pelo planejado
       emAberto += planejado;
     }
   }
 
   const saldoLiquido = estourado - economizado;
-  const projecaoTotal = realizado + emAberto + concluidasSemRealizado;
+  const projecaoTotal = realizado + emAberto;
   return {
     realizado,
     emAberto,
@@ -335,7 +345,8 @@ export function computeBudget(
     planejadoTotal,
     projecaoTotal,
     desvioProjecao: projecaoTotal - planejadoTotal,
-    realizadoAInformar,
+    concluidasComCusto,
+    concluidasCustoZero,
   };
 }
 

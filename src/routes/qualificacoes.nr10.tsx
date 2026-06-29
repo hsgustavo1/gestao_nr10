@@ -1,7 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { CheckCircle2, XCircle, MinusCircle, Upload, Pencil, Users } from "lucide-react";
-import { z } from "zod";
+import { AlertTriangle, CheckCircle2, XCircle, MinusCircle, Clock, CircleDashed, Upload, Users } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,34 +18,26 @@ import { useEmployees, useNR10Trainings } from "@/lib/qualificacoes-queries";
 import { NR10TrainingDialog } from "@/components/nr10-training-dialog";
 import { NR10TurmaDialog } from "@/components/nr10-turma-dialog";
 import {
+  reciclagemStatus,
   trainingExpiryStatus,
+  requiredTrainings,
   formatDatePtBR,
+  TRAINING_LABELS,
+  SETOR_FULL_NAMES,
   type TrainingType,
   type NR10Training,
 } from "@/lib/qualificacoes";
 import { cn } from "@/lib/utils";
 
-const nr10SearchSchema = z.object({
-  view: z.enum(["matrix", "table"]).optional().default("matrix"),
-  tipo: z.string().optional().default("all"),
-  status: z.string().optional().default("all"),
-  setor: z.string().optional().default("all"),
-});
-
 export const Route = createFileRoute("/qualificacoes/nr10")({
-  validateSearch: nr10SearchSchema,
+  validateSearch: (search: Record<string, unknown>) => ({
+    tipo: (search.tipo as string | undefined) ?? "all",
+    status: (search.status as string | undefined) ?? "all",
+    setor: (search.setor as string | undefined) ?? "all",
+  }),
   component: NR10Page,
   head: () => ({ meta: [{ title: "Capacitações NR-10 — Pessoas" }] }),
 });
-
-const COLUMNS: { type: TrainingType; category: "formacao" | "reciclagem"; label: string }[] = [
-  { type: "nr10_basico", category: "formacao", label: "NR-10 B.\nFormação" },
-  { type: "nr10_basico", category: "reciclagem", label: "NR-10 B.\nReciclagem" },
-  { type: "nr10_areas_classificadas", category: "formacao", label: "Áreas Class.\nFormação" },
-  { type: "nr10_areas_classificadas", category: "reciclagem", label: "Áreas Class.\nReciclagem" },
-  { type: "sep", category: "formacao", label: "SEP\nFormação" },
-  { type: "sep", category: "reciclagem", label: "SEP\nReciclagem" },
-];
 
 type DialogState = {
   employeeId: string;
@@ -56,87 +47,148 @@ type DialogState = {
   training?: NR10Training;
 };
 
-function StatusCell({
-  training,
+/** Calcula a data de vencimento (formação + 2 anos) em formato pt-BR. */
+function vencimentoStr(isoDate: string): string {
+  const d = new Date(isoDate + "T12:00:00");
+  d.setFullYear(d.getFullYear() + 2);
+  return formatDatePtBR(d.toISOString().slice(0, 10));
+}
+
+/** Ícone de formação: perene — nunca X. */
+function FormacaoIcon({ date, hasCertificate }: { date?: string | null; hasCertificate?: boolean }) {
+  if (!date) return <span title="Sem registro" className="flex justify-center"><MinusCircle className="h-4 w-4 text-muted-foreground/40" /></span>;
+  const noCert = hasCertificate === false;
+  const tooltip = noCert ? `${formatDatePtBR(date)} · Certificado não anexado` : formatDatePtBR(date);
+  return (
+    <span title={tooltip} className="flex justify-center">
+      <CheckCircle2 className={`h-4 w-4 ${noCert ? "text-amber-500" : "text-emerald-500"}`} />
+    </span>
+  );
+}
+
+/**
+ * Ícone de reciclagem.
+ * - Reciclagem feita → CheckCircle2 (verde ou amarelo se sem certificado)
+ * - Válido pela formação (sem reciclagem) → Clock na cor do status
+ * - Vencido/expirando → XCircle / AlertTriangle
+ * - Sem dado → MinusCircle
+ */
+function ReciclagemCell({
+  reciclagemDate,
+  formacaoDate,
+  hasCertificate,
   onClick,
-  isRevalidatedByReciclagem,
 }: {
-  training?: NR10Training;
+  reciclagemDate?: string | null;
+  formacaoDate?: string | null;
+  hasCertificate?: boolean;
   onClick: () => void;
-  isRevalidatedByReciclagem?: boolean;
 }) {
   const { isStaff } = useAuth();
   const tdClass = cn("py-2 px-3 text-center", isStaff && "cursor-pointer hover:bg-muted/40");
 
-  if (!training || !training.training_date) {
+  if (reciclagemDate) {
+    // Reciclagem realizada
+    const status = trainingExpiryStatus(reciclagemDate);
+    const certSuffix = hasCertificate === false ? " · Certificado não anexado" : "";
+    if (status === "ok") {
+      const noCert = hasCertificate === false;
+      return (
+        <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+          <span title={`${formatDatePtBR(reciclagemDate)}${certSuffix}`} className="flex justify-center">
+            <CheckCircle2 className={`h-4 w-4 ${noCert ? "text-amber-500" : "text-emerald-500"}`} />
+          </span>
+        </td>
+      );
+    }
+    if (status === "expiring") {
+      return (
+        <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+          <span title={`${formatDatePtBR(reciclagemDate)} · Vence em breve${certSuffix}`} className="flex justify-center">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+          </span>
+        </td>
+      );
+    }
+    // expired
     return (
       <td onClick={isStaff ? onClick : undefined} className={tdClass}>
-        <MinusCircle className="h-4 w-4 mx-auto text-muted-foreground/40" />
+        <span title={`${formatDatePtBR(reciclagemDate)} · Vencida${certSuffix}`} className="flex justify-center">
+          <XCircle className="h-4 w-4 text-destructive" />
+        </span>
       </td>
     );
   }
 
-  // If this formação is revalidated by a valid reciclagem, always show OK
-  if (isRevalidatedByReciclagem) {
+  if (formacaoDate) {
+    // Sem reciclagem — vigência vem da formação
+    const status = trainingExpiryStatus(formacaoDate);
+    const venc = vencimentoStr(formacaoDate);
+    if (status === "expired") {
+      return (
+        <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+          <span title={`Reciclagem vencida · base: ${formatDatePtBR(formacaoDate)}`} className="flex justify-center">
+            <XCircle className="h-4 w-4 text-destructive" />
+          </span>
+        </td>
+      );
+    }
+    const color = status === "expiring" ? "text-amber-500" : "text-emerald-500";
     return (
-      <td
-        onClick={isStaff ? onClick : undefined}
-        className={tdClass}
-        title={formatDatePtBR(training.training_date)}
-      >
-        <CheckCircle2 className="h-4 w-4 mx-auto text-emerald-500" />
+      <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+        <span title={`Sem reciclagem · válido pela formação até ${venc}`} className="flex justify-center">
+          <Clock className={`h-4 w-4 ${color}`} />
+        </span>
       </td>
     );
   }
 
-  const expiry = trainingExpiryStatus(training.training_date);
   return (
-    <td
-      onClick={isStaff ? onClick : undefined}
-      className={tdClass}
-      title={formatDatePtBR(training.training_date)}
-    >
-      {expiry === "ok" ? (
-        <CheckCircle2 className="h-4 w-4 mx-auto text-emerald-500" />
-      ) : expiry === "expiring" ? (
-        <CheckCircle2 className="h-4 w-4 mx-auto text-amber-500" />
-      ) : (
-        <XCircle className="h-4 w-4 mx-auto text-destructive" />
-      )}
+    <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+      <span title="Sem registro" className="flex justify-center">
+        <MinusCircle className="h-4 w-4 text-muted-foreground/40" />
+      </span>
     </td>
   );
 }
 
-function StatusIcon({
-  status,
-  date,
-}: {
-  status: "ok" | "expiring" | "expired" | "none";
-  date?: string | null;
-}) {
-  const title = date ? formatDatePtBR(date) : "Sem registro";
-  if (status === "ok")
+/** Célula para treinamento não obrigatório (ex: GER + Áreas Classificadas). */
+function NaoObrigatorioCell({ hasTraining, date, onClick }: { hasTraining: boolean; date?: string | null; onClick: () => void }) {
+  const { isStaff } = useAuth();
+  const tdClass = cn("py-2 px-3 text-center", isStaff && "cursor-pointer hover:bg-muted/40");
+  if (hasTraining && date) {
     return (
-      <span title={title}>
-        <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" />
-      </span>
+      <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+        <span title={`${formatDatePtBR(date)} · Não obrigatório para esta equipe`} className="flex justify-center">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500/60" />
+        </span>
+      </td>
     );
-  if (status === "expiring")
-    return (
-      <span title={title}>
-        <CheckCircle2 className="h-4 w-4 text-amber-500 mx-auto" />
-      </span>
-    );
-  if (status === "expired")
-    return (
-      <span title={title}>
-        <XCircle className="h-4 w-4 text-destructive mx-auto" />
-      </span>
-    );
+  }
   return (
-    <span title="Sem registro">
-      <MinusCircle className="h-4 w-4 text-muted-foreground/40 mx-auto" />
-    </span>
+    <td className="py-2 px-3 text-center">
+      <span title="Não obrigatório para esta equipe" className="flex justify-center">
+        <CircleDashed className="h-4 w-4 text-muted-foreground/30" />
+      </span>
+    </td>
+  );
+}
+
+/** Célula clicável de formação. */
+function FormacaoCell({
+  training,
+  onClick,
+}: {
+  training?: NR10Training;
+  onClick: () => void;
+}) {
+  const { isStaff } = useAuth();
+  const tdClass = cn("py-2 px-3 text-center", isStaff && "cursor-pointer hover:bg-muted/40");
+  const hasCertificate = training ? !!training.art_arquivo_url : undefined;
+  return (
+    <td onClick={isStaff ? onClick : undefined} className={tdClass}>
+      <FormacaoIcon date={training?.training_date} hasCertificate={hasCertificate} />
+    </td>
   );
 }
 
@@ -146,6 +198,8 @@ type EmployeeRow = {
     name: string;
     matricula: string;
     setor: string | null;
+    reciclagem_requerida?: boolean;
+    reciclagem_motivo?: string | null;
     [key: string]: unknown;
   };
   nr10_basico: "ok" | "expiring" | "expired" | "none";
@@ -168,15 +222,11 @@ function NR10Page() {
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [turmaOpen, setTurmaOpen] = useState(false);
 
-  const search = Route.useSearch();
-  const navigate = useNavigate({ from: Route.fullPath });
-
-  const view = search.view ?? "matrix";
-
+  const searchParams = Route.useSearch();
   const [nameSearch, setNameSearch] = useState("");
-  const [tableSetor, setTableSetor] = useState(search.setor ?? "all");
-  const [tableType, setTableType] = useState(search.tipo ?? "all");
-  const [tableStatus, setTableStatus] = useState(search.status ?? "all");
+  const [tableSetor, setTableSetor] = useState(searchParams.setor ?? "all");
+  const [tableType, setTableType] = useState(searchParams.tipo ?? "all");
+  const [tableStatus, setTableStatus] = useState(searchParams.status ?? "all");
 
   const trainingMap = useMemo(() => {
     const map = new Map<string, NR10Training>();
@@ -189,23 +239,23 @@ function NR10Page() {
   const tableData = useMemo((): EmployeeRow[] => {
     const rows: EmployeeRow[] = employees.map((emp) => {
       function effectiveStatus(type: string): "ok" | "expiring" | "expired" | "none" {
-        const formacao = trainingMap.get(`${emp.id}:${type}:formacao`);
-        const reciclagem = trainingMap.get(`${emp.id}:${type}:reciclagem`);
-        const recStatus = reciclagem?.training_date
-          ? trainingExpiryStatus(reciclagem.training_date)
-          : "none";
-        if (recStatus === "ok" || recStatus === "expiring") return recStatus;
-        return formacao?.training_date ? trainingExpiryStatus(formacao.training_date) : "none";
+        const formacaoDate = trainingMap.get(`${emp.id}:${type}:formacao`)?.training_date ?? null;
+        const reciclagemDate = trainingMap.get(`${emp.id}:${type}:reciclagem`)?.training_date ?? null;
+        if (!formacaoDate) return "none";
+        return reciclagemStatus(reciclagemDate, formacaoDate);
       }
       const s1 = effectiveStatus("nr10_basico");
       const s2 = effectiveStatus("nr10_areas_classificadas");
       const s3 = effectiveStatus("sep");
-      const allStatuses = [s1, s2, s3];
-      const overall: "ok" | "expiring" | "expired" | "none" = allStatuses.every((s) => s === "ok")
+      const required = requiredTrainings(emp.setor);
+      const requiredStatuses = required.map((t) =>
+        t === "nr10_basico" ? s1 : t === "nr10_areas_classificadas" ? s2 : s3
+      );
+      const overall: "ok" | "expiring" | "expired" | "none" = requiredStatuses.every((s) => s === "ok")
         ? "ok"
-        : allStatuses.some((s) => s === "expired")
+        : requiredStatuses.some((s) => s === "expired")
           ? "expired"
-          : allStatuses.some((s) => s === "expiring")
+          : requiredStatuses.some((s) => s === "expiring")
             ? "expiring"
             : "none";
       return {
@@ -214,22 +264,17 @@ function NR10Page() {
         nr10_areas_classificadas: s2,
         sep: s3,
         overall,
-        nr10_basicoFormDate:
-          trainingMap.get(`${emp.id}:nr10_basico:formacao`)?.training_date ?? null,
-        nr10_basicoRecDate:
-          trainingMap.get(`${emp.id}:nr10_basico:reciclagem`)?.training_date ?? null,
-        nr10_areas_classificadasFormDate:
-          trainingMap.get(`${emp.id}:nr10_areas_classificadas:formacao`)?.training_date ?? null,
-        nr10_areas_classificadasRecDate:
-          trainingMap.get(`${emp.id}:nr10_areas_classificadas:reciclagem`)?.training_date ?? null,
+        nr10_basicoFormDate: trainingMap.get(`${emp.id}:nr10_basico:formacao`)?.training_date ?? null,
+        nr10_basicoRecDate: trainingMap.get(`${emp.id}:nr10_basico:reciclagem`)?.training_date ?? null,
+        nr10_areas_classificadasFormDate: trainingMap.get(`${emp.id}:nr10_areas_classificadas:formacao`)?.training_date ?? null,
+        nr10_areas_classificadasRecDate: trainingMap.get(`${emp.id}:nr10_areas_classificadas:reciclagem`)?.training_date ?? null,
         sepFormDate: trainingMap.get(`${emp.id}:sep:formacao`)?.training_date ?? null,
         sepRecDate: trainingMap.get(`${emp.id}:sep:reciclagem`)?.training_date ?? null,
       };
     });
 
     return rows.filter((row) => {
-      if (nameSearch && !row.emp.name.toLowerCase().includes(nameSearch.toLowerCase()))
-        return false;
+      if (nameSearch && !row.emp.name.toLowerCase().includes(nameSearch.toLowerCase())) return false;
       if (tableSetor !== "all" && row.emp.setor !== tableSetor) return false;
       if (tableType !== "all") {
         const typeStatus = row[tableType as keyof EmployeeRow] as string;
@@ -244,12 +289,21 @@ function NR10Page() {
         if (tableStatus === "expiring" && row.overall !== "expiring") return false;
         if (tableStatus === "expired" && row.overall !== "expired") return false;
         if (tableStatus === "none" && row.overall !== "none") return false;
-        if (tableStatus === "non_compliant" && row.overall !== "expired" && row.overall !== "none")
-          return false;
+        if (tableStatus === "non_compliant" && row.overall !== "expired" && row.overall !== "none") return false;
       }
       return true;
     });
   }, [employees, trainingMap, nameSearch, tableSetor, tableType, tableStatus]);
+
+  function openDialog(emp: EmployeeRow["emp"], type: TrainingType, category: "formacao" | "reciclagem") {
+    setDialog({
+      employeeId: emp.id,
+      employeeName: emp.name,
+      type,
+      category,
+      training: trainingMap.get(`${emp.id}:${type}:${category}`),
+    });
+  }
 
   return (
     <PageShell>
@@ -264,23 +318,6 @@ function NR10Page() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div className="flex rounded-lg border overflow-hidden text-xs">
-            <button
-              type="button"
-              onClick={() => navigate({ search: (prev) => ({ ...prev, view: "matrix" }) })}
-              className={`px-3 py-1.5 font-medium transition-colors ${view === "matrix" ? "bg-foreground text-background" : "bg-background text-muted-foreground hover:bg-muted"}`}
-            >
-              Matriz
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate({ search: (prev) => ({ ...prev, view: "table" }) })}
-              className={`px-3 py-1.5 font-medium transition-colors ${view === "table" ? "bg-foreground text-background" : "bg-background text-muted-foreground hover:bg-muted"}`}
-            >
-              Por Integrante
-            </button>
-          </div>
           {isStaff && (
             <Button variant="outline" className="gap-1.5" onClick={() => setTurmaOpen(true)}>
               <Users className="h-4 w-4" />
@@ -301,373 +338,216 @@ function NR10Page() {
         </div>
       </div>
 
-      {/* MATRIX VIEW */}
-      {view === "matrix" && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr className="border-b bg-muted/30">
-                <th className="py-3 px-3 text-left font-medium text-muted-foreground min-w-[180px]">
-                  Colaborador
-                </th>
-                <th className="py-2 px-2 text-left font-medium text-muted-foreground w-16">Mat.</th>
-                {COLUMNS.map((c) => (
-                  <th
-                    key={`${c.type}:${c.category}`}
-                    className="py-2 px-3 text-center font-medium text-muted-foreground whitespace-pre-line min-w-[80px]"
-                  >
-                    {c.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading
-                ? Array.from({ length: 6 }).map((_, i) => (
-                    <tr key={i} className="border-b">
-                      <td className="py-3 px-3">
-                        <Skeleton className="h-4 w-32" />
-                      </td>
-                      <td className="py-2 px-2">
-                        <Skeleton className="h-4 w-12" />
-                      </td>
-                      {COLUMNS.map((_, j) => (
-                        <td key={j} className="py-2 px-3 text-center">
-                          <Skeleton className="h-4 w-4 mx-auto rounded-full" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                : employees.map((emp) => (
-                    <tr key={emp.id} className="border-b hover:bg-muted/20">
-                      <td className="py-3 px-3 font-medium">
-                        {emp.name}
-                        {emp.reciclagem_requerida && (
-                          <span
-                            className="ml-1.5 inline-flex items-center rounded-full border border-red-300 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
-                            title={`Reciclagem extraordinária pendente${emp.reciclagem_motivo ? `: ${emp.reciclagem_motivo}` : ""} (NR-10 10.8.8)`}
-                          >
-                            Reciclagem
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-2 text-muted-foreground">{emp.matricula}</td>
-                      {COLUMNS.map((col) => {
-                        const training = trainingMap.get(`${emp.id}:${col.type}:${col.category}`);
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-4 items-center">
+        <Input
+          placeholder="Buscar por nome..."
+          value={nameSearch}
+          onChange={(e) => setNameSearch(e.target.value)}
+          className="h-8 text-xs w-48"
+        />
+        <Select value={tableSetor} onValueChange={setTableSetor}>
+          <SelectTrigger className="h-8 text-xs w-44">
+            <SelectValue placeholder="Equipe" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as equipes</SelectItem>
+            {([
+              ["ELE", "ELE — Elétrica"],
+              ["INS", "INS — Instrumentação"],
+              ["GER", "GER — Geração de energia"],
+              ["ADM", "ADM — Administrativo"],
+            ] as [string, string][]).map(([value, label]) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={tableType} onValueChange={setTableType}>
+          <SelectTrigger className="h-8 text-xs w-40">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            {(["nr10_basico", "nr10_areas_classificadas", "sep"] as TrainingType[]).map((t) => (
+              <SelectItem key={t} value={t}>{TRAINING_LABELS[t]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={tableStatus} onValueChange={setTableStatus}>
+          <SelectTrigger className="h-8 text-xs w-36">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="ok">Conforme</SelectItem>
+            <SelectItem value="expiring">Vencendo</SelectItem>
+            <SelectItem value="expired">Vencido</SelectItem>
+            <SelectItem value="non_compliant">Não conforme</SelectItem>
+            <SelectItem value="none">Sem registro</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground ml-auto">
+          {tableData.length} colaborador{tableData.length !== 1 ? "es" : ""}
+        </span>
+      </div>
 
-                        let isRevalidatedByReciclagem = false;
-                        if (col.category === "formacao") {
-                          const reciclagem = trainingMap.get(`${emp.id}:${col.type}:reciclagem`);
-                          if (reciclagem?.training_date) {
-                            const recStatus = trainingExpiryStatus(reciclagem.training_date);
-                            isRevalidatedByReciclagem =
-                              recStatus === "ok" || recStatus === "expiring";
-                          }
-                        }
-
-                        return (
-                          <StatusCell
-                            key={`${col.type}:${col.category}`}
-                            training={training}
-                            isRevalidatedByReciclagem={isRevalidatedByReciclagem}
-                            onClick={() =>
-                              setDialog({
-                                employeeId: emp.id,
-                                employeeName: emp.name,
-                                type: col.type,
-                                category: col.category,
-                                training,
-                              })
-                            }
-                          />
-                        );
-                      })}
-                    </tr>
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="border-b bg-muted/30">
+              <th className="py-3 px-3 text-left font-medium text-muted-foreground min-w-[180px]">
+                Colaborador
+              </th>
+              <th className="py-2 px-2 text-left font-medium text-muted-foreground w-16">Mat.</th>
+              <th className="py-2 px-3 text-left font-medium text-muted-foreground w-16">Equipe</th>
+              <th className="py-2 px-3 text-center font-medium text-muted-foreground" colSpan={2}>
+                {TRAINING_LABELS.nr10_basico}
+              </th>
+              <th className="py-2 px-3 text-center font-medium text-muted-foreground" colSpan={2}>
+                {TRAINING_LABELS.nr10_areas_classificadas}
+              </th>
+              <th className="py-2 px-3 text-center font-medium text-muted-foreground" colSpan={2}>
+                {TRAINING_LABELS.sep}
+              </th>
+              <th className="py-2 px-3 text-center font-medium text-muted-foreground">Status</th>
+            </tr>
+            <tr className="border-b bg-muted/10">
+              <th colSpan={3} />
+              <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">Form.</th>
+              <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">Recic.</th>
+              <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">Form.</th>
+              <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">Recic.</th>
+              <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">Form.</th>
+              <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">Recic.</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i} className="border-b">
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-32" /></td>
+                  <td className="py-2 px-2"><Skeleton className="h-4 w-12" /></td>
+                  <td className="py-2 px-3"><Skeleton className="h-4 w-8" /></td>
+                  {Array.from({ length: 7 }).map((_, j) => (
+                    <td key={j} className="py-2 px-3 text-center">
+                      <Skeleton className="h-4 w-4 mx-auto rounded-full" />
+                    </td>
                   ))}
-            </tbody>
-          </table>
-          {!isLoading && employees.length === 0 && (
-            <p className="py-12 text-center text-muted-foreground text-sm">
-              Nenhum colaborador cadastrado. Importe a planilha ou adicione colaboradores
-              manualmente.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* TABLE VIEW — Per-employee */}
-      {view === "table" && (
-        <>
-          {/* Filters bar */}
-          <div className="flex flex-wrap gap-2 mb-4 items-center">
-            <Input
-              placeholder="Buscar por nome..."
-              value={nameSearch}
-              onChange={(e) => setNameSearch(e.target.value)}
-              className="h-8 text-xs w-48"
-            />
-            <Select value={tableSetor} onValueChange={setTableSetor}>
-              <SelectTrigger className="h-8 text-xs w-28">
-                <SelectValue placeholder="Equipe" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as equipes</SelectItem>
-                {["ELE", "GER", "INS", "MEC", "ADM", "OPE", "OUT"].map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={tableType} onValueChange={setTableType}>
-              <SelectTrigger className="h-8 text-xs w-36">
-                <SelectValue placeholder="Tipo de treino" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                <SelectItem value="nr10_basico">NR-10 Básico</SelectItem>
-                <SelectItem value="nr10_areas_classificadas">Áreas Classificadas</SelectItem>
-                <SelectItem value="sep">SEP</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={tableStatus} onValueChange={setTableStatus}>
-              <SelectTrigger className="h-8 text-xs w-36">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="ok">Conforme</SelectItem>
-                <SelectItem value="expiring">Vencendo</SelectItem>
-                <SelectItem value="expired">Vencido</SelectItem>
-                <SelectItem value="non_compliant">Não conforme</SelectItem>
-                <SelectItem value="none">Sem registro</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-xs text-muted-foreground ml-auto">
-              {tableData.length} integrante{tableData.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="py-3 px-3 text-left font-medium text-muted-foreground min-w-[180px]">
-                    Integrante
-                  </th>
-                  <th className="py-2 px-2 text-left font-medium text-muted-foreground w-16">
-                    Mat.
-                  </th>
-                  <th className="py-2 px-3 text-left font-medium text-muted-foreground w-16">
-                    Setor
-                  </th>
-                  <th
-                    className="py-2 px-3 text-center font-medium text-muted-foreground"
-                    colSpan={2}
-                  >
-                    NR-10 Básico
-                  </th>
-                  <th
-                    className="py-2 px-3 text-center font-medium text-muted-foreground"
-                    colSpan={2}
-                  >
-                    Áreas Class.
-                  </th>
-                  <th
-                    className="py-2 px-3 text-center font-medium text-muted-foreground"
-                    colSpan={2}
-                  >
-                    SEP
-                  </th>
-                  <th className="py-2 px-3 text-center font-medium text-muted-foreground">
-                    Status
-                  </th>
-                  {isStaff && <th className="py-2 font-medium text-muted-foreground w-10"></th>}
                 </tr>
-                <tr className="border-b bg-muted/10">
-                  <th colSpan={3} />
-                  <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">
-                    Form.
-                  </th>
-                  <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">
-                    Recic.
-                  </th>
-                  <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">
-                    Form.
-                  </th>
-                  <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">
-                    Recic.
-                  </th>
-                  <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">
-                    Form.
-                  </th>
-                  <th className="py-1 px-2 text-center text-[10px] text-muted-foreground font-normal">
-                    Recic.
-                  </th>
-                  <th />
-                  {isStaff && <th />}
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-b">
-                      <td className="py-3 px-3">
-                        <Skeleton className="h-4 w-32" />
-                      </td>
-                      <td className="py-2 px-2">
-                        <Skeleton className="h-4 w-12" />
-                      </td>
-                      <td className="py-2 px-3">
-                        <Skeleton className="h-4 w-8" />
-                      </td>
-                      {Array.from({ length: 7 }).map((_, j) => (
-                        <td key={j} className="py-2 px-3 text-center">
-                          <Skeleton className="h-4 w-4 mx-auto rounded-full" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : tableData.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={isStaff ? 11 : 10}
-                      className="py-12 text-center text-muted-foreground"
-                    >
-                      Nenhum integrante encontrado com os filtros selecionados.
+              ))
+            ) : tableData.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="py-12 text-center text-muted-foreground">
+                  Nenhum colaborador encontrado com os filtros selecionados.
+                </td>
+              </tr>
+            ) : (
+              tableData.map((row) => {
+                const overallVariant =
+                  row.overall === "ok" ? "default"
+                  : row.overall === "expiring" ? "secondary"
+                  : row.overall === "expired" ? "destructive"
+                  : "outline";
+                const overallLabel =
+                  row.overall === "ok" ? "Conforme"
+                  : row.overall === "expiring" ? "Vencendo"
+                  : row.overall === "expired" ? "Vencido"
+                  : "Sem registro";
+                return (
+                  <tr key={row.emp.id} className="border-b hover:bg-muted/20 transition-colors">
+                    <td className="py-3 px-3 font-medium">
+                      {row.emp.name}
+                      {row.emp.reciclagem_requerida && (
+                        <span
+                          className="ml-1.5 inline-flex items-center rounded-full border border-red-300 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
+                          title={`Reciclagem extraordinária pendente${row.emp.reciclagem_motivo ? `: ${row.emp.reciclagem_motivo}` : ""} (NR-10 10.8.8)`}
+                        >
+                          Reciclagem
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 px-2 text-muted-foreground">{row.emp.matricula}</td>
+                    <td className="py-2 px-3">
+                      {row.emp.setor && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px]"
+                          title={SETOR_FULL_NAMES[row.emp.setor as string] ?? row.emp.setor}
+                        >
+                          {row.emp.setor as string}
+                        </Badge>
+                      )}
+                    </td>
+                    {/* NR-10 Básico */}
+                    <FormacaoCell
+                      training={trainingMap.get(`${row.emp.id}:nr10_basico:formacao`)}
+                      onClick={() => openDialog(row.emp, "nr10_basico", "formacao")}
+                    />
+                    <ReciclagemCell
+                      reciclagemDate={row.nr10_basicoRecDate}
+                      formacaoDate={row.nr10_basicoFormDate}
+                      hasCertificate={trainingMap.get(`${row.emp.id}:nr10_basico:reciclagem`) ? !!trainingMap.get(`${row.emp.id}:nr10_basico:reciclagem`)!.art_arquivo_url : undefined}
+                      onClick={() => openDialog(row.emp, "nr10_basico", "reciclagem")}
+                    />
+                    {/* Áreas Classificadas */}
+                    {requiredTrainings(row.emp.setor as string).includes("nr10_areas_classificadas") ? (
+                      <>
+                        <FormacaoCell
+                          training={trainingMap.get(`${row.emp.id}:nr10_areas_classificadas:formacao`)}
+                          onClick={() => openDialog(row.emp, "nr10_areas_classificadas", "formacao")}
+                        />
+                        <ReciclagemCell
+                          reciclagemDate={row.nr10_areas_classificadasRecDate}
+                          formacaoDate={row.nr10_areas_classificadasFormDate}
+                          hasCertificate={trainingMap.get(`${row.emp.id}:nr10_areas_classificadas:reciclagem`) ? !!trainingMap.get(`${row.emp.id}:nr10_areas_classificadas:reciclagem`)!.art_arquivo_url : undefined}
+                          onClick={() => openDialog(row.emp, "nr10_areas_classificadas", "reciclagem")}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <NaoObrigatorioCell
+                          hasTraining={!!row.nr10_areas_classificadasFormDate}
+                          date={row.nr10_areas_classificadasFormDate}
+                          onClick={() => openDialog(row.emp, "nr10_areas_classificadas", "formacao")}
+                        />
+                        <NaoObrigatorioCell
+                          hasTraining={!!row.nr10_areas_classificadasRecDate}
+                          date={row.nr10_areas_classificadasRecDate}
+                          onClick={() => openDialog(row.emp, "nr10_areas_classificadas", "reciclagem")}
+                        />
+                      </>
+                    )}
+                    {/* SEP */}
+                    <FormacaoCell
+                      training={trainingMap.get(`${row.emp.id}:sep:formacao`)}
+                      onClick={() => openDialog(row.emp, "sep", "formacao")}
+                    />
+                    <ReciclagemCell
+                      reciclagemDate={row.sepRecDate}
+                      formacaoDate={row.sepFormDate}
+                      hasCertificate={trainingMap.get(`${row.emp.id}:sep:reciclagem`) ? !!trainingMap.get(`${row.emp.id}:sep:reciclagem`)!.art_arquivo_url : undefined}
+                      onClick={() => openDialog(row.emp, "sep", "reciclagem")}
+                    />
+                    {/* Status geral */}
+                    <td className="py-2 px-3 text-center">
+                      <Badge variant={overallVariant} className="text-[10px]">
+                        {overallLabel}
+                      </Badge>
                     </td>
                   </tr>
-                ) : (
-                  tableData.map((row) => {
-                    const overallVariant =
-                      row.overall === "ok"
-                        ? "default"
-                        : row.overall === "expiring"
-                          ? "secondary"
-                          : row.overall === "expired"
-                            ? "destructive"
-                            : "outline";
-                    const overallLabel =
-                      row.overall === "ok"
-                        ? "Conforme"
-                        : row.overall === "expiring"
-                          ? "Vencendo"
-                          : row.overall === "expired"
-                            ? "Vencido"
-                            : "Sem registro";
-                    return (
-                      <tr key={row.emp.id} className="border-b hover:bg-muted/20 transition-colors">
-                        <td className="py-3 px-3 font-medium">{row.emp.name}</td>
-                        <td className="py-2 px-2 text-muted-foreground">{row.emp.matricula}</td>
-                        <td className="py-2 px-3">
-                          {row.emp.setor && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {row.emp.setor as string}
-                            </Badge>
-                          )}
-                        </td>
-                        {/* NR-10 Básico */}
-                        <td className="py-2 px-3 text-center">
-                          <StatusIcon
-                            status={
-                              row.nr10_basicoFormDate
-                                ? trainingExpiryStatus(row.nr10_basicoFormDate)
-                                : "none"
-                            }
-                            date={row.nr10_basicoFormDate}
-                          />
-                        </td>
-                        <td className="py-2 px-3 text-center">
-                          <StatusIcon
-                            status={
-                              row.nr10_basicoRecDate
-                                ? trainingExpiryStatus(row.nr10_basicoRecDate)
-                                : "none"
-                            }
-                            date={row.nr10_basicoRecDate}
-                          />
-                        </td>
-                        {/* Áreas Class. */}
-                        <td className="py-2 px-3 text-center">
-                          <StatusIcon
-                            status={
-                              row.nr10_areas_classificadasFormDate
-                                ? trainingExpiryStatus(row.nr10_areas_classificadasFormDate)
-                                : "none"
-                            }
-                            date={row.nr10_areas_classificadasFormDate}
-                          />
-                        </td>
-                        <td className="py-2 px-3 text-center">
-                          <StatusIcon
-                            status={
-                              row.nr10_areas_classificadasRecDate
-                                ? trainingExpiryStatus(row.nr10_areas_classificadasRecDate)
-                                : "none"
-                            }
-                            date={row.nr10_areas_classificadasRecDate}
-                          />
-                        </td>
-                        {/* SEP */}
-                        <td className="py-2 px-3 text-center">
-                          <StatusIcon
-                            status={
-                              row.sepFormDate ? trainingExpiryStatus(row.sepFormDate) : "none"
-                            }
-                            date={row.sepFormDate}
-                          />
-                        </td>
-                        <td className="py-2 px-3 text-center">
-                          <StatusIcon
-                            status={row.sepRecDate ? trainingExpiryStatus(row.sepRecDate) : "none"}
-                            date={row.sepRecDate}
-                          />
-                        </td>
-                        {/* Status geral */}
-                        <td className="py-2 px-3 text-center">
-                          <Badge variant={overallVariant} className="text-[10px]">
-                            {overallLabel}
-                          </Badge>
-                        </td>
-                        {isStaff && (
-                          <td className="py-2 px-2">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-6 w-6"
-                              title="Editar treinamentos"
-                              onClick={() =>
-                                setDialog({
-                                  employeeId: row.emp.id,
-                                  employeeName: row.emp.name,
-                                  type: "nr10_basico",
-                                  category: "formacao",
-                                  training: trainingMap.get(`${row.emp.id}:nr10_basico:formacao`),
-                                })
-                              }
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      {/* Dialog — unchanged */}
       {dialog && (
         <NR10TrainingDialog
           open={!!dialog}
-          onOpenChange={(v) => {
-            if (!v) setDialog(null);
-          }}
+          onOpenChange={(v) => { if (!v) setDialog(null); }}
           employeeId={dialog.employeeId}
           employeeName={dialog.employeeName}
           defaultType={dialog.type}

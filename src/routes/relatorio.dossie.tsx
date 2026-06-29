@@ -15,6 +15,7 @@ import {
   TRAINING_TYPES,
   formatDatePtBR,
   trainingExpiryStatus,
+  reciclagemStatus,
   type NR10Training,
   type TrainingType,
   type WorkAuthorization,
@@ -118,14 +119,21 @@ function DossiePage() {
           authorization: auth,
           aso,
         });
-        const latestByType: Partial<Record<TrainingType, string | null>> = {};
+        // Para cada tipo: data a exibir = reciclagem mais recente (ou formação como fallback)
+        // Status = reciclagemStatus (formação é perene — nunca aparece como "Vencido")
+        const latestByType: Partial<Record<TrainingType, { date: string | null; status: ReturnType<typeof reciclagemStatus> }>> = {};
         for (const type of TRAINING_TYPES) {
-          let latest: string | null = null;
+          let formDate: string | null = null;
+          let recDate: string | null = null;
           for (const t of trainingsByEmp.get(e.id) ?? []) {
             if (t.training_type !== type || !t.training_date) continue;
-            if (!latest || t.training_date > latest) latest = t.training_date;
+            if (t.category === "formacao") {
+              if (!formDate || t.training_date > formDate) formDate = t.training_date;
+            } else {
+              if (!recDate || t.training_date > recDate) recDate = t.training_date;
+            }
           }
-          latestByType[type] = latest;
+          latestByType[type] = { date: recDate ?? formDate, status: reciclagemStatus(recDate, formDate) };
         }
         return { emp: e, auth, aso, aptidao, latestByType };
       })
@@ -323,8 +331,9 @@ function DossiePage() {
                     </td>
                     <td className="py-1.5 pr-3 font-semibold">{auth.level}</td>
                     {TRAINING_TYPES.map((type) => {
-                      const date = latestByType[type];
-                      const st = trainingExpiryStatus(date ?? null);
+                      const entry = latestByType[type];
+                      const date = entry?.date ?? null;
+                      const st = entry?.status ?? "none";
                       return (
                         <td key={type} className="py-1.5 pr-3 whitespace-nowrap">
                           {date ? (

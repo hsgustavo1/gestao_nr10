@@ -34,22 +34,38 @@ describe("computeBudget", () => {
       planejadoTotal: 0,
       projecaoTotal: 0,
       desvioProjecao: 0,
-      realizadoAInformar: 0,
+      concluidasComCusto: 0,
+      concluidasCustoZero: 0,
     });
   });
 
-  it("NC sem custo planejado (null) não entra no R$", () => {
-    const b = computeBudget([nc("concluida", null, 500)]);
+  it("concluída sem planejado → assume planejado=real=0 (custo zero)", () => {
+    const b = computeBudget([nc("concluida", null)]);
     expect(b.planejadoTotal).toBe(0);
     expect(b.realizado).toBe(0);
+    expect(b.concluidasCustoZero).toBe(1);
+    expect(b.concluidasComCusto).toBe(0);
+    expect(b.projecaoTotal).toBe(0);
+  });
+
+  it("concluída sem planejado mas com real explícito → planejado=0, real conta", () => {
+    const b = computeBudget([nc("concluida", null, 500)]);
+    expect(b.planejadoTotal).toBe(0);
+    expect(b.realizado).toBe(500);
+    expect(b.estourado).toBe(500);
+    expect(b.concluidasComCusto).toBe(1);
+  });
+
+  it("não-concluída sem planejado → ignorada", () => {
+    const b = computeBudget([nc("pendente", null)]);
+    expect(b.planejadoTotal).toBe(0);
+    expect(b.emAberto).toBe(0);
     expect(b.projecaoTotal).toBe(0);
   });
 
   it("não-concluída sem realizado vira em aberto; com realizado conta como realizado", () => {
     const b = computeBudget([nc("pendente", 1000), nc("em_andamento", 500, 200)]);
-    // pendente sem realizado → em aberto pelo planejado
     expect(b.emAberto).toBe(1000);
-    // em_andamento com realizado parcial → conta como realizado (custo já registrado)
     expect(b.realizado).toBe(200);
     expect(b.economizado).toBe(300); // 200 realizado vs 500 planejado → economia
     expect(b.planejadoTotal).toBe(1500);
@@ -79,8 +95,8 @@ describe("computeBudget", () => {
   it("misto: estouro e economia se compensam no saldo líquido", () => {
     const b = computeBudget([
       nc("concluida", 1000, 1300), // +300
-      nc("concluida", 1000, 700), // -300
-      nc("pendente", 500), // em aberto
+      nc("concluida", 1000, 700),  // -300
+      nc("pendente", 500),          // em aberto
     ]);
     expect(b.realizado).toBe(2000);
     expect(b.estourado).toBe(300);
@@ -92,23 +108,31 @@ describe("computeBudget", () => {
     expect(b.desvioProjecao).toBe(0);
   });
 
-  it("concluída sem realizado informado → 'a informar', fora do saldo, projeção usa planejado", () => {
+  it("concluída sem real → assume real = planejado (sem estouro/economia)", () => {
     const b = computeBudget([nc("concluida", 1000, null)]);
-    expect(b.realizado).toBe(0);
-    expect(b.realizadoAInformar).toBe(1);
+    expect(b.realizado).toBe(1000);
     expect(b.estourado).toBe(0);
     expect(b.economizado).toBe(0);
     expect(b.saldoLiquido).toBe(0);
-    expect(b.projecaoTotal).toBe(1000); // não subestima
+    expect(b.projecaoTotal).toBe(1000);
     expect(b.desvioProjecao).toBe(0);
+    expect(b.concluidasComCusto).toBe(1);
   });
 
-  it("custo zero concluído conta como informado sem desvio", () => {
+  it("custo zero concluído conta como custo zero", () => {
     const b = computeBudget([nc("concluida", 0, 0)]);
     expect(b.realizado).toBe(0);
-    expect(b.realizadoAInformar).toBe(0);
+    expect(b.concluidasCustoZero).toBe(1);
+    expect(b.concluidasComCusto).toBe(0);
     expect(b.saldoLiquido).toBe(0);
     expect(b.planejadoTotal).toBe(0);
+  });
+
+  it("concluída sem real e custo zero → custo zero sem desvio", () => {
+    const b = computeBudget([nc("concluida", 0, null)]);
+    expect(b.realizado).toBe(0);
+    expect(b.concluidasCustoZero).toBe(1);
+    expect(b.saldoLiquido).toBe(0);
   });
 });
 

@@ -12,7 +12,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useEmployees, useWorkInstructions, useITTrainings } from "@/lib/qualificacoes-queries";
 import { InstructionDialog } from "@/components/instruction-dialog";
 import { ITTrainingDialog } from "@/components/it-training-dialog";
-import { formatDatePtBR } from "@/lib/qualificacoes";
+import { formatDatePtBR, SETOR_FULL_NAMES } from "@/lib/qualificacoes";
 import type { WorkInstruction } from "@/lib/qualificacoes";
 import { cn } from "@/lib/utils";
 import {
@@ -435,7 +435,7 @@ function InstrucoesPage() {
                         <td className="py-2 px-2 text-muted-foreground">{row.emp.matricula}</td>
                         <td className="py-2 px-3">
                           {row.emp.setor && (
-                            <Badge variant="outline" className="text-[10px]">
+                            <Badge variant="outline" className="text-[10px]" title={SETOR_FULL_NAMES[row.emp.setor] ?? row.emp.setor}>
                               {row.emp.setor}
                             </Badge>
                           )}

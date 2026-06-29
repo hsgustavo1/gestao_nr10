@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useEmployees, useDeleteEmployee } from "@/lib/qualificacoes-queries";
 import { EmployeeDialog } from "@/components/employee-dialog";
 import type { Employee } from "@/lib/qualificacoes";
-import { formatDatePtBR, employeeStatusVariant, EMPLOYEE_STATUS_LABELS } from "@/lib/qualificacoes";
+import { formatDatePtBR, employeeStatusVariant, EMPLOYEE_STATUS_LABELS, SETOR_FULL_NAMES } from "@/lib/qualificacoes";
 import {
   Select,
   SelectContent,
@@ -98,9 +98,14 @@ function ColaboradoresPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todas</SelectItem>
-            {["ELE", "GER", "INS", "MEC", "ADM", "OPE", "OUT"].map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
+            {([
+              ["ELE", "ELE — Elétrica"],
+              ["INS", "INS — Instrumentação"],
+              ["GER", "GER — Geração de energia"],
+              ["ADM", "ADM — Administrativo"],
+            ] as [string, string][]).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -148,7 +153,7 @@ function ColaboradoresPage() {
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground">{emp.matricula}</td>
                     <td className="py-3 pr-4">
-                      {emp.setor && <Badge variant="outline">{emp.setor}</Badge>}
+                      {emp.setor && <Badge variant="outline" title={SETOR_FULL_NAMES[emp.setor] ?? emp.setor}>{emp.setor}</Badge>}
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground">{emp.classificacao ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground truncate max-w-[200px]">
@@ -167,7 +172,6 @@ function ColaboradoresPage() {
                     {isStaff && (
                       <td className="py-3">
                         <div className="flex gap-1">
-                          {/* Attach diploma */}
                           <Button
                             size="icon"
                             variant="ghost"
@@ -177,7 +181,6 @@ function ColaboradoresPage() {
                           >
                             <Paperclip className="h-3.5 w-3.5" />
                           </Button>
-                          {/* Attach histórico escolar */}
                           <Button
                             size="icon"
                             variant="ghost"

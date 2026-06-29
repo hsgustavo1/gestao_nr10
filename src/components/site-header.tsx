@@ -242,6 +242,9 @@ export function SiteHeader() {
                   <MobileNavLink to="/qualificacoes" onNav={() => setMenuOpen(false)}>
                     Dashboard
                   </MobileNavLink>
+                  <MobileNavLink to="/qualificacoes/integrantes" onNav={() => setMenuOpen(false)}>
+                    Colaboradores
+                  </MobileNavLink>
                   <MobileNavLink to="/qualificacoes/colaboradores" onNav={() => setMenuOpen(false)}>
                     Qualificação
                   </MobileNavLink>
@@ -777,6 +780,7 @@ function QualDropdown() {
   const { isAdmin } = useAuth();
 
   const items = [
+    { to: "/qualificacoes/integrantes", label: "Colaboradores" },
     { to: "/qualificacoes/colaboradores", label: "Qualificação" },
     { to: "/qualificacoes/nr10", label: "Capacitações NR-10" },
     { to: "/qualificacoes/instrucoes", label: "Instruções de trabalho" },

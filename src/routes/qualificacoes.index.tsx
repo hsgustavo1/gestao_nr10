@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo, useCallback } from "react";
 import {
   Users,
@@ -7,7 +7,6 @@ import {
   BookOpen,
   AlertTriangle,
   CheckCircle2,
-  X,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +26,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   PieChart,
   Pie,
   Cell,
@@ -40,9 +38,12 @@ import {
 } from "@/lib/qualificacoes-queries";
 import {
   trainingExpiryStatus,
+  reciclagemStatus,
   formatDatePtBR,
   TRAINING_TYPES,
   TRAINING_LABELS,
+  SETOR_FULL_NAMES,
+  requiredTrainings,
 } from "@/lib/qualificacoes";
 import type { NR10Training } from "@/lib/qualificacoes";
 import { useASOs } from "@/lib/asos-queries";
@@ -67,79 +68,6 @@ const COLORS = {
   "Sem auth.": "#d1d5db",
 } as const;
 
-function DrillDownPanel({
-  drillDown,
-  employees,
-  onClose,
-}: {
-  drillDown: { label: string; count: number } | null;
-  employees: Array<{
-    id: string;
-    name: string;
-    matricula: string;
-    setor: string | null;
-    relevantDate: string | null;
-  }>;
-  onClose: () => void;
-}) {
-  if (!drillDown) return null;
-  return (
-    <Card className="mb-6 border-blue-200 bg-blue-50/30 dark:border-blue-900 dark:bg-blue-950/20">
-      <CardHeader className="pb-2 flex-row items-center justify-between">
-        <CardTitle className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-          {drillDown.label}
-          <Badge variant="outline" className="ml-2 text-[10px]">
-            {employees.length} colaboradores
-          </Badge>
-        </CardTitle>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded p-1 hover:bg-muted transition-colors text-muted-foreground"
-          aria-label="Fechar"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </CardHeader>
-      <CardContent>
-        {employees.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-2">Nenhum colaborador nesta categoria.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="py-1.5 pr-4 text-left font-medium">Nome</th>
-                  <th className="py-1.5 pr-4 text-left font-medium">Matrícula</th>
-                  <th className="py-1.5 pr-4 text-left font-medium">Setor</th>
-                  <th className="py-1.5 text-left font-medium">Data</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((emp) => (
-                  <tr key={emp.id} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="py-1.5 pr-4 font-medium">{emp.name}</td>
-                    <td className="py-1.5 pr-4 text-muted-foreground">{emp.matricula}</td>
-                    <td className="py-1.5 pr-4">
-                      {emp.setor && (
-                        <Badge variant="outline" className="text-[10px]">
-                          {emp.setor}
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="py-1.5 text-muted-foreground">
-                      {emp.relevantDate ? formatDatePtBR(emp.relevantDate) : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 function QualificacoesHub() {
   const { data: employees } = useEmployees("ativo");
@@ -159,21 +87,10 @@ function QualificacoesHub() {
   );
   const [itCardStatus, setItCardStatus] = useState<"all" | "ok" | "pendente" | "vencido">("all");
 
-  // Drill-down state
-  type DrillDown = {
-    source: "training_bar" | "auth_donut" | "setor_bar";
-    trainingType?: string;
-    trainingCat?: string;
-    trainingStatus?: "ok" | "expiring" | "expired" | "none";
-    authLevel?: string;
-    drillSetor?: string;
-    label: string;
-    count: number;
-  };
-  const [drillDown, setDrillDown] = useState<DrillDown | null>(null);
-  const [drillDownAnchor, setDrillDownAnchor] = useState<"training" | "auth" | "setor" | null>(
-    null,
-  );
+  const navigate = useNavigate();
+
+  // Hover state para relevo no gráfico de treinamentos
+  const [hoveredCell, setHoveredCell] = useState<{ colIndex: number; barKey: string } | null>(null);
 
   // Active employees (hook already filters to "ativo")
   const activeEmployees = useMemo(() => employees ?? [], [employees]);
@@ -205,14 +122,12 @@ function QualificacoesHub() {
     (empId: string, type: string): boolean => {
       const formacao = trainingMap.get(`${empId}:${type}:formacao`);
       const reciclagem = trainingMap.get(`${empId}:${type}:reciclagem`);
-      const recStatus = reciclagem?.training_date
-        ? trainingExpiryStatus(reciclagem.training_date)
-        : "none";
-      if (recStatus === "ok" || recStatus === "expiring") return true;
-      const fStatus = formacao?.training_date
-        ? trainingExpiryStatus(formacao.training_date)
-        : "none";
-      return fStatus === "ok" || fStatus === "expiring";
+      // formação é perene; o que expira é a reciclagem bienal
+      const st = reciclagemStatus(
+        reciclagem?.training_date ?? null,
+        formacao?.training_date ?? null,
+      );
+      return st === "ok" || st === "expiring";
     },
     [trainingMap],
   );
@@ -221,7 +136,7 @@ function QualificacoesHub() {
   const overallCompliance = useMemo(() => {
     if (filteredEmployees.length === 0) return 0;
     const fullyCompliant = filteredEmployees.filter((emp) =>
-      TRAINING_TYPES.every((type) => isEmployeeCompliantForType(emp.id, type)),
+      requiredTrainings(emp.setor).every((type) => isEmployeeCompliantForType(emp.id, type)),
     ).length;
     return Math.round((fullyCompliant / filteredEmployees.length) * 100);
   }, [filteredEmployees, isEmployeeCompliantForType]);
@@ -231,37 +146,37 @@ function QualificacoesHub() {
     const cols = [
       {
         key: "nr10_basico:formacao",
-        label: "NR-10 B.\nFormação",
+        label: `${TRAINING_LABELS.nr10_basico}\nFormação`,
         type: "nr10_basico",
         cat: "formacao",
       },
       {
         key: "nr10_basico:reciclagem",
-        label: "NR-10 B.\nReciclagem",
+        label: `${TRAINING_LABELS.nr10_basico}\nReciclagem`,
         type: "nr10_basico",
         cat: "reciclagem",
       },
       {
         key: "nr10_areas_classificadas:formacao",
-        label: "Áreas C.\nFormação",
+        label: `${TRAINING_LABELS.nr10_areas_classificadas}\nFormação`,
         type: "nr10_areas_classificadas",
         cat: "formacao",
       },
       {
         key: "nr10_areas_classificadas:reciclagem",
-        label: "Áreas C.\nReciclagem",
+        label: `${TRAINING_LABELS.nr10_areas_classificadas}\nReciclagem`,
         type: "nr10_areas_classificadas",
         cat: "reciclagem",
       },
       {
         key: "sep:formacao",
-        label: "SEP\nFormação",
+        label: `${TRAINING_LABELS.sep}\nFormação`,
         type: "sep",
         cat: "formacao",
       },
       {
         key: "sep:reciclagem",
-        label: "SEP\nReciclagem",
+        label: `${TRAINING_LABELS.sep}\nReciclagem`,
         type: "sep",
         cat: "reciclagem",
       },
@@ -273,8 +188,19 @@ function QualificacoesHub() {
         expired = 0,
         none = 0;
       for (const emp of filteredEmployees) {
-        const t = trainingMap.get(`${emp.id}:${col.type}:${col.cat}`);
-        const s = t?.training_date ? trainingExpiryStatus(t.training_date) : "none";
+        // GER não tem requisito de Áreas Classificadas — excluir da coluna
+        if (!requiredTrainings(emp.setor).includes(col.type as typeof TRAINING_TYPES[number])) continue;
+        let s: "ok" | "expiring" | "expired" | "none";
+        if (col.cat === "formacao") {
+          // formação é perene — só OK ou Sem registro
+          const t = trainingMap.get(`${emp.id}:${col.type}:formacao`);
+          s = t?.training_date ? "ok" : "none";
+        } else {
+          // reciclagem bienal — usa formação como base quando não há reciclagem registrada
+          const rec = trainingMap.get(`${emp.id}:${col.type}:reciclagem`);
+          const form = trainingMap.get(`${emp.id}:${col.type}:formacao`);
+          s = reciclagemStatus(rec?.training_date ?? null, form?.training_date ?? null);
+        }
         if (s === "ok") ok++;
         else if (s === "expiring") expiring++;
         else if (s === "expired") expired++;
@@ -310,13 +236,14 @@ function QualificacoesHub() {
 
   // Horizontal bar chart — Conformidade por equipe
   const setorComplianceData = useMemo(() => {
-    const setores = ["ELE", "GER", "INS", "MEC", "ADM", "OPE", "OUT"];
+    const setores = ["ELE", "GER", "INS", "ADM"];
     return setores
       .map((setor) => {
         const empInSetor = activeEmployees.filter((e) => e.setor === setor);
         if (empInSetor.length === 0) return null;
+        const required = requiredTrainings(setor);
         const compliant = empInSetor.filter((emp) =>
-          TRAINING_TYPES.some((type) => isEmployeeCompliantForType(emp.id, type)),
+          required.every((type) => isEmployeeCompliantForType(emp.id, type)),
         ).length;
         const pct = Math.round((compliant / empInSetor.length) * 100);
         return { setor, compliant, total: empInSetor.length, pct };
@@ -348,6 +275,7 @@ function QualificacoesHub() {
     }[] = [];
     for (const t of trainings ?? []) {
       if (!filteredIds.has(t.employee_id) || !t.training_date) continue;
+      if (t.category === "formacao") continue; // formação é perene, nunca vence
       const s = trainingExpiryStatus(t.training_date);
       if (s === "expiring" || s === "expired") {
         const emp = filteredEmployees.find((e) => e.id === t.employee_id);
@@ -356,7 +284,7 @@ function QualificacoesHub() {
             empName: emp.name,
             type:
               TRAINING_LABELS[t.training_type as keyof typeof TRAINING_LABELS] ?? t.training_type,
-            cat: t.category === "formacao" ? "Formação" : "Reciclagem",
+            cat: "Reciclagem",
             date: t.training_date,
             status: s,
           });
@@ -374,13 +302,14 @@ function QualificacoesHub() {
   const validAuthsCount = authsInFilter.filter((a: any) => a.valid).length;
   const noAuthCount = filteredEmployees.length - authsInFilter.length;
 
-  // Conformidade NR-10 card — filtered by nr10CardType
+  // Conformidade de treinamentos card — filtered by nr10CardType
   const nr10CardCompliance = useMemo(() => {
     if (filteredEmployees.length === 0) return 0;
-    const typesToCheck = nr10CardType === "all" ? TRAINING_TYPES : [nr10CardType];
-    const compliant = filteredEmployees.filter((emp) =>
-      typesToCheck.every((type) => isEmployeeCompliantForType(emp.id, type)),
-    ).length;
+    const compliant = filteredEmployees.filter((emp) => {
+      const typesToCheck =
+        nr10CardType === "all" ? requiredTrainings(emp.setor) : [nr10CardType as typeof TRAINING_TYPES[number]];
+      return typesToCheck.every((type) => isEmployeeCompliantForType(emp.id, type));
+    }).length;
     return Math.round((compliant / filteredEmployees.length) * 100);
   }, [filteredEmployees, nr10CardType, isEmployeeCompliantForType]);
 
@@ -431,46 +360,6 @@ function QualificacoesHub() {
     return out.sort((a, b) => b.bloqueantes.length - a.bloqueantes.length);
   }, [filteredEmployees, authorizations, trainings, asos]);
 
-  // Drill-down employees
-  const drillDownEmployees = useMemo(() => {
-    if (!drillDown) return [];
-    if (
-      drillDown.source === "training_bar" &&
-      drillDown.trainingType &&
-      drillDown.trainingCat &&
-      drillDown.trainingStatus
-    ) {
-      return filteredEmployees
-        .filter((emp) => {
-          const t = trainingMap.get(`${emp.id}:${drillDown.trainingType}:${drillDown.trainingCat}`);
-          const s = t?.training_date ? trainingExpiryStatus(t.training_date) : "none";
-          return s === drillDown.trainingStatus;
-        })
-        .map((emp) => {
-          const t = trainingMap.get(`${emp.id}:${drillDown.trainingType}:${drillDown.trainingCat}`);
-          return { ...emp, relevantDate: t?.training_date ?? null };
-        });
-    }
-    if (drillDown.source === "auth_donut" && drillDown.authLevel) {
-      const authMap = new Map((authorizations ?? []).map((a: any) => [a.employee_id, a]));
-      return filteredEmployees
-        .filter((emp) => {
-          const auth = authMap.get(emp.id) as any;
-          if (drillDown.authLevel === "Sem auth.") return !auth;
-          return auth?.level === drillDown.authLevel;
-        })
-        .map((emp) => {
-          const auth = authMap.get(emp.id) as any;
-          return { ...emp, relevantDate: auth?.authorization_date ?? null };
-        });
-    }
-    if (drillDown.source === "setor_bar" && drillDown.drillSetor) {
-      return filteredEmployees
-        .filter((emp) => emp.setor === drillDown.drillSetor)
-        .map((emp) => ({ ...emp, relevantDate: null }));
-    }
-    return [];
-  }, [drillDown, filteredEmployees, trainingMap, authorizations]);
 
   return (
     <PageShell>
@@ -490,10 +379,13 @@ function QualificacoesHub() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todas</SelectItem>
-              {["ELE", "GER", "INS", "MEC", "ADM", "OPE", "OUT"].map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
+              {([
+                ["ELE", "ELE — Elétrica"],
+                ["INS", "INS — Instrumentação"],
+                ["GER", "GER — Geração de energia"],
+                ["ADM", "ADM — Administrativo"],
+              ] as [string, string][]).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -528,7 +420,7 @@ function QualificacoesHub() {
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                  Conformidade NR-10
+                  Conformidade de treinamentos
                 </p>
                 <p
                   className={`text-3xl font-bold mt-1 ${
@@ -563,9 +455,9 @@ function QualificacoesHub() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
-                <SelectItem value="nr10_basico">NR-10 Básico</SelectItem>
-                <SelectItem value="nr10_areas_classificadas">Áreas Class.</SelectItem>
-                <SelectItem value="sep">SEP</SelectItem>
+                {TRAINING_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>{TRAINING_LABELS[t]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </CardContent>
@@ -732,132 +624,96 @@ function QualificacoesHub() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Legenda clicável */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 justify-center">
+            {(["ok", "expiring", "expired", "none"] as const).map((s) => {
+              const labels: Record<string, string> = { ok: "OK", expiring: "Vencendo em 90 dias", expired: "Vencido", none: "Sem registro" };
+              const isHov = hoveredCell?.barKey === s && hoveredCell.colIndex === -1;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  className="flex items-center gap-1.5 text-[10px] rounded px-1.5 py-0.5 transition-all hover:bg-muted/50 cursor-pointer"
+                  style={{ fontWeight: hoveredCell?.colIndex === -1 && hoveredCell?.barKey === s ? 700 : undefined }}
+                  onMouseEnter={() => setHoveredCell({ colIndex: -1, barKey: s })}
+                  onMouseLeave={() => setHoveredCell(null)}
+                  onClick={() => navigate({ to: "/qualificacoes/nr10", search: { tipo: "all", status: s, setor: setorFilter === "todos" ? "all" : setorFilter } })}
+                  title={`Ver colaboradores com status "${labels[s]}" em capacitações NR-10`}
+                >
+                  <span className="h-2.5 w-2.5 rounded-sm inline-block" style={{ background: COLORS[s], boxShadow: isHov ? `0 0 0 2px ${COLORS[s]}55` : undefined }} />
+                  {labels[s]}
+                </button>
+              );
+            })}
+          </div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart
               data={trainingComplianceData}
               margin={{ top: 4, right: 16, left: 0, bottom: 32 }}
+              onMouseLeave={() => setHoveredCell(null)}
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} />
+              <XAxis
+                dataKey="name"
+                interval={0}
+                tick={(props: any) => {
+                  const { x, y, payload } = props;
+                  const entry = trainingComplianceData.find((d) => d.name === payload.value);
+                  const lines: string[] = payload.value.split("\n");
+                  return (
+                    <g
+                      transform={`translate(${x},${y})`}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => entry && navigate({ to: "/qualificacoes/nr10", search: { tipo: entry.type, status: "all", setor: setorFilter === "todos" ? "all" : setorFilter } })}
+                    >
+                      {lines.map((line: string, i: number) => (
+                        <text key={i} x={0} y={0} dy={i * 11 + 10} textAnchor="middle" fill="#6b7280" fontSize={10}>
+                          {line}
+                        </text>
+                      ))}
+                    </g>
+                  );
+                }}
+              />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
               <Tooltip
-                formatter={(value, name) => [
-                  value,
-                  name === "ok"
-                    ? "OK"
-                    : name === "expiring"
-                      ? "Vencendo"
-                      : name === "expired"
-                        ? "Vencido"
-                        : "Sem registro",
-                ]}
+                formatter={(value, name) => [value, name === "ok" ? "OK" : name === "expiring" ? "Vencendo" : name === "expired" ? "Vencido" : "Sem registro"]}
               />
-              <Legend
-                formatter={(value) =>
-                  value === "ok"
-                    ? "OK"
-                    : value === "expiring"
-                      ? "Vencendo em 90 dias"
-                      : value === "expired"
-                        ? "Vencido"
-                        : "Sem registro"
-                }
-                wrapperStyle={{ fontSize: 10 }}
-              />
-              <Bar
-                dataKey="ok"
-                stackId="a"
-                fill={COLORS.ok}
-                name="ok"
-                radius={[0, 0, 0, 0]}
-                style={{ cursor: "pointer" }}
-                onClick={(data: any) => {
-                  if (data.ok === 0) return;
-                  setDrillDown({
-                    source: "training_bar",
-                    trainingType: data.type,
-                    trainingCat: data.cat,
-                    trainingStatus: "ok",
-                    label: `${data.name.replace("\n", " ")} — OK`,
-                    count: data.ok,
-                  });
-                  setDrillDownAnchor("training");
-                }}
-              />
-              <Bar
-                dataKey="expiring"
-                stackId="a"
-                fill={COLORS.expiring}
-                name="expiring"
-                style={{ cursor: "pointer" }}
-                onClick={(data: any) => {
-                  if (data.expiring === 0) return;
-                  setDrillDown({
-                    source: "training_bar",
-                    trainingType: data.type,
-                    trainingCat: data.cat,
-                    trainingStatus: "expiring",
-                    label: `${data.name.replace("\n", " ")} — Vencendo`,
-                    count: data.expiring,
-                  });
-                  setDrillDownAnchor("training");
-                }}
-              />
-              <Bar
-                dataKey="expired"
-                stackId="a"
-                fill={COLORS.expired}
-                name="expired"
-                style={{ cursor: "pointer" }}
-                onClick={(data: any) => {
-                  if (data.expired === 0) return;
-                  setDrillDown({
-                    source: "training_bar",
-                    trainingType: data.type,
-                    trainingCat: data.cat,
-                    trainingStatus: "expired",
-                    label: `${data.name.replace("\n", " ")} — Vencido`,
-                    count: data.expired,
-                  });
-                  setDrillDownAnchor("training");
-                }}
-              />
-              <Bar
-                dataKey="none"
-                stackId="a"
-                fill={COLORS.none}
-                name="none"
-                radius={[4, 4, 0, 0]}
-                style={{ cursor: "pointer" }}
-                onClick={(data: any) => {
-                  if (data.none === 0) return;
-                  setDrillDown({
-                    source: "training_bar",
-                    trainingType: data.type,
-                    trainingCat: data.cat,
-                    trainingStatus: "none",
-                    label: `${data.name.replace("\n", " ")} — Sem registro`,
-                    count: data.none,
-                  });
-                  setDrillDownAnchor("training");
-                }}
-              />
+              {(["ok", "expiring", "expired", "none"] as const).map((barKey, barIdx) => (
+                <Bar
+                  key={barKey}
+                  dataKey={barKey}
+                  stackId="a"
+                  fill={COLORS[barKey]}
+                  name={barKey}
+                  radius={barKey === "none" ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                  style={{ cursor: "pointer" }}
+                  onMouseEnter={(_: any, colIndex: number) => setHoveredCell({ colIndex, barKey })}
+                  onClick={(data: any, colIndex: number) =>
+                    navigate({ to: "/qualificacoes/nr10", search: { tipo: data.type, status: barKey, setor: setorFilter === "todos" ? "all" : setorFilter } })
+                  }
+                >
+                  {trainingComplianceData.map((_, colIndex) => {
+                    const isHovered = hoveredCell?.colIndex === colIndex && hoveredCell?.barKey === barKey;
+                    return (
+                      <Cell
+                        key={colIndex}
+                        fill={COLORS[barKey]}
+                        style={isHovered
+                          ? { filter: "brightness(1.18) drop-shadow(0 -3px 6px rgba(0,0,0,0.22))", outline: "none" }
+                          : undefined}
+                      />
+                    );
+                  })}
+                </Bar>
+              ))}
             </BarChart>
           </ResponsiveContainer>
+          <p className="text-[10px] text-muted-foreground text-center mt-1">
+            Clique em um segmento para filtrar por status · Clique no nome do curso para ver todos · Clique na legenda para filtrar por status em todos os cursos
+          </p>
         </CardContent>
       </Card>
-
-      {/* Drill-down panel for training bar */}
-      {drillDownAnchor === "training" && (
-        <DrillDownPanel
-          drillDown={drillDown}
-          employees={drillDownEmployees as any}
-          onClose={() => {
-            setDrillDown(null);
-            setDrillDownAnchor(null);
-          }}
-        />
-      )}
 
       {/* Row 3: Donut + Setor bar */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-5 mb-6">
@@ -880,15 +736,9 @@ function QualificacoesHub() {
                   label={({ name, value }) => `${name}: ${value}`}
                   labelLine={false}
                   cursor="pointer"
-                  onClick={(data: any) => {
-                    setDrillDown({
-                      source: "auth_donut",
-                      authLevel: data.name,
-                      label: `Nível ${data.name}`,
-                      count: data.value,
-                    });
-                    setDrillDownAnchor("auth");
-                  }}
+                  onClick={(data: any) =>
+                    navigate({ to: "/qualificacoes/autorizacoes", search: { level: data.name, setor: "todos", valida: "all", semAuth: "all" } })
+                  }
                 >
                   {authLevelData.map((entry) => (
                     <Cell
@@ -921,7 +771,7 @@ function QualificacoesHub() {
         {/* Horizontal bar — Conformidade por equipe */}
         <Card className="md:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Conformidade NR-10 por equipe</CardTitle>
+            <CardTitle className="text-sm font-semibold">Conformidade de treinamentos por equipe</CardTitle>
           </CardHeader>
           <CardContent>
             {setorComplianceData.length === 0 ? (
@@ -934,15 +784,8 @@ function QualificacoesHub() {
                   <div
                     key={d.setor}
                     className="flex items-center gap-3 text-xs cursor-pointer rounded px-1 hover:bg-muted/40 transition-colors"
-                    onClick={() => {
-                      setDrillDown({
-                        source: "setor_bar",
-                        drillSetor: d.setor,
-                        label: `Equipe ${d.setor} — todos os colaboradores`,
-                        count: d.total,
-                      });
-                      setDrillDownAnchor("setor");
-                    }}
+                    title={`Ver capacitações da equipe ${d.setor}`}
+                    onClick={() => navigate({ to: "/qualificacoes/nr10", search: { tipo: "all", status: "all", setor: d.setor } })}
                   >
                     <span className="w-8 font-medium text-muted-foreground">{d.setor}</span>
                     <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
@@ -969,29 +812,6 @@ function QualificacoesHub() {
         </Card>
       </div>
 
-      {/* Drill-down panel for auth donut */}
-      {drillDownAnchor === "auth" && (
-        <DrillDownPanel
-          drillDown={drillDown}
-          employees={drillDownEmployees as any}
-          onClose={() => {
-            setDrillDown(null);
-            setDrillDownAnchor(null);
-          }}
-        />
-      )}
-
-      {/* Drill-down panel for setor bar */}
-      {drillDownAnchor === "setor" && (
-        <DrillDownPanel
-          drillDown={drillDown}
-          employees={drillDownEmployees as any}
-          onClose={() => {
-            setDrillDown(null);
-            setDrillDownAnchor(null);
-          }}
-        />
-      )}
 
       {/* Row 4: IT status + Alerts */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
@@ -1005,32 +825,22 @@ function QualificacoesHub() {
           <CardContent>
             <div className="space-y-3">
               {[
-                {
-                  label: "Concluídas (OK)",
-                  count: itStatusCounts.ok,
-                  color: "bg-emerald-500",
-                },
-                {
-                  label: "Pendentes",
-                  count: itStatusCounts.pendente,
-                  color: "bg-amber-500",
-                },
-                {
-                  label: "Vencidas",
-                  count: itStatusCounts.vencido,
-                  color: "bg-destructive",
-                },
+                { label: "Concluídas (OK)", count: itStatusCounts.ok, color: "bg-emerald-500", status: "ok" },
+                { label: "Pendentes", count: itStatusCounts.pendente, color: "bg-amber-500", status: "pendente" },
+                { label: "Vencidas", count: itStatusCounts.vencido, color: "bg-destructive", status: "vencido" },
               ].map((item) => {
                 const total = itStatusCounts.ok + itStatusCounts.pendente + itStatusCounts.vencido;
                 const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
                 return (
-                  <div key={item.label} className="flex items-center gap-3 text-xs">
+                  <div
+                    key={item.label}
+                    className="flex items-center gap-3 text-xs cursor-pointer rounded px-1 py-0.5 hover:bg-muted/40 transition-colors"
+                    title={`Ver ITs com status "${item.label}"`}
+                    onClick={() => navigate({ to: "/qualificacoes/instrucoes", search: { status: item.status, setor: "all", it: "all", view: "matrix" } })}
+                  >
                     <span className="w-32 text-muted-foreground">{item.label}</span>
                     <div className="flex-1 bg-muted rounded-full h-2.5 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${item.color}`}
-                        style={{ width: `${pct}%` }}
-                      />
+                      <div className={`h-full rounded-full ${item.color}`} style={{ width: `${pct}%` }} />
                     </div>
                     <span className="w-8 text-right font-semibold">{item.count}</span>
                   </div>
