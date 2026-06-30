@@ -257,7 +257,7 @@ function RtiImportarPage() {
   const upsertReport = useUpsertRtiReport();
 
   // Metadados do relatório
-  const [titulo, setTitulo] = useState(`RTI ${new Date().getFullYear()}`);
+  const [titulo, setTitulo] = useState("");
   const [empresaAuditora, setEmpresaAuditora] = useState("");
   const [responsavelAuditoria, setResponsavelAuditoria] = useState("");
   const [responsavelPlano, setResponsavelPlano] = useState("");

@@ -31,7 +31,7 @@ type NavGroup = {
 
 function SidebarSubLink({ to, label }: SubItem) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const active = pathname === to || pathname.startsWith(to + "/");
+  const active = pathname === to;
   return (
     <Link
       to={to}
