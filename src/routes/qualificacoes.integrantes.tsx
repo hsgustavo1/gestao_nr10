@@ -177,7 +177,6 @@ function ColaboradoresPage() {
               <th className="py-2.5 px-3 font-medium">Matrícula</th>
               <th className="py-2.5 px-3 font-medium">Equipe</th>
               <th className="py-2.5 px-3 font-medium">Função</th>
-              <th className="py-2.5 px-3 font-medium">Classificação</th>
               <th className="py-2.5 px-3 font-medium">Status</th>
               {canEdit && <th className="py-2.5 px-3 font-medium">Ações</th>}
             </tr>
@@ -221,9 +220,6 @@ function ColaboradoresPage() {
                       </td>
                       <td className="py-3 px-3 text-muted-foreground text-xs max-w-[220px] truncate">
                         {emp.funcao ?? "—"}
-                      </td>
-                      <td className="py-3 px-3 text-muted-foreground text-xs">
-                        {emp.classificacao ?? "—"}
                       </td>
                       <td className="py-3 px-3">
                         <span

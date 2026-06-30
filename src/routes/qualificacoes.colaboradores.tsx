@@ -121,6 +121,7 @@ function ColaboradoresPage() {
               <th className="py-2 pr-4 font-medium">Nome</th>
               <th className="py-2 pr-4 font-medium">Matrícula</th>
               <th className="py-2 pr-4 font-medium">Setor</th>
+              <th className="py-2 pr-4 font-medium">Classificação</th>
               <th className="py-2 pr-4 font-medium">Função</th>
               <th className="py-2 pr-4 font-medium">Situação</th>
               <th className="py-2 pr-4 font-medium">Escolaridade</th>
@@ -157,6 +158,7 @@ function ColaboradoresPage() {
                     <td className="py-3 pr-4">
                       {emp.setor && <Badge variant="outline" title={SETOR_FULL_NAMES[emp.setor] ?? emp.setor}>{emp.setor}</Badge>}
                     </td>
+                    <td className="py-3 pr-4 text-muted-foreground">{emp.classificacao ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground truncate max-w-[200px]">
                       {emp.funcao ?? "—"}
                     </td>
