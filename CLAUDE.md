@@ -33,7 +33,8 @@ Este relatório foi gerado pelo graphify e contém o mapa estrutural completo do
 - `useAuth()` — 96 arestas (afeta o sistema inteiro)
 - `cn()` — 80 arestas (utilitário de classes CSS)
 - `Button` — 54 arestas
-- `PageShell()` — 41 arestas (novo god node — layout global)
+- `PageShell()` — 41 arestas (layout global — inclui AppSidebar)
+- `AppSidebar` — novo god node; grupos colapsáveis gateados por entitlement; mudar afeta navegação de todo o app
 - `formatDatePtBR()` — 37 arestas
 
 ## Stack
@@ -44,12 +45,35 @@ Este relatório foi gerado pelo graphify e contém o mapa estrutural completo do
 - **Padrão:** `foo.ts` (tipos/lógica pura) + `foo-queries.ts` (React Query + Supabase)
 - **Shared lib:** `@gestao/campo-core` (tipos e helpers compartilhados entre app e PWA)
 
+## Layout — Sidebar + Topbar (desde 2026-06-29)
+
+- **Topbar:** 52px, `brand-topbar` (pinho), sticky z-40. Contém: hambúrguer mobile | logo mark + "Conforme." | divisor + OrgSwitcher | VencimentosBell + UserMenu.
+- **Sidebar desktop:** `AppSidebar` — 200px, branco, sticky `top-[52px]`, `hidden lg:flex`. Grupos colapsáveis (LOTO, NR-10, RTI, Inspeções, Pessoas + EPIs single + Configurações). Abre automaticamente quando rota ativa está dentro do grupo; sub-itens usam match exato (`pathname === to`).
+- **Mobile:** Sheet drawer no topbar (hambúrguer), mesmo conteúdo em tema pinho escuro.
+- Avatar de iniciais: `rounded-md` (não `rounded-full`).
+- Redirect pós-login (`/`): não-platform-admin → `/rti` (ou `/qualificacoes`); platform admin fica na vitrine.
+
 ## Convenções
 
 - Migrations: aplicadas via **MCP do Supabase** (`apply_migration` para DDL, `execute_sql` para checagens/seed) no projeto `fumwovtzyhxrjhkjzujs`. Manter também o arquivo `.sql` versionado em `supabase/migrations/`. (Antes era manual via SQL Editor — mudou em 2026-06-19.)
 - `types.ts` atualizado à mão
 - Commits direto na `main`
 - Erros tsc pré-existentes são conhecidos — não reportar como bugs novos
+
+## Schema Multi-Tenant — restrições por org (desde 2026-06-29)
+
+Unique constraints globais foram migradas para **por org** para permitir dados homônimos entre clientes:
+
+| Tabela | Antes | Depois |
+|---|---|---|
+| `employees` | `UNIQUE(matricula)` | `UNIQUE(matricula, org_id)` |
+| `work_instructions` | `UNIQUE(code)` | `UNIQUE(code, org_id)` |
+
+`batchImportQualificacoes` **deve** receber `org_id` injetado em todos os payloads (employees, nr10Trainings, authorizations, instructions, itTrainings). A rota de carga usa `auth.currentOrg?.id` para isso.
+
+### RLS Pessoas — padrão de acesso consultor
+
+Tabelas `employees`, `nr10_trainings`, `work_authorizations`, `it_trainings`, `work_instructions` têm políticas `*_org_*` que aceitam `fn_org_is_manager(uid, org_id)` além de `org_role_at_least(uid, org_id, 'member')`. Isso permite que o consultor (que gerencia via `managed_by_org_id`) opere nas orgs clientes sem ser membro direto.
 
 ## Design System — Conforme / Gestão NR-10
 
