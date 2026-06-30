@@ -26,15 +26,26 @@ dois itens abaixo são produto, não infraestrutura. Ordem deliberada: dossiê
 primeiro porque o usuário não consegue validar o PWA agora (sem acesso a
 teste de campo no momento).
 
-1. ⏳ **Dossiê de auditoria/conformidade (PDF exportável) — EM FILA, próximo a
-   atacar.** Reaproveita o agregador já existente (`ComplianceReport` /
-   `snapshotPayloadFrom()`, comunidade "Compliance Aggregation" no
-   graphify-out — EPI, inspeções, documentos). Hoje esse dado só é consumido
-   internamente (dashboard); falta uma exportação apresentável a terceiros
-   (auditor, diretoria do cliente, fiscal). Gerado sob demanda, autenticado,
-   sem token público — não depende da vitrine sem login (item adiado
-   separadamente) nem da conclui-la antes. Roda na branch `staging` antes de
-   ir pra `main`/produção.
+1. 📝 **Dossiê de auditoria/conformidade — SPEC PRONTA, próximo a atacar.**
+   **Correção importante (descoberta ao especificar):** o dossiê **já existe**
+   em `/relatorio/dossie` (`src/routes/relatorio.dossie.tsx`, linkado no menu
+   NR-10) — 5 seções (Prontuário, Aptidão/Treinamentos, Inspeções, EPIs, Plano
+   de ação RTI), já multi-tenant, já exporta via `window.print()`. **Não é
+   trabalho do zero** — é completar um gap: falta a seção **Incidentes
+   Elétricos** + ponderar incidentes no índice global de conformidade
+   (resolvido = a favor, aberto = contra, peso por gravidade). Spec completa:
+   [`2026-06-30-dossie-fiscalizacao-completo-design.md`](../specs/2026-06-30-dossie-fiscalizacao-completo-design.md).
+   v1 mostra status real (conformes + NCs/pendências com prazo/responsável)
+   — decisão consciente de não usar o filtro "só conformes" agora.
+   **LOTO ficou fora desta fatia** (decisão 2026-06-30): tecnicamente seria o
+   mesmo padrão (seção condicional a `entitlement "loto"`), mas o módulo LOTO
+   segue sob a desvinculação pendente do @lovable.dev — evitar mexer nele até
+   essa desvinculação fechar. Revisitar depois, registrado como P2 na spec.
+   - ⏳ **Futuro — "modo auditoria" (só conformes):** variante do mesmo dossiê
+     que esconde NCs/pendências, espelhando a filosofia da vitrine sem login
+     (nunca mostra não-conformidade). Adiado deliberadamente (2026-06-30) pra
+     não inflar o escopo da v1; revisitar depois que a v1 (status real) estiver
+     validada em uso.
 2. ⏳ **Captura de achado em campo — reordenar UX (PWA) — DEPOIS do item 1,
    só quando houver janela pra testar em campo real.** Hoje
    (`campo-pwa/src/pages/PointCapture.tsx`) o achado nasce desacoplado da
