@@ -10,6 +10,12 @@ import { useInspections } from "@/lib/inspecoes-queries";
 import { useEPIs, useEPITests } from "@/lib/epis-queries";
 import { useASOs } from "@/lib/asos-queries";
 import { useAllRtiNcs } from "@/lib/rti-queries";
+import { useIncidents } from "@/lib/incidentes-queries";
+import {
+  INCIDENT_GRAVIDADE_LABELS,
+  INCIDENT_STATUS_LABELS,
+  INCIDENT_TIPO_LABELS,
+} from "@/lib/incidentes";
 import {
   TRAINING_LABELS,
   TRAINING_TYPES,
@@ -83,6 +89,7 @@ function DossiePage() {
   const { data: epiTests = [] } = useEPITests();
   const { data: asos = [] } = useASOs();
   const { data: rtiNcs = [] } = useAllRtiNcs();
+  const { data: incidents = [] } = useIncidents();
 
   const isLoading = l0 || l1 || l2 || l3 || l4 || l5 || l6;
 
@@ -167,6 +174,13 @@ function DossiePage() {
     for (const nc of rtiNcs) byStatus[nc.status as RtiNcStatus]++;
     return { total: rtiNcs.length, byStatus };
   }, [rtiNcs]);
+
+  // Resumo de incidentes elétricos
+  const incidentesResumo = useMemo(() => {
+    const byStatus: Record<string, number> = { aberto: 0, em_investigacao: 0, concluido: 0 };
+    for (const i of incidents) byStatus[i.status] = (byStatus[i.status] ?? 0) + 1;
+    return { total: incidents.length, byStatus };
+  }, [incidents]);
 
   const hoje = new Date();
 
@@ -527,6 +541,73 @@ function DossiePage() {
                   <span className="text-muted-foreground text-xs">concluídas</span>
                 </div>
               </div>
+            )}
+          </Section>
+
+          {/* 6. Incidentes elétricos */}
+          <Section
+            title="6. Incidentes e quase-acidentes elétricos"
+            subtitle="Registro de ocorrências e tratamento (investigação/conclusão)."
+          >
+            {incidentesResumo.total === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhum incidente registrado.</p>
+            ) : (
+              <>
+                <div className="flex gap-6 text-sm flex-wrap mb-3">
+                  <div>
+                    <span className="text-2xl font-bold tabular-nums">
+                      {incidentesResumo.total}
+                    </span>{" "}
+                    <span className="text-muted-foreground text-xs">no total</span>
+                  </div>
+                  {Object.entries(incidentesResumo.byStatus).map(([status, count]) => (
+                    <div key={status}>
+                      <span
+                        className={`text-2xl font-bold tabular-nums ${status === "concluido" ? "text-emerald-600" : status === "em_investigacao" ? "text-amber-600" : "text-red-600"}`}
+                      >
+                        {count}
+                      </span>{" "}
+                      <span className="text-muted-foreground text-xs">
+                        {INCIDENT_STATUS_LABELS[status as keyof typeof INCIDENT_STATUS_LABELS]}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b text-muted-foreground text-left">
+                      <th className="py-1.5 pr-3 font-medium">Data</th>
+                      <th className="py-1.5 pr-3 font-medium">Tipo</th>
+                      <th className="py-1.5 pr-3 font-medium">Setor/Local</th>
+                      <th className="py-1.5 pr-3 font-medium">Gravidade</th>
+                      <th className="py-1.5 font-medium">Situação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {incidents.map((i) => (
+                      <tr key={i.id} className="border-b">
+                        <td className="py-1.5 pr-3 whitespace-nowrap">
+                          {formatDatePtBR(i.occurred_at)}
+                        </td>
+                        <td className="py-1.5 pr-3">{INCIDENT_TIPO_LABELS[i.tipo]}</td>
+                        <td className="py-1.5 pr-3 text-muted-foreground">
+                          {i.setor ?? i.local ?? "—"}
+                        </td>
+                        <td
+                          className={`py-1.5 pr-3 ${i.gravidade === "fatal" || i.gravidade === "grave" ? "text-red-600 font-semibold" : i.gravidade === "moderada" ? "text-amber-600" : ""}`}
+                        >
+                          {INCIDENT_GRAVIDADE_LABELS[i.gravidade]}
+                        </td>
+                        <td
+                          className={`py-1.5 font-semibold ${i.status === "concluido" ? "text-emerald-600" : i.status === "em_investigacao" ? "text-amber-600" : "text-red-600"}`}
+                        >
+                          {INCIDENT_STATUS_LABELS[i.status]}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
             )}
           </Section>
 

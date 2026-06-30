@@ -4,6 +4,7 @@ import { useNR10Documents } from "./prontuario-queries";
 import { useInspections, useOpenActions } from "./inspecoes-queries";
 import { useEPIs, useEPITests } from "./epis-queries";
 import { useASOs } from "./asos-queries";
+import { useIncidents } from "./incidentes-queries";
 import {
   trainingExpiryStatus,
   TRAINING_LABELS,
@@ -14,6 +15,36 @@ import { prontuarioCompleteness, docExpiryStatus } from "./prontuario";
 import { INSPECTION_TYPES, INSPECTION_TYPE_SHORT, type InspectionType } from "./inspecoes";
 import { epiTestStatus, lastTestByEpi } from "./epis";
 import { asoStatus, latestASOByEmployee } from "./asos";
+import type { IncidentGravidade } from "./incidentes";
+
+// Peso por gravidade na ponderação do índice de conformidade: incidente sem
+// lesão pesa o mínimo, fatal pesa o máximo — escala 1 a 4 sobre 5 níveis.
+const INCIDENT_GRAVIDADE_WEIGHT: Record<IncidentGravidade, number> = {
+  sem_lesao: 1,
+  leve: 1,
+  moderada: 2,
+  grave: 3,
+  fatal: 4,
+};
+
+/**
+ * Sem incidente registrado = eixo limpo (100). Com incidentes, cada um
+ * contribui com peso conforme gravidade: status "concluido" conta o peso a
+ * favor, "aberto"/"em_investigacao" conta o peso contra.
+ */
+export function incidentCompliancePercent(
+  incidents: { gravidade: IncidentGravidade; status: string }[],
+): number {
+  if (incidents.length === 0) return 100;
+  let favor = 0;
+  let total = 0;
+  for (const i of incidents) {
+    const peso = INCIDENT_GRAVIDADE_WEIGHT[i.gravidade];
+    total += peso;
+    if (i.status === "concluido") favor += peso;
+  }
+  return pct(favor, total);
+}
 
 // ── Relatório de conformidade reutilizável ──────────────────────────────────
 // O mesmo cálculo alimenta: /relatorio, o dossiê de fiscalização e os
@@ -52,6 +83,9 @@ export type ComplianceReport = {
   epiPercent: number | null;
   asoOk: number;
   asoPercent: number;
+  incidents: number;
+  incidentsOpen: number;
+  incidentPercent: number;
 };
 
 export function useComplianceReport() {
@@ -64,8 +98,9 @@ export function useComplianceReport() {
   const { data: epis = [], isLoading: l7 } = useEPIs();
   const { data: epiTests = [], isLoading: l8 } = useEPITests();
   const { data: asos = [], isLoading: l9 } = useASOs();
+  const { data: incidents = [], isLoading: l10 } = useIncidents();
 
-  const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9;
+  const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10;
 
   const report = useMemo<ComplianceReport | null>(() => {
     if (isLoading) return null;
@@ -136,6 +171,11 @@ export function useComplianceReport() {
     }
     const asoPercent = pct(asoOk, employees.length);
 
+    // Incidentes: resolvido (concluido) conta a favor, aberto/em_investigacao
+    // conta contra, ponderado por gravidade. Sem incidente = eixo limpo (100).
+    const incidentsOpen = incidents.filter((i) => i.status !== "concluido").length;
+    const incidentPercent = incidentCompliancePercent(incidents);
+
     // Índice global: média dos módulos com dados
     const parts: number[] = [];
     const basico = trainingRows.find((r) => r.type === "nr10_basico");
@@ -147,6 +187,7 @@ export function useComplianceReport() {
     parts.push(prontuario.percent);
     if (inspPercent !== null) parts.push(inspPercent);
     if (epiPercent !== null) parts.push(epiPercent);
+    parts.push(incidentPercent);
     const overall =
       parts.length > 0 ? Math.round(parts.reduce((s, p) => s + p, 0) / parts.length) : 0;
 
@@ -165,6 +206,9 @@ export function useComplianceReport() {
       epiPercent,
       asoOk,
       asoPercent,
+      incidents: incidents.length,
+      incidentsOpen,
+      incidentPercent,
     };
   }, [
     isLoading,
@@ -177,6 +221,7 @@ export function useComplianceReport() {
     epis,
     epiTests,
     asos,
+    incidents,
   ]);
 
   return { report, isLoading };
@@ -195,6 +240,7 @@ export function snapshotPayloadFrom(report: ComplianceReport) {
     epis: report.epiPercent,
     colaboradores: report.employees,
     acoes_abertas: report.openActions,
+    incidentes: report.incidentPercent,
   };
 }
 

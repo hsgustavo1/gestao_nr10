@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { pct, snapshotPayloadFrom, type ComplianceReport } from "../conformidade";
+import {
+  incidentCompliancePercent,
+  pct,
+  snapshotPayloadFrom,
+  type ComplianceReport,
+} from "../conformidade";
 import { prontuarioCompleteness } from "../prontuario";
 
 // O índice de conformidade e o payload de snapshot alimentam o /relatorio, o
@@ -41,6 +46,9 @@ describe("snapshotPayloadFrom", () => {
     epiPercent: null,
     asoOk: 9,
     asoPercent: 75,
+    incidents: 0,
+    incidentsOpen: 0,
+    incidentPercent: 100,
     ...over,
   });
 
@@ -67,6 +75,45 @@ describe("snapshotPayloadFrom", () => {
       epis: null,
       colaboradores: 12,
       acoes_abertas: 3,
+      incidentes: 100,
     });
+  });
+});
+
+describe("incidentCompliancePercent", () => {
+  it("sem incidentes → 100 (eixo limpo)", () => {
+    expect(incidentCompliancePercent([])).toBe(100);
+  });
+
+  it("todos resolvidos → 100, independente da gravidade", () => {
+    expect(
+      incidentCompliancePercent([
+        { gravidade: "fatal", status: "concluido" },
+        { gravidade: "leve", status: "concluido" },
+      ]),
+    ).toBe(100);
+  });
+
+  it("todos abertos → 0", () => {
+    expect(
+      incidentCompliancePercent([
+        { gravidade: "leve", status: "aberto" },
+        { gravidade: "moderada", status: "em_investigacao" },
+      ]),
+    ).toBe(0);
+  });
+
+  it("incidente grave aberto pesa mais que um leve aberto", () => {
+    // 1 leve aberto (peso 1) entre 1 leve resolvido (peso 1) + esse aberto: 50%
+    const comLeve = incidentCompliancePercent([
+      { gravidade: "leve", status: "concluido" },
+      { gravidade: "leve", status: "aberto" },
+    ]);
+    // mesma proporção de itens, mas o aberto agora é grave (peso 3) — penaliza mais
+    const comGrave = incidentCompliancePercent([
+      { gravidade: "leve", status: "concluido" },
+      { gravidade: "grave", status: "aberto" },
+    ]);
+    expect(comGrave).toBeLessThan(comLeve);
   });
 });
