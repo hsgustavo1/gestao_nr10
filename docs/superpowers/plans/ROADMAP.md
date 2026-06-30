@@ -1,7 +1,50 @@
 # ROADMAP — gestão_nr10 (handoff entre sessões)
 
 > Documento de continuidade. Permite retomar o trabalho numa nova sessão de IA
-> sem o contexto desta. Última atualização: 2026-06-21.
+> sem o contexto desta. Última atualização: 2026-06-30.
+
+## ⚠️ Deploy — correção (2026-06-30)
+
+App principal **e** PWA estão os dois no **Vercel** (projetos `gestao-nr10` e
+`campo-pwa`). A decisão "app fica na Cloudflare" registrada abaixo neste
+documento (seções "Decisões já tomadas" item 4 e "Fases posteriores" item
+"App no Vercel") **está desatualizada** — a migração já aconteceu em
+2026-06-22 (commit `5997c1b feat(deploy): migra app principal para Vercel`).
+`wrangler.jsonc` e `@cloudflare/vite-plugin` em `package.json` são resíduo do
+setup antigo, não usados no build (`vite.config.ts` não referencia o plugin).
+
+**Fluxo de deploy agora (2026-06-30):** branch fixa `staging` antes da `main`.
+Commits vão para `staging` → Vercel gera preview estável por branch nos dois
+projetos → validação → merge `staging → main` → produção. Ver CLAUDE.md seção
+"Deploy e fluxo de staging".
+
+## 🎯 Prioridade atual (2026-06-30) — diferencial de produto
+
+Definido em sessão de análise estratégica (duas perspectivas: usuário em toda
+a cadeia + fundador). Sem nada crítico pendente na fundação multi-tenant — os
+dois itens abaixo são produto, não infraestrutura. Ordem deliberada: dossiê
+primeiro porque o usuário não consegue validar o PWA agora (sem acesso a
+teste de campo no momento).
+
+1. ⏳ **Dossiê de auditoria/conformidade (PDF exportável) — EM FILA, próximo a
+   atacar.** Reaproveita o agregador já existente (`ComplianceReport` /
+   `snapshotPayloadFrom()`, comunidade "Compliance Aggregation" no
+   graphify-out — EPI, inspeções, documentos). Hoje esse dado só é consumido
+   internamente (dashboard); falta uma exportação apresentável a terceiros
+   (auditor, diretoria do cliente, fiscal). Gerado sob demanda, autenticado,
+   sem token público — não depende da vitrine sem login (item adiado
+   separadamente) nem da conclui-la antes. Roda na branch `staging` antes de
+   ir pra `main`/produção.
+2. ⏳ **Captura de achado em campo — reordenar UX (PWA) — DEPOIS do item 1,
+   só quando houver janela pra testar em campo real.** Hoje
+   (`campo-pwa/src/pages/PointCapture.tsx`) o achado nasce desacoplado da
+   foto: o app só pergunta "qual o problema?" quando o técnico tenta *sair*
+   do ponto com foto solta, não no momento de tirar a foto. Selecionar um
+   `modo_falha` já pré-preenche descrição/prioridade/recomendação (bom,
+   manter), mas isso devia acontecer logo após o disparo da câmera, não como
+   gate de saída. Mudança de UI/interação, não de arquitetura (pipeline
+   achado→RTI já pronto). **Bloqueado por:** precisa de teste em campo real
+   (PWA/offline/câmera) antes de validar — não testar só via preview web.
 
 ## ⏱️ O QUE FALTA FAZER AGORA (checklist ordenado)
 
@@ -77,8 +120,8 @@ camada de revenda entra já no MVP.
 2. Isolamento real é no **banco (RLS)**, não no front. Front é conveniência.
 3. Seam de autorização = funções `SECURITY DEFINER` (padrão já existente
    `has_role`/`is_staff`), agora com `can_access_org` / `org_role_at_least`.
-4. Deploy: **PWA no Vercel** já; **app fica na Cloudflare** (decisão de migrar
-   para Vercel adiada — ver fim deste doc).
+4. Deploy: **PWA e app principal no Vercel**, os dois (app migrou em
+   2026-06-22, commit `5997c1b` — ver nota no topo deste doc).
 5. Storage de fotos: Supabase Storage com path `{org_id}/…` (isolamento +
    migração futura para storage frio sem retrabalho).
 
@@ -390,9 +433,11 @@ plano: [`2026-06-19-ui-gestao-empresas.md`](2026-06-19-ui-gestao-empresas.md).
 - **Billing/assinatura por org** (Stripe), atrelado a `org_entitlements`.
 - **UI mãe↔unidade** (consolidação multi-unidade) e **white-label do consultor**
   (logo/cores por `consultoria`).
-- **App no Vercel (opcional):** trocar o alvo de build do TanStack Start de
-  Cloudflare para o preset Vercel (remover/condicionar `@cloudflare/vite-plugin`
-  em [`vite.config.ts`](../../../vite.config.ts)); validar SSR no deploy real.
+- ✅ **App no Vercel — ENTREGUE (2026-06-22, commit `5997c1b`).** Build trocou
+  de `@cloudflare/vite-plugin` para adapter Node.js SSR (`api/server.ts`) +
+  `vercel.json`. `wrangler.jsonc` e a dependência `@cloudflare/vite-plugin` no
+  `package.json` ficaram como resíduo — candidatos a remoção numa limpeza
+  futura, não usados no build atual.
 - **Login offline multiusuário (aparelho compartilhado):** ver detalhes na seção
   "Sessão, offline e login" (cache de sessões por usuário + `setSession` + PIN
   local). Passar por brainstorming antes (mexe em auth/segurança).

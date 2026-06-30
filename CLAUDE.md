@@ -57,8 +57,15 @@ Este relatório foi gerado pelo graphify e contém o mapa estrutural completo do
 
 - Migrations: aplicadas via **MCP do Supabase** (`apply_migration` para DDL, `execute_sql` para checagens/seed) no projeto `fumwovtzyhxrjhkjzujs`. Manter também o arquivo `.sql` versionado em `supabase/migrations/`. (Antes era manual via SQL Editor — mudou em 2026-06-19.)
 - `types.ts` atualizado à mão
-- Commits direto na `main`
 - Erros tsc pré-existentes são conhecidos — não reportar como bugs novos
+
+## Deploy e fluxo de staging (desde 2026-06-30)
+
+- **App principal e PWA estão os dois no Vercel** (projetos `gestao-nr10` e `campo-pwa`, mesma conta/team `hsgustavo1-gmailcoms-projects`). Migração do app principal saiu da Cloudflare em 2026-06-22 (commit `5997c1b`) — `wrangler.jsonc` e a dependência `@cloudflare/vite-plugin` são resíduo, não usados no build atual. **Não reabrir a hipótese "app está na Cloudflare"** — está desatualizada.
+- **Commits passam por uma branch fixa `staging` antes da `main`.** Motivo: o consultor já testa o produto em uso real; mudança não pode ir direto pra produção sem validação num ambiente publicado (PWA tem comportamento — service worker, instalação, cache offline — que só aparece em HTTPS real, não em localhost).
+  - Fluxo: commit/push na `staging` → Vercel gera preview automático e estável por branch (`gestao-nr10-git-staging-...vercel.app` e `campo-pwa-git-staging-...vercel.app`, já que os projetos estão conectados ao GitHub) → validar lá → merge `staging → main` → deploy de produção.
+  - Após cada merge para `main`, sincronizar a `staging` de volta com a `main` (`git checkout staging && git merge main`) para não acumular divergência.
+  - `main` continua sendo a branch de produção real nos dois projetos Vercel.
 
 ## Schema Multi-Tenant — restrições por org (desde 2026-06-29)
 
