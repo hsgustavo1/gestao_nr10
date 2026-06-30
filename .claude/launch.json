@@ -5,8 +5,8 @@
       "name": "gestao-nr10 (App Principal)",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 8081,
-      "autoPort": true
+      "port": 57010,
+      "autoPort": false
     },
     {
       "name": "campo-pwa (PWA Mobile)",
