@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState, type FormEvent } from "react";
+import { addMonths, addYears, format } from "date-fns";
 import { toast } from "sonner";
 import { Download, FileText, Plus, Search, Stethoscope, Trash2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
@@ -63,6 +64,12 @@ export const Route = createFileRoute("/qualificacoes/asos")({
     ],
   }),
 });
+
+const VALIDITY_PRESETS = [
+  { label: "6 meses", apply: (d: Date) => addMonths(d, 6) },
+  { label: "1 ano", apply: (d: Date) => addYears(d, 1) },
+  { label: "2 anos", apply: (d: Date) => addYears(d, 2) },
+] as const;
 
 function statusBadge(status: ASOStatus) {
   const cls: Record<ASOStatus, string> = {
@@ -539,6 +546,21 @@ function ASOHistoryDialog({
                   onChange={(e) => setValidityDate(e.target.value)}
                   required
                 />
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {VALIDITY_PRESETS.map((p) => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => {
+                        if (!examDate) return toast.error("Informe a data do exame primeiro.");
+                        setValidityDate(format(p.apply(new Date(examDate + "T12:00:00")), "yyyy-MM-dd"));
+                      }}
+                      className="rounded-full border px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">

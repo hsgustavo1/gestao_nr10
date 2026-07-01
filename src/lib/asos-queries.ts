@@ -31,13 +31,17 @@ export function useASOs(employeeId?: string) {
 
 export function useUpsertASO() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<ASO, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      // Ao criar (sem id), carimba a org ativa — fn_default_org_id só cobre usuário
+      // de 1 org; consultor/platform admin precisam do org_id explícito.
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("asos")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
