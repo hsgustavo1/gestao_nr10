@@ -73,12 +73,13 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlock
     const { data: report, error } = await supabase
       .from("padlock_reports")
       .insert({
+        org_id: targetPadlock.org_id,
         padlock_id: targetPadlock.id,
         padlock_code: targetPadlock.code,
         reporter_name: name.trim() || null,
         reporter_contact: contact.trim() || null,
         message: msg,
-      })
+      } as never)
       .select()
       .single();
     if (error || !report) {
@@ -87,6 +88,7 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlock
       return;
     }
     await supabase.from("padlock_report_events").insert({
+      org_id: targetPadlock.org_id,
       report_id: report.id,
       padlock_id: targetPadlock.id,
       padlock_code: targetPadlock.code,
@@ -94,7 +96,7 @@ export function ReportInconsistencyDialog({ open, onOpenChange, padlock, padlock
       actor_id: user?.id ?? null,
       actor_name: name.trim() || (user?.email ?? "Anônimo"),
       notes: msg,
-    });
+    } as never);
     setLoading(false);
     toast.success("Report enviado. Obrigado!");
     setMessage("");

@@ -22,13 +22,15 @@ export function useIncidents() {
 
 export function useUpsertIncident() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<ElectricalIncident, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("electrical_incidents")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;

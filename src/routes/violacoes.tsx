@@ -259,6 +259,7 @@ function ViolationDialog({
   onSaved: () => void;
 }) {
   const isEdit = !!existing;
+  const { currentOrgId } = useAuth();
   const [date, setDate] = useState<string>(
     existing?.violation_date ?? new Date().toISOString().slice(0, 10),
   );
@@ -340,10 +341,11 @@ function ViolationDialog({
     const id = crypto.randomUUID();
     const { error } = await supabase.from("padlock_violations").insert({
       id,
+      ...(currentOrgId ? { org_id: currentOrgId } : {}),
       ...payload,
       created_by: actorId,
       created_by_name: actorName,
-    });
+    } as never);
     if (error) {
       setBusy(false);
       await supabase.storage.from("violation-docs").remove([documentPath]);

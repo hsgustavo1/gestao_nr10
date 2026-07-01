@@ -27,13 +27,15 @@ export function useNR10Documents() {
 
 export function useUpsertNR10Document() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<NR10Document, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("nr10_documents")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -90,8 +92,10 @@ export function useDocumentVersions(documentId?: string) {
 
 export async function archiveDocumentVersion(
   version: Omit<NR10DocumentVersion, "id" | "created_at">,
+  orgId?: string | null,
 ) {
-  const { error } = await supabase.from("nr10_document_versions").insert(version);
+  const row = orgId ? { ...version, org_id: orgId } : version;
+  const { error } = await supabase.from("nr10_document_versions").insert(row as never);
   if (error) throw error;
 }
 

@@ -25,13 +25,15 @@ export function useInspections(type?: InspectionType) {
 
 export function useUpsertInspection() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<Inspection, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("inspections")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -97,13 +99,15 @@ export function useOpenActions(type?: InspectionType) {
 
 export function useUpsertInspectionAction() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<InspectionAction, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("inspection_actions")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;

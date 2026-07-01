@@ -379,6 +379,7 @@ function ModoDialog({
     if (!label.trim()) return toast.error("Informe o nome (label) do modo de falha.");
     if (!categoria.trim()) return toast.error("Informe a categoria.");
     if (!descricao.trim()) return toast.error("Informe a descrição-padrão da NC.");
+    if (!orgId) return toast.error("Nenhuma organização selecionada para este modo.");
 
     let codigo = existing?.codigo ?? slugify(label);
     if (!isEdit) {

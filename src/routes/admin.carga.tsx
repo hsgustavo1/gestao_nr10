@@ -157,7 +157,7 @@ function parseSheet(rows: Record<string, unknown>[]): ParsedRow[] {
 }
 
 function AdminCargaPage() {
-  const { isAdmin, loading, user } = useAuth();
+  const { isAdmin, loading, user, currentOrgId } = useAuth();
   const [parsed, setParsed] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState<string>("");
   const [importing, setImporting] = useState(false);
@@ -244,6 +244,7 @@ function AdminCargaPage() {
       const payload = batch.map((p) => {
         const code = `${p.color}-${String(p.number).padStart(3, "0")}`;
         return {
+          ...(currentOrgId ? { org_id: currentOrgId } : {}),
           code,
           number: p.number!,
           color: p.color!,
@@ -263,7 +264,7 @@ function AdminCargaPage() {
       // upsert por code para tornar a operação idempotente
       const { data, error } = await supabase
         .from("padlocks")
-        .upsert(payload, { onConflict: "code", ignoreDuplicates: false })
+        .upsert(payload as never, { onConflict: "code", ignoreDuplicates: false })
         .select("id, code");
 
       if (error) {

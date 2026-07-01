@@ -41,7 +41,7 @@ export function useUpsertASO() {
       const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("asos")
-        .upsert(body, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;

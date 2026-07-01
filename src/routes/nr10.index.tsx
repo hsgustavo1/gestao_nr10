@@ -429,6 +429,7 @@ function DocumentDialog({
   actorName: string;
 }) {
   const isEdit = !!existing;
+  const { currentOrgId } = useAuth();
   const upsert = useUpsertNR10Document();
   const { data: versions = [] } = useDocumentVersions(existing?.id);
   const [category, setCategory] = useState<string>(existing?.category ?? presetCategory ?? "");
@@ -476,14 +477,17 @@ function DocumentDialog({
       // Versionamento: o PDF substituído é arquivado, não excluído — o
       // histórico de versões do prontuário fica auditável.
       if (oldPath && existing) {
-        await archiveDocumentVersion({
-          document_id: existing.id,
-          file_path: oldPath,
-          file_name: existing.title,
-          document_date: existing.document_date,
-          validity_date: existing.validity_date,
-          replaced_by_name: actorName,
-        });
+        await archiveDocumentVersion(
+          {
+            document_id: existing.id,
+            file_path: oldPath,
+            file_name: existing.title,
+            document_date: existing.document_date,
+            validity_date: existing.validity_date,
+            replaced_by_name: actorName,
+          },
+          currentOrgId,
+        );
       }
       toast.success(isEdit ? "Documento atualizado." : "Documento cadastrado.");
       onOpenChange(false);

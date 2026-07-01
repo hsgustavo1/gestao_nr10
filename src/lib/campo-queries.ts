@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import type { RtiArea, RtiNc, RtiReport } from "./rti";
 import {
   caminhoAbaixoDoSetor,
@@ -50,7 +51,10 @@ export function useUpsertModoFalha() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (
-      payload: Omit<RtiModoFalha, "id" | "created_at" | "updated_at"> & { id?: string },
+      payload: Omit<RtiModoFalha, "id" | "created_at" | "updated_at" | "org_id"> & {
+        id?: string;
+        org_id: string;
+      },
     ) => {
       // Usa INSERT para novos modos e UPDATE para edição — evita o path
       // ON CONFLICT DO UPDATE que exige checar políticas de INSERT E UPDATE
@@ -143,11 +147,16 @@ export function useFieldInspection(id?: string) {
 
 export function useUpsertFieldInspection() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Partial<FieldInspection> & { titulo: string; id?: string }) => {
+      // Ao criar (sem id), carimba a org ativa — fn_default_org_id só cobre usuário
+      // de 1 org; consultor/platform admin precisam do org_id explícito.
+      const body =
+        !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("field_inspections")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -245,6 +254,7 @@ export function useFieldNodes(inspectionId?: string) {
 
 export function useUpsertFieldNode() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Partial<FieldNode> & {
@@ -254,9 +264,11 @@ export function useUpsertFieldNode() {
         id?: string;
       },
     ) => {
+      const body =
+        !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("field_nodes")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -310,6 +322,14 @@ export async function bulkCreateNodes(
   const linhas = normalizarEstrutura(linhasBrutas);
   if (linhas.length === 0) return 0;
 
+  // Carimba a mesma org da inspeção-pai (fn_default_org_id só cobre usuário de 1 org).
+  const { data: inspectionRow } = await supabase
+    .from("field_inspections")
+    .select("org_id")
+    .eq("id", inspectionId)
+    .single();
+  const orgId = (inspectionRow as { org_id?: string } | null)?.org_id;
+
   const { data: existentes } = await supabase
     .from("field_nodes")
     .select("*")
@@ -340,7 +360,14 @@ export async function bulkCreateNodes(
     ordemPorParent.set(parentId, ordem);
     const { data, error } = await supabase
       .from("field_nodes")
-      .insert({ inspection_id: inspectionId, parent_id: parentId, nivel, nome, ordem })
+      .insert({
+        ...(orgId ? { org_id: orgId } : {}),
+        inspection_id: inspectionId,
+        parent_id: parentId,
+        nivel,
+        nome,
+        ordem,
+      } as never)
       .select()
       .single();
     if (error) throw error;
@@ -468,13 +495,16 @@ export function useFieldPoint(id?: string) {
 
 export function useUpsertFieldPoint() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Partial<FieldPoint> & { inspection_id: string; node_id: string; id?: string },
     ) => {
+      const body =
+        !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("field_points")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -548,13 +578,16 @@ export function useInspectionFindings(inspectionId?: string) {
 
 export function useUpsertFieldFinding() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Partial<FieldFinding> & { point_id: string; descricao: string; id?: string },
     ) => {
+      const body =
+        !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("field_findings")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -627,9 +660,15 @@ export async function uploadFieldPhoto(
 
 export function useAddFieldPhoto() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Omit<FieldPhoto, "id" | "created_at">) => {
-      const { data, error } = await supabase.from("field_photos").insert(payload).select().single();
+      const body = currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      const { data, error } = await supabase
+        .from("field_photos")
+        .insert(body as never)
+        .select()
+        .single();
       if (error) throw error;
       return data as unknown as FieldPhoto;
     },
@@ -688,6 +727,7 @@ export type AchadoNovo = {
  */
 export function useCriarPontoComColeta() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (args: {
       inspectionId: string;
@@ -701,12 +741,13 @@ export function useCriarPontoComColeta() {
       const { data: pointData, error: pErr } = await supabase
         .from("field_points")
         .insert({
+          ...(currentOrgId ? { org_id: currentOrgId } : {}),
           inspection_id: args.inspectionId,
           node_id: args.nodeId,
           titulo: args.titulo,
           observacoes: args.observacoes,
           ordem: args.ordem,
-        })
+        } as never)
         .select()
         .single();
       if (pErr) throw pErr;
@@ -714,18 +755,23 @@ export function useCriarPontoComColeta() {
 
       if (args.fotos.length > 0) {
         const rows = args.fotos.map((f, i) => ({
+          ...(currentOrgId ? { org_id: currentOrgId } : {}),
           point_id: point.id,
           file_path: f.path,
           file_name: f.name,
           legenda: null,
           ordem: i,
         }));
-        const { error } = await supabase.from("field_photos").insert(rows);
+        const { error } = await supabase.from("field_photos").insert(rows as never);
         if (error) throw error;
       }
       if (args.achados.length > 0) {
-        const rows = args.achados.map((a) => ({ ...a, point_id: point.id }));
-        const { error } = await supabase.from("field_findings").insert(rows);
+        const rows = args.achados.map((a) => ({
+          ...a,
+          ...(currentOrgId ? { org_id: currentOrgId } : {}),
+          point_id: point.id,
+        }));
+        const { error } = await supabase.from("field_findings").insert(rows as never);
         if (error) throw error;
       }
       return point;
@@ -759,6 +805,10 @@ export async function comporRti({
   actorName: string | null;
   onProgress?: (etapa: string, done: number, total: number) => void;
 }): Promise<ComporRtiResult> {
+  // Raiz do RTI herda a org da inspeção de origem; as NCs/áreas/evidências
+  // repassam o mesmo org_id (fn_default_org_id só cobre usuário de 1 org).
+  const orgId = inspection.org_id;
+
   // 1) Carrega árvore, pontos, achados e fotos
   const { data: nodesData, error: nErr } = await supabase
     .from("field_nodes")
@@ -816,9 +866,7 @@ export async function comporRti({
     const { data: rep, error: rErr } = await supabase
       .from("rti_reports")
       .insert({
-        // Raiz do RTI herda a org da inspeção de origem; as NCs/áreas/evidências
-        // cascateiam o org_id via trigger no banco. Ausente → trigger resolve (single-org).
-        org_id: inspection.org_id ?? undefined,
+        ...(orgId ? { org_id: orgId } : {}),
         titulo: inspection.titulo,
         empresa_auditora: inspection.cliente,
         responsavel_auditoria: inspection.engenheiro,
@@ -827,7 +875,7 @@ export async function comporRti({
         periodo_fim: inspection.data_inspecao,
         notes: `Composto a partir da coleta em campo "${inspection.titulo}".`,
         created_by_name: actorName,
-      })
+      } as never)
       .select()
       .single();
     if (rErr) throw rErr;
@@ -851,7 +899,9 @@ export async function comporRti({
     maxOrdem += 1;
     const { data: area, error } = await supabase
       .from("rti_areas")
-      .insert({ report_id: reportId, nome, ordem: maxOrdem })
+      .insert(
+        { ...(orgId ? { org_id: orgId } : {}), report_id: reportId, nome, ordem: maxOrdem } as never,
+      )
       .select()
       .single();
     if (error) throw error;
@@ -917,11 +967,12 @@ export async function comporRti({
           .eq("id", existingNc.id);
         if (updErr) throw updErr;
         await supabase.from("rti_nc_historico").insert({
+          ...(orgId ? { org_id: orgId } : {}),
           nc_id: existingNc.id,
           tipo: "alteracao",
           texto: `Achado revisado via recomposição da coleta em campo "${inspection.titulo}"`,
           autor_nome: actorName,
-        });
+        } as never);
         ncsAtualizadas += 1;
         done += 1;
         onProgress?.("Atualizando NCs", done, totalEtapas);
@@ -931,6 +982,7 @@ export async function comporRti({
         const { data: ncData, error: ncErr } = await supabase
           .from("rti_ncs")
           .insert({
+            ...(orgId ? { org_id: orgId } : {}),
             report_id: reportId,
             area_id: areaIdByNome.get(setorNome)!,
             numero,
@@ -948,7 +1000,7 @@ export async function comporRti({
             situacao_atual: situacaoAtual,
             concluida_em: null,
             finding_id: finding.id,
-          })
+          } as never)
           .select()
           .single();
         if (ncErr) throw ncErr;
@@ -970,6 +1022,7 @@ export async function comporRti({
             .copy(ph.file_path, novoPath);
           if (cpErr) throw cpErr;
           const { error: evErr } = await supabase.from("rti_nc_evidencias").insert({
+            ...(orgId ? { org_id: orgId } : {}),
             nc_id: nc.id,
             tipo: "constatacao",
             file_path: novoPath,
@@ -977,7 +1030,7 @@ export async function comporRti({
             mime_type: "image/jpeg",
             descricao: ph.legenda,
             created_by_name: actorName,
-          });
+          } as never);
           if (evErr) throw evErr;
           fotosCopiadas += 1;
           done += 1;
@@ -985,11 +1038,12 @@ export async function comporRti({
         }
 
         await supabase.from("rti_nc_historico").insert({
+          ...(orgId ? { org_id: orgId } : {}),
           nc_id: nc.id,
           tipo: "alteracao",
           texto: `NC composta a partir da coleta em campo "${inspection.titulo}" (${[setorNome, prefixoPonto].filter(Boolean).join(" › ")})`,
           autor_nome: actorName,
-        });
+        } as never);
       }
     }
   }

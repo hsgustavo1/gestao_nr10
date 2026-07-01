@@ -181,6 +181,7 @@ function RtiEvidenciasMassaPage() {
         const nc = item.nc!;
         const path = await uploadRtiFile(item.row.file, `nc-${nc.numero}`);
         const { error } = await supabase.from("rti_nc_evidencias").insert({
+          ...(auth.currentOrgId ? { org_id: auth.currentOrgId } : {}),
           nc_id: nc.id,
           tipo,
           file_path: path,
@@ -188,7 +189,7 @@ function RtiEvidenciasMassaPage() {
           mime_type: item.row.file.type || null,
           descricao: null,
           created_by_name: actorName,
-        });
+        } as never);
         if (error) throw error;
         porNc.set(nc.id, (porNc.get(nc.id) ?? 0) + 1);
         done++;
@@ -197,13 +198,14 @@ function RtiEvidenciasMassaPage() {
 
       // Histórico: uma entrada por NC afetada
       const histRows = [...porNc.entries()].map(([nc_id, n]) => ({
+        ...(auth.currentOrgId ? { org_id: auth.currentOrgId } : {}),
         nc_id,
         tipo: "alteracao" as const,
         texto: `${n} ${n === 1 ? "evidência importada" : "evidências importadas"} em massa (${RTI_EVIDENCIA_TIPO_LABELS[tipo].toLowerCase()})`,
         autor_nome: actorName,
       }));
       for (let i = 0; i < histRows.length; i += 200) {
-        await supabase.from("rti_nc_historico").insert(histRows.slice(i, i + 200));
+        await supabase.from("rti_nc_historico").insert(histRows.slice(i, i + 200) as never);
       }
 
       qc.invalidateQueries({ queryKey: ["rti_nc_evidencias"] });

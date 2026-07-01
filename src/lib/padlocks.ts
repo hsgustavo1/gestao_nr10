@@ -72,7 +72,14 @@ export async function logEvent(input: {
   new_data?: unknown;
   notes?: string;
 }) {
+  // Carimba o mesmo org_id do cadeado (fn_default_org_id só cobre usuário de 1 org).
+  const { data: padlockRow } = await supabase
+    .from("padlocks")
+    .select("org_id")
+    .eq("id", input.padlock_id)
+    .single();
   await supabase.from("padlock_events").insert({
+    ...(padlockRow?.org_id ? { org_id: padlockRow.org_id } : {}),
     padlock_id: input.padlock_id,
     padlock_code: input.padlock_code,
     action: input.action,
@@ -81,7 +88,7 @@ export async function logEvent(input: {
     previous_data: (input.previous_data as never) ?? null,
     new_data: (input.new_data as never) ?? null,
     notes: input.notes ?? null,
-  });
+  } as never);
 }
 
 export function formatDateTime(iso: string | null | undefined) {

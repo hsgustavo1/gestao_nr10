@@ -52,7 +52,7 @@ export function NewPadlockDialog({
   onOpenChange: (o: boolean) => void;
   onCreated: () => void;
 }) {
-  const { user } = useAuth();
+  const { user, currentOrgId } = useAuth();
   const [color, setColor] = useState<PadlockColor>("azul");
   const [number, setNumber] = useState("");
   const [ownerName, setOwnerName] = useState("");
@@ -144,6 +144,7 @@ export function NewPadlockDialog({
     const { data, error } = await supabase
       .from("padlocks")
       .insert({
+        ...(currentOrgId ? { org_id: currentOrgId } : {}),
         code,
         color: parsed.data.color,
         number: parsed.data.number,
@@ -153,7 +154,7 @@ export function NewPadlockDialog({
         owner_sector: parsed.data.owner_sector,
         owner_phone: isRed ? null : parsed.data.owner_phone || null,
         created_by: user?.id ?? null,
-      })
+      } as never)
       .select()
       .single();
     if (error || !data) {

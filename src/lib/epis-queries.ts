@@ -32,13 +32,17 @@ export function useEPIs(includeInactive = false) {
 
 export function useUpsertEPI() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<EPI, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      // Ao criar (sem id), carimba a org ativa — fn_default_org_id só cobre usuário
+      // de 1 org; consultor/platform admin precisam do org_id explícito.
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("epis")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -76,9 +80,15 @@ export function useEPITests(epiId?: string) {
 
 export function useInsertEPITest() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Omit<EPITest, "id" | "created_at">) => {
-      const { data, error } = await supabase.from("epi_tests").insert(payload).select().single();
+      const body = currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      const { data, error } = await supabase
+        .from("epi_tests")
+        .insert(body as never)
+        .select()
+        .single();
       if (error) throw error;
       return data as EPITest;
     },

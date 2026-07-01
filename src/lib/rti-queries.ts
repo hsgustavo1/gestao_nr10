@@ -83,7 +83,7 @@ export function useUpsertRtiReport() {
       const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("rti_reports")
-        .upsert(body, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -166,9 +166,15 @@ export function useRtiAreas(reportId?: string) {
 
 export function useCreateRtiArea() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: { report_id: string; nome: string; ordem: number }) => {
-      const { data, error } = await supabase.from("rti_areas").insert(payload).select().single();
+      const body = currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      const { data, error } = await supabase
+        .from("rti_areas")
+        .insert(body as never)
+        .select()
+        .single();
       if (error) throw error;
       return data as RtiArea;
     },
@@ -234,9 +240,15 @@ function invalidateNcs(qc: ReturnType<typeof useQueryClient>) {
 
 export function useCreateRtiNc() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Omit<RtiNc, "id" | "created_at" | "updated_at">) => {
-      const { data, error } = await supabase.from("rti_ncs").insert(payload).select().single();
+      const body = currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      const { data, error } = await supabase
+        .from("rti_ncs")
+        .insert(body as never)
+        .select()
+        .single();
       if (error) throw error;
       return data as RtiNc;
     },
@@ -360,11 +372,13 @@ export function useRtiEvidenciaFileIndex(reportId?: string) {
 
 export function useAddRtiEvidencia() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Omit<RtiNcEvidencia, "id" | "created_at">) => {
+      const body = currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("rti_nc_evidencias")
-        .insert(payload)
+        .insert(body as never)
         .select()
         .single();
       if (error) throw error;
@@ -435,11 +449,13 @@ export function useRtiHistorico(ncId?: string) {
 
 export function useAddRtiHistorico() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Omit<RtiNcHistorico, "id" | "created_at">) => {
+      const body = currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("rti_nc_historico")
-        .insert(payload)
+        .insert(body as never)
         .select()
         .single();
       if (error) throw error;
@@ -456,9 +472,18 @@ export async function logBulkHistorico(
   autorNome: string | null,
   tipo: "comentario" | "alteracao" = "alteracao",
 ) {
-  const rows = ncIds.map((nc_id) => ({ nc_id, tipo, texto, autor_nome: autorNome }));
+  // Carimba o mesmo org_id das NCs (fn_default_org_id só cobre usuário de 1 org).
+  const { data: ncsData } = await supabase.from("rti_ncs").select("id, org_id").in("id", ncIds);
+  const orgIdByNc = new Map((ncsData ?? []).map((n) => [n.id, n.org_id as string | undefined]));
+  const rows = ncIds.map((nc_id) => ({
+    nc_id,
+    tipo,
+    texto,
+    autor_nome: autorNome,
+    org_id: orgIdByNc.get(nc_id),
+  }));
   for (let i = 0; i < rows.length; i += 200) {
-    await supabase.from("rti_nc_historico").insert(rows.slice(i, i + 200));
+    await supabase.from("rti_nc_historico").insert(rows.slice(i, i + 200) as never);
   }
 }
 
@@ -500,10 +525,14 @@ export async function bulkAttachRtiEvidencias({
   autorNome: string | null;
   onProgress?: (done: number, total: number) => void;
 }) {
+  // Carimba o mesmo org_id das NCs (fn_default_org_id só cobre usuário de 1 org).
+  const { data: ncsData } = await supabase.from("rti_ncs").select("id, org_id").in("id", ncIds);
+  const orgIdByNc = new Map((ncsData ?? []).map((n) => [n.id, n.org_id as string | undefined]));
+
   const total = ncIds.length * files.length;
   let done = 0;
   for (const ncId of ncIds) {
-    const rows: Omit<RtiNcEvidencia, "id" | "created_at">[] = [];
+    const rows: (Omit<RtiNcEvidencia, "id" | "created_at"> & { org_id?: string })[] = [];
     for (const file of files) {
       const path = await uploadRtiFile(file);
       rows.push({
@@ -514,11 +543,12 @@ export async function bulkAttachRtiEvidencias({
         mime_type: file.type || null,
         descricao,
         created_by_name: autorNome,
+        org_id: orgIdByNc.get(ncId),
       });
       done += 1;
       onProgress?.(done, total);
     }
-    const { error } = await supabase.from("rti_nc_evidencias").insert(rows);
+    const { error } = await supabase.from("rti_nc_evidencias").insert(rows as never);
     if (error) throw error;
   }
 }
@@ -556,7 +586,7 @@ export async function batchImportRti({ report, areas, ncs, orgId, onProgress }: 
   if (orgId) reportRow.org_id = orgId;
   const { data: rep, error: repErr } = await supabase
     .from("rti_reports")
-    .insert(reportRow)
+    .insert(reportRow as never)
     .select()
     .single();
   if (repErr) throw repErr;
@@ -565,7 +595,7 @@ export async function batchImportRti({ report, areas, ncs, orgId, onProgress }: 
   // 2) Áreas
   const { data: areaRows, error: areaErr } = await supabase
     .from("rti_areas")
-    .insert(areas.map((a) => ({ ...a, report_id: reportId })))
+    .insert(areas.map((a) => ({ ...a, report_id: reportId, ...(orgId ? { org_id: orgId } : {}) })) as never)
     .select();
   if (areaErr) throw areaErr;
   const areaIdByNome = new Map((areaRows as RtiArea[]).map((a) => [a.nome, a.id]));
@@ -573,6 +603,7 @@ export async function batchImportRti({ report, areas, ncs, orgId, onProgress }: 
   // 3) NCs em lotes
   const rows = ncs.map((nc) => ({
     report_id: reportId,
+    ...(orgId ? { org_id: orgId } : {}),
     area_id: areaIdByNome.get(nc.area)!,
     numero: nc.numero,
     descricao: nc.descricao,
@@ -592,7 +623,7 @@ export async function batchImportRti({ report, areas, ncs, orgId, onProgress }: 
     const chunk = rows.slice(i, i + 200);
     const { error } = await supabase
       .from("rti_ncs")
-      .upsert(chunk, { onConflict: "report_id,numero", ignoreDuplicates: true });
+      .upsert(chunk as never, { onConflict: "report_id,numero", ignoreDuplicates: true });
     if (error) throw error;
     onProgress?.(Math.min(i + 200, rows.length), rows.length);
   }

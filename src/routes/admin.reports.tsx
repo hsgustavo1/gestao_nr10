@@ -29,6 +29,7 @@ type ReportStatus = "aguardando" | "solucionado" | "recusado";
 
 type Report = {
   id: string;
+  org_id: string;
   padlock_id: string;
   padlock_code: string;
   reporter_name: string | null;
@@ -154,6 +155,7 @@ function AdminReportsPage() {
       return;
     }
     await supabase.from("padlock_report_events").insert({
+      org_id: acting.report.org_id,
       report_id: acting.report.id,
       padlock_id: acting.report.padlock_id,
       padlock_code: acting.report.padlock_code,
@@ -161,7 +163,7 @@ function AdminReportsPage() {
       actor_id: user?.id ?? null,
       actor_name: actorName,
       notes: trimmed,
-    });
+    } as never);
     setBusy(false);
     toast.success(
       acting.resolution === "solucionado" ? "Report marcado como solucionado." : "Report recusado.",

@@ -40,11 +40,13 @@ export function useEmployees(statusFilter: "ativo" | "afastado" | "desligado" | 
 
 export function useUpsertEmployee() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Partial<Employee> & { name: string; matricula: string }) => {
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("employees")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -83,13 +85,15 @@ export function useNR10Trainings(employeeId?: string) {
 
 export function useUpsertNR10Training() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<NR10Training, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("nr10_trainings")
-        .upsert(payload, { onConflict: "employee_id,training_type,category" })
+        .upsert(body as never, { onConflict: "employee_id,training_type,category" })
         .select()
         .single();
       if (error) throw error;
@@ -113,6 +117,7 @@ export function useUpsertNR10Training() {
 /** Registro de treinamento em turma: um upsert por colaborador selecionado. */
 export function useRegistrarTurma() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async ({
       employeeIds,
@@ -121,10 +126,14 @@ export function useRegistrarTurma() {
       employeeIds: string[];
       training: Omit<NR10Training, "id" | "created_at" | "updated_at" | "employee_id">;
     }) => {
-      const rows = employeeIds.map((employee_id) => ({ ...training, employee_id }));
+      const rows = employeeIds.map((employee_id) => ({
+        ...training,
+        employee_id,
+        ...(currentOrgId ? { org_id: currentOrgId } : {}),
+      }));
       const { error } = await supabase
         .from("nr10_trainings")
-        .upsert(rows, { onConflict: "employee_id,training_type,category" });
+        .upsert(rows as never, { onConflict: "employee_id,training_type,category" });
       if (error) throw error;
       // Reciclagem em turma também limpa a flag de reciclagem extraordinária
       if (training.category === "reciclagem" && employeeIds.length > 0) {
@@ -167,6 +176,7 @@ export function useWorkAuthorizations() {
 
 export function useUpsertAuthorization() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<WorkAuthorization, "id" | "created_at" | "updated_at" | "is_current"> & {
@@ -181,9 +191,11 @@ export function useUpsertAuthorization() {
         .eq("employee_id", payload.employee_id)
         .eq("is_current", true);
 
-      // Insert new authorization as current
+      // Insert new authorization as current — carimba a org ativa (fn_default_org_id
+      // só cobre usuário de 1 org; consultor/platform admin precisam do org_id explícito).
+      const body = currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (wa.insert({ ...payload, is_current: true } as any) as any)
+      const { data, error } = await (wa.insert({ ...body, is_current: true } as any) as any)
         .select()
         .single();
       if (error) throw error;
@@ -232,11 +244,13 @@ export function useWorkInstructions() {
 
 export function useUpsertInstruction() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Partial<WorkInstruction> & { code: string }) => {
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("work_instructions")
-        .upsert(payload, { onConflict: "id" })
+        .upsert(body as never, { onConflict: "id" })
         .select()
         .single();
       if (error) throw error;
@@ -267,13 +281,15 @@ export function useITTrainings(employeeId?: string) {
 
 export function useUpsertITTraining() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (
       payload: Omit<ITTraining, "id" | "created_at" | "updated_at"> & { id?: string },
     ) => {
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("it_trainings")
-        .upsert(payload, { onConflict: "employee_id,instruction_id" })
+        .upsert(body as never, { onConflict: "employee_id,instruction_id" })
         .select()
         .single();
       if (error) throw error;
@@ -305,13 +321,15 @@ export async function batchImportQualificacoes(payload: {
     instructionCode: string;
     status: string;
     conclusao_date: string | null;
-    org_id: string;
+    // Carimbado pelo caller (admin.qualificacoes.carga.tsx) só na hora da importação —
+    // ausente durante o parse da planilha.
+    org_id?: string;
   }[];
 }) {
   // Step 1: upsert employees, get back IDs mapped by matricula
   const { data: empData, error: empErr } = await supabase
     .from("employees")
-    .upsert(payload.employees, { onConflict: "matricula,org_id" })
+    .upsert(payload.employees as never, { onConflict: "matricula,org_id" })
     .select("id, matricula");
   if (empErr) throw empErr;
 
@@ -323,7 +341,7 @@ export async function batchImportQualificacoes(payload: {
   if (payload.instructions.length > 0) {
     const { error } = await supabase
       .from("work_instructions")
-      .upsert(payload.instructions, { onConflict: "code,org_id" });
+      .upsert(payload.instructions as never, { onConflict: "code,org_id" });
     if (error) throw error;
   }
 
@@ -335,7 +353,7 @@ export async function batchImportQualificacoes(payload: {
     if (rows.length > 0) {
       const { error } = await supabase
         .from("nr10_trainings")
-        .upsert(rows, { onConflict: "employee_id,training_type,category" });
+        .upsert(rows as never, { onConflict: "employee_id,training_type,category" });
       if (error) throw error;
     }
   }
@@ -380,7 +398,7 @@ export async function batchImportQualificacoes(payload: {
   if (itRows.length > 0) {
     const { error } = await supabase
       .from("it_trainings")
-      .upsert(itRows, { onConflict: "employee_id,instruction_id" });
+      .upsert(itRows as never, { onConflict: "employee_id,instruction_id" });
     if (error) throw error;
   }
 
