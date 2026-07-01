@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -67,6 +68,24 @@ export function EmployeeDialog({ open, onOpenChange, employee }: Props) {
       status: employee?.status ?? "ativo",
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: employee?.name ?? "",
+        matricula: employee?.matricula ?? "",
+        setor: employee?.setor ?? "",
+        classificacao: employee?.classificacao ?? "",
+        funcao: employee?.funcao ?? "",
+        escolaridade: employee?.escolaridade ?? "",
+        diploma: employee?.diploma ?? "",
+        diploma_conclusao: employee?.diploma_conclusao ?? "",
+        crea_cft: employee?.crea_cft ?? "",
+        status: employee?.status ?? "ativo",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, employee]);
 
   async function onSubmit(values: FormValues) {
     try {

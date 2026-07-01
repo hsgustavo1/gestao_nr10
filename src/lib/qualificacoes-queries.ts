@@ -193,7 +193,11 @@ export function useUpsertAuthorization() {
 
       // Insert new authorization as current — carimba a org ativa (fn_default_org_id
       // só cobre usuário de 1 org; consultor/platform admin precisam do org_id explícito).
-      const body = currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      // payload.id (quando presente) é o id da autorização anterior sendo editada — ela
+      // é arquivada acima (is_current: false), não reaproveitada, senão o insert abaixo
+      // colide com a mesma primary key e falha com "duplicate key value".
+      const { id: _previousId, ...rest } = payload;
+      const body = currentOrgId ? { ...rest, org_id: currentOrgId } : rest;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (wa.insert({ ...body, is_current: true } as any) as any)
         .select()
