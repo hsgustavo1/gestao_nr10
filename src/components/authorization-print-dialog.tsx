@@ -76,12 +76,12 @@ export function AuthorizationPrintDialog({ open, onOpenChange, authorization, em
               <p className="font-semibold text-muted-foreground uppercase text-[10px]">Situação</p>
               <p
                 className={
-                  authorization.valid
-                    ? "text-emerald-600 font-semibold"
-                    : "text-destructive font-semibold"
+                  authorization.suspended
+                    ? "text-destructive font-semibold"
+                    : "text-emerald-600 font-semibold"
                 }
               >
-                {authorization.valid ? "VÁLIDA" : "INVÁLIDA"}
+                {authorization.suspended ? "SUSPENSA" : "VÁLIDA"}
               </p>
             </div>
           </div>

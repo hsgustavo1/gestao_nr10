@@ -175,15 +175,25 @@ describe("asoStatus", () => {
 
 describe("computeAptidao", () => {
   const base = () => ({
-    employee: { status: "ativo" as const, reciclagem_requerida: false, reciclagem_motivo: null },
+    employee: {
+      status: "ativo" as const,
+      setor: "ADM",
+      reciclagem_requerida: false,
+      reciclagem_motivo: null,
+    },
     trainings: [
       {
         training_type: "nr10_basico" as const,
         category: "formacao" as const,
         training_date: iso(addDays(hoje, -100)),
       },
+      {
+        training_type: "sep" as const,
+        category: "formacao" as const,
+        training_date: iso(addDays(hoje, -100)),
+      },
     ],
-    authorization: { valid: true },
+    authorization: { suspended: false },
     aso: { ...asoBase({}), exam_date: iso(addDays(hoje, -10)) },
   });
 
@@ -199,9 +209,9 @@ describe("computeAptidao", () => {
     expect(r.bloqueantes.map((b) => b.code)).toContain("sem_autorizacao");
   });
 
-  it("autorização inválida → bloqueado", () => {
-    const r = computeAptidao({ ...base(), authorization: { valid: false } });
-    expect(r.bloqueantes.map((b) => b.code)).toContain("autorizacao_invalida");
+  it("autorização suspensa pelo PLH → bloqueado", () => {
+    const r = computeAptidao({ ...base(), authorization: { suspended: true } });
+    expect(r.bloqueantes.map((b) => b.code)).toContain("autorizacao_suspensa");
   });
 
   it("NR-10 Básico ausente → bloqueado", () => {
@@ -237,9 +247,53 @@ describe("computeAptidao", () => {
           category: "reciclagem",
           training_date: iso(addDays(hoje, -60)),
         },
+        {
+          training_type: "sep",
+          category: "formacao",
+          training_date: iso(addDays(hoje, -60)),
+        },
       ],
     });
     expect(r.apto).toBe(true);
+  });
+
+  it("NR-10 Complementar - SEP ausente → bloqueado", () => {
+    const r = computeAptidao({
+      ...base(),
+      trainings: [
+        {
+          training_type: "nr10_basico",
+          category: "formacao",
+          training_date: iso(addDays(hoje, -100)),
+        },
+      ],
+    });
+    expect(r.bloqueantes.map((b) => b.code)).toContain("sep_ausente");
+  });
+
+  it("NR-10 Complementar - SEP vencido → bloqueado", () => {
+    const r = computeAptidao({
+      ...base(),
+      trainings: [
+        {
+          training_type: "nr10_basico",
+          category: "formacao",
+          training_date: iso(addDays(hoje, -100)),
+        },
+        {
+          training_type: "sep",
+          category: "formacao",
+          training_date: iso(addDays(addYears(hoje, -2), -30)),
+        },
+      ],
+    });
+    expect(r.bloqueantes.map((b) => b.code)).toContain("sep_vencido");
+  });
+
+  it("Áreas Classificadas ausente NÃO bloqueia (é só informativa)", () => {
+    const r = computeAptidao(base());
+    expect(r.apto).toBe(true);
+    expect(r.bloqueantes.map((b) => b.code)).not.toContain("nr10_areas_classificadas_ausente");
   });
 
   it("ASO ausente → bloqueado", () => {
@@ -271,6 +325,7 @@ describe("computeAptidao", () => {
       ...base(),
       employee: {
         status: "ativo",
+        setor: "ADM",
         reciclagem_requerida: true,
         reciclagem_motivo: "Mudança de função",
       },
@@ -281,13 +336,13 @@ describe("computeAptidao", () => {
   });
 
   it("colaborador afastado → bloqueado", () => {
-    const r = computeAptidao({ ...base(), employee: { status: "afastado" } });
+    const r = computeAptidao({ ...base(), employee: { status: "afastado", setor: "ADM" } });
     expect(r.bloqueantes.map((b) => b.code)).toContain("colaborador_inativo");
   });
 
   it("acumula múltiplos bloqueantes", () => {
     const r = computeAptidao({
-      employee: { status: "ativo", reciclagem_requerida: true },
+      employee: { status: "ativo", setor: "ADM", reciclagem_requerida: true },
       trainings: [],
       authorization: null,
       aso: null,

@@ -230,9 +230,9 @@ function CarteirinhaPage() {
                       </div>
                       <div className="text-right">
                         <div
-                          className={`text-sm font-semibold ${data.authorization.valid ? "text-emerald-600" : "text-red-600"}`}
+                          className={`text-sm font-semibold ${data.authorization.suspended ? "text-red-600" : "text-emerald-600"}`}
                         >
-                          {data.authorization.valid ? "VÁLIDA" : "INVÁLIDA"}
+                          {data.authorization.suspended ? "SUSPENSA" : "VÁLIDA"}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           desde {formatDatePtBR(data.authorization.authorization_date)}

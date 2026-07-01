@@ -299,7 +299,7 @@ function QualificacoesHub() {
     () => (authorizations ?? []).filter((a: any) => filteredIds.has(a.employee_id)),
     [authorizations, filteredIds],
   );
-  const validAuthsCount = authsInFilter.filter((a: any) => a.valid).length;
+  const validAuthsCount = authsInFilter.filter((a: any) => !a.suspended).length;
   const noAuthCount = filteredEmployees.length - authsInFilter.length;
 
   // Conformidade de treinamentos card — filtered by nr10CardType
@@ -319,7 +319,7 @@ function QualificacoesHub() {
       return { valid: validAuthsCount, total: authsInFilter.length, noAuth: noAuthCount };
     const levelFiltered = authsInFilter.filter((a: any) => a.level === authCardLevel);
     return {
-      valid: levelFiltered.filter((a: any) => a.valid).length,
+      valid: levelFiltered.filter((a: any) => !a.suspended).length,
       total: levelFiltered.length,
       noAuth: 0,
     };

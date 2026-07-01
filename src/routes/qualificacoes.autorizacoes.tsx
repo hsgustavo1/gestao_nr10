@@ -59,7 +59,7 @@ function HistoryRow({ employeeId, colSpan }: { employeeId: string; colSpan: numb
               <div key={h.id} className="text-xs flex gap-4 items-center text-muted-foreground">
                 <span className="font-mono font-semibold">{h.level}</span>
                 <span>{formatDatePtBR(h.authorization_date)}</span>
-                <span className="text-[10px]">{h.valid ? "Válida" : "Inválida"}</span>
+                <span className="text-[10px]">{h.suspended ? "Suspensa" : "Válida"}</span>
                 <span className="truncate max-w-[200px]">{h.funcao ?? ""}</span>
               </div>
             ))}
@@ -142,8 +142,8 @@ function AutorizacoesPage() {
       if (setorFilter !== "todos" && emp.setor !== setorFilter) return false;
       const auth = authByEmployee.get(emp.id);
       if (levelFilter !== "all" && auth?.level !== levelFilter) return false;
-      if (validFilter === "sim" && !auth?.valid) return false;
-      if (validFilter === "nao" && auth?.valid !== false) return false;
+      if (validFilter === "sim" && auth?.suspended) return false;
+      if (validFilter === "nao" && !auth?.suspended) return false;
       if (validFilter === "sem_auth" && auth) return false;
       return true;
     });
@@ -175,7 +175,7 @@ function AutorizacoesPage() {
           <span>
             Válidas:{" "}
             <strong className="text-emerald-600">
-              {authorizations.filter((a: any) => a.valid).length}
+              {authorizations.filter((a: any) => !a.suspended).length}
             </strong>
           </span>
           <span>
@@ -225,7 +225,7 @@ function AutorizacoesPage() {
             <SelectContent>
               <SelectItem value="all">Todas</SelectItem>
               <SelectItem value="sim">Válidas</SelectItem>
-              <SelectItem value="nao">Inválidas</SelectItem>
+              <SelectItem value="nao">Suspensas</SelectItem>
               <SelectItem value="sem_auth">Sem autorização</SelectItem>
             </SelectContent>
           </Select>
@@ -296,8 +296,8 @@ function AutorizacoesPage() {
                           </td>
                           <td className="py-3 pr-4">
                             {auth ? (
-                              <Badge variant={auth.valid ? "default" : "destructive"}>
-                                {auth.valid ? "Sim" : "Não"}
+                              <Badge variant={auth.suspended ? "destructive" : "default"}>
+                                {auth.suspended ? "Não" : "Sim"}
                               </Badge>
                             ) : null}
                           </td>

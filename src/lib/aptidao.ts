@@ -1,4 +1,5 @@
 import {
+  requiredTrainings,
   trainingExpiryStatus,
   type Employee,
   type NR10Training,
@@ -14,9 +15,11 @@ import { asoStatus, type ASO } from "./asos";
 
 export const BLOQUEANTE_CODES = [
   "sem_autorizacao",
-  "autorizacao_invalida",
+  "autorizacao_suspensa",
   "nr10_basico_ausente",
   "nr10_basico_vencido",
+  "sep_ausente",
+  "sep_vencido",
   "aso_ausente",
   "aso_vencido",
   "aso_inapto",
@@ -28,9 +31,11 @@ export type BloqueanteCode = (typeof BLOQUEANTE_CODES)[number];
 
 export const BLOQUEANTE_LABELS: Record<BloqueanteCode, string> = {
   sem_autorizacao: "Sem autorização vigente",
-  autorizacao_invalida: "Autorização marcada como inválida",
+  autorizacao_suspensa: "Autorização suspensa por decisão do PLH",
   nr10_basico_ausente: "Sem capacitação NR-10 Básico",
   nr10_basico_vencido: "NR-10 Básico vencido (reciclagem bienal)",
+  sep_ausente: "Sem capacitação NR-10 Complementar - SEP",
+  sep_vencido: "NR-10 Complementar - SEP vencido (reciclagem bienal)",
   aso_ausente: "Sem ASO registrado",
   aso_vencido: "ASO vencido",
   aso_inapto: "ASO inapto para trabalho em eletricidade",
@@ -50,25 +55,33 @@ export type Aptidao = {
 };
 
 export type AptidaoInput = {
-  employee: Pick<Employee, "status"> &
+  employee: Pick<Employee, "status" | "setor"> &
     Partial<Pick<Employee, "reciclagem_requerida" | "reciclagem_motivo">>;
   /** Treinamentos NR-10 do colaborador (qualquer tipo/categoria). */
   trainings: Pick<NR10Training, "training_type" | "category" | "training_date">[];
   /** Autorização vigente (is_current = true) ou null. */
-  authorization: Pick<WorkAuthorization, "valid"> | null;
+  authorization: Pick<WorkAuthorization, "suspended"> | null;
   /** ASO mais recente do colaborador ou null. */
   aso: Pick<ASO, "validity_date" | "resultado" | "apto_eletricidade" | "exam_date"> | null;
   today?: Date;
 };
 
-/** Data do treinamento NR-10 Básico mais recente (formação ou reciclagem). */
-export function latestBasicoDate(trainings: AptidaoInput["trainings"]): string | null {
+/** Data mais recente (formação ou reciclagem) de um tipo de treinamento NR-10. */
+export function latestTrainingDate(
+  trainings: AptidaoInput["trainings"],
+  type: NR10Training["training_type"],
+): string | null {
   let latest: string | null = null;
   for (const t of trainings) {
-    if (t.training_type !== "nr10_basico" || !t.training_date) continue;
+    if (t.training_type !== type || !t.training_date) continue;
     if (!latest || t.training_date > latest) latest = t.training_date;
   }
   return latest;
+}
+
+/** Data do treinamento NR-10 Básico mais recente (formação ou reciclagem). */
+export function latestBasicoDate(trainings: AptidaoInput["trainings"]): string | null {
+  return latestTrainingDate(trainings, "nr10_basico");
 }
 
 export function computeAptidao(input: AptidaoInput): Aptidao {
@@ -82,11 +95,13 @@ export function computeAptidao(input: AptidaoInput): Aptidao {
     push("colaborador_inativo");
   }
 
-  // 1) Autorização formal vigente (NR-10 10.8.4)
+  // 1) Autorização formal vigente (NR-10 10.8.4) e não suspensa pelo PLH.
+  // "suspended" é uma decisão manual e independente das demais condições —
+  // o PLH pode suspender mesmo com ASO/treinamento em dia.
   if (!input.authorization) {
     push("sem_autorizacao");
-  } else if (!input.authorization.valid) {
-    push("autorizacao_invalida");
+  } else if (input.authorization.suspended) {
+    push("autorizacao_suspensa");
   }
 
   // 2) Capacitação NR-10 Básico válida (reciclagem bienal — 10.8.8)
@@ -95,6 +110,18 @@ export function computeAptidao(input: AptidaoInput): Aptidao {
     push("nr10_basico_ausente");
   } else if (trainingExpiryStatus(basicoDate) === "expired") {
     push("nr10_basico_vencido");
+  }
+
+  // 2b) Capacitação NR-10 Complementar - SEP (mesma reciclagem bienal),
+  // exigida sempre que a equipe do colaborador exige SEP (requiredTrainings).
+  // Áreas Classificadas é só informativa — não bloqueia.
+  if (requiredTrainings(input.employee.setor).includes("sep")) {
+    const sepDate = latestTrainingDate(input.trainings, "sep");
+    if (!sepDate) {
+      push("sep_ausente");
+    } else if (trainingExpiryStatus(sepDate) === "expired") {
+      push("sep_vencido");
+    }
   }
 
   // 3) ASO válido com aptidão para eletricidade (10.8.7)

@@ -2097,8 +2097,8 @@ export type Database = {
           is_current: boolean
           level: string
           org_id: string
+          suspended: boolean
           updated_at: string
-          valid: boolean
         }
         Insert: {
           abrangencia?: string | null
@@ -2110,8 +2110,8 @@ export type Database = {
           is_current?: boolean
           level: string
           org_id: string
+          suspended?: boolean
           updated_at?: string
-          valid?: boolean
         }
         Update: {
           abrangencia?: string | null
@@ -2123,8 +2123,8 @@ export type Database = {
           is_current?: boolean
           level?: string
           org_id?: string
+          suspended?: boolean
           updated_at?: string
-          valid?: boolean
         }
         Relationships: [
           {

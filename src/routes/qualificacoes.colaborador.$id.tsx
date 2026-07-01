@@ -309,9 +309,9 @@ function ColaboradorDossiePage() {
                 </div>
                 <div className="text-right">
                   <div
-                    className={`text-sm font-semibold ${currentAuth.valid ? "text-emerald-600" : "text-red-600"}`}
+                    className={`text-sm font-semibold ${currentAuth.suspended ? "text-red-600" : "text-emerald-600"}`}
                   >
-                    {currentAuth.valid ? "VÁLIDA" : "INVÁLIDA"}
+                    {currentAuth.suspended ? "SUSPENSA" : "VÁLIDA"}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
                     desde {formatDatePtBR(currentAuth.authorization_date)}
@@ -329,7 +329,7 @@ function ColaboradorDossiePage() {
                     <div key={h.id} className="text-xs flex gap-3 text-muted-foreground">
                       <span className="font-mono font-semibold">{h.level}</span>
                       <span>{formatDatePtBR(h.authorization_date)}</span>
-                      <span>{h.valid ? "Válida" : "Inválida"}</span>
+                      <span>{h.suspended ? "Suspensa" : "Válida"}</span>
                       <span className="truncate">{h.funcao ?? ""}</span>
                     </div>
                   ))}

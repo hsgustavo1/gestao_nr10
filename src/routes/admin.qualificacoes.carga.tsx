@@ -223,10 +223,10 @@ function parseWorkbook(wb: XLSX.WorkBook): ParsedData {
           funcao: strOrNull(row[32]),
           abrangencia: strOrNull(row[33]),
           authorization_date: parseExcelDate(row[30]),
-          valid:
+          suspended:
             String(row[34] ?? "")
               .trim()
-              .toLowerCase() === "sim",
+              .toLowerCase() !== "sim",
         });
       }
     }

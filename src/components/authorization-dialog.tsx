@@ -38,7 +38,7 @@ const schema = z.object({
   funcao: z.string().optional(),
   abrangencia: z.string().optional(),
   authorization_date: z.string().optional(),
-  valid: z.boolean(),
+  suspended: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -68,7 +68,7 @@ export function AuthorizationDialog({
       funcao: authorization?.funcao ?? "",
       abrangencia: authorization?.abrangencia ?? "",
       authorization_date: authorization?.authorization_date ?? "",
-      valid: authorization?.valid ?? false,
+      suspended: authorization?.suspended ?? false,
     },
   });
 
@@ -80,7 +80,7 @@ export function AuthorizationDialog({
         funcao: authorization?.funcao ?? "",
         abrangencia: authorization?.abrangencia ?? "",
         authorization_date: authorization?.authorization_date ?? "",
-        valid: authorization?.valid ?? false,
+        suspended: authorization?.suspended ?? false,
       });
     }
   }, [open, employeeId, authorization, form]);
@@ -185,10 +185,10 @@ export function AuthorizationDialog({
 
             <FormField
               control={form.control}
-              name="valid"
+              name="suspended"
               render={({ field }) => (
                 <FormItem className="flex items-center gap-3">
-                  <FormLabel className="mt-0">Autorização válida</FormLabel>
+                  <FormLabel className="mt-0">Autorização suspensa por decisão do PLH</FormLabel>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>

@@ -125,10 +125,10 @@ export function useComplianceReport() {
       return { type, label: TRAINING_LABELS[type], valid, universe, percent: pct(valid, universe) };
     }).filter((r) => r.universe > 0);
 
-    // Autorizações: % de ativos com autorização válida
-    const validAuth = (authorizations as Array<{ employee_id: string; valid: boolean }>).filter(
-      (a) => a.valid && employeeIds.has(a.employee_id),
-    ).length;
+    // Autorizações: % de ativos com autorização válida (não suspensa)
+    const validAuth = (
+      authorizations as Array<{ employee_id: string; suspended: boolean }>
+    ).filter((a) => !a.suspended && employeeIds.has(a.employee_id)).length;
     const authPercent = pct(validAuth, employees.length);
 
     // Prontuário

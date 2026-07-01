@@ -114,7 +114,8 @@ export type WorkAuthorization = {
   funcao: string | null;
   abrangencia: string | null;
   authorization_date: string | null;
-  valid: boolean;
+  /** Suspensão manual pelo PLH — default false; independente de ASO/treinamento. */
+  suspended: boolean;
   is_current: boolean;
   created_at: string;
   updated_at: string;
