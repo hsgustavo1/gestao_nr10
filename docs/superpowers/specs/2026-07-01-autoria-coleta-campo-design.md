@@ -152,14 +152,18 @@ relatório.
    `responsavel_auditoria`.** Passa a receber `responsavelAuditoria:
    string | null` como parâmetro explícito, vindo do diálogo de composição.
 5. **`ComporRtiDialog` (`campo.inspecao.$id.tsx`) ganha um campo de texto
-   "Responsável pela auditoria"**, editável, default a definir (ver Open
-   Question).
-6. **RTI composto exibe "Coletado em campo por"**: lista deduplicada de
-   `collected_by_name` não-nulos entre os pontos da inspeção, calculada no
-   momento da composição e persistida em algum lugar legível no relatório
-   final — mecanismo exato (novo campo em `rti_reports`, ou string
-   concatenada em `notes`, ou tabela de junção) a decidir no plano de
-   implementação, não nesta spec.
+   "Responsável pela auditoria"**, pré-preenchido com `actorName` (quem
+   está compondo o RTI agora) e editável — não travado, o consolidador pode
+   trocar pelo nome de outra pessoa (ex.: engenheiro responsável formal que
+   não é quem está com a mão no teclado).
+6. **Coluna nova em `rti_reports`: `coletores_campo text[] null`.** Campo
+   estruturado (array), não texto livre concatenado — guarda a lista
+   deduplicada de `collected_by_name` não-nulos entre os pontos da
+   inspeção, calculada no momento da composição do RTI. Escolhido em vez de
+   tabela de junção porque não há necessidade nesta fatia de consultar "em
+   quais relatórios este coletor apareceu" (isso seria P2); um array
+   resolve a exibição no relatório sem esse overhead, e pode evoluir pra
+   tabela normalizada depois se um consumidor estruturado aparecer.
    - Acceptance: se todos os pontos tiverem `collected_by_name = null`
      (dado legado, pré-migração), a seção mostra algo como "não
      registrado" em vez de lista vazia silenciosa.
@@ -181,14 +185,12 @@ relatório.
 
 ## Open Questions
 
-- [produto] Default do campo "Responsável pela auditoria" no diálogo de
-  composição: vazio (força escolha explícita) ou pré-preenchido com
-  `actorName` (quem está compondo agora), editável? Definir antes de
-  implementar o requirement P0-5.
-- [engenharia] Mecanismo de persistência de "Coletado em campo por"
-  (requirement P0-6) — campo estruturado vs. texto livre. Decidir no plano
-  de implementação, considerando se algum consumidor futuro (P2) vai
-  precisar consultar isso de forma estruturada.
+Nenhuma pendente — resolvidas nesta sessão:
+
+- Default do campo "Responsável pela auditoria": pré-preenchido com
+  `actorName`, editável (requirement P0-5).
+- Persistência de "Coletado em campo por": campo estruturado,
+  `rti_reports.coletores_campo text[]` (requirement P0-6).
 
 ## Timeline
 
