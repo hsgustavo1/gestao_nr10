@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { resizeImage } from "@/lib/campo";
+import { mensagemUploadAmigavel, removerArquivosOrfaos } from "@/lib/upload";
 import type { RtiArea, RtiNc, RtiNcEvidencia, RtiNcHistorico, RtiReport } from "./rti";
 import type { RtiSnapshotRow } from "./rti-snapshots";
 
@@ -114,24 +116,28 @@ export function useDeleteRtiReport() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (reportId: string) => {
-      // Remove arquivos de evidências do storage antes do cascade
+      // 1. Coleta paths: PDF do relatório + evidências de todas as NCs
+      const paths: string[] = [];
+      const { data: rep } = await supabase
+        .from("rti_reports")
+        .select("report_path")
+        .eq("id", reportId)
+        .maybeSingle();
+      if (rep?.report_path) paths.push(rep.report_path);
+
       const ncs = await fetchAllRows<{ id: string }>((from, to) =>
         supabase.from("rti_ncs").select("id").eq("report_id", reportId).range(from, to),
       );
-      if (ncs.length > 0) {
-        const ncIds = ncs.map((n) => n.id);
-        const paths: string[] = [];
-        for (let i = 0; i < ncIds.length; i += 200) {
-          const { data } = await supabase
-            .from("rti_nc_evidencias")
-            .select("file_path")
-            .in("nc_id", ncIds.slice(i, i + 200));
-          for (const e of data ?? []) paths.push(e.file_path);
-        }
-        for (let i = 0; i < paths.length; i += 100) {
-          await supabase.storage.from("rti-evidencias").remove(paths.slice(i, i + 100));
-        }
+      const ncIds = ncs.map((n) => n.id);
+      for (let i = 0; i < ncIds.length; i += 200) {
+        const { data } = await supabase
+          .from("rti_nc_evidencias")
+          .select("file_path")
+          .in("nc_id", ncIds.slice(i, i + 200));
+        for (const e of data ?? []) paths.push(e.file_path);
       }
+
+      // 2. Apaga as linhas de negócio (cascade cuida das NCs/evidências)
       const { count, error } = await supabase
         .from("rti_reports")
         .delete({ count: "exact" })
@@ -141,6 +147,9 @@ export function useDeleteRtiReport() {
         throw new Error(
           "Sem permissão para excluir este relatório. Relatórios entregues por consultor externo só podem ser removidos pelo próprio consultor.",
         );
+
+      // 3. Remove do Storage só o que ficou sem referência
+      await removerArquivosOrfaos(paths);
     },
     onSuccess: () => qc.invalidateQueries(),
   });
@@ -298,11 +307,9 @@ export function useDeleteRtiNc() {
         .select("file_path")
         .eq("nc_id", ncId);
       const paths = (data ?? []).map((e) => e.file_path);
-      if (paths.length > 0) {
-        await supabase.storage.from("rti-evidencias").remove(paths);
-      }
       const { error } = await supabase.from("rti_ncs").delete().eq("id", ncId);
       if (error) throw error;
+      await removerArquivosOrfaos(paths);
     },
     onSuccess: () => invalidateNcs(qc),
   });
@@ -417,9 +424,9 @@ export function useDeleteRtiEvidencia() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (ev: { id: string; nc_id: string; file_path: string }) => {
-      await supabase.storage.from("rti-evidencias").remove([ev.file_path]);
       const { error } = await supabase.from("rti_nc_evidencias").delete().eq("id", ev.id);
       if (error) throw error;
+      await removerArquivosOrfaos([ev.file_path]);
       return ev;
     },
     onSuccess: (ev) => {
@@ -490,13 +497,14 @@ export async function logBulkHistorico(
 // ── Arquivos (bucket rti-evidencias) ─────────────────────────────────────────
 
 export async function uploadRtiFile(file: File, prefix = "evidencias"): Promise<string> {
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+  const resized = await resizeImage(file, 1024);
+  const ext = resized.name.split(".").pop()?.toLowerCase() ?? "bin";
   const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("rti-evidencias").upload(path, file, {
+  const { error } = await supabase.storage.from("rti-evidencias").upload(path, resized, {
     cacheControl: "3600",
     upsert: false,
   });
-  if (error) throw error;
+  if (error) throw new Error(mensagemUploadAmigavel(error));
   return path;
 }
 

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { mensagemUploadAmigavel, removerArquivosOrfaos } from "@/lib/upload";
 import type { RtiArea, RtiNc, RtiReport } from "./rti";
 import {
   caminhoAbaixoDoSetor,
@@ -214,8 +215,8 @@ export function useDeleteFieldInspection() {
         .select("id")
         .eq("inspection_id", inspectionId);
       const pointIds = (points ?? []).map((p) => p.id);
+      const paths: string[] = [];
       if (pointIds.length > 0) {
-        const paths: string[] = [];
         for (let i = 0; i < pointIds.length; i += 200) {
           const { data: photos } = await supabase
             .from("field_photos")
@@ -223,12 +224,10 @@ export function useDeleteFieldInspection() {
             .in("point_id", pointIds.slice(i, i + 200));
           for (const ph of photos ?? []) paths.push(ph.file_path);
         }
-        for (let i = 0; i < paths.length; i += 100) {
-          await supabase.storage.from("rti-evidencias").remove(paths.slice(i, i + 100));
-        }
       }
       const { error } = await supabase.from("field_inspections").delete().eq("id", inspectionId);
       if (error) throw error;
+      await removerArquivosOrfaos(paths);
     },
     onSuccess: () => qc.invalidateQueries(),
   });
@@ -295,16 +294,17 @@ export function useDeleteFieldNode() {
       // dos pontos diretamente no nó (descendentes mais profundos são raros e o arquivo
       // órfão é tolerável). Aqui removemos os do próprio nó.
       const pointIds = (descPoints ?? []).filter((p) => p.node_id === node.id).map((p) => p.id);
+      let paths: string[] = [];
       if (pointIds.length > 0) {
         const { data: photos } = await supabase
           .from("field_photos")
           .select("file_path")
           .in("point_id", pointIds);
-        const paths = (photos ?? []).map((p) => p.file_path);
-        if (paths.length > 0) await supabase.storage.from("rti-evidencias").remove(paths);
+        paths = (photos ?? []).map((p) => p.file_path);
       }
       const { error } = await supabase.from("field_nodes").delete().eq("id", node.id);
       if (error) throw error;
+      await removerArquivosOrfaos(paths);
       return node;
     },
     onSuccess: (node) => {
@@ -527,9 +527,9 @@ export function useDeleteFieldPoint() {
         .select("file_path")
         .eq("point_id", point.id);
       const paths = (photos ?? []).map((p) => p.file_path);
-      if (paths.length > 0) await supabase.storage.from("rti-evidencias").remove(paths);
       const { error } = await supabase.from("field_points").delete().eq("id", point.id);
       if (error) throw error;
+      await removerArquivosOrfaos(paths);
       return point;
     },
     onSuccess: (point) => {
@@ -646,7 +646,7 @@ export async function uploadFieldPhoto(
   file: File,
   orgId?: string,
 ): Promise<{ path: string; name: string }> {
-  const resized = await resizeImage(file);
+  const resized = await resizeImage(file, 1024);
   const ext = resized.name.split(".").pop()?.toLowerCase() ?? "jpg";
   const path = orgId
     ? `${orgId}/campo/${crypto.randomUUID()}.${ext}`
@@ -655,7 +655,7 @@ export async function uploadFieldPhoto(
     cacheControl: "3600",
     upsert: false,
   });
-  if (error) throw error;
+  if (error) throw new Error(mensagemUploadAmigavel(error));
   return { path, name: resized.name };
 }
 
@@ -699,9 +699,9 @@ export function useDeleteFieldPhoto() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (photo: { id: string; file_path: string; point_id: string }) => {
-      await supabase.storage.from("rti-evidencias").remove([photo.file_path]);
       const { error } = await supabase.from("field_photos").delete().eq("id", photo.id);
       if (error) throw error;
+      await removerArquivosOrfaos([photo.file_path]);
       return photo;
     },
     onSuccess: (p) => {
