@@ -4,6 +4,7 @@
 export {
   proximoNivel,
   labelDoTipo,
+  labelDoTipoPlural,
   filhosDoNo,
   modosPorCategoria,
   formatNormas,
