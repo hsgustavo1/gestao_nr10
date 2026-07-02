@@ -7,6 +7,7 @@ import { useState } from "react";
 import { CreateInspectionModal } from "@/components/CreateInspectionModal";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { clearOrgContext } from "@/lib/org";
+import { clearActor } from "@/lib/actor";
 
 const STATUS_LABEL: Record<string, string> = {
   em_andamento: "Em andamento",
@@ -48,6 +49,7 @@ export default function InspectionList() {
       : "Você está OFFLINE. Se sair agora, NÃO conseguirá entrar de novo sem internet. Para continuar usando offline, NÃO saia — apenas feche o app. Sair mesmo assim?";
     if (!window.confirm(msg)) return;
     clearOrgContext();
+    clearActor();
     await supabase.auth.signOut();
     navigate("/login", { replace: true });
   }

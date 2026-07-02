@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { SyncStatus } from "./SyncStatus";
 import { startConnectivityWatcher } from "@/sync/engine";
+import { cacheActor } from "@/lib/actor";
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -11,7 +12,10 @@ export default function Layout() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) navigate("/login", { replace: true });
-      else setChecked(true);
+      else {
+        setChecked(true);
+        void cacheActor();
+      }
     });
   }, [navigate]);
 
