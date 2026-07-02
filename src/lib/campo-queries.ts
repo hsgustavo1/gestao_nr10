@@ -1017,23 +1017,17 @@ export async function comporRti({
         done += 1;
         onProgress?.("Criando NCs", done, totalEtapas);
 
-        // Fotos do ponto → evidência de constatação em cada NC (cópia independente)
+        // Fotos do ponto → evidência de constatação em cada NC (referência, não cópia)
         for (const ph of fotosDoPonto) {
-          const ext = ph.file_path.split(".").pop() ?? "jpg";
-          // Path escopado por org (fallback ao legado `evidencias/…` se a inspeção
-          // não tiver org_id — mantém compatibilidade sem regressão).
-          const novoPath = inspection.org_id
-            ? `${inspection.org_id}/evidencias/${crypto.randomUUID()}.${ext}`
-            : `evidencias/${crypto.randomUUID()}.${ext}`;
-          const { error: cpErr } = await supabase.storage
-            .from("rti-evidencias")
-            .copy(ph.file_path, novoPath);
-          if (cpErr) throw cpErr;
+          // Decisão C (2026-07-02): referencia a foto de campo (JÁ comprimida via
+          // PWA + resizeImage 1024) em vez de copiar — 1× storage. A exclusão é
+          // reference-aware (removerArquivosOrfaos), então o arquivo só some quando
+          // NENHUMA linha (campo ou RTI) o referenciar mais.
           const { error: evErr } = await supabase.from("rti_nc_evidencias").insert({
             ...(orgId ? { org_id: orgId } : {}),
             nc_id: nc.id,
             tipo: "constatacao",
-            file_path: novoPath,
+            file_path: ph.file_path,
             file_name: ph.file_name,
             mime_type: "image/jpeg",
             descricao: ph.legenda,
@@ -1042,7 +1036,7 @@ export async function comporRti({
           if (evErr) throw evErr;
           fotosCopiadas += 1;
           done += 1;
-          onProgress?.("Copiando fotos", done, totalEtapas);
+          onProgress?.("Vinculando fotos", done, totalEtapas);
         }
 
         await supabase.from("rti_nc_historico").insert({
