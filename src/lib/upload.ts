@@ -93,6 +93,10 @@ const BUCKET_EVIDENCIAS = "rti-evidencias";
  * `field_photos` nem `rti_nc_evidencias`. Chamar DEPOIS de apagar as linhas de negócio.
  * Reference-aware: nunca apaga arquivo ainda em uso (fotos de campo compartilhadas com RTI).
  * Checa o erro do `.remove()` e o propaga (não deixa órfão em silêncio).
+ *
+ * Não é atômico: uma inserção concorrente que referencie um dos paths entre a checagem
+ * e a remoção não é coberta (janela considerada aceitável — paths são únicos por UUID).
+ * Se um lote de `.remove()` falhar, os lotes anteriores já foram removidos com sucesso.
  */
 export async function removerArquivosOrfaos(paths: string[]): Promise<void> {
   const unicos = [...new Set(paths.filter(Boolean))];
