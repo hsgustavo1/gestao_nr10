@@ -710,6 +710,8 @@ export type Database = {
       }
       field_points: {
         Row: {
+          collected_by_name: string | null
+          collected_by_user_id: string | null
           created_at: string
           id: string
           inspection_id: string
@@ -721,6 +723,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          collected_by_name?: string | null
+          collected_by_user_id?: string | null
           created_at?: string
           id?: string
           inspection_id: string
@@ -732,6 +736,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          collected_by_name?: string | null
+          collected_by_user_id?: string | null
           created_at?: string
           id?: string
           inspection_id?: string
@@ -1922,6 +1928,7 @@ export type Database = {
       }
       rti_reports: {
         Row: {
+          coletores_campo: string[] | null
           created_at: string
           created_by: string | null
           created_by_name: string | null
@@ -1941,6 +1948,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          coletores_campo?: string[] | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
@@ -1960,6 +1968,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          coletores_campo?: string[] | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
