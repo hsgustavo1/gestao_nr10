@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { resizeImage } from "@/lib/campo";
 import { mensagemUploadAmigavel, removerArquivosOrfaos } from "@/lib/upload";
+import { evidenciaFolder, evidenciaPath, maiorIndiceEvidencia } from "@/lib/storage-paths";
 import type { RtiArea, RtiNc, RtiNcEvidencia, RtiNcHistorico, RtiReport } from "./rti";
 import type { RtiSnapshotRow } from "./rti-snapshots";
 
@@ -496,16 +497,45 @@ export async function logBulkHistorico(
 
 // ── Arquivos (bucket rti-evidencias) ─────────────────────────────────────────
 
-export async function uploadRtiFile(file: File, prefix = "evidencias"): Promise<string> {
+export type RtiEvidenciaUploadOpts = {
+  orgId: string;
+  reportId: string;
+  reportTitulo: string | null;
+  ncNum: number;
+};
+
+/**
+ * Comprime e envia uma evidência para {org}/{reportSlug}/nc-{ncNum}-{idx}.{ext}.
+ * O índice é o maior existente no prefixo + 1; em conflito de nome (corrida),
+ * incrementa e tenta de novo. Retorna o file_path final gravado.
+ */
+export async function uploadRtiEvidencia(
+  file: File,
+  opts: RtiEvidenciaUploadOpts,
+): Promise<string> {
   const resized = await resizeImage(file, 1024);
-  const ext = resized.name.split(".").pop()?.toLowerCase() ?? "bin";
-  const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("rti-evidencias").upload(path, resized, {
-    cacheControl: "3600",
-    upsert: false,
-  });
-  if (error) throw new Error(mensagemUploadAmigavel(error));
-  return path;
+  const ext = resized.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const report = { id: opts.reportId, titulo: opts.reportTitulo };
+
+  // Descobre o próximo índice olhando o que já existe no prefixo do relatório.
+  const { data: listagem } = await supabase.storage
+    .from("rti-evidencias")
+    .list(evidenciaFolder(opts.orgId, report), { limit: 1000 });
+  let idx = maiorIndiceEvidencia((listagem ?? []).map((o) => o.name), opts.ncNum) + 1;
+
+  // Envia; se o nome colidir (outra sessão pegou o mesmo índice), incrementa e repete.
+  for (let tentativa = 0; tentativa < 10; tentativa++) {
+    const path = evidenciaPath(opts.orgId, report, opts.ncNum, idx, ext);
+    const { error } = await supabase.storage
+      .from("rti-evidencias")
+      .upload(path, resized, { cacheControl: "3600", upsert: false });
+    if (!error) return path;
+    const raw = (error as Error).message?.toLowerCase() ?? "";
+    const colisao = raw.includes("already exists") || raw.includes("duplicate");
+    if (!colisao) throw new Error(mensagemUploadAmigavel(error));
+    idx += 1;
+  }
+  throw new Error("Não foi possível salvar a evidência. Tente novamente em instantes.");
 }
 
 export function rtiFileUrl(path: string): string {
@@ -534,15 +564,43 @@ export async function bulkAttachRtiEvidencias({
   onProgress?: (done: number, total: number) => void;
 }) {
   // Carimba o mesmo org_id das NCs (fn_default_org_id só cobre usuário de 1 org).
-  const { data: ncsData } = await supabase.from("rti_ncs").select("id, org_id").in("id", ncIds);
-  const orgIdByNc = new Map((ncsData ?? []).map((n) => [n.id, n.org_id as string | undefined]));
+  const { data: ncsData } = await supabase
+    .from("rti_ncs")
+    .select("id, org_id, numero, report_id")
+    .in("id", ncIds);
+  const ncInfoById = new Map(
+    (ncsData ?? []).map((n) => [
+      n.id as string,
+      {
+        orgId: n.org_id as string | undefined,
+        numero: n.numero as number,
+        reportId: n.report_id as string,
+      },
+    ]),
+  );
+
+  const reportIds = [...new Set((ncsData ?? []).map((n) => n.report_id as string))];
+  const { data: reportsData } = await supabase
+    .from("rti_reports")
+    .select("id, titulo")
+    .in("id", reportIds);
+  const reportTituloById = new Map(
+    (reportsData ?? []).map((r) => [r.id as string, r.titulo as string | null]),
+  );
 
   const total = ncIds.length * files.length;
   let done = 0;
   for (const ncId of ncIds) {
+    const info = ncInfoById.get(ncId);
+    if (!info?.orgId) throw new Error("NC sem organização definida; não é possível anexar evidência.");
     const rows: (Omit<RtiNcEvidencia, "id" | "created_at"> & { org_id?: string })[] = [];
     for (const file of files) {
-      const path = await uploadRtiFile(file);
+      const path = await uploadRtiEvidencia(file, {
+        orgId: info.orgId,
+        reportId: info.reportId,
+        reportTitulo: reportTituloById.get(info.reportId) ?? null,
+        ncNum: info.numero,
+      });
       rows.push({
         nc_id: ncId,
         tipo,
@@ -551,7 +609,7 @@ export async function bulkAttachRtiEvidencias({
         mime_type: file.type || null,
         descricao,
         created_by_name: autorNome,
-        org_id: orgIdByNc.get(ncId),
+        org_id: info.orgId,
       });
       done += 1;
       onProgress?.(done, total);

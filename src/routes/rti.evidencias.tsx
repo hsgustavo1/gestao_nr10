@@ -41,7 +41,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { RTI_EVIDENCIA_TIPO_LABELS, type RtiEvidenciaTipo, type RtiNc } from "@/lib/rti";
 import {
-  uploadRtiFile,
+  uploadRtiEvidencia,
   useRtiEvidenciaFileIndex,
   useRtiNcs,
   useRtiReports,
@@ -172,6 +172,11 @@ function RtiEvidenciasMassaPage() {
 
   async function importar() {
     if (!activeReport || analise.ok.length === 0) return;
+    if (!auth.currentOrgId) {
+      toast.error("Selecione uma empresa antes de importar evidências.");
+      return;
+    }
+    const orgId = auth.currentOrgId;
     setImporting(true);
     setProgress({ done: 0, total: analise.ok.length });
     const porNc = new Map<string, number>();
@@ -179,7 +184,12 @@ function RtiEvidenciasMassaPage() {
     try {
       for (const item of analise.ok) {
         const nc = item.nc!;
-        const path = await uploadRtiFile(item.row.file, `nc-${nc.numero}`);
+        const path = await uploadRtiEvidencia(item.row.file, {
+          orgId,
+          reportId: nc.report_id,
+          reportTitulo: activeReport?.titulo ?? null,
+          ncNum: nc.numero,
+        });
         const { error } = await supabase.from("rti_nc_evidencias").insert({
           ...(auth.currentOrgId ? { org_id: auth.currentOrgId } : {}),
           nc_id: nc.id,
