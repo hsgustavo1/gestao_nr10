@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import type { RtiArea, RtiNc, RtiReport } from "./rti";
 import {
   caminhoAbaixoDoSetor,
+  coletoresCampoDe,
   normalizarEstrutura,
   resizeImage,
   setorDoNo,
@@ -798,11 +799,13 @@ export async function comporRti({
   inspection,
   destino,
   actorName,
+  responsavelAuditoria,
   onProgress,
 }: {
   inspection: FieldInspection;
   destino: ComporRtiDestino;
   actorName: string | null;
+  responsavelAuditoria: string | null;
   onProgress?: (etapa: string, done: number, total: number) => void;
 }): Promise<ComporRtiResult> {
   // Raiz do RTI herda a org da inspeção de origem; as NCs/áreas/evidências
@@ -863,14 +866,19 @@ export async function comporRti({
   if (destino.mode === "existente") {
     reportId = destino.reportId;
   } else {
+    // coletores_campo só é gravado na criação — mesmo comportamento que os
+    // demais campos deste insert (empresa_auditora, responsavel_auditoria):
+    // recompor pra um relatório existente não atualiza metadados do relatório.
+    const coletoresCampo = coletoresCampoDe(points);
     const { data: rep, error: rErr } = await supabase
       .from("rti_reports")
       .insert({
         ...(orgId ? { org_id: orgId } : {}),
         titulo: inspection.titulo,
         empresa_auditora: inspection.cliente,
-        responsavel_auditoria: inspection.engenheiro,
+        responsavel_auditoria: responsavelAuditoria,
         responsavel_plano: null,
+        coletores_campo: coletoresCampo,
         periodo_inicio: inspection.data_inspecao,
         periodo_fim: inspection.data_inspecao,
         notes: `Composto a partir da coleta em campo "${inspection.titulo}".`,
