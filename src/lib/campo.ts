@@ -178,6 +178,21 @@ export function caminhoAbaixoDoSetor(nodeId: string, byId: Map<string, FieldNode
     .join(" › ");
 }
 
+/**
+ * Lista deduplicada de coletores de campo (field_points.collected_by_name),
+ * na ordem de primeira aparição. null quando nenhum ponto tem coletor
+ * registrado (dado legado pré-migração, ou lista vazia).
+ */
+export function coletoresCampoDe(points: FieldPoint[]): string[] | null {
+  const nomes: string[] = [];
+  for (const p of points) {
+    if (p.collected_by_name && !nomes.includes(p.collected_by_name)) {
+      nomes.push(p.collected_by_name);
+    }
+  }
+  return nomes.length > 0 ? nomes : null;
+}
+
 /** Filhos diretos de um nó (parentId null = setores na raiz). */
 export function filhosDoNo(parentId: string | null, nodes: FieldNode[]): FieldNode[] {
   return nodes

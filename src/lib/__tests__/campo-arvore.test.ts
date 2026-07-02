@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   caminhoAbaixoDoSetor,
+  coletoresCampoDe,
   filhosDoNo,
   nodePath,
   normalizarEstrutura,
   proximoNivel,
   setorDoNo,
   type FieldNode,
+  type FieldPoint,
 } from "../campo";
 
 // Helper para montar nós de teste com o mínimo de campos
@@ -83,5 +85,40 @@ describe("normalizarEstrutura", () => {
       { setor: "Moagem", ativo: "CCM-02", componente: "G4" },
       { setor: "Caldeira", ativo: null, componente: null },
     ]);
+  });
+});
+
+describe("coletoresCampoDe", () => {
+  function ponto(collected_by_name: string | null): FieldPoint {
+    return {
+      id: "p",
+      inspection_id: "i",
+      node_id: "n",
+      titulo: null,
+      observacoes: null,
+      ordem: 0,
+      collected_by_user_id: null,
+      collected_by_name,
+      created_at: "",
+      updated_at: "",
+    };
+  }
+
+  it("deduplica nomes repetidos preservando a ordem de primeira aparição", () => {
+    const pontos = [ponto("Ana"), ponto("Beto"), ponto("Ana")];
+    expect(coletoresCampoDe(pontos)).toEqual(["Ana", "Beto"]);
+  });
+
+  it("ignora entradas null (dado legado pré-migração)", () => {
+    const pontos = [ponto(null), ponto("Ana"), ponto(null)];
+    expect(coletoresCampoDe(pontos)).toEqual(["Ana"]);
+  });
+
+  it("retorna null quando nenhum ponto tem coletor registrado", () => {
+    expect(coletoresCampoDe([ponto(null), ponto(null)])).toBeNull();
+  });
+
+  it("retorna null para lista vazia", () => {
+    expect(coletoresCampoDe([])).toBeNull();
   });
 });
