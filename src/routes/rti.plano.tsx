@@ -840,7 +840,7 @@ function RtiPlanoPage() {
 
       {activeReport && repAcc?.canEntregar && auth.currentOrgId && (
         <EntregarRtiDialog
-          key={`${activeReport.id}:${entregarOpen}`}
+          key={activeReport.id}
           open={entregarOpen}
           onOpenChange={setEntregarOpen}
           report={activeReport}
@@ -1475,6 +1475,20 @@ function EntregarRtiDialog({
   const [respPlano, setRespPlano] = useState("");
   const [inicio, setInicio] = useState(report.periodo_inicio ?? "");
   const [fim, setFim] = useState(report.periodo_fim ?? "");
+
+  // Reseta os campos toda vez que o pop-up abre — evita que extras/textos/datas
+  // de uma abertura anterior (ou de outro relatório) sobrevivam ao fechar
+  // sem remontar o nó do Dialog (o que quebraria a animação de saída do Radix).
+  useEffect(() => {
+    if (open) {
+      setExtras([]);
+      setNovo("");
+      setTecnicoRti("");
+      setRespPlano("");
+      setInicio(report.periodo_inicio ?? "");
+      setFim(report.periodo_fim ?? "");
+    }
+  }, [open, report]);
 
   const totalCampo = auto.length + extras.length;
   const podeEntregar = totalCampo >= 1 && inicio !== "" && fim !== "";
