@@ -840,6 +840,7 @@ function RtiPlanoPage() {
 
       {activeReport && repAcc?.canEntregar && auth.currentOrgId && (
         <EntregarRtiDialog
+          key={`${activeReport.id}:${entregarOpen}`}
           open={entregarOpen}
           onOpenChange={setEntregarOpen}
           report={activeReport}
@@ -1464,7 +1465,10 @@ function EntregarRtiDialog({
     periodoFim: string;
   }) => void;
 }) {
-  const auto = useMemo(() => responsaveisInspecaoCampo(report.coletores_campo, null), [report]);
+  const auto = useMemo(
+    () => responsaveisInspecaoCampo(report.coletores_campo, null),
+    [report.coletores_campo],
+  );
   const [extras, setExtras] = useState<string[]>([]);
   const [novo, setNovo] = useState("");
   const [tecnicoRti, setTecnicoRti] = useState("");
