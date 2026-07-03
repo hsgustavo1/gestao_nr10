@@ -1942,8 +1942,10 @@ export type Database = {
           periodo_fim: string | null
           periodo_inicio: string | null
           report_path: string | null
-          responsavel_auditoria: string | null
+          responsaveis_campo_extra: string[] | null
           responsavel_plano: string | null
+          responsavel_relatorio: string | null
+          responsavel_tecnico_rti: string | null
           titulo: string
           updated_at: string
         }
@@ -1962,8 +1964,10 @@ export type Database = {
           periodo_fim?: string | null
           periodo_inicio?: string | null
           report_path?: string | null
-          responsavel_auditoria?: string | null
+          responsaveis_campo_extra?: string[] | null
           responsavel_plano?: string | null
+          responsavel_relatorio?: string | null
+          responsavel_tecnico_rti?: string | null
           titulo: string
           updated_at?: string
         }
@@ -1982,8 +1986,10 @@ export type Database = {
           periodo_fim?: string | null
           periodo_inicio?: string | null
           report_path?: string | null
-          responsavel_auditoria?: string | null
+          responsaveis_campo_extra?: string[] | null
           responsavel_plano?: string | null
+          responsavel_relatorio?: string | null
+          responsavel_tecnico_rti?: string | null
           titulo?: string
           updated_at?: string
         }
@@ -2236,7 +2242,16 @@ export type Database = {
         Returns: undefined
       }
       fn_entregar_rti_report: {
-        Args: { _entregue_por_org: string; _report_id: string }
+        Args: {
+          _report_id: string
+          _entregue_por_org: string
+          _responsaveis_campo_extra: string[]
+          _responsavel_relatorio: string
+          _responsavel_tecnico_rti: string
+          _responsavel_plano: string
+          _periodo_inicio: string
+          _periodo_fim: string
+        }
         Returns: undefined
       }
       fn_inspection_delivery_visible: {
