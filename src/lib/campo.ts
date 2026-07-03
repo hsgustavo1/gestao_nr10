@@ -242,10 +242,12 @@ export function normalizarEstrutura(linhas: EstruturaLinha[]): EstruturaLinha[] 
 }
 
 // ── Redimensionamento de fotos no cliente ────────────────────────────────────
-// Fotos de campo saem do celular com 8–20 MB; reduzimos para ~1600px JPEG
-// antes do upload (conexão de campo costuma ser ruim).
+// Fotos saem do celular/câmera com 8–20 MB; reduzimos para ~1024px JPEG antes do
+// upload. Além da conexão de campo ruim, isso segura o crescimento do storage do
+// Supabase (decisão de MVP em 2026-07-02: alvo 1024px em todos os uploads).
+// Não-imagens (PDF) passam intactas; qualquer falha cai no original.
 
-export async function resizeImage(file: File, maxDim = 1600, quality = 0.85): Promise<File> {
+export async function resizeImage(file: File, maxDim = 1024, quality = 0.85): Promise<File> {
   if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
   try {
     const bitmap = await createImageBitmap(file);

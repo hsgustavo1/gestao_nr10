@@ -4,12 +4,13 @@ import imageCompression from "browser-image-compression";
 // Estratégia: o original full-res permanece na galeria do aparelho (o OS salva ao
 // usar a câmera via <input capture>); só a versão comprimida entra no app/Supabase.
 //
-// Calibragem inicial (decidida pelo usuário em 2026-06-23): alvo 0,6 MB, mantendo
-// resolução suficiente para ler placas, terminais e etiquetas. Ajustar aqui se a
-// legibilidade no campo pedir mais/menos.
+// Calibragem (2026-07-02): alvo 0,6 MB e 1024px de lado maior, alinhado ao limite
+// de 1024px usado em todos os uploads do app principal — decisão de MVP para conter
+// o crescimento do storage do Supabase. Ajustar aqui se a legibilidade de placas,
+// terminais e etiquetas no campo pedir mais resolução.
 const COMPRESSION_OPTS = {
   maxSizeMB: 0.6,
-  maxWidthOrHeight: 2048,
+  maxWidthOrHeight: 1024,
   useWebWorker: true,
   fileType: "image/jpeg",
   initialQuality: 0.8,

@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { resizeImage } from "@/lib/campo";
+import { mensagemUploadAmigavel } from "@/lib/upload";
 import type {
   Employee,
   NR10Training,
@@ -465,13 +467,14 @@ export async function uploadCertificateFile(
   file: File,
   suffix?: string,
 ): Promise<string> {
-  const ext = file.name.split(".").pop() ?? "pdf";
+  const resized = await resizeImage(file, 1024);
+  const ext = resized.name.split(".").pop() ?? "pdf";
   const path = `${employeeId}/${Date.now()}${suffix ? `_${suffix}` : ""}.${ext}`;
-  const { error } = await supabase.storage.from("certificates").upload(path, file, {
+  const { error } = await supabase.storage.from("certificates").upload(path, resized, {
     cacheControl: "3600",
     upsert: false,
   });
-  if (error) throw error;
+  if (error) throw new Error(mensagemUploadAmigavel(error));
   const { data } = supabase.storage.from("certificates").getPublicUrl(path);
   return data.publicUrl;
 }

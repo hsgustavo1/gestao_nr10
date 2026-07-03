@@ -41,22 +41,31 @@ describe("evidenciaFolder / evidenciaFileName / evidenciaPath", () => {
   it("monta o prefixo por relatório", () => {
     expect(evidenciaFolder(org, report)).toBe(`${org}/rti-1-6d9ec4c6`);
   });
-  it("nomeia por NC e índice", () => {
-    expect(evidenciaFileName(2, 3, "jpg")).toBe("nc-2-3.jpg");
+  it("com nome da empresa, prefixa o slug antes do id", () => {
+    expect(evidenciaFolder(org, report, "Equipe Interna S/A")).toBe(
+      `equipe-interna-s-a-${org}/rti-1-6d9ec4c6`,
+    );
+  });
+  it("nomeia por NC e índice com zero-padding (4 e 2 dígitos)", () => {
+    expect(evidenciaFileName(2, 3, "jpg")).toBe("nc-0002-03.jpg");
+    expect(evidenciaFileName(10, 1, "jpg")).toBe("nc-0010-01.jpg");
   });
   it("caminho completo", () => {
     expect(evidenciaPath(org, report, 2, 3, "jpg")).toBe(
-      `${org}/rti-1-6d9ec4c6/nc-2-3.jpg`,
+      `${org}/rti-1-6d9ec4c6/nc-0002-03.jpg`,
     );
   });
 });
 
 describe("maiorIndiceEvidencia", () => {
   it("retorna o maior índice da NC pedida, ignorando outras NCs e extensões", () => {
-    const names = ["nc-1-1.jpg", "nc-1-2.jpeg", "nc-2-1.jpg", "nc-10-1.jpg"];
+    const names = ["nc-0001-01.jpg", "nc-0001-02.jpeg", "nc-0002-01.jpg", "nc-0010-01.jpg"];
     expect(maiorIndiceEvidencia(names, 1)).toBe(2);
     expect(maiorIndiceEvidencia(names, 2)).toBe(1);
     expect(maiorIndiceEvidencia(names, 10)).toBe(1);
+  });
+  it("tolera o formato antigo sem padding misturado no mesmo prefixo", () => {
+    expect(maiorIndiceEvidencia(["nc-1-1.jpg", "nc-0001-02.jpg"], 1)).toBe(2);
   });
   it("NC sem arquivos retorna 0", () => {
     expect(maiorIndiceEvidencia(["nc-1-1.jpg"], 9)).toBe(0);

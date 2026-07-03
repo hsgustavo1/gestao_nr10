@@ -72,7 +72,7 @@ function FindingForm({
         <button onClick={onClose} className="p-2.5 -m-1 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 flex items-center justify-center">
           <X className="h-5 w-5" />
         </button>
-        <h2 className="font-semibold flex-1">Novo achado</h2>
+        <h2 className="font-semibold flex-1">Nova não conformidade</h2>
         <button
           onClick={handleSave}
           disabled={saving || !descricao.trim()}
@@ -115,7 +115,7 @@ function FindingForm({
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             rows={3}
-            placeholder="Descreva o achado..."
+            placeholder="Descreva a não conformidade..."
             className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
@@ -220,7 +220,7 @@ function FindingCard({ finding, modos }: { finding: LocalFinding; modos: RtiModo
           {modo && <p className="text-xs text-blue-400">{modo.label}</p>}
           <p className="text-sm">{finding.descricao}</p>
         </div>
-        <button onClick={handleDelete} className="p-1 shrink-0" aria-label="Remover achado">
+        <button onClick={handleDelete} className="p-1 shrink-0" aria-label="Remover não conformidade">
           <Trash2 className="h-4 w-4 text-red-400" />
         </button>
       </div>
@@ -283,11 +283,18 @@ export default function PointCapture() {
     setLegendaInput("");
     // reset input so the same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = "";
+
+    // Primeira foto do ponto: abre o formulário de NC na hora, em vez de só
+    // cobrar isso quando o técnico tenta sair (gate de saída continua como rede
+    // de segurança para quem cancelar o formulário sem salvar).
+    if ((findings ?? []).length === 0) {
+      setShowFindingForm(true);
+    }
   }
 
-  // Remove o ponto e tudo abaixo (fotos/achados) localmente; descarta inserts ainda
+  // Remove o ponto e tudo abaixo (fotos/NCs) localmente; descarta inserts ainda
   // pendentes na fila (evita criar no servidor só pra deletar) e, para o que já foi
-  // sincronizado, enfileira a deleção (a cascata no servidor cobre fotos/achados).
+  // sincronizado, enfileira a deleção (a cascata no servidor cobre fotos/NCs).
   async function purgePoint() {
     if (!nodeId) return;
     const ptPhotos = await db.photos.where("point_id").equals(nodeId).toArray();
@@ -320,7 +327,7 @@ export default function PointCapture() {
     if (leaving) return;
     const f = findings ?? [];
     const ph = photos ?? [];
-    // Toda foto precisa virar uma não conformidade. Sem nenhum achado, o ponto não pode
+    // Toda foto precisa virar uma não conformidade. Sem nenhuma NC, o ponto não pode
     // persistir com foto solta: ou se adiciona uma NC, ou apaga.
     if (f.length === 0) {
       if (ph.length === 0) {
@@ -408,12 +415,16 @@ export default function PointCapture() {
           </button>
         </section>
 
-        {/* Achados */}
+        {/* Não conformidades */}
         <section className="space-y-3">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Achados</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+            Não conformidades
+          </p>
 
           {findings?.length === 0 && (
-            <p className="text-sm text-slate-500 text-center py-2">Nenhum achado registrado.</p>
+            <p className="text-sm text-slate-500 text-center py-2">
+              Nenhuma não conformidade registrada.
+            </p>
           )}
 
           {findings?.map((f) => (
@@ -425,7 +436,7 @@ export default function PointCapture() {
             className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-600 hover:border-slate-500 hover:bg-slate-800/60 active:bg-slate-800 active:scale-[0.98] transition-all h-12 text-sm font-semibold text-slate-300"
           >
             <Plus className="h-5 w-5" />
-            Adicionar achado
+            Adicionar não conformidade
           </button>
         </section>
       </div>

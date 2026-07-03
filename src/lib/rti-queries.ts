@@ -499,13 +499,14 @@ export async function logBulkHistorico(
 
 export type RtiEvidenciaUploadOpts = {
   orgId: string;
+  orgNome?: string | null;
   reportId: string;
   reportTitulo: string | null;
   ncNum: number;
 };
 
 /**
- * Comprime e envia uma evidência para {org}/{reportSlug}/nc-{ncNum}-{idx}.{ext}.
+ * Comprime e envia uma evidência para {orgSlug-orgId}/{reportSlug}/nc-{ncNum}-{idx}.{ext}.
  * O índice é o maior existente no prefixo + 1; em conflito de nome (corrida),
  * incrementa e tenta de novo. Retorna o file_path final gravado.
  */
@@ -513,19 +514,19 @@ export async function uploadRtiEvidencia(
   file: File,
   opts: RtiEvidenciaUploadOpts,
 ): Promise<string> {
-  const resized = await resizeImage(file, 1024);
+  const resized = await resizeImage(file, 2048);
   const ext = resized.name.split(".").pop()?.toLowerCase() ?? "jpg";
   const report = { id: opts.reportId, titulo: opts.reportTitulo };
 
   // Descobre o próximo índice olhando o que já existe no prefixo do relatório.
   const { data: listagem } = await supabase.storage
     .from("rti-evidencias")
-    .list(evidenciaFolder(opts.orgId, report), { limit: 1000 });
+    .list(evidenciaFolder(opts.orgId, report, opts.orgNome), { limit: 1000 });
   let idx = maiorIndiceEvidencia((listagem ?? []).map((o) => o.name), opts.ncNum) + 1;
 
   // Envia; se o nome colidir (outra sessão pegou o mesmo índice), incrementa e repete.
   for (let tentativa = 0; tentativa < 10; tentativa++) {
-    const path = evidenciaPath(opts.orgId, report, opts.ncNum, idx, ext);
+    const path = evidenciaPath(opts.orgId, report, opts.ncNum, idx, ext, opts.orgNome);
     const { error } = await supabase.storage
       .from("rti-evidencias")
       .upload(path, resized, { cacheControl: "3600", upsert: false });
@@ -588,6 +589,10 @@ export async function bulkAttachRtiEvidencias({
     (reportsData ?? []).map((r) => [r.id as string, r.titulo as string | null]),
   );
 
+  const orgIds = [...new Set((ncsData ?? []).map((n) => n.org_id as string).filter(Boolean))];
+  const { data: orgsData } = await supabase.from("organizations").select("id, nome").in("id", orgIds);
+  const orgNomeById = new Map((orgsData ?? []).map((o) => [o.id as string, o.nome as string | null]));
+
   const total = ncIds.length * files.length;
   let done = 0;
   for (const ncId of ncIds) {
@@ -597,6 +602,7 @@ export async function bulkAttachRtiEvidencias({
     for (const file of files) {
       const path = await uploadRtiEvidencia(file, {
         orgId: info.orgId,
+        orgNome: orgNomeById.get(info.orgId) ?? null,
         reportId: info.reportId,
         reportTitulo: reportTituloById.get(info.reportId) ?? null,
         ncNum: info.numero,

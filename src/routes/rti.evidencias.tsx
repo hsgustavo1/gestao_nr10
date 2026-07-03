@@ -186,6 +186,7 @@ function RtiEvidenciasMassaPage() {
         const nc = item.nc!;
         const path = await uploadRtiEvidencia(item.row.file, {
           orgId,
+          orgNome: auth.currentOrg?.nome ?? null,
           reportId: nc.report_id,
           reportTitulo: activeReport?.titulo ?? null,
           ncNum: nc.numero,

@@ -232,6 +232,16 @@ function DossiePage() {
                 {report.overall}%
               </span>
             </div>
+            <div className="mt-2 inline-flex items-baseline gap-2">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                Incidentes registrados
+              </span>
+              <span className="text-sm font-semibold tabular-nums">
+                {incidentesResumo.total}
+                {incidentesResumo.total > 0 &&
+                  ` (${incidentesResumo.byStatus["concluido"] ?? 0} concluídos)`}
+              </span>
+            </div>
           </div>
 
           {/* 1. Prontuário */}
