@@ -378,3 +378,32 @@ export function computeAndamentoPorCusto(
   }
   return { comCusto, custoZero, semCusto };
 }
+
+/**
+ * Lista final de "Responsáveis pela inspeção em campo" exibida/gravada.
+ * Une os coletores automáticos do PWA (`coletores_campo`, travados) com os
+ * nomes adicionados manualmente na entrega (`responsaveis_campo_extra`),
+ * aparando espaços, descartando vazios e deduplicando por igualdade exata.
+ * Ordem: automáticos primeiro, depois manuais.
+ */
+export function responsaveisInspecaoCampo(
+  coletores: string[] | null,
+  extras: string[] | null,
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const nome of [...(coletores ?? []), ...(extras ?? [])]) {
+    const t = (nome ?? "").trim();
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
+  }
+  return out;
+}
+
+/** Rótulo singular/plural do campo de responsáveis de campo. */
+export function labelResponsaveisCampo(count: number): string {
+  return count > 1
+    ? "Responsáveis pela inspeção em campo"
+    : "Responsável pela inspeção em campo";
+}
