@@ -200,6 +200,20 @@ function RtiDashboardPage() {
 
   const isLoading = loadingReports || (activeReport && loadingNcs);
 
+  const respCampo = useMemo(
+    () =>
+      activeReport
+        ? responsaveisInspecaoCampo(activeReport.coletores_campo, activeReport.responsaveis_campo_extra)
+        : [],
+    [activeReport],
+  );
+  const temResponsaveisEntrega =
+    activeReport &&
+    (respCampo.length > 0 ||
+      activeReport.responsavel_relatorio ||
+      activeReport.responsavel_tecnico_rti ||
+      activeReport.entregue_em);
+
   return (
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
@@ -226,37 +240,24 @@ function RtiDashboardPage() {
               "Gestão das não conformidades do Relatório Técnico das Inspeções."
             )}
           </p>
-          {activeReport &&
-            (() => {
-              const respCampo = responsaveisInspecaoCampo(
-                activeReport.coletores_campo,
-                activeReport.responsaveis_campo_extra,
-              );
-              const temAlgo =
-                respCampo.length > 0 ||
-                activeReport.responsavel_relatorio ||
-                activeReport.responsavel_tecnico_rti ||
-                activeReport.entregue_em;
-              if (!temAlgo) return null;
-              return (
-                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
-                  {respCampo.length > 0 && (
-                    <span>
-                      {labelResponsaveisCampo(respCampo.length)}: {respCampo.join(", ")}
-                    </span>
-                  )}
-                  {activeReport.responsavel_tecnico_rti && (
-                    <span>Responsável Técnico do RTI: {activeReport.responsavel_tecnico_rti}</span>
-                  )}
-                  {activeReport.responsavel_relatorio && (
-                    <span>Responsável pelo relatório: {activeReport.responsavel_relatorio}</span>
-                  )}
-                  {activeReport.entregue_em && (
-                    <span>Entregue em {formatDatePtBR(activeReport.entregue_em)}</span>
-                  )}
-                </div>
-              );
-            })()}
+          {temResponsaveisEntrega && (
+            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+              {respCampo.length > 0 && (
+                <span>
+                  {labelResponsaveisCampo(respCampo.length)}: {respCampo.join(", ")}
+                </span>
+              )}
+              {activeReport?.responsavel_tecnico_rti && (
+                <span>Responsável Técnico do RTI: {activeReport.responsavel_tecnico_rti}</span>
+              )}
+              {activeReport?.responsavel_relatorio && (
+                <span>Responsável pelo relatório: {activeReport.responsavel_relatorio}</span>
+              )}
+              {activeReport?.entregue_em && (
+                <span>Entregue em {formatDatePtBR(activeReport.entregue_em)}</span>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {reports.length > 1 && (
