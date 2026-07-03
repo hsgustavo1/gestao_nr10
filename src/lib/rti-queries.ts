@@ -96,13 +96,30 @@ export function useUpsertRtiReport() {
   });
 }
 
+export type EntregarRtiPayload = {
+  reportId: string;
+  orgId: string;
+  responsaveisCampoExtra: string[];
+  responsavelRelatorio: string | null;
+  responsavelTecnicoRti: string | null;
+  responsavelPlano: string | null;
+  periodoInicio: string; // ISO date (yyyy-mm-dd)
+  periodoFim: string;    // ISO date (yyyy-mm-dd)
+};
+
 export function useEntregarRtiReport() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ reportId, orgId }: { reportId: string; orgId: string }) => {
+    mutationFn: async (p: EntregarRtiPayload) => {
       const { error } = await (supabase as any).rpc("fn_entregar_rti_report", {
-        _report_id: reportId,
-        _entregue_por_org: orgId,
+        _report_id: p.reportId,
+        _entregue_por_org: p.orgId,
+        _responsaveis_campo_extra: p.responsaveisCampoExtra,
+        _responsavel_relatorio: p.responsavelRelatorio,
+        _responsavel_tecnico_rti: p.responsavelTecnicoRti,
+        _responsavel_plano: p.responsavelPlano,
+        _periodo_inicio: p.periodoInicio,
+        _periodo_fim: p.periodoFim,
       });
       if (error) throw error;
     },
