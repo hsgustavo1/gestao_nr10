@@ -1,9 +1,10 @@
 # gestao_nr10 — instruções do projeto
 
-## Fluxo de trabalho — local primeiro, commit só sob comando (desde 2026-07-01)
+## Fluxo de trabalho — local primeiro, push remoto só sob comando (desde 2026-07-02)
 
 - **Desenvolver e testar em localhost, prioritariamente**, iterando com `preview_*` (dev server local) em vez de depender de round-trips de MCP (Supabase `execute_sql`/`get_logs`, Vercel `get_deployment_build_logs`/`get_runtime_logs`) a cada ajuste pequeno. Isso é uma questão de custo de tokens: cada ciclo de "push staging → esperar deploy → checar log via MCP" é caro; iterar local é mais barato.
-- **Nunca commitar ou dar push (staging ou main) por iniciativa própria.** Aguardar comando explícito do usuário para cada commit/deploy, mesmo que as mudanças estejam validadas localmente e prontas.
+- **Commits locais: livres.** Claude pode criar quantos commits locais achar necessário, sem pedir permissão a cada um (mantendo mensagens claras e escopo coerente por commit).
+- **Push remoto: só com solicitação explícita.** Qualquer `git push` (branch `staging` ou `main`) — e por consequência os deploys do Vercel (preview de staging e produção da main) — só acontece quando o usuário pedir explicitamente. Nunca dar push por iniciativa própria, mesmo com as mudanças validadas localmente e commitadas.
 - Exceção conhecida: comportamento de PWA (service worker, instalação, cache offline) só se manifesta em HTTPS real — para validar isso especificamente é necessário o preview de staging, não dá pra resolver só em localhost. Mas isso não muda a regra acima: o push para staging só acontece quando o usuário pedir.
 
 ## Servidor local — porta fixa 57010, gerenciado pelo usuário (desde 2026-07-01)
