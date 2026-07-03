@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { resizeImage } from "@/lib/campo";
+import { mensagemUploadAmigavel } from "@/lib/upload";
 import type { ASO } from "./asos";
 
 export const asoKeys = {
@@ -68,13 +70,14 @@ export function useDeleteASO() {
 // ── Arquivos ─────────────────────────────────────────────────────────────────
 
 export async function uploadASOFile(file: File): Promise<string> {
-  const ext = file.name.split(".").pop() ?? "pdf";
+  const resized = await resizeImage(file, 1024);
+  const ext = resized.name.split(".").pop() ?? "pdf";
   const path = `${crypto.randomUUID()}-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from("aso-docs").upload(path, file, {
+  const { error } = await supabase.storage.from("aso-docs").upload(path, resized, {
     cacheControl: "3600",
     upsert: false,
   });
-  if (error) throw error;
+  if (error) throw new Error(mensagemUploadAmigavel(error));
   return path;
 }
 

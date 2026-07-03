@@ -3,8 +3,16 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { db } from "@/db/dexie";
 import type { LocalNode } from "@/db/dexie";
 import { enqueue } from "@/sync/engine";
-import { filhosDoNo, labelDoTipo, nodePath, proximoNivel, setorDoNo } from "@/lib/campo";
+import {
+  filhosDoNo,
+  labelDoTipo,
+  labelDoTipoPlural,
+  nodePath,
+  proximoNivel,
+  setorDoNo,
+} from "@/lib/campo";
 import { exportSetorFotos } from "@/lib/export-fotos";
+import { getActorId, getActorName } from "@/lib/actor";
 import {
   AlertTriangle,
   Archive,
@@ -319,6 +327,8 @@ export default function InspectionDetail() {
         titulo: null,
         observacoes: null,
         ordem: existing,
+        collected_by_user_id: getActorId(),
+        collected_by_name: getActorName(),
         created_at: now,
         updated_at: now,
         _synced: false,
@@ -523,7 +533,7 @@ export default function InspectionDetail() {
           <section>
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                {labelDoTipo(childLevel)}s{children.length > 0 ? ` (${children.length})` : ""}
+                {labelDoTipoPlural(childLevel)}{children.length > 0 ? ` (${children.length})` : ""}
               </h2>
             </div>
 
@@ -541,7 +551,7 @@ export default function InspectionDetail() {
                       <div className="min-w-0 flex-1">
                         <div className="font-medium leading-tight truncate">{n.nome}</div>
                         <div className="text-xs text-slate-400">
-                          {c.pontos} ponto{c.pontos !== 1 ? "s" : ""} · {c.achados} achado
+                          {c.pontos} ponto{c.pontos !== 1 ? "s" : ""} · {c.achados} NC
                           {c.achados !== 1 ? "s" : ""}
                         </div>
                       </div>

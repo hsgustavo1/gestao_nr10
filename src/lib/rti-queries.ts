@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { resizeImage } from "@/lib/campo";
+import { mensagemUploadAmigavel, removerArquivosOrfaos } from "@/lib/upload";
+import { evidenciaFolder, evidenciaPath, maiorIndiceEvidencia } from "@/lib/storage-paths";
 import type { RtiArea, RtiNc, RtiNcEvidencia, RtiNcHistorico, RtiReport } from "./rti";
 import type { RtiSnapshotRow } from "./rti-snapshots";
 
@@ -114,24 +117,28 @@ export function useDeleteRtiReport() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (reportId: string) => {
-      // Remove arquivos de evidências do storage antes do cascade
+      // 1. Coleta paths: PDF do relatório + evidências de todas as NCs
+      const paths: string[] = [];
+      const { data: rep } = await supabase
+        .from("rti_reports")
+        .select("report_path")
+        .eq("id", reportId)
+        .maybeSingle();
+      if (rep?.report_path) paths.push(rep.report_path);
+
       const ncs = await fetchAllRows<{ id: string }>((from, to) =>
         supabase.from("rti_ncs").select("id").eq("report_id", reportId).range(from, to),
       );
-      if (ncs.length > 0) {
-        const ncIds = ncs.map((n) => n.id);
-        const paths: string[] = [];
-        for (let i = 0; i < ncIds.length; i += 200) {
-          const { data } = await supabase
-            .from("rti_nc_evidencias")
-            .select("file_path")
-            .in("nc_id", ncIds.slice(i, i + 200));
-          for (const e of data ?? []) paths.push(e.file_path);
-        }
-        for (let i = 0; i < paths.length; i += 100) {
-          await supabase.storage.from("rti-evidencias").remove(paths.slice(i, i + 100));
-        }
+      const ncIds = ncs.map((n) => n.id);
+      for (let i = 0; i < ncIds.length; i += 200) {
+        const { data } = await supabase
+          .from("rti_nc_evidencias")
+          .select("file_path")
+          .in("nc_id", ncIds.slice(i, i + 200));
+        for (const e of data ?? []) paths.push(e.file_path);
       }
+
+      // 2. Apaga as linhas de negócio (cascade cuida das NCs/evidências)
       const { count, error } = await supabase
         .from("rti_reports")
         .delete({ count: "exact" })
@@ -141,6 +148,9 @@ export function useDeleteRtiReport() {
         throw new Error(
           "Sem permissão para excluir este relatório. Relatórios entregues por consultor externo só podem ser removidos pelo próprio consultor.",
         );
+
+      // 3. Remove do Storage só o que ficou sem referência
+      await removerArquivosOrfaos(paths);
     },
     onSuccess: () => qc.invalidateQueries(),
   });
@@ -298,11 +308,9 @@ export function useDeleteRtiNc() {
         .select("file_path")
         .eq("nc_id", ncId);
       const paths = (data ?? []).map((e) => e.file_path);
-      if (paths.length > 0) {
-        await supabase.storage.from("rti-evidencias").remove(paths);
-      }
       const { error } = await supabase.from("rti_ncs").delete().eq("id", ncId);
       if (error) throw error;
+      await removerArquivosOrfaos(paths);
     },
     onSuccess: () => invalidateNcs(qc),
   });
@@ -417,9 +425,9 @@ export function useDeleteRtiEvidencia() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (ev: { id: string; nc_id: string; file_path: string }) => {
-      await supabase.storage.from("rti-evidencias").remove([ev.file_path]);
       const { error } = await supabase.from("rti_nc_evidencias").delete().eq("id", ev.id);
       if (error) throw error;
+      await removerArquivosOrfaos([ev.file_path]);
       return ev;
     },
     onSuccess: (ev) => {
@@ -489,15 +497,46 @@ export async function logBulkHistorico(
 
 // ── Arquivos (bucket rti-evidencias) ─────────────────────────────────────────
 
-export async function uploadRtiFile(file: File, prefix = "evidencias"): Promise<string> {
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
-  const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("rti-evidencias").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-  });
-  if (error) throw error;
-  return path;
+export type RtiEvidenciaUploadOpts = {
+  orgId: string;
+  orgNome?: string | null;
+  reportId: string;
+  reportTitulo: string | null;
+  ncNum: number;
+};
+
+/**
+ * Comprime e envia uma evidência para {orgSlug-orgId}/{reportSlug}/nc-{ncNum}-{idx}.{ext}.
+ * O índice é o maior existente no prefixo + 1; em conflito de nome (corrida),
+ * incrementa e tenta de novo. Retorna o file_path final gravado.
+ */
+export async function uploadRtiEvidencia(
+  file: File,
+  opts: RtiEvidenciaUploadOpts,
+): Promise<string> {
+  const resized = await resizeImage(file, 2048);
+  const ext = resized.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const report = { id: opts.reportId, titulo: opts.reportTitulo };
+
+  // Descobre o próximo índice olhando o que já existe no prefixo do relatório.
+  const { data: listagem } = await supabase.storage
+    .from("rti-evidencias")
+    .list(evidenciaFolder(opts.orgId, report, opts.orgNome), { limit: 1000 });
+  let idx = maiorIndiceEvidencia((listagem ?? []).map((o) => o.name), opts.ncNum) + 1;
+
+  // Envia; se o nome colidir (outra sessão pegou o mesmo índice), incrementa e repete.
+  for (let tentativa = 0; tentativa < 10; tentativa++) {
+    const path = evidenciaPath(opts.orgId, report, opts.ncNum, idx, ext, opts.orgNome);
+    const { error } = await supabase.storage
+      .from("rti-evidencias")
+      .upload(path, resized, { cacheControl: "3600", upsert: false });
+    if (!error) return path;
+    const raw = (error as Error).message?.toLowerCase() ?? "";
+    const colisao = raw.includes("already exists") || raw.includes("duplicate");
+    if (!colisao) throw new Error(mensagemUploadAmigavel(error));
+    idx += 1;
+  }
+  throw new Error("Não foi possível salvar a evidência. Tente novamente em instantes.");
 }
 
 export function rtiFileUrl(path: string): string {
@@ -526,15 +565,48 @@ export async function bulkAttachRtiEvidencias({
   onProgress?: (done: number, total: number) => void;
 }) {
   // Carimba o mesmo org_id das NCs (fn_default_org_id só cobre usuário de 1 org).
-  const { data: ncsData } = await supabase.from("rti_ncs").select("id, org_id").in("id", ncIds);
-  const orgIdByNc = new Map((ncsData ?? []).map((n) => [n.id, n.org_id as string | undefined]));
+  const { data: ncsData } = await supabase
+    .from("rti_ncs")
+    .select("id, org_id, numero, report_id")
+    .in("id", ncIds);
+  const ncInfoById = new Map(
+    (ncsData ?? []).map((n) => [
+      n.id as string,
+      {
+        orgId: n.org_id as string | undefined,
+        numero: n.numero as number,
+        reportId: n.report_id as string,
+      },
+    ]),
+  );
+
+  const reportIds = [...new Set((ncsData ?? []).map((n) => n.report_id as string))];
+  const { data: reportsData } = await supabase
+    .from("rti_reports")
+    .select("id, titulo")
+    .in("id", reportIds);
+  const reportTituloById = new Map(
+    (reportsData ?? []).map((r) => [r.id as string, r.titulo as string | null]),
+  );
+
+  const orgIds = [...new Set((ncsData ?? []).map((n) => n.org_id as string).filter(Boolean))];
+  const { data: orgsData } = await supabase.from("organizations").select("id, nome").in("id", orgIds);
+  const orgNomeById = new Map((orgsData ?? []).map((o) => [o.id as string, o.nome as string | null]));
 
   const total = ncIds.length * files.length;
   let done = 0;
   for (const ncId of ncIds) {
+    const info = ncInfoById.get(ncId);
+    if (!info?.orgId) throw new Error("NC sem organização definida; não é possível anexar evidência.");
     const rows: (Omit<RtiNcEvidencia, "id" | "created_at"> & { org_id?: string })[] = [];
     for (const file of files) {
-      const path = await uploadRtiFile(file);
+      const path = await uploadRtiEvidencia(file, {
+        orgId: info.orgId,
+        orgNome: orgNomeById.get(info.orgId) ?? null,
+        reportId: info.reportId,
+        reportTitulo: reportTituloById.get(info.reportId) ?? null,
+        ncNum: info.numero,
+      });
       rows.push({
         nc_id: ncId,
         tipo,
@@ -543,7 +615,7 @@ export async function bulkAttachRtiEvidencias({
         mime_type: file.type || null,
         descricao,
         created_by_name: autorNome,
-        org_id: orgIdByNc.get(ncId),
+        org_id: info.orgId,
       });
       done += 1;
       onProgress?.(done, total);

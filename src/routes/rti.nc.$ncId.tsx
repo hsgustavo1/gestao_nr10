@@ -56,7 +56,7 @@ import {
   logBulkHistorico,
   rtiFileUrl,
   rtiKeys,
-  uploadRtiFile,
+  uploadRtiEvidencia,
   useAddRtiEvidencia,
   useAddRtiHistorico,
   useDeleteRtiEvidencia,
@@ -66,6 +66,7 @@ import {
   useRtiHistorico,
   useRtiNc,
   useRtiNcs,
+  useRtiReports,
   useUpdateRtiEvidencia,
   useUpdateRtiNc,
 } from "@/lib/rti-queries";
@@ -100,6 +101,8 @@ function RtiNcDetailPage() {
   const canDeleteNc = acc.canDelete;
   const { data: areas = [] } = useRtiAreas(nc?.report_id);
   const { data: siblings = [] } = useRtiNcs(nc?.report_id);
+  const { data: reports = [] } = useRtiReports();
+  const report = reports.find((r) => r.id === nc?.report_id);
   const deleteNc = useDeleteRtiNc();
 
   const actorName =
@@ -256,6 +259,9 @@ function RtiNcDetailPage() {
             titulo="Registro da não conformidade"
             descricao="Fotos e documentos que evidenciam o problema constatado na inspeção."
             icon={<Camera className="h-4 w-4 text-primary" />}
+            orgId={auth.currentOrgId}
+            orgNome={auth.currentOrg?.nome ?? null}
+            reportTitulo={report?.titulo ?? null}
           />
           <EvidenceSection
             nc={nc}
@@ -265,6 +271,9 @@ function RtiNcDetailPage() {
             titulo="Evidências da correção"
             descricao="Comprovação da ação corretiva executada (fotos do depois, OS encerrada, laudos...)."
             icon={<CheckCheck className="h-4 w-4 text-emerald-600" />}
+            orgId={auth.currentOrgId}
+            orgNome={auth.currentOrg?.nome ?? null}
+            reportTitulo={report?.titulo ?? null}
           />
         </div>
 
@@ -696,6 +705,9 @@ function EvidenceSection({
   titulo,
   descricao,
   icon,
+  orgId,
+  orgNome,
+  reportTitulo,
 }: {
   nc: RtiNc;
   tipo: RtiEvidenciaTipo;
@@ -705,6 +717,9 @@ function EvidenceSection({
   titulo: string;
   descricao: string;
   icon: React.ReactNode;
+  orgId: string | null;
+  orgNome?: string | null;
+  reportTitulo: string | null;
 }) {
   const { data: todas = [], isLoading } = useRtiEvidencias(nc.id);
   const addEvidencia = useAddRtiEvidencia();
@@ -737,10 +752,20 @@ function EvidenceSection({
       if (naSelecao.has(f.name)) return toast.error(`"${f.name}" está repetido na seleção.`);
       naSelecao.add(f.name);
     }
+    if (!orgId) {
+      toast.error("Selecione uma empresa antes de anexar evidências.");
+      return;
+    }
     setBusy(true);
     try {
       for (const f of list) {
-        const path = await uploadRtiFile(f, `nc-${nc.numero}`);
+        const path = await uploadRtiEvidencia(f, {
+          orgId,
+          orgNome,
+          reportId: nc.report_id,
+          reportTitulo,
+          ncNum: nc.numero,
+        });
         await addEvidencia.mutateAsync({
           nc_id: nc.id,
           tipo,

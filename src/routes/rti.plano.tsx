@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -82,6 +82,7 @@ import {
 import {
   bulkAttachRtiEvidencias,
   logBulkHistorico,
+  rtiKeys,
   useBulkUpdateRtiNcs,
   useCreateRtiArea,
   useCreateRtiNc,
@@ -1155,6 +1156,14 @@ function NovaNcDialog({
   const { data: areas = [] } = useRtiAreas(reportId);
   const createNc = useCreateRtiNc();
   const createArea = useCreateRtiArea();
+  const qc = useQueryClient();
+
+  // Refetch ao abrir o diálogo: numerosExistentes vem do cache do React Query,
+  // que pode estar desatualizado (ex.: NC criada em outra aba/sessão) — sem isso
+  // o aviso de duplicado pode divergir do estado real do banco por alguns segundos.
+  useEffect(() => {
+    qc.invalidateQueries({ queryKey: rtiKeys.ncs(reportId) });
+  }, [qc, reportId]);
 
   const [areaId, setAreaId] = useState<string>("");
   const [novaArea, setNovaArea] = useState("");
@@ -1168,7 +1177,10 @@ function NovaNcDialog({
   const [custoPlanejado, setCustoPlanejado] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const numeroDuplicado = numerosExistentes.has(numero);
+  // Suprimido durante o envio: se a criação já teve sucesso, o refetch da query
+  // de NCs pode incluir o próprio número que esta submissão acabou de gravar,
+  // fazendo o aviso piscar um falso "já existe" na janela antes do diálogo fechar.
+  const numeroDuplicado = !busy && numerosExistentes.has(numero);
 
   /** Próximo número livre a partir de um valor (para o atalho de sugestão). */
   function proximoLivre(from: number): number {
@@ -1179,6 +1191,7 @@ function NovaNcDialog({
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     if (!descricao.trim()) return toast.error("Descreva a não conformidade.");
     if ((areaId === "" || areaId === "__nova__") && !novaArea.trim())
       return toast.error("Selecione ou crie a área.");
@@ -1222,7 +1235,13 @@ function NovaNcDialog({
       toast.success(`NC ${numero} registrada.`);
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao registrar: " + (err as Error).message);
+      const code = (err as { code?: string }).code;
+      if (code === "23505") {
+        qc.invalidateQueries({ queryKey: rtiKeys.ncs(reportId) });
+        toast.error(`A NC nº ${numero} já existe neste relatório. Escolha outro número.`);
+      } else {
+        toast.error("Falha ao registrar: " + (err as Error).message);
+      }
     } finally {
       setBusy(false);
     }

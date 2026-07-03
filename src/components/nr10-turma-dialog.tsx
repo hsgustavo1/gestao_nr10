@@ -2,6 +2,8 @@ import { useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { GraduationCap, Paperclip, Plus, Search, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { resizeImage } from "@/lib/campo";
+import { mensagemUploadAmigavel } from "@/lib/upload";
 import {
   Dialog,
   DialogContent,
@@ -100,12 +102,13 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
 
       let artArquivoUrl: string | null = null;
       if (artArquivo) {
-        const ext = artArquivo.name.split(".").pop() ?? "pdf";
+        const artComprimido = await resizeImage(artArquivo, 1024);
+        const ext = artComprimido.name.split(".").pop() ?? "pdf";
         const path = `art/${crypto.randomUUID()}-${Date.now()}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("nr10-docs")
-          .upload(path, artArquivo, { cacheControl: "3600", upsert: false });
-        if (uploadError) throw uploadError;
+          .upload(path, artComprimido, { cacheControl: "3600", upsert: false });
+        if (uploadError) throw new Error(mensagemUploadAmigavel(uploadError));
         const { data } = supabase.storage.from("nr10-docs").getPublicUrl(path);
         artArquivoUrl = data.publicUrl;
       }

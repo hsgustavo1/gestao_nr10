@@ -26,6 +26,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { mensagemUploadAmigavel } from "@/lib/upload";
 import { getLotoAccess } from "@/lib/tenancy-gates";
 import { useViolations, useQueryClient, type Violation } from "@/lib/queries";
 import { formatDateTime } from "@/lib/padlocks";
@@ -304,7 +305,7 @@ function ViolationDialog({
         .upload(path, file, { contentType: "application/pdf", upsert: false });
       if (upErr) {
         setBusy(false);
-        toast.error("Falha ao enviar PDF: " + upErr.message);
+        toast.error(mensagemUploadAmigavel(upErr));
         return;
       }
       if (isEdit && existing?.document_path) oldPathToRemove = existing.document_path;

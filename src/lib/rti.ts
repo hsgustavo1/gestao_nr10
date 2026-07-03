@@ -71,6 +71,8 @@ export type RtiReport = {
   empresa_auditora: string | null;
   responsavel_auditoria: string | null;
   responsavel_plano: string | null;
+  /** Lista deduplicada de field_points.collected_by_name no momento da composição. */
+  coletores_campo: string[] | null;
   periodo_inicio: string | null;
   periodo_fim: string | null;
   report_path: string | null;

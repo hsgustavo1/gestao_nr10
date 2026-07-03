@@ -57,6 +57,96 @@ teste de campo no momento).
    achado→RTI já pronto). **Bloqueado por:** precisa de teste em campo real
    (PWA/offline/câmera) antes de validar — não testar só via preview web.
 
+## 🗄️ Análise Supabase — storage (2026-07-02)
+
+Trilha de análise/saneamento do Supabase Storage. Contexto: o bucket `rti-evidencias`
+foi limpo (deletado/recriado) em 2026-07-02; storage hoje ≈ 0. Feito nesta data:
+compressão 1024px em **todos** os uploads, mensagens de erro amigáveis em PT, e restauro
+das políticas RLS + config do bucket (`20260702000000_restore_rti_evidencias_storage_policies.sql`).
+
+**Análise (NÃO executada):**
+[`2026-07-02-rti-evidencias-storage-reestruturacao.md`](2026-07-02-rti-evidencias-storage-reestruturacao.md)
+— trata 3 itens: (1/2) reestruturar paths para **um prefixo por relatório**
+(`{org}/{reportSlug}/nc-{ncNum}-{idx}.ext`), acabando com a mistura entre RTIs e a subpasta
+por NC; (3) **exclusão confiável** (deletes hoje ignoram o erro do `.remove()` e esquecem o
+`report_path` → órfãos). Bônus: `comporRti` duplica cada foto (2× storage). **Momento ideal
+por estar com o bucket vazio (sem migração).**
+
+**Spec de execução (pronto, NÃO executado):**
+[`2026-07-02-rti-evidencias-storage-execucao.md`](2026-07-02-rti-evidencias-storage-execucao.md)
+— plano task-by-task (TDD nas funções puras). **Decisões travadas:** A=`{slug(titulo)}-{id8}`
+(sem coluna `numero` em rti_reports); B=índice sequencial `nc-{n}-{i}` com retry; C=`comporRti`
+**referencia** a foto de campo já comprimida (metade do storage) + exclusão reference-aware;
+D=Edge Function `orphan-sweep` agendada. Ordem: Task 3 (deletes confiáveis) antes da Task 5.
+Purga do dataset de teste Atvos UAE já feita (2026-07-02) — bucket e banco limpos p/ reteste.
+
+**Aprendizado (controles reais a respeitar no delete):** `storage.objects` tem trigger
+`protect_delete` (barra DELETE via SQL cru; `.remove()` do cliente passa pela Storage API +
+RLS); e `fn_enforce_seal`/`entregue_em` sela relatório **entregue** (só platform admin / org
+entregadora apaga, pelo app). Não burlar por fora.
+
+**Pendências pontuais de bucket** (levantadas 2026-07-02):
+- Bucket `certificates` **não existe** → `uploadCertificateFile` (qualificações) sempre falha.
+- Outros 6 buckets ainda sem `file_size_limit`/`allowed_mime_types` (só `rti-evidencias` endurecido).
+
+## 🧩 UX — NC manual no RTI (2026-07-02, DEPOIS da trilha Supabase acima)
+
+Levantado pelo usuário testando a criação manual de NC (`NovaNcDialog`,
+[`src/routes/rti.plano.tsx:1142`](../../../src/routes/rti.plano.tsx)). **Ordem:**
+só atacar depois de fechar os itens Supabase que o usuário vai descrever em
+seguida. Perguntas de escopo já esboçadas (ver abaixo) — foram descartadas
+(dispensadas) na primeira tentativa; **refazer no momento oportuno**, quando
+esta trilha for retomada.
+
+1. **Reaproveitar área/setor entre relatórios.** Hoje `rti_areas` é por
+   `report_id` — sem conceito de área compartilhada. Pergunta em aberto:
+   escopo por organização (sugerir nomes já usados em outros RTIs do mesmo
+   cliente) vs. catálogo global do app (como os modos de falha "públicos").
+2. **Selecionar modo de falha pré-existente na NC manual.** Catálogo
+   `RtiModoFalha` existe (`src/lib/campo.ts:10`, tabela `rti_modos_falha`),
+   mas só é usado no fluxo de Campo (via `finding_id`). **`rti_ncs` não tem
+   coluna `modo_falha_id`** — NC manual (`finding_id: null`) não linka ao
+   catálogo hoje. Pergunta em aberto: só selecionar do catálogo (com
+   pré-preenchimento de descrição/recomendação/prioridade/tipo, como já
+   acontece em Campo) vs. vincular sem pré-preencher.
+3. **Anexar evidência ao criar NC manual.** Hoje `rti_nc_evidencias` só é
+   populado depois que a NC já existe (componente `RtiEvidencias` precisa de
+   `nc_id`). Pergunta em aberto: criar a NC primeiro e abrir upload na
+   sequência (mesmo modal) vs. seletor de arquivo já no formulário de criação
+   (upload só efetiva após o insert da NC ter sucesso).
+4. **Padronizar nomenclatura Área/Setor entre app principal e PWA.** App usa
+   "Área" (`rti_areas`); usuário reportou divergência com o PWA — não
+   localizado ainda onde exatamente (a árvore de Campo usa Setor→Ativo→
+   Componente, mas não achei o termo "Setor" em `campo-pwa/src` na busca
+   inicial). Precisa perguntar de novo onde exatamente foi visto.
+
+**Bug relacionado, corrigido (2026-07-02).** Sintoma confirmado pelo usuário:
+não havia duplicata real — só 1 NC nascia (correta), mas o banner de "NC nº X
+já existe" piscava um falso positivo rapidamente dentro do próprio diálogo,
+mesmo depois de uma 1ª rodada de correções (constraint + invalidação ao abrir
+— ver abaixo). **Causa raiz real, achada na 2ª rodada:** auto-falso-positivo —
+ao criar a NC nº 6 com sucesso, a mutation invalida a query de NCs; o refetch
+atualiza `numerosExistentes` incluindo o 6 (correto, acabou de ser criado por
+esta mesma submissão), mas isso acontece **antes** do `onOpenChange(false)`
+(que só roda depois do `await logBulkHistorico`) — nessa janela, o banner
+reage ao próprio número que a submissão em curso acabou de gravar. Correção:
+`numeroDuplicado = !busy && numerosExistentes.has(numero)` em `NovaNcDialog`
+([rti.plano.tsx](../../../src/routes/rti.plano.tsx)) — suprime o aviso
+reativo durante o envio, já que nesse momento ele pode estar refletindo a
+própria NC em criação. **Não verificado ao vivo** (race de timing, base sem
+dados de teste) — validado por leitura do fluxo assíncrono.
+
+Correções da 1ª rodada, mantidas (tornam a regra autoritativa no banco, ainda
+que não fossem a causa do flash):
+1. Migração aplicada (autorizada explicitamente pelo usuário)
+   [`20260702020000_rti_ncs_numero_unique_per_report.sql`](../../../supabase/migrations/20260702020000_rti_ncs_numero_unique_per_report.sql) —
+   `UNIQUE(report_id, numero)` em `rti_ncs` (confirmado sem duplicatas antes
+   de aplicar).
+2. `NovaNcDialog` invalida `rtiKeys.ncs(reportId)` ao abrir o diálogo.
+3. `submit()` trata erro `23505` (unique violation) com toast amigável.
+   Guard extra: `if (busy) return;` no início de `submit()` (proteção
+   síncrona contra reentrância).
+
 ## ⏱️ O QUE FALTA FAZER AGORA (checklist ordenado)
 
 Fases 0 → 2 estão com **código/SQL prontos e commitados** na `main`; CI verde

@@ -108,6 +108,9 @@ export type FieldPoint = {
   titulo: string | null;
   observacoes: string | null;
   ordem: number;
+  /** Quem estava logado quando o ponto foi criado — null em dados pré-migração. */
+  collected_by_user_id: string | null;
+  collected_by_name: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -175,6 +178,21 @@ export function caminhoAbaixoDoSetor(nodeId: string, byId: Map<string, FieldNode
     .join(" › ");
 }
 
+/**
+ * Lista deduplicada de coletores de campo (field_points.collected_by_name),
+ * na ordem de primeira aparição. null quando nenhum ponto tem coletor
+ * registrado (dado legado pré-migração, ou lista vazia).
+ */
+export function coletoresCampoDe(points: FieldPoint[]): string[] | null {
+  const nomes: string[] = [];
+  for (const p of points) {
+    if (p.collected_by_name && !nomes.includes(p.collected_by_name)) {
+      nomes.push(p.collected_by_name);
+    }
+  }
+  return nomes.length > 0 ? nomes : null;
+}
+
 /** Filhos diretos de um nó (parentId null = setores na raiz). */
 export function filhosDoNo(parentId: string | null, nodes: FieldNode[]): FieldNode[] {
   return nodes
@@ -224,10 +242,12 @@ export function normalizarEstrutura(linhas: EstruturaLinha[]): EstruturaLinha[] 
 }
 
 // ── Redimensionamento de fotos no cliente ────────────────────────────────────
-// Fotos de campo saem do celular com 8–20 MB; reduzimos para ~1600px JPEG
-// antes do upload (conexão de campo costuma ser ruim).
+// Fotos saem do celular/câmera com 8–20 MB; reduzimos para ~1024px JPEG antes do
+// upload. Além da conexão de campo ruim, isso segura o crescimento do storage do
+// Supabase (decisão de MVP em 2026-07-02: alvo 1024px em todos os uploads).
+// Não-imagens (PDF) passam intactas; qualquer falha cai no original.
 
-export async function resizeImage(file: File, maxDim = 1600, quality = 0.85): Promise<File> {
+export async function resizeImage(file: File, maxDim = 1024, quality = 0.85): Promise<File> {
   if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
   try {
     const bitmap = await createImageBitmap(file);

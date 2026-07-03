@@ -82,6 +82,9 @@ export type FieldPoint = {
   titulo: string | null;
   observacoes: string | null;
   ordem: number;
+  /** Quem estava logado quando o ponto foi criado — null em dados pré-migração. */
+  collected_by_user_id: string | null;
+  collected_by_name: string | null;
   created_at: string;
   updated_at: string;
 };

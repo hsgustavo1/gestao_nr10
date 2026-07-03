@@ -23,6 +23,14 @@ export function labelDoTipo(tipo: NodeType | null): string {
   return "Item";
 }
 
+/** Rótulo no plural para cada nível da árvore (setor→setores é irregular). */
+export function labelDoTipoPlural(tipo: NodeType | null): string {
+  if (tipo === "setor") return "Setores";
+  if (tipo === "ativo") return "Ativos";
+  if (tipo === "componente") return "Componentes";
+  return "Itens";
+}
+
 // ── Helpers de navegação na árvore ───────────────────────────────────────────
 
 /**

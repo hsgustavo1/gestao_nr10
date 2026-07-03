@@ -17,6 +17,8 @@ import { colorLabel, type Padlock } from "@/lib/padlocks";
 import { EtiquetaLOTO, type EtiquetaCor } from "@/components/etiqueta-loto";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { resizeImage } from "@/lib/campo";
+import { mensagemUploadAmigavel } from "@/lib/upload";
 
 const BUCKET = "padlock-photos";
 
@@ -159,13 +161,14 @@ export function PrintLabelDialog({
     if (file.size > 5 * 1024 * 1024) return toast.error("Imagem muito grande (máx. 5MB)");
     setUploading(true);
     const path = photoPathFor(padlock);
+    const comprimida = await resizeImage(file, 1024);
     const { error } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
+      .upload(path, comprimida, { upsert: true, contentType: comprimida.type, cacheControl: "3600" });
     if (error) {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
-      return toast.error("Falha ao salvar a foto: " + error.message);
+      return toast.error(mensagemUploadAmigavel(error));
     }
     const reader = new FileReader();
     reader.onload = () => {

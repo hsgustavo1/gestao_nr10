@@ -24,7 +24,8 @@ export function CreateInspectionModal({ onClose }: Props) {
   });
   // Fallback legado: sem cache de orgs (nunca sincronizou) → texto livre.
   const [clienteLivre, setClienteLivre] = useState("");
-  const [local, setLocal] = useState("");
+  // Capturado em background do usuário logado — não é mais pergunta na UX de
+  // criação, mas segue alimentando `responsavel_auditoria` na importação RTI.
   const [engenheiro, setEngenheiro] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +78,7 @@ export function CreateInspectionModal({ onClose }: Props) {
         ...(resolvedOrgId ? { org_id: resolvedOrgId } : {}),
         titulo: titulo.trim(),
         cliente: clienteNome,
-        local: local.trim() || null,
+        local: null,
         engenheiro: engenheiro || null,
         data_inspecao: now,
         status: "em_andamento" as const,
@@ -174,24 +175,6 @@ export function CreateInspectionModal({ onClose }: Props) {
               />
             </label>
           )}
-          <label className="block">
-            <span className="text-sm text-slate-400">Local</span>
-            <input
-              type="text"
-              value={local}
-              onChange={(e) => setLocal(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-slate-800 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm text-slate-400">Engenheiro</span>
-            <input
-              type="text"
-              value={engenheiro}
-              readOnly
-              className="mt-1 w-full rounded-lg bg-slate-800/50 px-3 py-2.5 text-sm text-slate-500 cursor-not-allowed"
-            />
-          </label>
         </div>
 
         {error && <p className="text-red-400 text-sm">{error}</p>}

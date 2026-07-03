@@ -1,5 +1,18 @@
 # gestao_nr10 — instruções do projeto
 
+## Fluxo de trabalho — local primeiro, commit só sob comando (desde 2026-07-01)
+
+- **Desenvolver e testar em localhost, prioritariamente**, iterando com `preview_*` (dev server local) em vez de depender de round-trips de MCP (Supabase `execute_sql`/`get_logs`, Vercel `get_deployment_build_logs`/`get_runtime_logs`) a cada ajuste pequeno. Isso é uma questão de custo de tokens: cada ciclo de "push staging → esperar deploy → checar log via MCP" é caro; iterar local é mais barato.
+- **Nunca commitar ou dar push (staging ou main) por iniciativa própria.** Aguardar comando explícito do usuário para cada commit/deploy, mesmo que as mudanças estejam validadas localmente e prontas.
+- Exceção conhecida: comportamento de PWA (service worker, instalação, cache offline) só se manifesta em HTTPS real — para validar isso especificamente é necessário o preview de staging, não dá pra resolver só em localhost. Mas isso não muda a regra acima: o push para staging só acontece quando o usuário pedir.
+
+## Servidor local — porta fixa 57010, gerenciado pelo usuário (desde 2026-07-01)
+
+- **O usuário sobe o dev server (`npm run dev`) pelo próprio PowerShell**, sempre na porta 57010 (config `"gestao-nr10 (App Principal)"` em `.claude/launch.json`, `autoPort: false`). Ele fica de pé o tempo todo, fora do ciclo de vida de qualquer sessão de chat — assim ele consegue acompanhar no próprio navegador sem depender da janela pequena do preview lateral.
+- **Claude nunca deve chamar `preview_stop` nesse servidor, nem reiniciá-lo.** Uso permitido: `preview_screenshot`/`preview_snapshot`/`preview_eval`/`preview_console_logs`/`preview_network`/`preview_click`/`preview_fill`/`preview_resize` apontando pro servidor já existente na 57010 — só leitura/interação, nunca start/stop.
+- Se `preview_start` for chamado com essa config e a porta já estiver ocupada pelo processo do usuário, isso é o comportamento esperado (o MCP se conecta ao processo existente) — não tratar como erro nem tentar "corrigir" subindo outra instância ou mudando a porta.
+- **Não criar configs novas/duplicadas em `launch.json`** para contornar conflito de porta — isso já causou bagunça (vários servidores locais simultâneos). Se a porta 57010 estiver realmente inacessível, perguntar ao usuário antes de qualquer mudança de config.
+
 ## Mapa do código (obrigatório ao iniciar)
 
 Antes de qualquer exploração do código (Glob, Grep, Read em arquivos fonte), leia:

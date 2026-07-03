@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
+import { removerArquivosOrfaos } from "@/lib/upload";
 import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
@@ -376,15 +377,12 @@ function ExcluirInspecaoDialog({
             const ncIds = (targetNcs ?? []).map((n: { id: string }) => n.id);
 
             if (ncIds.length > 0) {
-              // Remove evidence files from storage before deleting NCs.
+              // Coleta os paths das evidências ANTES de apagar as NCs.
               const { data: evidencias } = await supabase
                 .from("rti_nc_evidencias")
                 .select("file_path")
                 .in("nc_id", ncIds);
               const paths = (evidencias ?? []).map((e: { file_path: string }) => e.file_path);
-              for (let i = 0; i < paths.length; i += 100) {
-                await supabase.storage.from("rti-evidencias").remove(paths.slice(i, i + 100));
-              }
 
               // Delete only the NCs contributed by this inspection.
               for (let i = 0; i < ncIds.length; i += 200) {
@@ -393,6 +391,13 @@ function ExcluirInspecaoDialog({
                   .delete()
                   .in("id", ncIds.slice(i, i + 200));
               }
+
+              // Reference-aware: uma evidência pode referenciar o MESMO arquivo que
+              // field_photos (Decisão C, comporRti). Só remove do Storage o que
+              // ficou sem nenhuma referência, e só DEPOIS das linhas de negócio
+              // apagadas acima — nunca antes (removerArquivosOrfaos decide "órfão"
+              // consultando o banco).
+              await removerArquivosOrfaos(paths);
             }
           }
         }
