@@ -1383,7 +1383,6 @@ function ComporRtiDialog({
     (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || null;
 
   const [destino, setDestino] = useState<string>(defaultDestino ?? "novo");
-  const [responsavelAuditoria, setResponsavelAuditoria] = useState(actorName ?? "");
   const [busy, setBusy] = useState(false);
   const [progresso, setProgresso] = useState<{ etapa: string; done: number; total: number } | null>(
     null,
@@ -1398,7 +1397,6 @@ function ComporRtiDialog({
         inspection,
         destino: destino === "novo" ? { mode: "novo" } : { mode: "existente", reportId: destino },
         actorName,
-        responsavelAuditoria: responsavelAuditoria.trim() || null,
         onProgress: (etapa, done, total) => setProgresso({ etapa, done, total }),
       });
       await upsertInspection.mutateAsync({
@@ -1501,17 +1499,6 @@ function ComporRtiDialog({
               </SelectContent>
             </Select>
           </div>
-          {destino === "novo" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="responsavel-auditoria">Responsável pela auditoria</Label>
-              <Input
-                id="responsavel-auditoria"
-                value={responsavelAuditoria}
-                onChange={(e) => setResponsavelAuditoria(e.target.value)}
-                disabled={busy}
-              />
-            </div>
-          )}
           {progresso && (
             <div className="space-y-1">
               <Progress

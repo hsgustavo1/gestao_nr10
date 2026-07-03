@@ -799,13 +799,11 @@ export async function comporRti({
   inspection,
   destino,
   actorName,
-  responsavelAuditoria,
   onProgress,
 }: {
   inspection: FieldInspection;
   destino: ComporRtiDestino;
   actorName: string | null;
-  responsavelAuditoria: string | null;
   onProgress?: (etapa: string, done: number, total: number) => void;
 }): Promise<ComporRtiResult> {
   // Raiz do RTI herda a org da inspeção de origem; as NCs/áreas/evidências
@@ -867,7 +865,7 @@ export async function comporRti({
     reportId = destino.reportId;
   } else {
     // coletores_campo só é gravado na criação — mesmo comportamento que os
-    // demais campos deste insert (empresa_auditora, responsavel_auditoria):
+    // demais campos deste insert (empresa_auditora):
     // recompor pra um relatório existente não atualiza metadados do relatório.
     const coletoresCampo = coletoresCampoDe(points);
     const { data: rep, error: rErr } = await supabase
@@ -876,8 +874,10 @@ export async function comporRti({
         ...(orgId ? { org_id: orgId } : {}),
         titulo: inspection.titulo,
         empresa_auditora: inspection.cliente,
-        responsavel_auditoria: responsavelAuditoria,
+        responsavel_tecnico_rti: null,
         responsavel_plano: null,
+        responsaveis_campo_extra: null,
+        responsavel_relatorio: null,
         coletores_campo: coletoresCampo,
         periodo_inicio: inspection.data_inspecao,
         periodo_fim: inspection.data_inspecao,
