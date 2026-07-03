@@ -259,10 +259,6 @@ function RtiImportarPage() {
   // Metadados do relatório
   const [titulo, setTitulo] = useState("");
   const [empresaAuditora, setEmpresaAuditora] = useState("");
-  const [responsavelAuditoria, setResponsavelAuditoria] = useState("");
-  const [responsavelPlano, setResponsavelPlano] = useState("");
-  const [periodoInicio, setPeriodoInicio] = useState("");
-  const [periodoFim, setPeriodoFim] = useState("");
 
   // Planilha
   const [fileName, setFileName] = useState<string | null>(null);
@@ -336,10 +332,12 @@ function RtiImportarPage() {
         report: {
           titulo: titulo.trim(),
           empresa_auditora: empresaAuditora.trim() || null,
-          responsavel_auditoria: responsavelAuditoria.trim() || null,
-          responsavel_plano: responsavelPlano.trim() || null,
-          periodo_inicio: periodoInicio || null,
-          periodo_fim: periodoFim || null,
+          responsavel_tecnico_rti: null,
+          responsavel_plano: null,
+          responsaveis_campo_extra: null,
+          responsavel_relatorio: null,
+          periodo_inicio: null,
+          periodo_fim: null,
           coletores_campo: null,
           created_by: actorId,
           created_by_name: actorName,
@@ -365,10 +363,12 @@ function RtiImportarPage() {
       await upsertReport.mutateAsync({
         titulo: titulo.trim(),
         empresa_auditora: empresaAuditora.trim() || null,
-        responsavel_auditoria: responsavelAuditoria.trim() || null,
-        responsavel_plano: responsavelPlano.trim() || null,
-        periodo_inicio: periodoInicio || null,
-        periodo_fim: periodoFim || null,
+        responsavel_tecnico_rti: null,
+        responsavel_plano: null,
+        responsaveis_campo_extra: null,
+        responsavel_relatorio: null,
+        periodo_inicio: null,
+        periodo_fim: null,
         coletores_campo: null,
         report_path: null,
         notes: null,
@@ -484,44 +484,6 @@ function RtiImportarPage() {
                 maxLength={150}
                 placeholder="Ex.: Empresa"
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="imp-resp-aud">Responsável pela auditoria</Label>
-              <Input
-                id="imp-resp-aud"
-                value={responsavelAuditoria}
-                onChange={(e) => setResponsavelAuditoria(e.target.value)}
-                maxLength={150}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="imp-resp-plano">Responsável pelo plano de ação</Label>
-              <Input
-                id="imp-resp-plano"
-                value={responsavelPlano}
-                onChange={(e) => setResponsavelPlano(e.target.value)}
-                maxLength={150}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="imp-ini">Início da auditoria</Label>
-                <Input
-                  id="imp-ini"
-                  type="date"
-                  value={periodoInicio}
-                  onChange={(e) => setPeriodoInicio(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="imp-fim">Fim da auditoria</Label>
-                <Input
-                  id="imp-fim"
-                  type="date"
-                  value={periodoFim}
-                  onChange={(e) => setPeriodoFim(e.target.value)}
-                />
-              </div>
             </div>
           </div>
 
