@@ -69,10 +69,15 @@ export type RtiReport = {
   id: string;
   titulo: string;
   empresa_auditora: string | null;
-  responsavel_auditoria: string | null;
+  /** Emissor da ART do RTI (opcional). Pode diferir de coletores/entregador/criador. */
+  responsavel_tecnico_rti: string | null;
   responsavel_plano: string | null;
   /** Lista deduplicada de field_points.collected_by_name no momento da composição. */
   coletores_campo: string[] | null;
+  /** Responsáveis de campo adicionados manualmente na entrega. */
+  responsaveis_campo_extra: string[] | null;
+  /** Nome de quem entregou o relatório. */
+  responsavel_relatorio: string | null;
   periodo_inicio: string | null;
   periodo_fim: string | null;
   report_path: string | null;
