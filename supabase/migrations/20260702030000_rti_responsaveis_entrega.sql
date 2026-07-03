@@ -5,7 +5,7 @@
 -- 2) Adiciona responsaveis_campo_extra (nomes manuais) e responsavel_relatorio.
 -- 3) Estende fn_entregar_rti_report para gravar esses campos + datas e aplicar
 --    o responsável do plano nas NCs sem responsável, na mesma transação.
--- Idempotente.
+-- Idempotente, exceto o RENAME (migração de schema, não reexecutável).
 -- ============================================================================
 
 ALTER TABLE public.rti_reports
