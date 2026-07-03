@@ -72,11 +72,14 @@ import {
   RTI_PRIORIDADE_LABELS,
   RTI_TIPO_EXECUCAO_LABELS,
   RTI_TIPO_EXECUCAO_SHORT,
+  responsaveisInspecaoCampo,
+  labelResponsaveisCampo,
   type RtiCustoFiltro,
   type RtiEvidenciaTipo,
   type RtiNc,
   type RtiNcStatus,
   type RtiPrioridade,
+  type RtiReport,
   type RtiTipoExecucao,
 } from "@/lib/rti";
 import {
@@ -152,6 +155,7 @@ function RtiPlanoPage() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [novaNcOpen, setNovaNcOpen] = useState(false);
+  const [entregarOpen, setEntregarOpen] = useState(false);
 
   const actorName =
     (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0] || null;
@@ -336,19 +340,7 @@ function RtiPlanoPage() {
                   variant="outline"
                   size="sm"
                   disabled={entregar.isPending}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        "Após entregar, o cliente não poderá mais alterar o registro técnico " +
-                          "(criticidade, recomendações, evidências de constatação) deste relatório. Continuar?",
-                      )
-                    ) {
-                      entregar.mutate({
-                        reportId: activeReport.id,
-                        orgId: auth.currentOrg?.managed_by_org_id ?? auth.currentOrgId!,
-                      });
-                    }
-                  }}
+                  onClick={() => setEntregarOpen(true)}
                 >
                   {entregar.isPending ? "Entregando…" : "Entregar relatório"}
                 </Button>
@@ -843,6 +835,32 @@ function RtiPlanoPage() {
             if (!o) setNovaNcOpen(false);
           }}
           actorName={actorName}
+        />
+      )}
+
+      {activeReport && repAcc?.canEntregar && auth.currentOrgId && (
+        <EntregarRtiDialog
+          open={entregarOpen}
+          onOpenChange={setEntregarOpen}
+          report={activeReport}
+          actorName={actorName}
+          isPending={entregar.isPending}
+          onConfirm={(dados) =>
+            entregar.mutate(
+              {
+                reportId: activeReport.id,
+                orgId: auth.currentOrg?.managed_by_org_id ?? auth.currentOrgId!,
+                ...dados,
+              },
+              {
+                onSuccess: () => {
+                  setEntregarOpen(false);
+                  toast.success("Relatório entregue.");
+                },
+                onError: (e) => toast.error("Falha ao entregar: " + (e as Error).message),
+              },
+            )
+          }
         />
       )}
     </PageShell>
@@ -1417,6 +1435,203 @@ function NovaNcDialog({
             </Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Entregar relatório ───────────────────────────────────────────────────────
+
+function EntregarRtiDialog({
+  open,
+  onOpenChange,
+  report,
+  actorName,
+  isPending,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  report: RtiReport;
+  actorName: string | null;
+  isPending: boolean;
+  onConfirm: (dados: {
+    responsaveisCampoExtra: string[];
+    responsavelRelatorio: string | null;
+    responsavelTecnicoRti: string | null;
+    responsavelPlano: string | null;
+    periodoInicio: string;
+    periodoFim: string;
+  }) => void;
+}) {
+  const auto = useMemo(() => responsaveisInspecaoCampo(report.coletores_campo, null), [report]);
+  const [extras, setExtras] = useState<string[]>([]);
+  const [novo, setNovo] = useState("");
+  const [tecnicoRti, setTecnicoRti] = useState("");
+  const [respPlano, setRespPlano] = useState("");
+  const [inicio, setInicio] = useState(report.periodo_inicio ?? "");
+  const [fim, setFim] = useState(report.periodo_fim ?? "");
+
+  const totalCampo = auto.length + extras.length;
+  const podeEntregar = totalCampo >= 1 && inicio !== "" && fim !== "";
+  const hoje = formatDatePtBR(new Date().toISOString().slice(0, 10));
+
+  function addExtra() {
+    const t = novo.trim();
+    if (!t) return;
+    if (auto.includes(t) || extras.includes(t)) {
+      setNovo("");
+      return;
+    }
+    setExtras((prev) => [...prev, t]);
+    setNovo("");
+  }
+
+  function submit() {
+    if (!podeEntregar) return;
+    if (
+      !window.confirm(
+        "Após entregar, o cliente não poderá mais alterar o registro técnico " +
+          "(criticidade, recomendações, evidências de constatação) deste relatório. Continuar?",
+      )
+    )
+      return;
+    onConfirm({
+      responsaveisCampoExtra: extras,
+      responsavelRelatorio: actorName,
+      responsavelTecnicoRti: tecnicoRti.trim() || null,
+      responsavelPlano: respPlano.trim() || null,
+      periodoInicio: inicio,
+      periodoFim: fim,
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => (!isPending ? onOpenChange(o) : null)}>
+      <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Entregar relatório</DialogTitle>
+          <DialogDescription>
+            Informe os responsáveis e o período da inspeção. A data de entrega é registrada
+            automaticamente.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>{labelResponsaveisCampo(totalCampo)} *</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {auto.map((nome) => (
+                <span
+                  key={`auto-${nome}`}
+                  className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs"
+                  title="Coletado em campo (PWA) — não removível"
+                >
+                  {nome}
+                </span>
+              ))}
+              {extras.map((nome) => (
+                <span
+                  key={`extra-${nome}`}
+                  className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs"
+                >
+                  {nome}
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => setExtras((prev) => prev.filter((n) => n !== nome))}
+                    aria-label={`Remover ${nome}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={novo}
+                onChange={(e) => setNovo(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    addExtra();
+                  }
+                }}
+                placeholder="Adicionar responsável…"
+              />
+              <Button type="button" variant="outline" onClick={addExtra} disabled={!novo.trim()}>
+                Adicionar
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Responsável pelo relatório</Label>
+            <Input value={actorName ?? ""} disabled readOnly />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="ent-tecnico-rti">Responsável Técnico do RTI</Label>
+            <Input
+              id="ent-tecnico-rti"
+              value={tecnicoRti}
+              onChange={(e) => setTecnicoRti(e.target.value)}
+              placeholder="Opcional"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Pessoa que emitirá a ART do RTI. Pode ser diferente de quem coletou em campo,
+              entregou ou criou o relatório.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="ent-resp-plano">Responsável pelo plano de ação</Label>
+            <Input
+              id="ent-resp-plano"
+              value={respPlano}
+              onChange={(e) => setRespPlano(e.target.value)}
+              placeholder="Opcional"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Se preenchido, será aplicado às ações sem responsável definido.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="ent-inicio">Início da inspeção *</Label>
+              <Input
+                id="ent-inicio"
+                type="date"
+                value={inicio}
+                onChange={(e) => setInicio(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ent-fim">Término da inspeção *</Label>
+              <Input
+                id="ent-fim"
+                type="date"
+                value={fim}
+                onChange={(e) => setFim(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Data de entrega</Label>
+            <Input value={hoje} disabled readOnly />
+          </div>
+        </div>
+
+        <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={!podeEntregar || isPending}>
+            {isPending ? "Entregando…" : "Entregar relatório"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
