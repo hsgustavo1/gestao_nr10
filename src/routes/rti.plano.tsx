@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -52,7 +52,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
 import { getRtiCampoAccess, getRecordAccess, type SealActor } from "@/lib/tenancy-gates";
-import { formatDatePtBR } from "@/lib/qualificacoes";
+import { formatDatePtBR, formatTimestampPtBR } from "@/lib/qualificacoes";
 import {
   clampPrioridade,
   formatBRL,
@@ -89,6 +89,8 @@ import {
   useBulkUpdateRtiNcs,
   useCreateRtiArea,
   useCreateRtiNc,
+  rtiFileUrl,
+  uploadRtiArt,
   useEntregarRtiReport,
   useRtiAreas,
   useRtiEvidenciaIndex,
@@ -314,6 +316,17 @@ function RtiPlanoPage() {
 
   const isLoading = loadingReports || (activeReport && loadingNcs);
 
+  const respCampo = useMemo(
+    () =>
+      activeReport
+        ? responsaveisInspecaoCampo(activeReport.coletores_campo, activeReport.responsaveis_campo_extra)
+        : [],
+    [activeReport],
+  );
+  const temResponsaveisEntrega =
+    activeReport &&
+    (respCampo.length > 0 || activeReport.responsavel_relatorio || activeReport.responsavel_tecnico_rti);
+
   return (
     <PageShell>
       <div className="flex items-end justify-between flex-wrap gap-3">
@@ -327,12 +340,42 @@ function RtiPlanoPage() {
               ? activeReport.titulo
               : "Não conformidades do Relatório Técnico das Inspeções."}
           </p>
+          {temResponsaveisEntrega && (
+            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+              {respCampo.length > 0 && (
+                <span>
+                  {labelResponsaveisCampo(respCampo.length)}: {respCampo.join(", ")}
+                </span>
+              )}
+              {activeReport?.responsavel_tecnico_rti && (
+                <span>Responsável Técnico do RTI: {activeReport.responsavel_tecnico_rti}</span>
+              )}
+              {activeReport?.responsavel_relatorio && (
+                <span>Responsável pelo relatório: {activeReport.responsavel_relatorio}</span>
+              )}
+            </div>
+          )}
           {activeReport && (activeReport.entregue_em || repAcc?.canEntregar) && (
             <div className="mt-1.5 flex items-center gap-2 flex-wrap">
               {activeReport.entregue_em && (
                 <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                  Entregue em {formatDatePtBR(activeReport.entregue_em)}
+                  Entregue em {formatTimestampPtBR(activeReport.entregue_em)}
                 </span>
+              )}
+              {activeReport.art_numero && (
+                <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  ART: {activeReport.art_numero}
+                </span>
+              )}
+              {activeReport.art_arquivo_path && (
+                <a
+                  href={rtiFileUrl(activeReport.art_arquivo_path)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground"
+                >
+                  Consultar ART
+                </a>
               )}
               {repAcc?.canEntregar && auth.currentOrgId && (
                 <Button
@@ -1461,20 +1504,33 @@ function EntregarRtiDialog({
     responsavelRelatorio: string | null;
     responsavelTecnicoRti: string | null;
     responsavelPlano: string | null;
-    periodoInicio: string;
-    periodoFim: string;
+    periodoInicio: string | null;
+    periodoFim: string | null;
+    artNumero: string | null;
+    artArquivoPath: string | null;
+    entregueEm: string | null;
   }) => void;
 }) {
+  const auth = useAuth();
   const auto = useMemo(
     () => responsaveisInspecaoCampo(report.coletores_campo, null),
     [report.coletores_campo],
   );
+  const hojeIso = () => new Date().toISOString().slice(0, 10);
+
   const [extras, setExtras] = useState<string[]>([]);
   const [novo, setNovo] = useState("");
+  const [respRelatorio, setRespRelatorio] = useState(actorName ?? "");
   const [tecnicoRti, setTecnicoRti] = useState("");
   const [respPlano, setRespPlano] = useState("");
   const [inicio, setInicio] = useState(report.periodo_inicio ?? "");
   const [fim, setFim] = useState(report.periodo_fim ?? "");
+  const [artNumero, setArtNumero] = useState(report.art_numero ?? "");
+  const [artArquivoPath, setArtArquivoPath] = useState<string | null>(
+    report.art_arquivo_path ?? null,
+  );
+  const [artUploading, setArtUploading] = useState(false);
+  const [entregueEm, setEntregueEm] = useState(hojeIso());
 
   // Reseta os campos toda vez que o pop-up abre — evita que extras/textos/datas
   // de uma abertura anterior (ou de outro relatório) sobrevivam ao fechar
@@ -1483,16 +1539,19 @@ function EntregarRtiDialog({
     if (open) {
       setExtras([]);
       setNovo("");
+      setRespRelatorio(actorName ?? "");
       setTecnicoRti("");
       setRespPlano("");
       setInicio(report.periodo_inicio ?? "");
       setFim(report.periodo_fim ?? "");
+      setArtNumero(report.art_numero ?? "");
+      setArtArquivoPath(report.art_arquivo_path ?? null);
+      setArtUploading(false);
+      setEntregueEm(hojeIso());
     }
-  }, [open, report]);
+  }, [open, report, actorName]);
 
   const totalCampo = auto.length + extras.length;
-  const podeEntregar = totalCampo >= 1 && inicio !== "" && fim !== "";
-  const hoje = formatDatePtBR(new Date().toISOString().slice(0, 10));
 
   function addExtra() {
     const t = novo.trim();
@@ -1505,8 +1564,33 @@ function EntregarRtiDialog({
     setNovo("");
   }
 
+  async function onArtFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const orgId = auth.currentOrgId;
+    if (!orgId) {
+      toast.error("Selecione uma empresa antes de anexar a ART.");
+      return;
+    }
+    setArtUploading(true);
+    try {
+      const path = await uploadRtiArt(file, {
+        orgId,
+        orgNome: auth.currentOrg?.nome ?? null,
+        reportId: report.id,
+        reportTitulo: report.titulo,
+      });
+      setArtArquivoPath(path);
+      toast.success("ART anexada.");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setArtUploading(false);
+    }
+  }
+
   function submit() {
-    if (!podeEntregar) return;
     if (
       !window.confirm(
         "Após entregar, o cliente não poderá mais alterar o registro técnico " +
@@ -1516,11 +1600,14 @@ function EntregarRtiDialog({
       return;
     onConfirm({
       responsaveisCampoExtra: extras,
-      responsavelRelatorio: actorName,
+      responsavelRelatorio: respRelatorio.trim() || null,
       responsavelTecnicoRti: tecnicoRti.trim() || null,
       responsavelPlano: respPlano.trim() || null,
-      periodoInicio: inicio,
-      periodoFim: fim,
+      periodoInicio: inicio || null,
+      periodoFim: fim || null,
+      artNumero: artNumero.trim() || null,
+      artArquivoPath,
+      entregueEm: entregueEm || null,
     });
   }
 
@@ -1530,14 +1617,14 @@ function EntregarRtiDialog({
         <DialogHeader>
           <DialogTitle>Entregar relatório</DialogTitle>
           <DialogDescription>
-            Informe os responsáveis e o período da inspeção. A data de entrega é registrada
-            automaticamente.
+            Todos os campos abaixo já vêm sugeridos com os dados coletados, mas podem ser
+            livremente editados antes de confirmar a entrega.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>{labelResponsaveisCampo(totalCampo)} *</Label>
+            <Label>{labelResponsaveisCampo(totalCampo)}</Label>
             <div className="flex flex-wrap gap-1.5">
               {auto.map((nome) => (
                 <span
@@ -1584,8 +1671,13 @@ function EntregarRtiDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Responsável pelo relatório</Label>
-            <Input value={actorName ?? ""} disabled readOnly />
+            <Label htmlFor="ent-resp-relatorio">Responsável pelo relatório</Label>
+            <Input
+              id="ent-resp-relatorio"
+              value={respRelatorio}
+              onChange={(e) => setRespRelatorio(e.target.value)}
+              placeholder="Opcional"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -1603,6 +1695,41 @@ function EntregarRtiDialog({
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="ent-art-numero">Número da ART</Label>
+            <Input
+              id="ent-art-numero"
+              value={artNumero}
+              onChange={(e) => setArtNumero(e.target.value)}
+              placeholder="Opcional"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="ent-art-arquivo">Anexar ART</Label>
+            <Input
+              id="ent-art-arquivo"
+              type="file"
+              accept="application/pdf,image/*"
+              onChange={onArtFileChange}
+              disabled={artUploading}
+            />
+            {artUploading && <p className="text-[11px] text-muted-foreground">Enviando…</p>}
+            {!artUploading && artArquivoPath && (
+              <p className="text-[11px] text-muted-foreground">
+                Arquivo anexado.{" "}
+                <a
+                  href={rtiFileUrl(artArquivoPath)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Consultar ART
+                </a>
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="ent-resp-plano">Responsável pelo plano de ação</Label>
             <Input
               id="ent-resp-plano"
@@ -1617,7 +1744,7 @@ function EntregarRtiDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="ent-inicio">Início da inspeção *</Label>
+              <Label htmlFor="ent-inicio">Início da inspeção</Label>
               <Input
                 id="ent-inicio"
                 type="date"
@@ -1626,7 +1753,7 @@ function EntregarRtiDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="ent-fim">Término da inspeção *</Label>
+              <Label htmlFor="ent-fim">Término da inspeção</Label>
               <Input
                 id="ent-fim"
                 type="date"
@@ -1637,8 +1764,13 @@ function EntregarRtiDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Data de entrega</Label>
-            <Input value={hoje} disabled readOnly />
+            <Label htmlFor="ent-entregue-em">Data de entrega</Label>
+            <Input
+              id="ent-entregue-em"
+              type="date"
+              value={entregueEm}
+              onChange={(e) => setEntregueEm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -1646,7 +1778,7 @@ function EntregarRtiDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={!podeEntregar || isPending}>
+          <Button onClick={submit} disabled={isPending || artUploading}>
             {isPending ? "Entregando…" : "Entregar relatório"}
           </Button>
         </DialogFooter>

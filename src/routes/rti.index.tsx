@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { getRtiCampoAccess } from "@/lib/tenancy-gates";
-import { formatDatePtBR } from "@/lib/qualificacoes";
+import { formatDatePtBR, formatTimestampPtBR } from "@/lib/qualificacoes";
 import {
   computeAndamentoPorCusto,
   formatBRL,
@@ -51,7 +51,7 @@ import {
   type RtiPrazoBucket,
   type RtiPrioridade,
 } from "@/lib/rti";
-import { useRtiAreas, useRtiNcs, useRtiReports } from "@/lib/rti-queries";
+import { rtiFileUrl, useRtiAreas, useRtiNcs, useRtiReports } from "@/lib/rti-queries";
 
 export const Route = createFileRoute("/rti/")({
   component: RtiDashboardPage,
@@ -254,7 +254,18 @@ function RtiDashboardPage() {
                 <span>Responsável pelo relatório: {activeReport.responsavel_relatorio}</span>
               )}
               {activeReport?.entregue_em && (
-                <span>Entregue em {formatDatePtBR(activeReport.entregue_em)}</span>
+                <span>Entregue em {formatTimestampPtBR(activeReport.entregue_em)}</span>
+              )}
+              {activeReport?.art_numero && <span>ART: {activeReport.art_numero}</span>}
+              {activeReport?.art_arquivo_path && (
+                <a
+                  href={rtiFileUrl(activeReport.art_arquivo_path)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Consultar ART
+                </a>
               )}
             </div>
           )}

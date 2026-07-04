@@ -36,8 +36,8 @@ function SidebarSubLink({ to, label }: SubItem) {
     <Link
       to={to}
       className={cn(
-        "block pl-3 pr-2 py-[5px] text-[12px] rounded-sm transition-colors duration-75 text-foreground/80",
-        active ? "font-semibold text-[#334155] bg-secondary" : "hover:text-foreground",
+        "block pl-3 pr-2 py-[5px] text-[12px] rounded-sm transition-colors duration-75 text-white/70",
+        active ? "font-semibold text-white bg-white/10" : "hover:text-white/90",
       )}
     >
       {label}
@@ -59,23 +59,23 @@ function SidebarGroup({ group }: { group: NavGroup }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "w-full flex items-center gap-[9px] pl-[13px] pr-3 h-[34px] text-[13px] border-l-[3px] transition-[background,color] duration-100",
+          "w-full flex items-center gap-[9px] pl-[13px] pr-3 h-[34px] text-[13px] rounded-md transition-colors duration-100",
           isActive
-            ? "border-l-[#334155] bg-secondary text-[#334155] font-semibold"
-            : "border-l-transparent text-muted-foreground font-medium hover:bg-secondary/70 hover:text-foreground/70",
+            ? "bg-white/10 text-white font-semibold"
+            : "text-white/70 font-medium hover:bg-white/10 hover:text-white/90",
         )}
       >
-        <Icon className="h-[14px] w-[14px] shrink-0" />
+        <Icon className={cn("h-[14px] w-[14px] shrink-0", isActive ? "text-white" : "text-white/70")} />
         <span className="flex-1 text-left">{group.label}</span>
         <ChevronDown
           className={cn(
-            "h-3 w-3 shrink-0 transition-transform duration-150",
+            "h-3 w-3 shrink-0 text-white/50 transition-transform duration-150",
             open ? "rotate-180" : "",
           )}
         />
       </button>
       {open && (
-        <div className="ml-[22px] pl-3 border-l border-border/60 flex flex-col gap-0.5 py-1">
+        <div className="ml-[22px] pl-3 border-l border-white/10 flex flex-col gap-0.5 py-1">
           {group.children.map((c) => (
             <SidebarSubLink key={c.to} {...c} />
           ))}
@@ -103,13 +103,13 @@ function SidebarSingleLink({
     <Link
       to={to}
       className={cn(
-        "flex items-center gap-[9px] pl-[13px] pr-3 h-[34px] text-[13px] border-l-[3px] transition-[background,color] duration-100",
+        "flex items-center gap-[9px] pl-[13px] pr-3 h-[34px] text-[13px] rounded-md transition-colors duration-100",
         active
-          ? "border-l-[#334155] bg-secondary text-[#334155] font-semibold"
-          : "border-l-transparent text-muted-foreground font-medium hover:bg-secondary/70 hover:text-foreground/70",
+          ? "bg-white/10 text-white font-semibold"
+          : "text-white/70 font-medium hover:bg-white/10 hover:text-white/90",
       )}
     >
-      <Icon className="h-[14px] w-[14px] shrink-0" />
+      <Icon className={cn("h-[14px] w-[14px] shrink-0", active ? "text-white" : "text-white/70")} />
       {label}
     </Link>
   );
@@ -215,8 +215,8 @@ export function AppSidebar() {
   const settingsTo = canManageEmpresas ? "/admin/empresas" : "/admin/usuarios";
 
   return (
-    <aside className="hidden lg:flex w-[200px] shrink-0 flex-col border-r border-border bg-white sticky top-[52px] h-[calc(100vh-52px)] self-start overflow-y-auto">
-      <div className="flex flex-col flex-1 py-3">
+    <aside className="hidden lg:flex w-[200px] shrink-0 flex-col bg-[#0C3326] sticky top-[52px] h-[calc(100vh-52px)] self-start overflow-y-auto">
+      <div className="flex flex-col flex-1 py-3 px-2 gap-0.5">
         {visible.length > 0 && (
           <div className="flex flex-col gap-0.5">
             {visible.map((g) => (
@@ -233,7 +233,7 @@ export function AppSidebar() {
 
         {showSettings && (
           <div className="mt-auto pt-3">
-            <div className="h-px bg-border mx-4 mb-2" />
+            <div className="h-px bg-white/10 mx-2 mb-2" />
             <SidebarSingleLink
               label="Configurações"
               to={settingsTo}

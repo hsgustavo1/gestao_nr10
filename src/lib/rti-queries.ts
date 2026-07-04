@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { resizeImage } from "@/lib/campo";
 import { mensagemUploadAmigavel, removerArquivosOrfaos } from "@/lib/upload";
-import { evidenciaFolder, evidenciaPath, maiorIndiceEvidencia } from "@/lib/storage-paths";
+import { artPath, evidenciaFolder, evidenciaPath, maiorIndiceEvidencia } from "@/lib/storage-paths";
 import type { RtiArea, RtiNc, RtiNcEvidencia, RtiNcHistorico, RtiReport } from "./rti";
 import type { RtiSnapshotRow } from "./rti-snapshots";
 
@@ -103,8 +103,11 @@ export type EntregarRtiPayload = {
   responsavelRelatorio: string | null;
   responsavelTecnicoRti: string | null;
   responsavelPlano: string | null;
-  periodoInicio: string; // ISO date (yyyy-mm-dd)
-  periodoFim: string;    // ISO date (yyyy-mm-dd)
+  periodoInicio: string | null; // ISO date (yyyy-mm-dd)
+  periodoFim: string | null;    // ISO date (yyyy-mm-dd)
+  artNumero: string | null;
+  artArquivoPath: string | null;
+  entregueEm: string | null; // ISO date (yyyy-mm-dd); null = usa o momento do envio
 };
 
 export function useEntregarRtiReport() {
@@ -118,8 +121,11 @@ export function useEntregarRtiReport() {
         _responsavel_relatorio: p.responsavelRelatorio,
         _responsavel_tecnico_rti: p.responsavelTecnicoRti,
         _responsavel_plano: p.responsavelPlano,
-        _periodo_inicio: p.periodoInicio,
-        _periodo_fim: p.periodoFim,
+        _periodo_inicio: p.periodoInicio || null,
+        _periodo_fim: p.periodoFim || null,
+        _art_numero: p.artNumero,
+        _art_arquivo_path: p.artArquivoPath,
+        _entregue_em: p.entregueEm ? `${p.entregueEm}T12:00:00` : null,
       });
       if (error) throw error;
     },
@@ -559,6 +565,25 @@ export async function uploadRtiEvidencia(
 export function rtiFileUrl(path: string): string {
   const { data } = supabase.storage.from("rti-evidencias").getPublicUrl(path);
   return data.publicUrl;
+}
+
+export type RtiArtUploadOpts = {
+  orgId: string;
+  orgNome?: string | null;
+  reportId: string;
+  reportTitulo: string | null;
+};
+
+/** Envia (ou substitui) o arquivo da ART do relatório em {prefixo-do-relatório}/art.{ext}. */
+export async function uploadRtiArt(file: File, opts: RtiArtUploadOpts): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "pdf";
+  const report = { id: opts.reportId, titulo: opts.reportTitulo };
+  const path = artPath(opts.orgId, report, ext, opts.orgNome);
+  const { error } = await supabase.storage
+    .from("rti-evidencias")
+    .upload(path, file, { cacheControl: "3600", upsert: true });
+  if (error) throw new Error(mensagemUploadAmigavel(error));
+  return path;
 }
 
 /**

@@ -51,6 +51,20 @@ export function evidenciaPath(
   return `${evidenciaFolder(orgId, report, orgNome)}/${evidenciaFileName(ncNum, idx, ext)}`;
 }
 
+/** Nome fixo do arquivo da ART do relatório — upsert substitui o anterior. */
+export function artFileName(ext: string): string {
+  return `art.${ext}`;
+}
+
+export function artPath(
+  orgId: string,
+  report: { id: string; titulo?: string | null },
+  ext: string,
+  orgNome?: string | null,
+): string {
+  return `${evidenciaFolder(orgId, report, orgNome)}/${artFileName(ext)}`;
+}
+
 /** Maior índice já usado para uma NC, dado os nomes de arquivo do prefixo. 0 se nenhum. */
 export function maiorIndiceEvidencia(names: string[], ncNum: number): number {
   // "0*" tolera tanto o formato antigo sem padding (nc-10-1) quanto o novo (nc-0010-01).

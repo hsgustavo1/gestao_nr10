@@ -1928,6 +1928,8 @@ export type Database = {
       }
       rti_reports: {
         Row: {
+          art_arquivo_path: string | null
+          art_numero: string | null
           coletores_campo: string[] | null
           created_at: string
           created_by: string | null
@@ -1950,6 +1952,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          art_arquivo_path?: string | null
+          art_numero?: string | null
           coletores_campo?: string[] | null
           created_at?: string
           created_by?: string | null
@@ -1972,6 +1976,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          art_arquivo_path?: string | null
+          art_numero?: string | null
           coletores_campo?: string[] | null
           created_at?: string
           created_by?: string | null

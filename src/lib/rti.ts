@@ -78,6 +78,10 @@ export type RtiReport = {
   responsaveis_campo_extra: string[] | null;
   /** Nome de quem entregou o relatório. */
   responsavel_relatorio: string | null;
+  /** Número da ART emitida para o RTI (opcional). */
+  art_numero?: string | null;
+  /** Path do arquivo da ART no bucket rti-evidencias (opcional). */
+  art_arquivo_path?: string | null;
   periodo_inicio: string | null;
   periodo_fim: string | null;
   report_path: string | null;

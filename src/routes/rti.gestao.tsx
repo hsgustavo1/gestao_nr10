@@ -174,7 +174,7 @@ function ExcluirRtiDialog({
   }
 
   return (
-    <Dialog open onOpenChange={onOpenChange}>
+    <Dialog open onOpenChange={(o) => (!busy ? onOpenChange(o) : null)}>
       <DialogContent className="max-w-md w-[calc(100vw-1rem)]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">

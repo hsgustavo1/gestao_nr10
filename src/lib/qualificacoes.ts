@@ -158,6 +158,16 @@ export function formatDatePtBR(iso: string | null | undefined): string {
   }
 }
 
+/** Formata um timestamp ISO (com hora, ex.: `entregue_em`) para data em pt-BR, sem hora. */
+export function formatTimestampPtBR(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  try {
+    return format(new Date(iso), "dd/MM/yyyy", { locale: ptBR });
+  } catch {
+    return iso;
+  }
+}
+
 /** Retorna o status de expiração de um treinamento com validade de 2 anos. */
 export function trainingExpiryStatus(
   trainingDate: string | null,
