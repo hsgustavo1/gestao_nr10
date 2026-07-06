@@ -46,6 +46,7 @@ interface AuthState {
   displayName: string;
   // --- multi-tenancy ---
   orgs: Org[];
+  orgsReady: boolean;
   currentOrg: Org | null;
   currentOrgId: string | null;
   setCurrentOrg: (orgId: string) => void;
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [entitlements, setEntitlements] = useState<string[]>([]);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [orgsReady, setOrgsReady] = useState(false);
 
   const loadRoles = async (userId: string | undefined) => {
     if (!userId) {
@@ -97,8 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsPlatformAdmin(false);
       setCurrentOrgId(null);
       setProfileName(null);
+      setOrgsReady(false);
       return;
     }
+    setOrgsReady(false);
     try {
       // RLS em organizations já retorna exatamente as orgs acessíveis
       // (membro direto + filhas via parent + clientes via managed_by).
@@ -132,6 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsPlatformAdmin(false);
       setCurrentOrgId(null);
       setProfileName(null);
+    } finally {
+      setOrgsReady(true);
     }
   };
 
@@ -262,6 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isViewer,
         displayName,
         orgs,
+        orgsReady,
         currentOrg,
         currentOrgId,
         setCurrentOrg,

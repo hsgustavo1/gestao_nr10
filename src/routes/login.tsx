@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ShieldCheck, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { ORG_SELECT_PENDING_KEY } from "@/components/org-select-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +52,7 @@ function LoginPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         await refreshRoles();
+        sessionStorage.setItem(ORG_SELECT_PENDING_KEY, "1");
         toast.success("Bem-vindo!");
         navigate({ to: "/" });
       } else {

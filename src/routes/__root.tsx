@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/react";
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
+import { OrgSelectGate } from "@/components/org-select-gate";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -93,7 +94,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Outlet />
-        <Toaster richColors position="top-right" duration={6000} />
+        <OrgSelectGate />
+        <Toaster richColors position="top-right" duration={3000} />
       </AuthProvider>
     </QueryClientProvider>
   );
