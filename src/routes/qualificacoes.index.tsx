@@ -35,6 +35,7 @@ import {
   useNR10Trainings,
   useWorkAuthorizations,
   useITTrainings,
+  useFormacoesByOrg,
 } from "@/lib/qualificacoes-queries";
 import {
   trainingExpiryStatus,
@@ -44,6 +45,7 @@ import {
   TRAINING_LABELS,
   SETOR_FULL_NAMES,
   requiredTrainings,
+  faltaEscolaridadeQualificado,
 } from "@/lib/qualificacoes";
 import type { NR10Training } from "@/lib/qualificacoes";
 import { useASOs } from "@/lib/asos-queries";
@@ -75,6 +77,7 @@ function QualificacoesHub() {
   const { data: authorizations } = useWorkAuthorizations();
   const { data: itTrainings } = useITTrainings();
   const { data: asos } = useASOs();
+  const { data: formacoesByEmployee } = useFormacoesByOrg();
 
   const [setorFilter, setSetorFilter] = useState<string>("todos");
 
@@ -360,6 +363,15 @@ function QualificacoesHub() {
     return out.sort((a, b) => b.bloqueantes.length - a.bloqueantes.length);
   }, [filteredEmployees, authorizations, trainings, asos]);
 
+  // ── Qualificados sem escolaridade/formação com data de conclusão (alerta informativo) ──
+  const semEscolaridadeList = useMemo(
+    () =>
+      filteredEmployees.filter((emp) =>
+        faltaEscolaridadeQualificado(emp, formacoesByEmployee?.get(emp.id) ?? []),
+      ),
+    [filteredEmployees, formacoesByEmployee],
+  );
+
 
   return (
     <PageShell>
@@ -609,6 +621,58 @@ function QualificacoesHub() {
                       </Badge>
                     ))}
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Qualificados/Habilitados sem escolaridade/formação registrada — alerta informativo, não bloqueia autorização */}
+      <Card
+        className={`mb-6 ${semEscolaridadeList.length > 0 ? "border-amber-300 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20" : "border-emerald-200"}`}
+      >
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+            <GraduationCap
+              className={`h-4 w-4 ${semEscolaridadeList.length > 0 ? "text-amber-600" : "text-emerald-600"}`}
+            />
+            Qualificados/Habilitados sem escolaridade/formação registrada
+            <Badge
+              variant={semEscolaridadeList.length > 0 ? "secondary" : "outline"}
+              className="ml-1 text-[10px]"
+            >
+              {semEscolaridadeList.length}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {semEscolaridadeList.length === 0 ? (
+            <div className="flex items-center gap-2 text-xs text-emerald-600 py-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Todos os colaboradores "Qualificado"/"Habilitado" têm formação com data de conclusão registrada.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-[11px] text-muted-foreground">
+                Marcados como "Qualificado" ou "Habilitado" sem nenhuma formação com data de conclusão preenchida.
+                Não afeta a autorização de trabalho — é uma pendência cadastral.
+              </p>
+              {semEscolaridadeList.map((emp) => (
+                <div
+                  key={emp.id}
+                  className="flex items-center justify-between gap-3 text-xs py-1.5 border-b last:border-0"
+                >
+                  <div>
+                    <p className="font-medium">{emp.name}</p>
+                    <p className="text-muted-foreground">
+                      Mat. {emp.matricula}
+                      {emp.setor ? ` · ${emp.setor}` : ""}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px] font-normal">
+                    Sem formação registrada
+                  </Badge>
                 </div>
               ))}
             </div>

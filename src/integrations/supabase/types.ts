@@ -254,8 +254,10 @@ export type Database = {
           created_at: string
           created_by_org_id: string | null
           diploma: string | null
+          diploma_arquivo_path: string | null
           diploma_conclusao: string | null
           escolaridade: string | null
+          historico_arquivo_path: string | null
           funcao: string | null
           id: string
           matricula: string
@@ -276,9 +278,11 @@ export type Database = {
           created_at?: string
           created_by_org_id?: string | null
           diploma?: string | null
+          diploma_arquivo_path?: string | null
           diploma_conclusao?: string | null
           escolaridade?: string | null
           funcao?: string | null
+          historico_arquivo_path?: string | null
           id?: string
           matricula: string
           name: string
@@ -298,9 +302,11 @@ export type Database = {
           created_at?: string
           created_by_org_id?: string | null
           diploma?: string | null
+          diploma_arquivo_path?: string | null
           diploma_conclusao?: string | null
           escolaridade?: string | null
           funcao?: string | null
+          historico_arquivo_path?: string | null
           id?: string
           matricula?: string
           name?: string
@@ -1049,6 +1055,150 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "nr10_documents_org_fk"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_formacoes: {
+        Row: {
+          created_at: string
+          diploma_arquivo_path: string | null
+          diploma_conclusao: string | null
+          employee_id: string
+          formacao: string
+          historico_arquivo_path: string | null
+          id: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          diploma_arquivo_path?: string | null
+          diploma_conclusao?: string | null
+          employee_id: string
+          formacao: string
+          historico_arquivo_path?: string | null
+          id?: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          diploma_arquivo_path?: string | null
+          diploma_conclusao?: string | null
+          employee_id?: string
+          formacao?: string
+          historico_arquivo_path?: string | null
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_formacoes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_formacoes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_plh: {
+        Row: {
+          art_cargo_funcao: string | null
+          art_cargo_funcao_arquivo_path: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          org_id: string
+          termo_nomeacao_arquivo_path: string | null
+          termo_nomeacao_data: string | null
+          updated_at: string
+        }
+        Insert: {
+          art_cargo_funcao?: string | null
+          art_cargo_funcao_arquivo_path?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          org_id: string
+          termo_nomeacao_arquivo_path?: string | null
+          termo_nomeacao_data?: string | null
+          updated_at?: string
+        }
+        Update: {
+          art_cargo_funcao?: string | null
+          art_cargo_funcao_arquivo_path?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          org_id?: string
+          termo_nomeacao_arquivo_path?: string | null
+          termo_nomeacao_data?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_plh_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_plh_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_crea_anuidades: {
+        Row: {
+          ano: number
+          comprovante_arquivo_path: string | null
+          created_at: string
+          data_pagamento: string | null
+          employee_id: string
+          id: string
+          org_id: string
+        }
+        Insert: {
+          ano: number
+          comprovante_arquivo_path?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          employee_id: string
+          id?: string
+          org_id: string
+        }
+        Update: {
+          ano?: number
+          comprovante_arquivo_path?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          employee_id?: string
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_crea_anuidades_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_crea_anuidades_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"

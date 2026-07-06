@@ -50,7 +50,10 @@ function ColaboradoresPage() {
   const { data: employees = [], isLoading } = useEmployees(statusFilter);
   const deleteEmp = useDeleteEmployee();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Employee | undefined>();
+  const [editingId, setEditingId] = useState<string | undefined>();
+  // Sempre resolve a partir da lista viva — evita comparar `funcao`/`status` contra
+  // uma referência velha capturada no clique e disparar gatilhos de reciclagem à toa.
+  const editing = editingId ? employees.find((e) => e.id === editingId) : undefined;
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -66,7 +69,7 @@ function ColaboradoresPage() {
   }, [employees, setorFilter, search]);
 
   function handleEdit(emp: Employee) {
-    setEditing(emp);
+    setEditingId(emp.id);
     setDialogOpen(true);
   }
 
@@ -105,7 +108,7 @@ function ColaboradoresPage() {
         {canEdit && (
           <Button
             onClick={() => {
-              setEditing(undefined);
+              setEditingId(undefined);
               setDialogOpen(true);
             }}
             className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
@@ -274,7 +277,7 @@ function ColaboradoresPage() {
         open={dialogOpen}
         onOpenChange={(v) => {
           setDialogOpen(v);
-          if (!v) setEditing(undefined);
+          if (!v) setEditingId(undefined);
         }}
         employee={editing}
       />

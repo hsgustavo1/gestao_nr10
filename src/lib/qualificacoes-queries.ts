@@ -3,8 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { resizeImage } from "@/lib/campo";
 import { mensagemUploadAmigavel } from "@/lib/upload";
+import { slugify } from "@/lib/storage-paths";
 import type {
   Employee,
+  EmployeeFormacao,
+  EmployeePlh,
+  EmployeeCreaAnuidade,
   NR10Training,
   WorkAuthorization,
   WorkInstruction,
@@ -45,7 +49,12 @@ export function useUpsertEmployee() {
   const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Partial<Employee> & { name: string; matricula: string }) => {
-      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      // Colunas de data no Postgres rejeitam string vazia — o form envia "" quando o campo fica em branco.
+      const normalized = {
+        ...payload,
+        diploma_conclusao: payload.diploma_conclusao || null,
+      };
+      const body = !normalized.id && currentOrgId ? { ...normalized, org_id: currentOrgId } : normalized;
       const { data, error } = await supabase
         .from("employees")
         .upsert(body as never, { onConflict: "id" })
@@ -58,6 +67,220 @@ export function useUpsertEmployee() {
   });
 }
 
+export type EmployeeDocKind = "diploma" | "historico";
+
+/** Pasta do colaborador no bucket: slug do nome + id (identifica visualmente no Storage). */
+function employeeDocFolder(employee: { id: string; name: string }): string {
+  return `${slugify(employee.name)}-${employee.id}`;
+}
+
+/** Pasta da formação dentro do colaborador: slug do texto da formação + id. */
+function formacaoDocFolder(formacaoId: string, formacaoTexto: string): string {
+  const slug = slugify(formacaoTexto);
+  return slug ? `${slug}-${formacaoId}` : formacaoId;
+}
+
+/** Anexa diploma ou histórico escolar de uma formação (bucket "certificates", uma subpasta por formação). */
+export async function uploadFormacaoDoc(
+  employee: { id: string; name: string },
+  formacaoId: string,
+  formacaoTexto: string,
+  kind: EmployeeDocKind,
+  file: File,
+): Promise<string> {
+  const resized = await resizeImage(file, 1024);
+  const ext = resized.name.split(".").pop() ?? "pdf";
+  const path = `${employeeDocFolder(employee)}/${formacaoDocFolder(formacaoId, formacaoTexto)}/${kind}.${ext}`;
+  const { error } = await supabase.storage.from("certificates").upload(path, resized, {
+    cacheControl: "3600",
+    upsert: true,
+  });
+  if (error) throw new Error(mensagemUploadAmigavel(error));
+  return path;
+}
+
+export function employeeDocUrl(path: string): string {
+  const { data } = supabase.storage.from("certificates").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function deleteEmployeeDoc(path: string): Promise<void> {
+  const { error } = await supabase.storage.from("certificates").remove([path]);
+  if (error) throw new Error(mensagemUploadAmigavel(error));
+}
+
+// ── Formações (Escolaridade) ────────────────────────────────────────────────
+const FORMACAO_DOC_COLUMN: Record<EmployeeDocKind, "diploma_arquivo_path" | "historico_arquivo_path"> = {
+  diploma: "diploma_arquivo_path",
+  historico: "historico_arquivo_path",
+};
+
+/** Todas as formações da org, agrupadas por colaborador — usado no resumo da listagem. */
+export function useFormacoesByOrg() {
+  const { currentOrgId } = useAuth();
+  return useQuery({
+    queryKey: ["employee_formacoes", "by_org", currentOrgId],
+    enabled: !!currentOrgId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employee_formacoes")
+        .select("*")
+        .eq("org_id", currentOrgId!)
+        .order("created_at");
+      if (error) throw error;
+      const byEmployee = new Map<string, EmployeeFormacao[]>();
+      for (const row of data as EmployeeFormacao[]) {
+        const list = byEmployee.get(row.employee_id) ?? [];
+        list.push(row);
+        byEmployee.set(row.employee_id, list);
+      }
+      return byEmployee;
+    },
+  });
+}
+
+export function useEmployeeFormacoes(employeeId?: string) {
+  return useQuery({
+    queryKey: ["employee_formacoes", employeeId],
+    enabled: !!employeeId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employee_formacoes")
+        .select("*")
+        .eq("employee_id", employeeId!)
+        .order("created_at");
+      if (error) throw error;
+      return data as EmployeeFormacao[];
+    },
+  });
+}
+
+export function useAddFormacao() {
+  const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
+  return useMutation({
+    mutationFn: async ({ employeeId, formacao }: { employeeId: string; formacao: string }) => {
+      const { data, error } = await supabase
+        .from("employee_formacoes")
+        .insert({ employee_id: employeeId, org_id: currentOrgId!, formacao } as never)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as EmployeeFormacao;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_formacoes", vars.employeeId] }),
+  });
+}
+
+export function useUpdateFormacao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      employeeId,
+      formacao,
+      diploma_conclusao,
+    }: {
+      id: string;
+      employeeId: string;
+      formacao: string;
+      diploma_conclusao: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("employee_formacoes")
+        .update({ formacao, diploma_conclusao: diploma_conclusao || null } as never)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_formacoes", vars.employeeId] }),
+  });
+}
+
+export function useDeleteFormacao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      employeeId,
+      diploma_arquivo_path,
+      historico_arquivo_path,
+    }: {
+      id: string;
+      employeeId: string;
+      diploma_arquivo_path: string | null;
+      historico_arquivo_path: string | null;
+    }) => {
+      // Remove os anexos do Storage antes da linha — a policy de DELETE em storage.objects
+      // exige fn_employee_editable, que depende do employee_id ainda existir na tabela filha.
+      const paths = [diploma_arquivo_path, historico_arquivo_path].filter((p): p is string => !!p);
+      if (paths.length) {
+        const { error: storageError } = await supabase.storage.from("certificates").remove(paths);
+        if (storageError) throw new Error(mensagemUploadAmigavel(storageError));
+      }
+      const { error } = await supabase.from("employee_formacoes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_formacoes", vars.employeeId] }),
+  });
+}
+
+/** Anexa (ou substitui) o diploma/histórico escolar de uma formação e grava o caminho no registro. */
+export function useAttachFormacaoDoc() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employee,
+      formacaoId,
+      formacaoTexto,
+      kind,
+      file,
+    }: {
+      employee: { id: string; name: string };
+      formacaoId: string;
+      formacaoTexto: string;
+      kind: EmployeeDocKind;
+      file: File;
+    }) => {
+      const path = await uploadFormacaoDoc(employee, formacaoId, formacaoTexto, kind, file);
+      const column = FORMACAO_DOC_COLUMN[kind];
+      const { error } = await supabase
+        .from("employee_formacoes")
+        .update({ [column]: path } as never)
+        .eq("id", formacaoId);
+      if (error) throw error;
+      return path;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_formacoes", vars.employee.id] }),
+  });
+}
+
+/** Remove o anexo (diploma/histórico) do Storage e limpa o caminho na formação. */
+export function useRemoveFormacaoDoc() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      formacaoId,
+      kind,
+      path,
+    }: {
+      employeeId: string;
+      formacaoId: string;
+      kind: EmployeeDocKind;
+      path: string;
+    }) => {
+      await deleteEmployeeDoc(path);
+      const column = FORMACAO_DOC_COLUMN[kind];
+      const { error } = await supabase
+        .from("employee_formacoes")
+        .update({ [column]: null } as never)
+        .eq("id", formacaoId);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_formacoes", vars.employeeId] }),
+  });
+}
+
 export function useDeleteEmployee() {
   const qc = useQueryClient();
   return useMutation({
@@ -66,6 +289,279 @@ export function useDeleteEmployee() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: qualKeys.employees }),
+  });
+}
+
+// ── PLH (Profissional Legalmente Habilitado) ────────────────────────────────
+export type PlhDocKind = "termo_nomeacao" | "art_cargo_funcao";
+
+const PLH_DOC_COLUMN: Record<PlhDocKind, "termo_nomeacao_arquivo_path" | "art_cargo_funcao_arquivo_path"> = {
+  termo_nomeacao: "termo_nomeacao_arquivo_path",
+  art_cargo_funcao: "art_cargo_funcao_arquivo_path",
+};
+
+/** Anexa termo de nomeação ou ART de cargo/função (bucket "certificates", subpasta "plh" do colaborador). */
+export async function uploadPlhDoc(
+  employee: { id: string; name: string },
+  kind: PlhDocKind,
+  file: File,
+): Promise<string> {
+  const resized = await resizeImage(file, 1024);
+  const ext = resized.name.split(".").pop() ?? "pdf";
+  const path = `${employeeDocFolder(employee)}/plh/${kind}.${ext}`;
+  const { error } = await supabase.storage.from("certificates").upload(path, resized, {
+    cacheControl: "3600",
+    upsert: true,
+  });
+  if (error) throw new Error(mensagemUploadAmigavel(error));
+  return path;
+}
+
+export function useEmployeePlh(employeeId?: string) {
+  return useQuery({
+    queryKey: ["employee_plh", employeeId],
+    enabled: !!employeeId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employee_plh")
+        .select("*")
+        .eq("employee_id", employeeId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as EmployeePlh | null;
+    },
+  });
+}
+
+/** Todos os registros de PLH da org, indexados por colaborador — usado na visão agregada de Habilitação. */
+export function usePlhByOrg() {
+  const { currentOrgId } = useAuth();
+  return useQuery({
+    queryKey: ["employee_plh", "by_org", currentOrgId],
+    enabled: !!currentOrgId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("employee_plh").select("*").eq("org_id", currentOrgId!);
+      if (error) throw error;
+      return new Map((data as EmployeePlh[]).map((row) => [row.employee_id, row]));
+    },
+  });
+}
+
+export function useUpsertEmployeePlh() {
+  const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
+  return useMutation({
+    mutationFn: async (payload: {
+      employeeId: string;
+      termo_nomeacao_data: string | null;
+      art_cargo_funcao: string | null;
+    }) => {
+      const { data, error } = await supabase
+        .from("employee_plh")
+        .upsert(
+          {
+            employee_id: payload.employeeId,
+            org_id: currentOrgId!,
+            termo_nomeacao_data: payload.termo_nomeacao_data || null,
+            art_cargo_funcao: payload.art_cargo_funcao || null,
+          } as never,
+          { onConflict: "employee_id" },
+        )
+        .select()
+        .single();
+      if (error) throw error;
+      return data as EmployeePlh;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_plh", vars.employeeId] }),
+  });
+}
+
+/** Anexa (ou substitui) o termo de nomeação/ART e grava o caminho no registro de PLH. */
+export function useAttachPlhDoc() {
+  const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
+  return useMutation({
+    mutationFn: async ({
+      employee,
+      kind,
+      file,
+    }: {
+      employee: { id: string; name: string };
+      kind: PlhDocKind;
+      file: File;
+    }) => {
+      const path = await uploadPlhDoc(employee, kind, file);
+      const column = PLH_DOC_COLUMN[kind];
+      const { error } = await supabase
+        .from("employee_plh")
+        .upsert({ employee_id: employee.id, org_id: currentOrgId!, [column]: path } as never, {
+          onConflict: "employee_id",
+        });
+      if (error) throw error;
+      return path;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_plh", vars.employee.id] }),
+  });
+}
+
+export function useRemovePlhDoc() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, kind, path }: { employeeId: string; kind: PlhDocKind; path: string }) => {
+      await deleteEmployeeDoc(path);
+      const column = PLH_DOC_COLUMN[kind];
+      const { error } = await supabase.from("employee_plh").update({ [column]: null } as never).eq(
+        "employee_id",
+        employeeId,
+      );
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_plh", vars.employeeId] }),
+  });
+}
+
+// ── Anuidades CREA/CFT ───────────────────────────────────────────────────────
+export function useCreaAnuidades(employeeId?: string) {
+  return useQuery({
+    queryKey: ["employee_crea_anuidades", employeeId],
+    enabled: !!employeeId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employee_crea_anuidades")
+        .select("*")
+        .eq("employee_id", employeeId!)
+        .order("ano", { ascending: false });
+      if (error) throw error;
+      return data as EmployeeCreaAnuidade[];
+    },
+  });
+}
+
+/** Todas as anuidades da org, agrupadas por colaborador — usado na visão agregada de Habilitação. */
+export function useCreaAnuidadesByOrg() {
+  const { currentOrgId } = useAuth();
+  return useQuery({
+    queryKey: ["employee_crea_anuidades", "by_org", currentOrgId],
+    enabled: !!currentOrgId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employee_crea_anuidades")
+        .select("*")
+        .eq("org_id", currentOrgId!);
+      if (error) throw error;
+      const byEmployee = new Map<string, EmployeeCreaAnuidade[]>();
+      for (const row of data as EmployeeCreaAnuidade[]) {
+        const list = byEmployee.get(row.employee_id) ?? [];
+        list.push(row);
+        byEmployee.set(row.employee_id, list);
+      }
+      return byEmployee;
+    },
+  });
+}
+
+export function useAddCreaAnuidade() {
+  const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ano,
+      data_pagamento,
+    }: {
+      employeeId: string;
+      ano: number;
+      data_pagamento?: string | null;
+    }) => {
+      const { data, error } = await supabase
+        .from("employee_crea_anuidades")
+        .insert({
+          employee_id: employeeId,
+          org_id: currentOrgId!,
+          ano,
+          data_pagamento: data_pagamento || null,
+        } as never)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as EmployeeCreaAnuidade;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_crea_anuidades", vars.employeeId] }),
+  });
+}
+
+export function useUpdateCreaAnuidade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      employeeId,
+      data_pagamento,
+    }: {
+      id: string;
+      employeeId: string;
+      data_pagamento: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("employee_crea_anuidades")
+        .update({ data_pagamento: data_pagamento || null } as never)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_crea_anuidades", vars.employeeId] }),
+  });
+}
+
+export function useDeleteCreaAnuidade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      employeeId,
+      comprovante_arquivo_path,
+    }: {
+      id: string;
+      employeeId: string;
+      comprovante_arquivo_path: string | null;
+    }) => {
+      if (comprovante_arquivo_path) await deleteEmployeeDoc(comprovante_arquivo_path);
+      const { error } = await supabase.from("employee_crea_anuidades").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_crea_anuidades", vars.employeeId] }),
+  });
+}
+
+export function useAttachAnuidadeDoc() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employee,
+      anuidadeId,
+      ano,
+      file,
+    }: {
+      employee: { id: string; name: string };
+      anuidadeId: string;
+      ano: number;
+      file: File;
+    }) => {
+      const resized = await resizeImage(file, 1024);
+      const ext = resized.name.split(".").pop() ?? "pdf";
+      const path = `${employeeDocFolder(employee)}/plh/anuidade-${ano}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("certificates").upload(path, resized, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+      if (uploadError) throw new Error(mensagemUploadAmigavel(uploadError));
+      const { error } = await supabase
+        .from("employee_crea_anuidades")
+        .update({ comprovante_arquivo_path: path } as never)
+        .eq("id", anuidadeId);
+      if (error) throw error;
+      return path;
+    },
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["employee_crea_anuidades", vars.employee.id] }),
   });
 }
 

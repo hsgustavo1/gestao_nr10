@@ -1,16 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Paperclip, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, GraduationCap, AlertTriangle } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { getPessoasAccess } from "@/lib/tenancy-gates";
-import { useEmployees, useDeleteEmployee } from "@/lib/qualificacoes-queries";
+import { useEmployees, useDeleteEmployee, useFormacoesByOrg } from "@/lib/qualificacoes-queries";
 import { EmployeeDialog } from "@/components/employee-dialog";
 import type { Employee } from "@/lib/qualificacoes";
-import { formatDatePtBR, employeeStatusVariant, EMPLOYEE_STATUS_LABELS, SETOR_FULL_NAMES } from "@/lib/qualificacoes";
+import {
+  employeeStatusVariant,
+  EMPLOYEE_STATUS_LABELS,
+  SETOR_FULL_NAMES,
+  faltaEscolaridadeQualificado,
+} from "@/lib/qualificacoes";
 import {
   Select,
   SelectContent,
@@ -33,15 +38,23 @@ function ColaboradoresPage() {
   );
   const [setorFilter, setSetorFilter] = useState<string>("todos");
   const { data: employees = [], isLoading } = useEmployees(statusFilter);
+  const { data: formacoesByEmployee } = useFormacoesByOrg();
   const deleteEmp = useDeleteEmployee();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Employee | undefined>();
+  const [editingId, setEditingId] = useState<string | undefined>();
+  // Sempre resolve a partir da lista viva (não guarda a referência capturada no clique),
+  // para o pop-up nunca comparar contra um `funcao`/`status` antigo e disparar gatilhos à toa.
+  const editing = editingId ? employees.find((e) => e.id === editingId) : undefined;
 
   const filteredEmployees =
     setorFilter === "todos" ? employees : employees.filter((emp) => emp.setor === setorFilter);
 
+  const semEscolaridade = filteredEmployees.filter((emp) =>
+    faltaEscolaridadeQualificado(emp, formacoesByEmployee?.get(emp.id) ?? []),
+  );
+
   function handleEdit(emp: Employee) {
-    setEditing(emp);
+    setEditingId(emp.id);
     setDialogOpen(true);
   }
 
@@ -67,7 +80,7 @@ function ColaboradoresPage() {
         {canEdit && (
           <Button
             onClick={() => {
-              setEditing(undefined);
+              setEditingId(undefined);
               setDialogOpen(true);
             }}
             className="bg-brand-gradient text-white shadow-brand hover:opacity-95"
@@ -114,6 +127,17 @@ function ColaboradoresPage() {
         </Select>
       </div>
 
+      {semEscolaridade.length > 0 && (
+        <div className="mt-4 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+          <span>
+            {semEscolaridade.length} colaborador{semEscolaridade.length !== 1 ? "es" : ""} marcado
+            {semEscolaridade.length !== 1 ? "s" : ""} como "Qualificado"/"Habilitado" sem escolaridade/formação
+            com data de conclusão registrada: {semEscolaridade.map((e) => e.name).join(", ")}.
+          </span>
+        </div>
+      )}
+
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -124,9 +148,7 @@ function ColaboradoresPage() {
               <th className="py-2 pr-4 font-medium">Classificação</th>
               <th className="py-2 pr-4 font-medium">Função</th>
               <th className="py-2 pr-4 font-medium">Situação</th>
-              <th className="py-2 pr-4 font-medium">Escolaridade</th>
-              <th className="py-2 pr-4 font-medium">Diploma</th>
-              <th className="py-2 pr-4 font-medium">Conclusão</th>
+              <th className="py-2 pr-4 font-medium">Escolaridade / Formação</th>
               {canEdit && <th className="py-2 font-medium">Ações</th>}
 
             </tr>
@@ -135,7 +157,7 @@ function ColaboradoresPage() {
             {isLoading
               ? Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b">
-                    {Array.from({ length: 9 }).map((_, j) => (
+                    {Array.from({ length: 7 }).map((_, j) => (
                       <td key={j} className="py-3 pr-4">
                         <Skeleton className="h-4 w-24" />
                       </td>
@@ -167,10 +189,17 @@ function ColaboradoresPage() {
                         {EMPLOYEE_STATUS_LABELS[emp.status ?? "ativo"]}
                       </Badge>
                     </td>
-                    <td className="py-3 pr-4 text-muted-foreground">{emp.escolaridade ?? "—"}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">{emp.diploma ?? "—"}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">
-                      {formatDatePtBR(emp.diploma_conclusao)}
+                    <td className="py-3 pr-4 text-muted-foreground truncate max-w-[240px]">
+                      <span className="inline-flex items-center gap-1">
+                        {faltaEscolaridadeQualificado(emp, formacoesByEmployee?.get(emp.id) ?? []) && (
+                          <span title='"Qualificado"/"Habilitado" exige formação com data de conclusão'>
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                          </span>
+                        )}
+                        <span className="truncate">
+                          {(formacoesByEmployee?.get(emp.id) ?? []).map((f) => f.formacao).join("; ") || "—"}
+                        </span>
+                      </span>
                     </td>
                     {canEdit && (
                       <td className="py-3">
@@ -180,19 +209,10 @@ function ColaboradoresPage() {
                               size="icon"
                               variant="ghost"
                               className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                              title="Anexar diploma"
-                              onClick={() => toast.info("Anexo de documentos em breve")}
+                              title="Escolaridade / Formação"
+                              onClick={() => handleEdit(emp)}
                             >
-                              <Paperclip className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                              title="Anexar histórico escolar"
-                              onClick={() => toast.info("Anexo de documentos em breve")}
-                            >
-                              <FileText className="h-3.5 w-3.5" />
+                              <GraduationCap className="h-3.5 w-3.5" />
                             </Button>
                             <Button
                               size="icon"
@@ -233,7 +253,7 @@ function ColaboradoresPage() {
         open={dialogOpen}
         onOpenChange={(v) => {
           setDialogOpen(v);
-          if (!v) setEditing(undefined);
+          if (!v) setEditingId(undefined);
         }}
         employee={editing}
       />

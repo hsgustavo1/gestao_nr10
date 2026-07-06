@@ -13,6 +13,7 @@ import { useASOs } from "./asos-queries";
 import { latestASOByEmployee, ASO_TIPO_LABELS, type ASO } from "./asos";
 import {
   TRAINING_LABELS,
+  requiredTrainings,
   type Employee,
   type ITTraining,
   type NR10Training,
@@ -117,6 +118,7 @@ export function buildVencimentos(
     const [employeeId, trainingType] = key.split("|");
     const emp = employeeById.get(employeeId);
     if (!emp) continue;
+    if (!requiredTrainings(emp.setor).includes(trainingType as TrainingType)) continue;
     const recDate = reciclagemByEmpType.get(key) ?? null;
     // Data-base para o prazo bienal: reciclagem mais recente, ou formação quando não há reciclagem
     const baseDate = recDate ?? formDate;

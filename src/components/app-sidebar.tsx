@@ -173,7 +173,7 @@ export function AppSidebar() {
           ? [
               { label: "Coleta em Campo", to: "/campo" },
               { label: "Modos de falha", to: "/campo/modos" },
-              { label: "Importar planilha", to: "/rti/importar" },
+              { label: "Importar RTI", to: "/rti/importar" },
               { label: "Importar evidências", to: "/rti/evidencias" },
               { label: "Gestão de Relatórios", to: "/rti/gestao" },
             ]
@@ -200,12 +200,12 @@ export function AppSidebar() {
         { label: "Dashboard", to: "/qualificacoes" },
         { label: "Colaboradores", to: "/qualificacoes/integrantes" },
         { label: "Qualificação", to: "/qualificacoes/colaboradores" },
-        { label: "Capacitações NR-10", to: "/qualificacoes/nr10" },
+        { label: "Capacitação", to: "/qualificacoes/nr10" },
         { label: "Instruções de trabalho", to: "/qualificacoes/instrucoes" },
         { label: "Autorizações", to: "/qualificacoes/autorizacoes" },
         { label: "ASOs", to: "/qualificacoes/asos" },
-        { label: "PLH", to: "/qualificacoes/plh" },
-        ...(canEditPessoas ? [{ label: "Importar xlsx", to: "/admin/qualificacoes/carga" }] : []),
+        { label: "Habilitação", to: "/qualificacoes/plh" },
+        ...(canEditPessoas ? [{ label: "Importar dados", to: "/admin/qualificacoes/carga" }] : []),
       ],
     },
   ];

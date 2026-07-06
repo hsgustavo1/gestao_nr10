@@ -21,10 +21,11 @@ export const SETOR_FULL_NAMES: Record<string, string> = {
 
 /**
  * Retorna os tipos de treinamento NR-10 exigidos para uma equipe.
- * GER (Geração de energia) não exige Áreas Classificadas — somente NR-10 Básico + SEP.
+ * GER (Geração de energia), ADM (Administrativo) e AGR (Agrícola) não exigem
+ * Áreas Classificadas — somente NR-10 Básico + SEP.
  */
 export function requiredTrainings(setor: string | null): TrainingType[] {
-  if (setor === "GER") return ["nr10_basico", "sep"];
+  if (setor === "GER" || setor === "ADM" || setor === "AGR") return ["nr10_basico", "sep"];
   return [...TRAINING_TYPES];
 }
 
@@ -67,11 +68,74 @@ export type Employee = {
   retorno_em?: string | null;
   reciclagem_requerida?: boolean;
   reciclagem_motivo?: string | null;
+  diploma_arquivo_path?: string | null;
+  historico_arquivo_path?: string | null;
   org_id?: string;
   created_by_org_id?: string | null;
   created_at: string;
   updated_at: string;
 };
+
+/** Uma formação/escolaridade do colaborador, com seus próprios anexos (diploma, histórico). */
+export type EmployeeFormacao = {
+  id: string;
+  employee_id: string;
+  org_id: string;
+  formacao: string;
+  diploma_conclusao: string | null;
+  diploma_arquivo_path: string | null;
+  historico_arquivo_path: string | null;
+  created_at: string;
+};
+
+/** "Qualificado" e "Habilitado" exigem ao menos uma formação com nome e data de conclusão preenchidos (NR-10). */
+export function faltaEscolaridadeQualificado(emp: Employee, formacoes: EmployeeFormacao[]): boolean {
+  if (emp.classificacao !== "Qualificado" && emp.classificacao !== "Habilitado") return false;
+  return !formacoes.some((f) => f.formacao.trim() && f.diploma_conclusao);
+}
+
+/** Dados de PLH (Profissional Legalmente Habilitado) — um registro por colaborador "Habilitado". */
+export type EmployeePlh = {
+  id: string;
+  employee_id: string;
+  org_id: string;
+  termo_nomeacao_data: string | null;
+  termo_nomeacao_arquivo_path: string | null;
+  art_cargo_funcao: string | null;
+  art_cargo_funcao_arquivo_path: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Anuidade paga ao conselho de classe (CREA/CFT) — um registro por ano. */
+export type EmployeeCreaAnuidade = {
+  id: string;
+  employee_id: string;
+  org_id: string;
+  ano: number;
+  data_pagamento: string | null;
+  comprovante_arquivo_path: string | null;
+  created_at: string;
+};
+
+/** A anuidade do ano X vale até 31/01 do ano seguinte (regra do conselho de classe). */
+export function creaAnuidadeValidoAte(ano: number): string {
+  return `${ano + 1}-01-31`;
+}
+
+/** Data de validade da anuidade mais recente já paga, ou null se nenhuma tem pagamento registrado. */
+export function creaAnuidadeValidadeAtual(anuidades: EmployeeCreaAnuidade[]): string | null {
+  const anosPagos = anuidades.filter((a) => a.data_pagamento).map((a) => a.ano);
+  if (!anosPagos.length) return null;
+  return creaAnuidadeValidoAte(Math.max(...anosPagos));
+}
+
+/** Em dia se a anuidade paga mais recente ainda não passou de sua validade (31/01 do ano seguinte). */
+export function creaAnuidadeEmDia(anuidades: EmployeeCreaAnuidade[], today: Date = new Date()): boolean {
+  const validade = creaAnuidadeValidadeAtual(anuidades);
+  if (!validade) return false;
+  return today <= new Date(validade + "T23:59:59");
+}
 
 export const EMPLOYEE_STATUS_LABELS: Record<string, string> = {
   ativo: "Ativo",
