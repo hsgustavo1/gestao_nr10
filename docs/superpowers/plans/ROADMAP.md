@@ -1,7 +1,7 @@
 # ROADMAP — gestão_nr10 (handoff entre sessões)
 
 > Documento de continuidade. Permite retomar o trabalho numa nova sessão de IA
-> sem o contexto desta. Última atualização: 2026-06-30.
+> sem o contexto desta. Última atualização: 2026-07-06.
 
 ## ⚠️ Deploy — correção (2026-06-30)
 
@@ -56,6 +56,30 @@ teste de campo no momento).
    gate de saída. Mudança de UI/interação, não de arquitetura (pipeline
    achado→RTI já pronto). **Bloqueado por:** precisa de teste em campo real
    (PWA/offline/câmera) antes de validar — não testar só via preview web.
+
+## 📜 Nova NR-10 (Portaria MTE 737/2026) — SPEC PRONTA, NÃO atacar agora (2026-07-06)
+
+A NR-10 foi **inteiramente reescrita** (DOU 01/06/2026) — **vigência 01/06/2027**.
+Decisão do founder (2026-07-06): spec elaborada e estacionada; há prioridades antes
+(dossiê, trilha storage, UX campo). Gap analysis completo + fases + decisões em aberto:
+[`2026-07-06-nr10-portaria-737-adequacao.md`](../specs/2026-07-06-nr10-portaria-737-adequacao.md).
+
+Resumo para retomada:
+- **Fase 1 (obrigatória, deadline 01/06/2027; iniciar até ~fev/2027):** catálogo de
+  treinamentos 3→6 tipos c/ CH mínima, periódico bienal 16h, treinamento eventual com
+  gatilhos automáticos (afastamento >90d, acidente grave via módulo Incidentes),
+  renumeração de referências (PIE cita 10.2.x — agora é 10.15.x), PIE reestruturado,
+  ensaios dielétricos expandidos.
+- **Fase 2 (produto novo):** Permissão de Trabalho digital c/ gate de aptidão (norma
+  autoriza meio digital no local — 10.7.2.3), procedimentos estruturados c/ aprovação
+  PLH, capacitação c/ convalidação de módulos **entre orgs** (10.8.4.2 — caso de uso
+  nativamente multi-tenant, ninguém terá cedo).
+- **Fase 3:** EPI arco elétrico (Anexo IV/NFPA 70E), energia incidente, zonas, GIR.
+- **Amarração com Motor 1 (H2 da análise estratégica):** a Fase 1 toca exatamente as
+  regras hardcoded que a regra de ouro manda parar de espalhar. Se a retomada
+  coincidir com o Horizonte 2, a nova NR-10 vira o 1º conteúdo *versionado por
+  vigência* do motor (requisito E3, não capturado na análise NR-13). Decidir na
+  retomada (D1 da spec).
 
 ## 🗄️ Análise Supabase — storage (2026-07-02)
 
