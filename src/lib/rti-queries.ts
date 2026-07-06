@@ -586,6 +586,12 @@ export async function uploadRtiArt(file: File, opts: RtiArtUploadOpts): Promise<
   return path;
 }
 
+/** Remove o arquivo da ART do Storage (ex.: usuário anexou o arquivo errado). */
+export async function deleteRtiArt(path: string): Promise<void> {
+  const { error } = await supabase.storage.from("rti-evidencias").remove([path]);
+  if (error) throw new Error(mensagemUploadAmigavel(error));
+}
+
 /**
  * Anexa um conjunto de arquivos a várias NCs de uma vez (ação em massa).
  * Cada arquivo é enviado uma vez por NC (cópia independente no storage), para

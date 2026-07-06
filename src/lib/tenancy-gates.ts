@@ -91,8 +91,12 @@ export type RecordAccess = {
   canEditTecnico: boolean;
   canDelete: boolean;
   canEntregar: boolean;
+  /** Reabrir o pop-up de entrega para corrigir dados — só até 30 dias após a entrega. */
+  canEditEntrega: boolean;
   sealed: boolean;
 };
+
+const PRAZO_EDICAO_ENTREGA_DIAS = 30;
 
 export function getRecordAccess(ctx: SealActor, record: SealedRecord): RecordAccess {
   const hasRti = ctx.hasEntitlement("rti_pwa") || ctx.hasEntitlement("rti") || ctx.hasEntitlement("gestao_completa");
@@ -111,6 +115,10 @@ export function getRecordAccess(ctx: SealActor, record: SealedRecord): RecordAcc
     authorRank >= ORG_RANK.member;
 
   const sealed = record.entregue_em != null;
+  const diasDesdeEntrega = record.entregue_em
+    ? (Date.now() - new Date(record.entregue_em).getTime()) / 86_400_000
+    : null;
+  const dentroDoPrazoEdicao = diasDesdeEntrega != null && diasDesdeEntrega <= PRAZO_EDICAO_ENTREGA_DIAS;
 
   return {
     canView,
@@ -118,6 +126,7 @@ export function getRecordAccess(ctx: SealActor, record: SealedRecord): RecordAcc
     canEditTecnico: canEditModule && (!sealed || canBypass),
     canDelete: canEditModule && (!sealed || canBypass),
     canEntregar: canView && !sealed && canBypass,
+    canEditEntrega: canView && canBypass && sealed && dentroDoPrazoEdicao,
     sealed,
   };
 }

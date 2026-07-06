@@ -230,7 +230,7 @@ function RtiEvidenciasMassaPage() {
     } catch (e) {
       qc.invalidateQueries({ queryKey: ["rti_nc_evidencias"] });
       qc.invalidateQueries({ queryKey: ["rti_nc_evidencias_files"] });
-      toast.error(`Falha após ${done} envios: ` + (e as Error).message);
+      toast.error(`Envio interrompido após ${done} envios. Detalhe: ` + (e as Error).message);
     } finally {
       setImporting(false);
       setProgress(null);

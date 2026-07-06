@@ -287,7 +287,7 @@ function DeleteModoButton({
         await archive.mutateAsync(modo.id);
         toast.success("Modo arquivado com sucesso.");
       } catch (e) {
-        toast.error("Falha ao arquivar: " + (e as Error).message);
+        toast.error("Não foi possível arquivar. Detalhe: " + (e as Error).message);
       }
     }
     return (
@@ -305,7 +305,7 @@ function DeleteModoButton({
       await del.mutateAsync(modo.id);
       toast.success("Modo excluído.");
     } catch (e) {
-      toast.error("Falha ao excluir: " + (e as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (e as Error).message);
     }
   }
   return (
@@ -410,7 +410,7 @@ function ModoDialog({
       toast.success(isEdit ? "Modo atualizado." : "Modo criado.");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
       setBusy(false);
     }
   }

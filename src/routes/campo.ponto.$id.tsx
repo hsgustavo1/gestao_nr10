@@ -121,7 +121,7 @@ function CampoPontoPage() {
       }
       toast.success(`${list.length} foto(s) anexada(s).`);
     } catch (e) {
-      toast.error("Falha no upload: " + (e as Error).message);
+      toast.error("Não foi possível concluir o upload. Detalhe: " + (e as Error).message);
     } finally {
       setUploading(false);
       if (cameraRef.current) cameraRef.current.value = "";
@@ -134,7 +134,7 @@ function CampoPontoPage() {
       await deletePhoto.mutateAsync({ id: ph.id, file_path: ph.file_path, point_id: point.id });
       toast.success("Foto excluída.");
     } catch (e) {
-      toast.error("Falha: " + (e as Error).message);
+      toast.error("Não foi possível concluir a ação. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -405,7 +405,7 @@ function DeleteFindingButton({ finding, pointId }: { finding: FieldFinding; poin
       await del.mutateAsync({ id: finding.id, point_id: pointId });
       toast.success("Excluído.");
     } catch (e) {
-      toast.error("Falha: " + (e as Error).message);
+      toast.error("Não foi possível concluir a ação. Detalhe: " + (e as Error).message);
     }
   }
   return (
@@ -442,7 +442,7 @@ function PhotoLightbox({
       toast.success("Legenda salva.");
       onClose();
     } catch (e) {
-      toast.error("Falha: " + (e as Error).message);
+      toast.error("Não foi possível concluir a ação. Detalhe: " + (e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -530,7 +530,7 @@ function ModosFalhaSheet({
       });
       toast.success(`Adicionado: ${modo.label}`);
     } catch (e) {
-      toast.error("Falha: " + (e as Error).message);
+      toast.error("Não foi possível concluir a ação. Detalhe: " + (e as Error).message);
     } finally {
       setTimeout(() => setAplicado(null), 500);
     }
@@ -661,7 +661,7 @@ function FindingDialog({
       toast.success(isEdit ? "Atualizado." : "Adicionado.");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha: " + (err as Error).message);
+      toast.error("Não foi possível concluir a ação. Detalhe: " + (err as Error).message);
       setBusy(false);
     }
   }

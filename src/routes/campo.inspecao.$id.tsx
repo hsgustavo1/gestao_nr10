@@ -227,7 +227,7 @@ function CampoInspecaoPage() {
       toast.success("Inspeção entregue ao cliente.");
       setEntregarOpen(false);
     } catch (err) {
-      toast.error("Falha ao entregar: " + (err as Error).message);
+      toast.error("Não foi possível entregar. Detalhe: " + (err as Error).message);
     }
   }
 
@@ -242,7 +242,7 @@ function CampoInspecaoPage() {
         report_id: inspection.report_id,
       });
     } catch (err) {
-      toast.error("Falha ao reabrir: " + (err as Error).message);
+      toast.error("Não foi possível reabrir. Detalhe: " + (err as Error).message);
     } finally {
       setReopening(false);
     }
@@ -585,7 +585,7 @@ function DeleteNodeButton({ node }: { node: FieldNode }) {
       await del.mutateAsync({ id: node.id, inspection_id: node.inspection_id });
       toast.success("Removido.");
     } catch (err) {
-      toast.error("Falha ao excluir: " + (err as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (err as Error).message);
     }
   }
   return (
@@ -716,7 +716,7 @@ function CapturaPontoSheet({
       toast.success(`Ponto registrado: ${totalAchados} modo(s), ${fotos.length} foto(s).`);
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
       setBusy(false);
       setProgresso(null);
     }
@@ -1109,7 +1109,7 @@ function AddNodeDialog({
       toast.success(`${NIVEL_LABEL[nivel]} criado.`);
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao criar: " + (err as Error).message);
+      toast.error("Não foi possível criar. Detalhe: " + (err as Error).message);
       setBusy(false);
     }
   }
@@ -1209,7 +1209,7 @@ function CargaEstruturaDialog({
       toast.success(`${n} nó(s) criados a partir da planilha.`);
       onOpenChange(false);
     } catch (e) {
-      toast.error("Falha ao importar: " + (e as Error).message);
+      toast.error("Não foi possível importar. Detalhe: " + (e as Error).message);
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -1226,7 +1226,7 @@ function CargaEstruturaDialog({
       toast.success(`${n} setor(es) carregados.`);
       onOpenChange(false);
     } catch (e) {
-      toast.error("Falha: " + (e as Error).message);
+      toast.error("Não foi possível concluir a ação. Detalhe: " + (e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -1410,7 +1410,7 @@ function ComporRtiDialog({
       setProgresso(null);
       setDicaReportId(result.reportId);
     } catch (err) {
-      toast.error("Falha ao compor o RTI: " + (err as Error).message);
+      toast.error("Não foi possível compor o RTI. Detalhe: " + (err as Error).message);
       setBusy(false);
       setProgresso(null);
     }

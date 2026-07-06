@@ -100,6 +100,7 @@ const sealCtx = ({
 
 const sealed = { entregue_em: "2026-06-19T00:00:00Z", entregue_por_org: "consultoria-1" };
 const rascunho = { entregue_em: null, entregue_por_org: null };
+const seladoHaMuitoTempo = { entregue_em: "2020-01-01T00:00:00Z", entregue_por_org: "consultoria-1" };
 
 describe("getRecordAccess", () => {
   it("admin-padrão do cliente: edita rotina, NÃO edita técnico nem entrega (selado)", () => {
@@ -142,6 +143,26 @@ describe("getRecordAccess", () => {
   it("relatório em rascunho: admin-padrão edita técnico (sem selo)", () => {
     const a = getRecordAccess(sealCtx({ direct: "admin" }), rascunho);
     expect(a.canEditTecnico).toBe(true);
+  });
+
+  it("canEditEntrega: quem pode entregar também pode corrigir dados dentro de 30 dias da entrega", () => {
+    const a = getRecordAccess(sealCtx({ isPlatformAdmin: true }), sealed);
+    expect(a.canEditEntrega).toBe(true);
+  });
+
+  it("canEditEntrega: false após 30 dias da entrega", () => {
+    const a = getRecordAccess(sealCtx({ isPlatformAdmin: true }), seladoHaMuitoTempo);
+    expect(a.canEditEntrega).toBe(false);
+  });
+
+  it("canEditEntrega: false em rascunho (ainda não entregue — usa canEntregar, não este)", () => {
+    const a = getRecordAccess(sealCtx({ isPlatformAdmin: true }), rascunho);
+    expect(a.canEditEntrega).toBe(false);
+  });
+
+  it("canEditEntrega: false para quem não pode bypassar o selo (admin-padrão do cliente)", () => {
+    const a = getRecordAccess(sealCtx({ direct: "admin" }), sealed);
+    expect(a.canEditEntrega).toBe(false);
   });
 });
 

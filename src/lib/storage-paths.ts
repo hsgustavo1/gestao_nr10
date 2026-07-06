@@ -51,18 +51,20 @@ export function evidenciaPath(
   return `${evidenciaFolder(orgId, report, orgNome)}/${evidenciaFileName(ncNum, idx, ext)}`;
 }
 
-/** Nome fixo do arquivo da ART do relatório — upsert substitui o anterior. */
-export function artFileName(ext: string): string {
-  return `art.${ext}`;
+/** Nome do arquivo da ART, identificando o relatório de origem — upsert substitui o anterior. */
+export function artFileName(report: { titulo?: string | null }, ext: string): string {
+  const base = slugify(report.titulo ?? "") || "rti";
+  return `art-${base}.${ext}`;
 }
 
+/** ARTs ficam numa subpasta própria dentro do relatório, para não misturar com evidências de NC. */
 export function artPath(
   orgId: string,
   report: { id: string; titulo?: string | null },
   ext: string,
   orgNome?: string | null,
 ): string {
-  return `${evidenciaFolder(orgId, report, orgNome)}/${artFileName(ext)}`;
+  return `${evidenciaFolder(orgId, report, orgNome)}/art/${artFileName(report, ext)}`;
 }
 
 /** Maior índice já usado para uma NC, dado os nomes de arquivo do prefixo. 0 se nenhum. */

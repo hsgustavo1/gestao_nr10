@@ -3,7 +3,15 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, FileSpreadsheet, Plus, Trash2, Upload } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  Plus,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -229,6 +237,49 @@ function parseWorkbook(wb: XLSX.WorkBook): ParseResult {
   return { areas, ncs, avisos };
 }
 
+/** Gera e baixa a planilha-modelo com o cabeçalho esperado pelo parser. */
+function baixarModelo() {
+  const cabecalho = [
+    "NC",
+    "Não Conformidade",
+    "Recomendação",
+    "P",
+    "Responsável",
+    "Status",
+    "% Conclusão",
+    "Prazo",
+    "Investimento",
+    "Custo Planejado",
+    "Custo Realizado",
+    "Situação Atual",
+  ];
+  const exemplo = [
+    1,
+    "Ausência de sinalização de risco elétrico no quadro de distribuição.",
+    "Instalar placas de sinalização conforme NR-10.",
+    3,
+    "João Silva",
+    "Pendente",
+    0,
+    "31/12/2026",
+    "Não",
+    500,
+    "",
+    "Aguardando compra do material.",
+  ];
+  const linhas = [
+    ["PLANO DE AÇÃO NR 10 - ÁREA: Subestação"],
+    [],
+    cabecalho,
+    exemplo,
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(linhas);
+  ws["!cols"] = cabecalho.map(() => ({ wch: 22 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Subestação");
+  XLSX.writeFile(wb, "modelo-plano-de-acao-rti.xlsx");
+}
+
 // ── Contagem de NCs por relatório ─────────────────────────────────────────────
 
 function useRtiNcCount(reportId: string) {
@@ -316,7 +367,7 @@ function RtiImportarPage() {
       setParsed(result);
       toast.success(`${result.ncs.length} NCs encontradas em ${result.areas.length} áreas.`);
     } catch (e) {
-      toast.error("Falha ao ler a planilha: " + (e as Error).message);
+      toast.error("Não foi possível ler a planilha. Detalhe: " + (e as Error).message);
     } finally {
       setParsing(false);
     }
@@ -350,7 +401,7 @@ function RtiImportarPage() {
       toast.success(`Plano de ação importado: ${parsed.ncs.length} NCs.`);
       navigate({ to: "/rti" });
     } catch (e) {
-      toast.error("Falha na importação: " + (e as Error).message);
+      toast.error("Não foi possível concluir a importação. Detalhe: " + (e as Error).message);
     } finally {
       setImporting(false);
       setProgress(null);
@@ -378,7 +429,7 @@ function RtiImportarPage() {
       toast.success("Relatório criado. Adicione NCs pelo Plano de Ação.");
       navigate({ to: "/rti" });
     } catch (e) {
-      toast.error("Falha ao criar: " + (e as Error).message);
+      toast.error("Não foi possível criar. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -393,7 +444,7 @@ function RtiImportarPage() {
       await deleteReport.mutateAsync(id);
       toast.success("Relatório excluído.");
     } catch (e) {
-      toast.error("Falha ao excluir: " + (e as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -488,9 +539,14 @@ function RtiImportarPage() {
           </div>
 
           <div className="rounded-md border border-dashed bg-muted/20 p-4">
-            <Label htmlFor="imp-file" className="text-sm font-semibold flex items-center gap-2">
-              <Upload className="h-4 w-4" /> Planilha do plano de ação (.xlsx)
-            </Label>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <Label htmlFor="imp-file" className="text-sm font-semibold flex items-center gap-2">
+                <Upload className="h-4 w-4" /> Planilha do plano de ação (.xlsx)
+              </Label>
+              <Button type="button" variant="outline" size="sm" onClick={baixarModelo}>
+                <Download className="h-3.5 w-3.5" /> Baixar planilha modelo
+              </Button>
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">
               O sistema lê automaticamente todas as abas de área (cabeçalho com NC, Não
               Conformidade, Recomendação, P, Status...). Abas de capa, resumos e gráficos são

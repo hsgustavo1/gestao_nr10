@@ -157,7 +157,7 @@ function InspectionCard({
       await arquivar.mutateAsync({ id: inspection.id, arquivada_campo: true });
       toast.success("Inspeção arquivada do campo.");
     } catch (err) {
-      toast.error("Falha ao arquivar: " + (err as Error).message);
+      toast.error("Não foi possível arquivar. Detalhe: " + (err as Error).message);
     }
   }
 
@@ -293,7 +293,7 @@ function ReexportarDialog({
       toast.success("Inspeção reexportada ao campo. Sincronize o PWA para vê-la no celular.");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao reexportar: " + (err as Error).message);
+      toast.error("Não foi possível reexportar. Detalhe: " + (err as Error).message);
       setBusy(false);
     }
   }
@@ -417,7 +417,7 @@ function ExcluirInspecaoDialog({
       toast.success("Excluído com sucesso.");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao excluir: " + (err as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (err as Error).message);
       setBusy(false);
     }
   }
@@ -559,7 +559,7 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
       toast.success("Inspeção criada. Adicione os pontos de coleta.");
       navigate({ to: "/campo/inspecao/$id", params: { id: insp.id } });
     } catch (err) {
-      toast.error("Falha ao criar: " + (err as Error).message);
+      toast.error("Não foi possível criar. Detalhe: " + (err as Error).message);
       setBusy(false);
     }
   }

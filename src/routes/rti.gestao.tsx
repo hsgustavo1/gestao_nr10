@@ -168,7 +168,7 @@ function ExcluirRtiDialog({
       toast.success("Relatório RTI excluído.");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao excluir: " + (err as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (err as Error).message);
       setBusy(false);
     }
   }

@@ -130,7 +130,7 @@ function RtiNcDetailPage() {
       toast.success(`NC ${nc.numero} excluída.`);
       navigate({ to: "/rti/plano", search: { report: nc.report_id } });
     } catch (e) {
-      toast.error("Falha ao excluir: " + (e as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -437,7 +437,7 @@ function GestaoCard({
       await qc.invalidateQueries({ queryKey: rtiKeys.historico(nc.id) });
       toast.success("NC atualizada.");
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }
@@ -788,7 +788,7 @@ function EvidenceSection({
         `${list.length} ${list.length === 1 ? "evidência anexada" : "evidências anexadas"}.`,
       );
     } catch (e) {
-      toast.error("Falha no upload: " + (e as Error).message);
+      toast.error("Não foi possível concluir o upload. Detalhe: " + (e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -800,7 +800,7 @@ function EvidenceSection({
       await deleteEvidencia.mutateAsync({ id: ev.id, nc_id: ev.nc_id, file_path: ev.file_path });
       toast.success("Evidência excluída.");
     } catch (e) {
-      toast.error("Falha ao excluir: " + (e as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -960,7 +960,7 @@ function EvidenceLightbox({
       });
       toast.success("Legenda atualizada.");
     } catch (e) {
-      toast.error("Falha ao salvar legenda: " + (e as Error).message);
+      toast.error("Não foi possível salvar a legenda. Detalhe: " + (e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -1072,7 +1072,7 @@ function HistoricoCard({
       });
       setComentario("");
     } catch (err) {
-      toast.error("Falha ao comentar: " + (err as Error).message);
+      toast.error("Não foi possível enviar o comentário. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }

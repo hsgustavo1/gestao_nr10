@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Camera,
   CheckCheck,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -16,6 +17,7 @@ import {
   Paperclip,
   Plus,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
@@ -84,6 +86,7 @@ import {
 } from "@/lib/rti";
 import {
   bulkAttachRtiEvidencias,
+  deleteRtiArt,
   logBulkHistorico,
   rtiKeys,
   useBulkUpdateRtiNcs,
@@ -274,7 +277,7 @@ function RtiPlanoPage() {
       );
       toast.success(`NC ${nc.numero}: ${RTI_NC_STATUS_LABELS[status]}.`);
     } catch (e) {
-      toast.error("Falha ao atualizar: " + (e as Error).message);
+      toast.error("Não foi possível atualizar. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -386,6 +389,18 @@ function RtiPlanoPage() {
                   onClick={() => setEntregarOpen(true)}
                 >
                   {entregar.isPending ? "Entregando…" : "Entregar relatório"}
+                </Button>
+              )}
+              {!repAcc?.canEntregar && repAcc?.canEditEntrega && auth.currentOrgId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={entregar.isPending}
+                  onClick={() => setEntregarOpen(true)}
+                  title="Disponível até 30 dias após a entrega"
+                >
+                  {entregar.isPending ? "Salvando…" : "Editar dados de entrega"}
                 </Button>
               )}
             </div>
@@ -623,7 +638,7 @@ function RtiPlanoPage() {
               toast.success(`${ids.length} NCs · ${partes.join(", ")}.`);
               setSelected(new Set());
             } catch (e) {
-              toast.error("Falha na ação em massa: " + (e as Error).message);
+              toast.error("Não foi possível concluir a ação em massa. Detalhe: " + (e as Error).message);
             }
           }}
         />
@@ -881,7 +896,7 @@ function RtiPlanoPage() {
         />
       )}
 
-      {activeReport && repAcc?.canEntregar && auth.currentOrgId && (
+      {activeReport && (repAcc?.canEntregar || repAcc?.canEditEntrega) && auth.currentOrgId && (
         <EntregarRtiDialog
           key={activeReport.id}
           open={entregarOpen}
@@ -899,9 +914,12 @@ function RtiPlanoPage() {
               {
                 onSuccess: () => {
                   setEntregarOpen(false);
-                  toast.success("Relatório entregue.");
+                  toast.success(
+                    activeReport.entregue_em ? "Dados de entrega atualizados." : "Relatório entregue.",
+                  );
                 },
-                onError: (e) => toast.error("Falha ao entregar: " + (e as Error).message),
+                onError: (e) =>
+                  toast.error("Não foi possível salvar. Detalhe: " + (e as Error).message),
               },
             )
           }
@@ -1302,7 +1320,7 @@ function NovaNcDialog({
         qc.invalidateQueries({ queryKey: rtiKeys.ncs(reportId) });
         toast.error(`A NC nº ${numero} já existe neste relatório. Escolha outro número.`);
       } else {
-        toast.error("Falha ao registrar: " + (err as Error).message);
+        toast.error("Não foi possível registrar. Detalhe: " + (err as Error).message);
       }
     } finally {
       setBusy(false);
@@ -1529,27 +1547,40 @@ function EntregarRtiDialog({
   const [artArquivoPath, setArtArquivoPath] = useState<string | null>(
     report.art_arquivo_path ?? null,
   );
+  const [artArquivoNome, setArtArquivoNome] = useState<string | null>(null);
   const [artUploading, setArtUploading] = useState(false);
+  const artFileInputRef = useRef<HTMLInputElement>(null);
+  const artNomeExibido = artArquivoNome ?? (artArquivoPath ? artArquivoPath.split("/").pop() : null);
   const [entregueEm, setEntregueEm] = useState(hojeIso());
 
-  // Reseta os campos toda vez que o pop-up abre — evita que extras/textos/datas
-  // de uma abertura anterior (ou de outro relatório) sobrevivam ao fechar
-  // sem remontar o nó do Dialog (o que quebraria a animação de saída do Radix).
+  // Reseta os campos só na TRANSIÇÃO fechado→aberto do pop-up — nunca enquanto
+  // já está aberto. `report` vem de uma query (React Query refaz a busca em
+  // segundo plano a cada 30s) e ganha uma nova referência a cada refetch mesmo
+  // com os mesmos dados; se o efeito dependesse de `report`/`actorName`, um
+  // refetch no meio do preenchimento apagava silenciosamente tudo que o
+  // usuário já tinha digitado (foi o que causou dados incorretos na entrega).
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (open) {
-      setExtras([]);
+    if (open && !wasOpenRef.current) {
+      // Pré-preenche com o que já está salvo (reabertura pós-entrega para
+      // corrigir dados) — só cai no padrão (nome de quem está logado) quando
+      // o relatório ainda não tem responsável pelo relatório definido.
+      setExtras(report.responsaveis_campo_extra ?? []);
       setNovo("");
-      setRespRelatorio(actorName ?? "");
-      setTecnicoRti("");
-      setRespPlano("");
+      setRespRelatorio(report.responsavel_relatorio ?? actorName ?? "");
+      setTecnicoRti(report.responsavel_tecnico_rti ?? "");
+      setRespPlano(report.responsavel_plano ?? "");
       setInicio(report.periodo_inicio ?? "");
       setFim(report.periodo_fim ?? "");
       setArtNumero(report.art_numero ?? "");
       setArtArquivoPath(report.art_arquivo_path ?? null);
+      setArtArquivoNome(null);
       setArtUploading(false);
-      setEntregueEm(hojeIso());
+      setEntregueEm((report.entregue_em ?? "").slice(0, 10) || hojeIso());
     }
-  }, [open, report, actorName]);
+    wasOpenRef.current = open;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const totalCampo = auto.length + extras.length;
 
@@ -1582,22 +1613,40 @@ function EntregarRtiDialog({
         reportTitulo: report.titulo,
       });
       setArtArquivoPath(path);
+      setArtArquivoNome(file.name);
       toast.success("ART anexada.");
     } catch (err) {
-      toast.error((err as Error).message);
+      toast.error("Não foi possível anexar a ART. Detalhe: " + (err as Error).message);
     } finally {
       setArtUploading(false);
     }
   }
 
-  function submit() {
-    if (
-      !window.confirm(
-        "Após entregar, o cliente não poderá mais alterar o registro técnico " +
-          "(criticidade, recomendações, evidências de constatação) deste relatório. Continuar?",
-      )
-    )
+  async function removerArt() {
+    if (!artArquivoPath) return;
+    if (!window.confirm("Remover o arquivo da ART anexada? Esta ação não pode ser desfeita."))
       return;
+    setArtUploading(true);
+    try {
+      await deleteRtiArt(artArquivoPath);
+      setArtArquivoPath(null);
+      setArtArquivoNome(null);
+      toast.success("Arquivo da ART removido.");
+    } catch (err) {
+      toast.error("Não foi possível remover o arquivo. Detalhe: " + (err as Error).message);
+    } finally {
+      setArtUploading(false);
+    }
+  }
+
+  const jaEntregue = report.entregue_em != null;
+
+  function submit() {
+    const confirmMsg = jaEntregue
+      ? "Salvar as alterações nos dados de entrega deste relatório?"
+      : "Após entregar, o cliente não poderá mais alterar o registro técnico " +
+        "(criticidade, recomendações, evidências de constatação) deste relatório. Continuar?";
+    if (!window.confirm(confirmMsg)) return;
     onConfirm({
       responsaveisCampoExtra: extras,
       responsavelRelatorio: respRelatorio.trim() || null,
@@ -1615,10 +1664,11 @@ function EntregarRtiDialog({
     <Dialog open={open} onOpenChange={(o) => (!isPending ? onOpenChange(o) : null)}>
       <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Entregar relatório</DialogTitle>
+          <DialogTitle>{jaEntregue ? "Editar dados de entrega" : "Entregar relatório"}</DialogTitle>
           <DialogDescription>
-            Todos os campos abaixo já vêm sugeridos com os dados coletados, mas podem ser
-            livremente editados antes de confirmar a entrega.
+            {jaEntregue
+              ? "Este relatório já foi entregue. Os campos abaixo mostram os dados salvos — corrija o que precisar. Disponível até 30 dias após a entrega."
+              : "Todos os campos abaixo já vêm sugeridos com os dados coletados, mas podem ser livremente editados antes de confirmar a entrega."}
           </DialogDescription>
         </DialogHeader>
 
@@ -1706,17 +1756,50 @@ function EntregarRtiDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="ent-art-arquivo">Anexar ART</Label>
-            <Input
+            <input
+              ref={artFileInputRef}
               id="ent-art-arquivo"
               type="file"
               accept="application/pdf,image/*"
               onChange={onArtFileChange}
               disabled={artUploading}
+              className="hidden"
             />
-            {artUploading && <p className="text-[11px] text-muted-foreground">Enviando…</p>}
+            <div className="flex items-center gap-2 rounded-md border border-input px-3 py-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => artFileInputRef.current?.click()}
+                disabled={artUploading}
+              >
+                Escolher arquivo
+              </Button>
+              <span
+                className={`flex-1 truncate text-sm ${artNomeExibido ? "text-foreground" : "text-muted-foreground"}`}
+                title={artNomeExibido ?? undefined}
+              >
+                {artUploading ? "Enviando…" : (artNomeExibido ?? "Nenhum arquivo escolhido")}
+              </span>
+              {!artUploading && artNomeExibido && (
+                <>
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+                    onClick={removerArt}
+                    title="Remover arquivo anexado"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              )}
+            </div>
             {!artUploading && artArquivoPath && (
               <p className="text-[11px] text-muted-foreground">
-                Arquivo anexado.{" "}
                 <a
                   href={rtiFileUrl(artArquivoPath)}
                   target="_blank"
@@ -1779,7 +1862,13 @@ function EntregarRtiDialog({
             Cancelar
           </Button>
           <Button onClick={submit} disabled={isPending || artUploading}>
-            {isPending ? "Entregando…" : "Entregar relatório"}
+            {isPending
+              ? jaEntregue
+                ? "Salvando…"
+                : "Entregando…"
+              : jaEntregue
+                ? "Salvar alterações"
+                : "Entregar relatório"}
           </Button>
         </DialogFooter>
       </DialogContent>
