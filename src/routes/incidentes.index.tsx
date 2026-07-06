@@ -165,7 +165,7 @@ function IncidentesPage() {
       await deleteIncident.mutateAsync({ id: incident.id, file_path: incident.file_path });
       toast.success("Incidente excluído.");
     } catch (e) {
-      toast.error("Falha ao excluir: " + (e as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -478,7 +478,7 @@ function IncidentDialog({
       toast.success(isEdit ? "Incidente atualizado." : "Incidente registrado.");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }

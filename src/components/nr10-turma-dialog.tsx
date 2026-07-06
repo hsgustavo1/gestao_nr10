@@ -135,7 +135,7 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
       setArtArquivo(null);
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao registrar turma: " + (err as Error).message);
+      toast.error("Não foi possível registrar a turma. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }

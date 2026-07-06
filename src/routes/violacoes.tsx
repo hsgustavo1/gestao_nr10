@@ -329,7 +329,7 @@ function ViolationDialog({
         setBusy(false);
         if (file && documentPath)
           await supabase.storage.from("violation-docs").remove([documentPath]);
-        toast.error("Falha ao atualizar registro: " + error.message);
+        toast.error("Não foi possível atualizar o registro. Detalhe: " + error.message);
         return;
       }
       if (oldPathToRemove) await supabase.storage.from("violation-docs").remove([oldPathToRemove]);
@@ -350,7 +350,7 @@ function ViolationDialog({
     if (error) {
       setBusy(false);
       await supabase.storage.from("violation-docs").remove([documentPath]);
-      toast.error("Falha ao salvar registro: " + error.message);
+      toast.error("Não foi possível salvar o registro. Detalhe: " + error.message);
       return;
     }
     setBusy(false);

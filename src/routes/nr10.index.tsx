@@ -145,7 +145,7 @@ function ProntuarioPage() {
       await deleteDoc.mutateAsync({ id: doc.id, file_path: doc.file_path });
       toast.success("Documento excluído.");
     } catch (e) {
-      toast.error("Falha ao excluir: " + (e as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -492,7 +492,7 @@ function DocumentDialog({
       toast.success(isEdit ? "Documento atualizado." : "Documento cadastrado.");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }

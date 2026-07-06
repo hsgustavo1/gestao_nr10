@@ -333,7 +333,7 @@ function NovaEmpresaWizard({
   // Cria a empresa (passos 1–3) e, se preenchido, o 1º usuário (passo 4, opcional).
   async function finish(withUser: boolean) {
     if (withUser) {
-      if (!email.includes("@")) return toast.error("E-mail invalido");
+      if (!email.includes("@")) return toast.error("E-mail inválido");
       if (!isLinking && password.length < 8) return toast.error("Senha deve ter ao menos 8 caracteres");
     }
     setSaving(true);

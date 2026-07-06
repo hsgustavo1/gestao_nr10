@@ -191,7 +191,7 @@ function AdminUsersPage() {
       const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
       if (error) {
         setBusy(null);
-        return toast.error(error.message);
+        return toast.error("Não foi possível atualizar a permissão. Detalhe: " + error.message);
       }
     } else {
       const { error } = await supabase
@@ -201,7 +201,7 @@ function AdminUsersPage() {
         .eq("role", role);
       if (error) {
         setBusy(null);
-        return toast.error(error.message);
+        return toast.error("Não foi possível atualizar a permissão. Detalhe: " + error.message);
       }
     }
     toast.success("Permissão atualizada");

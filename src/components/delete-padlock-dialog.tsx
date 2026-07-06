@@ -73,7 +73,7 @@ export function DeletePadlockDialog({
     const { error } = await supabase.from("padlocks").delete().eq("id", padlock.id);
     if (error) {
       setLoading(false);
-      return toast.error(error.message);
+      return toast.error("Não foi possível eliminar o dispositivo. Detalhe: " + error.message);
     }
     toast.success("Dispositivo eliminado permanentemente");
     reset();

@@ -154,7 +154,7 @@ export function InspecoesPage({ type }: { type: InspectionType }) {
       await deleteInspection.mutateAsync({ id: insp.id, report_path: insp.report_path });
       toast.success("Inspeção excluída.");
     } catch (e) {
-      toast.error("Falha ao excluir: " + (e as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -494,7 +494,7 @@ function InspectionDialog({
       toast.success(isEdit ? "Inspeção atualizada." : "Inspeção registrada.");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }
@@ -679,7 +679,7 @@ function ActionPlanDialog({
       setDueDate("");
       toast.success("Ação adicionada ao plano.");
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }
@@ -693,7 +693,7 @@ function ActionPlanDialog({
         completed_at: status === "concluida" ? new Date().toISOString().slice(0, 10) : null,
       });
     } catch (err) {
-      toast.error("Falha ao atualizar: " + (err as Error).message);
+      toast.error("Não foi possível atualizar. Detalhe: " + (err as Error).message);
     }
   }
 
@@ -703,7 +703,7 @@ function ActionPlanDialog({
       await deleteAction.mutateAsync(action.id);
       toast.success("Ação excluída.");
     } catch (err) {
-      toast.error("Falha ao excluir: " + (err as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (err as Error).message);
     }
   }
 

@@ -428,7 +428,7 @@ function ASOHistoryDialog({
       if (fileRef.current) fileRef.current.value = "";
       toast.success("ASO registrado.");
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }
@@ -440,7 +440,7 @@ function ASOHistoryDialog({
       await deleteASO.mutateAsync({ id: aso.id, file_path: aso.file_path });
       toast.success("ASO excluído.");
     } catch (err) {
-      toast.error("Falha ao excluir: " + (err as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (err as Error).message);
     }
   }
 

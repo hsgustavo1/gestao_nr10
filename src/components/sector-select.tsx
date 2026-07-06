@@ -101,7 +101,7 @@ export function SectorSelect({
       .eq("chave", "sectors");
     if (error) {
       setSaving(false);
-      return toast.error("Falha ao salvar: " + error.message);
+      return toast.error("Não foi possível salvar. Detalhe: " + error.message);
     }
     setSectors(next.sort((a, b) => a.localeCompare(b, "pt-BR")));
     onChange(name);

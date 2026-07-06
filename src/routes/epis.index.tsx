@@ -166,7 +166,7 @@ function EPIsPage() {
       await deleteEPI.mutateAsync(epi.id);
       toast.success("EPI excluído.");
     } catch (e) {
-      toast.error("Falha ao excluir: " + (e as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (e as Error).message);
     }
   }
 
@@ -506,7 +506,7 @@ function EPIDialog({
       toast.success(isEdit ? "EPI atualizado." : "EPI cadastrado.");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }
@@ -705,7 +705,7 @@ function EPITestsDialog({
       if (fileRef.current) fileRef.current.value = "";
       toast.success("Ensaio registrado.");
     } catch (err) {
-      toast.error("Falha ao salvar: " + (err as Error).message);
+      toast.error("Não foi possível salvar. Detalhe: " + (err as Error).message);
     } finally {
       setBusy(false);
     }
@@ -717,7 +717,7 @@ function EPITestsDialog({
       await deleteTest.mutateAsync({ id: test.id, certificate_path: test.certificate_path });
       toast.success("Ensaio excluído.");
     } catch (err) {
-      toast.error("Falha ao excluir: " + (err as Error).message);
+      toast.error("Não foi possível excluir. Detalhe: " + (err as Error).message);
     }
   }
 
