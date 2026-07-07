@@ -998,6 +998,24 @@ export function useCertificates(employeeId?: string, trainingId?: string) {
   });
 }
 
+/** Conjunto de nr10_training_id que têm ao menos um certificado anexado (por org). */
+export function useCertificateTrainingIds() {
+  const { currentOrgId } = useAuth();
+  return useQuery({
+    queryKey: ["training_certificates", "training_ids", currentOrgId],
+    enabled: !!currentOrgId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("training_certificates")
+        .select("nr10_training_id")
+        .eq("org_id", currentOrgId!)
+        .not("nr10_training_id", "is", null);
+      if (error) throw error;
+      return new Set((data as { nr10_training_id: string | null }[]).map((r) => r.nr10_training_id!));
+    },
+  });
+}
+
 export function useInsertCertificate() {
   const qc = useQueryClient();
   const { currentOrgId } = useAuth();

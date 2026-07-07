@@ -33,6 +33,7 @@ import { Route as RtiEvolucaoRouteImport } from './routes/rti.evolucao'
 import { Route as RtiEvidenciasRouteImport } from './routes/rti.evidencias'
 import { Route as RtiCustosRouteImport } from './routes/rti.custos'
 import { Route as RelatorioDossieRouteImport } from './routes/relatorio.dossie'
+import { Route as QualificacoesTurmasRouteImport } from './routes/qualificacoes.turmas'
 import { Route as QualificacoesPlhRouteImport } from './routes/qualificacoes.plh'
 import { Route as QualificacoesNr10RouteImport } from './routes/qualificacoes.nr10'
 import { Route as QualificacoesIntegrantesRouteImport } from './routes/qualificacoes.integrantes'
@@ -175,6 +176,11 @@ const RelatorioDossieRoute = RelatorioDossieRouteImport.update({
   path: '/relatorio/dossie',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QualificacoesTurmasRoute = QualificacoesTurmasRouteImport.update({
+  id: '/qualificacoes/turmas',
+  path: '/qualificacoes/turmas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QualificacoesPlhRoute = QualificacoesPlhRouteImport.update({
   id: '/qualificacoes/plh',
   path: '/qualificacoes/plh',
@@ -307,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/qualificacoes/integrantes': typeof QualificacoesIntegrantesRoute
   '/qualificacoes/nr10': typeof QualificacoesNr10Route
   '/qualificacoes/plh': typeof QualificacoesPlhRoute
+  '/qualificacoes/turmas': typeof QualificacoesTurmasRoute
   '/relatorio/dossie': typeof RelatorioDossieRoute
   '/rti/custos': typeof RtiCustosRoute
   '/rti/evidencias': typeof RtiEvidenciasRoute
@@ -354,6 +361,7 @@ export interface FileRoutesByTo {
   '/qualificacoes/integrantes': typeof QualificacoesIntegrantesRoute
   '/qualificacoes/nr10': typeof QualificacoesNr10Route
   '/qualificacoes/plh': typeof QualificacoesPlhRoute
+  '/qualificacoes/turmas': typeof QualificacoesTurmasRoute
   '/relatorio/dossie': typeof RelatorioDossieRoute
   '/rti/custos': typeof RtiCustosRoute
   '/rti/evidencias': typeof RtiEvidenciasRoute
@@ -402,6 +410,7 @@ export interface FileRoutesById {
   '/qualificacoes/integrantes': typeof QualificacoesIntegrantesRoute
   '/qualificacoes/nr10': typeof QualificacoesNr10Route
   '/qualificacoes/plh': typeof QualificacoesPlhRoute
+  '/qualificacoes/turmas': typeof QualificacoesTurmasRoute
   '/relatorio/dossie': typeof RelatorioDossieRoute
   '/rti/custos': typeof RtiCustosRoute
   '/rti/evidencias': typeof RtiEvidenciasRoute
@@ -451,6 +460,7 @@ export interface FileRouteTypes {
     | '/qualificacoes/integrantes'
     | '/qualificacoes/nr10'
     | '/qualificacoes/plh'
+    | '/qualificacoes/turmas'
     | '/relatorio/dossie'
     | '/rti/custos'
     | '/rti/evidencias'
@@ -498,6 +508,7 @@ export interface FileRouteTypes {
     | '/qualificacoes/integrantes'
     | '/qualificacoes/nr10'
     | '/qualificacoes/plh'
+    | '/qualificacoes/turmas'
     | '/relatorio/dossie'
     | '/rti/custos'
     | '/rti/evidencias'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/qualificacoes/integrantes'
     | '/qualificacoes/nr10'
     | '/qualificacoes/plh'
+    | '/qualificacoes/turmas'
     | '/relatorio/dossie'
     | '/rti/custos'
     | '/rti/evidencias'
@@ -593,6 +605,7 @@ export interface RootRouteChildren {
   QualificacoesIntegrantesRoute: typeof QualificacoesIntegrantesRoute
   QualificacoesNr10Route: typeof QualificacoesNr10Route
   QualificacoesPlhRoute: typeof QualificacoesPlhRoute
+  QualificacoesTurmasRoute: typeof QualificacoesTurmasRoute
   RelatorioDossieRoute: typeof RelatorioDossieRoute
   RtiCustosRoute: typeof RtiCustosRoute
   RtiEvidenciasRoute: typeof RtiEvidenciasRoute
@@ -790,6 +803,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RelatorioDossieRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qualificacoes/turmas': {
+      id: '/qualificacoes/turmas'
+      path: '/qualificacoes/turmas'
+      fullPath: '/qualificacoes/turmas'
+      preLoaderRoute: typeof QualificacoesTurmasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qualificacoes/plh': {
       id: '/qualificacoes/plh'
       path: '/qualificacoes/plh'
@@ -961,6 +981,7 @@ const rootRouteChildren: RootRouteChildren = {
   QualificacoesIntegrantesRoute: QualificacoesIntegrantesRoute,
   QualificacoesNr10Route: QualificacoesNr10Route,
   QualificacoesPlhRoute: QualificacoesPlhRoute,
+  QualificacoesTurmasRoute: QualificacoesTurmasRoute,
   RelatorioDossieRoute: RelatorioDossieRoute,
   RtiCustosRoute: RtiCustosRoute,
   RtiEvidenciasRoute: RtiEvidenciasRoute,

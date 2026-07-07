@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { AlertTriangle, CheckCircle2, XCircle, MinusCircle, Clock, CircleDashed, Upload, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle, MinusCircle, Clock, CircleDashed, Upload, Users, GraduationCap } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -323,6 +323,12 @@ function NR10Page() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button asChild variant="outline" className="gap-1.5">
+            <Link to="/qualificacoes/turmas">
+              <GraduationCap className="h-4 w-4" />
+              Turmas
+            </Link>
+          </Button>
           {canEdit && (
             <Button variant="outline" className="gap-1.5" onClick={() => setTurmaOpen(true)}>
               <Users className="h-4 w-4" />
