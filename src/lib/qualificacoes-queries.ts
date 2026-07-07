@@ -14,6 +14,7 @@ import type {
   WorkInstruction,
   ITTraining,
   TrainingCertificate,
+  TrainingType,
 } from "./qualificacoes";
 
 // ── Query Keys ───────────────────────────────────────────────────────────────
@@ -467,11 +468,11 @@ export function useAddCreaAnuidade() {
     mutationFn: async ({
       employeeId,
       ano,
-      data_pagamento,
+      validade_ate,
     }: {
       employeeId: string;
       ano: number;
-      data_pagamento?: string | null;
+      validade_ate?: string | null;
     }) => {
       const { data, error } = await supabase
         .from("employee_crea_anuidades")
@@ -479,7 +480,7 @@ export function useAddCreaAnuidade() {
           employee_id: employeeId,
           org_id: currentOrgId!,
           ano,
-          data_pagamento: data_pagamento || null,
+          validade_ate: validade_ate || null,
         } as never)
         .select()
         .single();
@@ -496,15 +497,15 @@ export function useUpdateCreaAnuidade() {
     mutationFn: async ({
       id,
       employeeId,
-      data_pagamento,
+      validade_ate,
     }: {
       id: string;
       employeeId: string;
-      data_pagamento: string | null;
+      validade_ate: string | null;
     }) => {
       const { error } = await supabase
         .from("employee_crea_anuidades")
-        .update({ data_pagamento: data_pagamento || null } as never)
+        .update({ validade_ate: validade_ate || null } as never)
         .eq("id", id);
       if (error) throw error;
     },
@@ -929,11 +930,15 @@ export function useCertificates(employeeId?: string, trainingId?: string) {
 
 export function useInsertCertificate() {
   const qc = useQueryClient();
+  const { currentOrgId } = useAuth();
   return useMutation({
-    mutationFn: async (payload: Omit<TrainingCertificate, "id" | "uploaded_at" | "created_at">) => {
+    mutationFn: async (
+      payload: Omit<TrainingCertificate, "id" | "uploaded_at" | "created_at" | "org_id">,
+    ) => {
+      if (!currentOrgId) throw new Error("Selecione uma organização antes de importar certificados.");
       const { data, error } = await supabase
         .from("training_certificates")
-        .insert(payload)
+        .insert({ ...payload, org_id: currentOrgId } as never)
         .select()
         .single();
       if (error) throw error;
@@ -943,6 +948,90 @@ export function useInsertCertificate() {
       qc.invalidateQueries({ queryKey: ["training_certificates", vars.employee_id] });
     },
   });
+}
+
+/**
+ * Importa um certificado (já recortado) fazendo-o "conversar" com a aba
+ * Capacitações: sobe o arquivo na pasta do colaborador, encontra o treinamento
+ * correspondente (colaborador + tipo + categoria — chave única em nr10_trainings)
+ * ou cria um novo, e insere o certificado VINCULADO a esse treinamento — assim o
+ * pop-up do treinamento passa a exibi-lo. Em conflito de data, a data do
+ * certificado prevalece; carga horária só preenche se o treino não tiver.
+ */
+export async function importCertificateAsTraining(params: {
+  employee: { id: string; name: string; matricula: string };
+  orgId: string;
+  trainingType: TrainingType;
+  category: "formacao" | "reciclagem";
+  issueDate: string | null;
+  workloadHours: number | null;
+  file: File;
+  baseName: string;
+  sourceLabel: string;
+  pagesInSource: string;
+}): Promise<void> {
+  const { url } = await uploadCertificateForEmployee(params.employee, params.file, params.baseName);
+
+  // 1) Treino correspondente (chave única employee_id+training_type+category).
+  const { data: existing, error: selErr } = await supabase
+    .from("nr10_trainings")
+    .select("id, carga_horaria")
+    .eq("employee_id", params.employee.id)
+    .eq("training_type", params.trainingType)
+    .eq("category", params.category)
+    .eq("org_id", params.orgId)
+    .maybeSingle();
+  if (selErr) throw selErr;
+
+  let trainingId: string;
+  if (existing) {
+    trainingId = existing.id as string;
+    // Atualiza sem sobrescrever dados já preenchidos: data do certificado prevalece;
+    // carga horária só entra se estiver vazia no treino.
+    const patch: Record<string, unknown> = {};
+    if (params.issueDate) patch.training_date = params.issueDate;
+    if (existing.carga_horaria == null && params.workloadHours != null) {
+      patch.carga_horaria = params.workloadHours;
+    }
+    if (Object.keys(patch).length > 0) {
+      const { error } = await supabase
+        .from("nr10_trainings")
+        .update(patch as never)
+        .eq("id", trainingId);
+      if (error) throw error;
+    }
+  } else {
+    const { data, error } = await supabase
+      .from("nr10_trainings")
+      .insert({
+        employee_id: params.employee.id,
+        org_id: params.orgId,
+        training_type: params.trainingType,
+        category: params.category,
+        training_date: params.issueDate,
+        carga_horaria: params.workloadHours,
+        valid: true, // certificado anexado é a evidência de que o treino ocorreu
+      } as never)
+      .select("id")
+      .single();
+    if (error) throw error;
+    trainingId = data.id as string;
+  }
+
+  // 2) Certificado vinculado ao treinamento.
+  const { error: certErr } = await supabase.from("training_certificates").insert({
+    employee_id: params.employee.id,
+    org_id: params.orgId,
+    nr10_training_id: trainingId,
+    training_type: params.trainingType,
+    category: params.category,
+    file_url: url,
+    file_name: `${params.baseName}.pdf`,
+    issue_date: params.issueDate,
+    source_file: params.sourceLabel,
+    pages_in_source: params.pagesInSource,
+  } as never);
+  if (certErr) throw certErr;
 }
 
 export function useDeleteCertificate() {
@@ -973,4 +1062,31 @@ export async function uploadCertificateFile(
   if (error) throw new Error(mensagemUploadAmigavel(error));
   const { data } = supabase.storage.from("certificates").getPublicUrl(path);
   return data.publicUrl;
+}
+
+/** Pasta de certificados do colaborador: {matricula}_{slug(nome)} — junta todos os certificados dele. */
+function certificateEmployeeFolder(employee: { name: string; matricula: string }): string {
+  return `${employee.matricula}_${slugify(employee.name)}`;
+}
+
+/**
+ * Sobe um certificado JÁ RECORTADO (só as páginas do colaborador) para a pasta
+ * {matricula}_{nome}/ do bucket, agrupando todos os certificados do colaborador
+ * no mesmo nível hierárquico. `baseName` identifica o certificado dentro da pasta.
+ */
+export async function uploadCertificateForEmployee(
+  employee: { name: string; matricula: string },
+  file: File,
+  baseName: string,
+): Promise<{ url: string; path: string }> {
+  const resized = await resizeImage(file, 1024);
+  const ext = resized.name.split(".").pop() ?? "pdf";
+  const path = `${certificateEmployeeFolder(employee)}/${baseName}.${ext}`;
+  const { error } = await supabase.storage.from("certificates").upload(path, resized, {
+    cacheControl: "3600",
+    upsert: false,
+  });
+  if (error) throw new Error(mensagemUploadAmigavel(error));
+  const { data } = supabase.storage.from("certificates").getPublicUrl(path);
+  return { url: data.publicUrl, path };
 }

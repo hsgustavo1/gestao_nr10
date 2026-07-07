@@ -1161,12 +1161,82 @@ export type Database = {
           },
         ]
       }
+      training_certificates: {
+        Row: {
+          category: string | null
+          created_at: string
+          employee_id: string
+          file_name: string | null
+          file_url: string
+          id: string
+          issue_date: string | null
+          nr10_training_id: string | null
+          org_id: string
+          pages_in_source: string | null
+          source_file: string | null
+          training_type: string | null
+          uploaded_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          employee_id: string
+          file_name?: string | null
+          file_url: string
+          id?: string
+          issue_date?: string | null
+          nr10_training_id?: string | null
+          org_id: string
+          pages_in_source?: string | null
+          source_file?: string | null
+          training_type?: string | null
+          uploaded_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          employee_id?: string
+          file_name?: string | null
+          file_url?: string
+          id?: string
+          issue_date?: string | null
+          nr10_training_id?: string | null
+          org_id?: string
+          pages_in_source?: string | null
+          source_file?: string | null
+          training_type?: string | null
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_certificates_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_certificates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_certificates_nr10_training_id_fkey"
+            columns: ["nr10_training_id"]
+            isOneToOne: false
+            referencedRelation: "nr10_trainings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_crea_anuidades: {
         Row: {
           ano: number
           comprovante_arquivo_path: string | null
           created_at: string
-          data_pagamento: string | null
+          validade_ate: string | null
           employee_id: string
           id: string
           org_id: string
@@ -1175,7 +1245,7 @@ export type Database = {
           ano: number
           comprovante_arquivo_path?: string | null
           created_at?: string
-          data_pagamento?: string | null
+          validade_ate?: string | null
           employee_id: string
           id?: string
           org_id: string
@@ -1184,7 +1254,7 @@ export type Database = {
           ano?: number
           comprovante_arquivo_path?: string | null
           created_at?: string
-          data_pagamento?: string | null
+          validade_ate?: string | null
           employee_id?: string
           id?: string
           org_id?: string

@@ -107,30 +107,29 @@ export type EmployeePlh = {
   updated_at: string;
 };
 
-/** Anuidade paga ao conselho de classe (CREA/CFT) — um registro por ano. */
+/**
+ * Anuidade paga ao conselho de classe (CREA/CFT) — um registro por ano.
+ * `validade_ate` é informada pelo consultor no lançamento (junto do comprovante),
+ * não calculada — o conselho pode variar a data-limite real de ano a ano.
+ */
 export type EmployeeCreaAnuidade = {
   id: string;
   employee_id: string;
   org_id: string;
   ano: number;
-  data_pagamento: string | null;
+  validade_ate: string | null;
   comprovante_arquivo_path: string | null;
   created_at: string;
 };
 
-/** A anuidade do ano X vale até 31/01 do ano seguinte (regra do conselho de classe). */
-export function creaAnuidadeValidoAte(ano: number): string {
-  return `${ano + 1}-01-31`;
-}
-
-/** Data de validade da anuidade mais recente já paga, ou null se nenhuma tem pagamento registrado. */
+/** Validade mais distante entre as anuidades com validade informada, ou null se nenhuma tiver. */
 export function creaAnuidadeValidadeAtual(anuidades: EmployeeCreaAnuidade[]): string | null {
-  const anosPagos = anuidades.filter((a) => a.data_pagamento).map((a) => a.ano);
-  if (!anosPagos.length) return null;
-  return creaAnuidadeValidoAte(Math.max(...anosPagos));
+  const validades = anuidades.map((a) => a.validade_ate).filter((v): v is string => !!v);
+  if (!validades.length) return null;
+  return validades.sort().at(-1)!;
 }
 
-/** Em dia se a anuidade paga mais recente ainda não passou de sua validade (31/01 do ano seguinte). */
+/** Em dia se a validade mais distante informada ainda não passou. */
 export function creaAnuidadeEmDia(anuidades: EmployeeCreaAnuidade[], today: Date = new Date()): boolean {
   const validade = creaAnuidadeValidadeAtual(anuidades);
   if (!validade) return false;
@@ -269,6 +268,7 @@ export function reciclagemStatus(
 export type TrainingCertificate = {
   id: string;
   employee_id: string;
+  org_id: string;
   nr10_training_id: string | null;
   training_type: TrainingType | null;
   category: "formacao" | "reciclagem" | null;
