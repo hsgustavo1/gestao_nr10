@@ -14,6 +14,8 @@ export type PageAnalysis = {
   category_guess: "formacao" | "reciclagem" | null;
   /** Carga horária lida no certificado (h). Decide formação × reciclagem melhor que o texto. */
   workload_hours_read: number | null;
+  /** Data de realização/conclusão do treinamento (dd/mm/aaaa ou ISO). Distinta da emissão. */
+  training_date_read: string | null;
   dates_read: string[];
   confidence: "alta" | "media" | "baixa";
 };
@@ -73,6 +75,18 @@ export function matchEmployeeByName(nameRead: string | null, employees: Employee
   return best?.emp ?? null;
 }
 
+/**
+ * Normaliza uma data lida pela IA (ISO `aaaa-mm-dd` ou `dd/mm/aaaa`) para ISO.
+ * Retorna null quando vazia ou irreconhecível.
+ */
+export function normalizeDateGuess(raw: string | null | undefined): string | null {
+  const s = raw?.trim();
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+}
+
 /** Extrai a data mais recente em formato dd/mm/aaaa encontrada no texto, como ISO. */
 export function extractLatestDateGuess(datesRead: string[]): string | null {
   const re = /(\d{2})\/(\d{2})\/(\d{4})/g;
@@ -111,6 +125,8 @@ export type CertificatePageGroup = {
   trainingType: TrainingType | "";
   category: "formacao" | "reciclagem" | "";
   issueDate: string;
+  /** Data de realização/conclusão lida — confrontada com a data da turma. */
+  dataRealizacao: string;
   /** Carga horária lida (h) — usada ao criar o treinamento a partir do certificado. */
   workloadHours: number | null;
   confidence: PageAnalysis["confidence"] | null;
@@ -144,6 +160,10 @@ export function groupPagesByFrenteVerso(
         trainingType: a && !lowConfidence ? (a.training_type_guess ?? "") : "",
         category: a ? inferCategory(a) : "",
         issueDate: extractLatestDateGuess(a?.dates_read ?? []) ?? "",
+        dataRealizacao:
+          normalizeDateGuess(a?.training_date_read) ??
+          extractLatestDateGuess(a?.dates_read ?? []) ??
+          "",
         workloadHours: a?.workload_hours_read ?? null,
         confidence: a?.confidence ?? null,
       };

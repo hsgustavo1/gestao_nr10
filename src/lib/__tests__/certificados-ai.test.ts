@@ -39,6 +39,7 @@ function analysis(over: Partial<PageAnalysis> = {}): PageAnalysis {
     training_type_guess: "nr10_basico",
     category_guess: "formacao",
     workload_hours_read: 40,
+    training_date_read: null,
     dates_read: [],
     confidence: "alta",
     ...over,
@@ -111,6 +112,7 @@ describe("groupPagesByFrenteVerso — baixa confiança deixa tipo em branco", ()
           training_type_guess: "nr10_basico",
           category_guess: "formacao",
           workload_hours_read: null,
+          training_date_read: null,
           dates_read: [],
           confidence: "baixa",
         },
@@ -216,5 +218,18 @@ describe("groupPagesByFrenteVerso", () => {
     expect(groups).toHaveLength(2);
     expect(groups[1].employee).toBeNull();
     expect(groups[1].pages).toEqual([2]);
+  });
+
+  it("propaga a data de realização (training_date_read), não a de emissão", () => {
+    const analyses: (PageAnalysis | null)[] = [
+      analysis({
+        page_type: "frente",
+        employee_name_read: "ALEXSANDRO ALVES DE LIMA",
+        training_date_read: "12/03/2026",
+        dates_read: ["Emitido em 20/03/2026"],
+      }),
+    ];
+    const groups = groupPagesByFrenteVerso(analyses, employees);
+    expect(groups[0].dataRealizacao).toBe("2026-03-12");
   });
 });

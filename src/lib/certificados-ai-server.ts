@@ -17,7 +17,12 @@ const USER_TEXT =
   '"training_type_guess": "nr10_basico"|"nr10_areas_classificadas"|"sep"|null, ' +
   '"category_guess": "formacao"|"reciclagem"|null, ' +
   '"workload_hours_read": <número de horas da carga horária como está escrito, ou null se não achar>, ' +
+  '"training_date_read": "<data de REALIZAÇÃO/CONCLUSÃO do treinamento em dd/mm/aaaa, ou null>", ' +
   '"dates_read": ["..."], "confidence": "alta"|"media"|"baixa"}\n\n' +
+  "Duas datas distintas: training_date_read é a data em que o treinamento foi REALIZADO/CONCLUÍDO " +
+  '(ex.: "realizado em 12/03/2026", "concluído em..."). A data de EMISSÃO do certificado (ex.: ' +
+  '"emitido em", "São Paulo, 20 de março de 2026") NÃO vai em training_date_read — coloque-a apenas ' +
+  "em dates_read. Se houver só uma data e não der para saber qual é, use-a em training_date_read.\n\n" +
   "Carga horária e categoria: procure a carga horária no certificado (ex.: \"carga horária: 40 horas\", " +
   '"40h", "16 horas"). Regra: FORMAÇÃO (curso inicial) de NR-10 básico/complementar tem ~40 horas; ' +
   "RECICLAGEM tem ~16 horas. Use a carga horária para decidir category_guess quando ela existir. " +
