@@ -115,10 +115,10 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
 
       await registrar.mutateAsync({
         employeeIds: Array.from(selected),
-        training: {
+        turma: {
           training_type: trainingType as TrainingType,
           category: category as "formacao" | "reciclagem",
-          training_date: trainingDate,
+          data: trainingDate,
           art: art.trim() || null,
           art_arquivo_url: artArquivoUrl,
           responsavel_tecnico: responsavelTecnico.trim() || null,
@@ -126,7 +126,6 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
           entidade: entidade.trim() || null,
           instrutor: instrutores.map((s) => s.trim()).filter(Boolean).join(" · ") || null,
           conteudo_programatico: conteudo.trim() || null,
-          valid: true,
         },
       });
       toast.success(`Turma registrada para ${selected.size} colaborador(es).`);

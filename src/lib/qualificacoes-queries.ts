@@ -10,6 +10,7 @@ import type {
   EmployeePlh,
   EmployeeCreaAnuidade,
   NR10Training,
+  NR10Turma,
   WorkAuthorization,
   WorkInstruction,
   ITTraining,
@@ -613,41 +614,110 @@ export function useUpsertNR10Training() {
   });
 }
 
-/** Registro de treinamento em turma: um upsert por colaborador selecionado. */
+/**
+ * Registro de treinamento por turma: cria/atualiza a turma (fonte da verdade) e
+ * sincroniza as participações dos colaboradores selecionados (via `upsertTurma`).
+ */
 export function useRegistrarTurma() {
   const qc = useQueryClient();
   const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async ({
       employeeIds,
-      training,
+      turma,
     }: {
       employeeIds: string[];
-      training: Omit<NR10Training, "id" | "created_at" | "updated_at" | "employee_id">;
+      turma: Omit<NR10Turma, "id" | "created_at" | "updated_at" | "org_id">;
     }) => {
-      const rows = employeeIds.map((employee_id) => ({
-        ...training,
-        employee_id,
-        ...(currentOrgId ? { org_id: currentOrgId } : {}),
-      }));
-      const { error } = await supabase
-        .from("nr10_trainings")
-        .upsert(rows as never, { onConflict: "employee_id,training_type,category" });
-      if (error) throw error;
+      if (!currentOrgId) throw new Error("Selecione uma organização antes de registrar a turma.");
+      await upsertTurma({ orgId: currentOrgId, turma, employeeIds });
       // Reciclagem em turma também limpa a flag de reciclagem extraordinária
-      if (training.category === "reciclagem" && employeeIds.length > 0) {
+      if (turma.category === "reciclagem" && employeeIds.length > 0) {
         await supabase
           .from("employees")
           .update({ reciclagem_requerida: false, reciclagem_motivo: null })
           .in("id", employeeIds);
       }
-      return rows.length;
+      return employeeIds.length;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["nr10_trainings"] });
+      qc.invalidateQueries({ queryKey: ["nr10_turmas"] });
       qc.invalidateQueries({ queryKey: qualKeys.employees });
     },
   });
+}
+
+// ── NR-10 Turmas ─────────────────────────────────────────────────────────────
+
+export function useTurmas() {
+  const { currentOrgId } = useAuth();
+  return useQuery({
+    queryKey: ["nr10_turmas", currentOrgId],
+    enabled: !!currentOrgId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("nr10_turmas")
+        .select("*")
+        .eq("org_id", currentOrgId!)
+        .order("data", { ascending: false });
+      if (error) throw error;
+      return data as NR10Turma[];
+    },
+  });
+}
+
+type TurmaInput = Omit<NR10Turma, "id" | "created_at" | "updated_at" | "org_id"> & { id?: string };
+
+/** Espelha os campos da turma nas participações (compat com leituras existentes). */
+function turmaMirror(turma: TurmaInput) {
+  return {
+    training_type: turma.training_type,
+    category: turma.category,
+    training_date: turma.data,
+    art: turma.art,
+    art_arquivo_url: turma.art_arquivo_url,
+    instrutor: turma.instrutor,
+    entidade: turma.entidade,
+    responsavel_tecnico: turma.responsavel_tecnico,
+    carga_horaria: turma.carga_horaria,
+    conteudo_programatico: turma.conteudo_programatico,
+  };
+}
+
+/**
+ * Cria/atualiza a turma (fonte da verdade) e sincroniza as participações
+ * selecionadas em `nr10_trainings`, espelhando os campos e setando `turma_id`.
+ * Mantém a chave única `employee_id,training_type,category`.
+ */
+export async function upsertTurma(params: {
+  orgId: string;
+  turma: TurmaInput;
+  employeeIds: string[];
+}): Promise<string> {
+  const { orgId, turma, employeeIds } = params;
+  const { data: saved, error } = await supabase
+    .from("nr10_turmas")
+    .upsert({ ...turma, org_id: orgId } as never)
+    .select("id")
+    .single();
+  if (error) throw error;
+  const turmaId = (saved as { id: string }).id;
+
+  if (employeeIds.length > 0) {
+    const rows = employeeIds.map((employee_id) => ({
+      employee_id,
+      org_id: orgId,
+      turma_id: turmaId,
+      valid: true,
+      ...turmaMirror(turma),
+    }));
+    const { error: upErr } = await supabase
+      .from("nr10_trainings")
+      .upsert(rows as never, { onConflict: "employee_id,training_type,category" });
+    if (upErr) throw upErr;
+  }
+  return turmaId;
 }
 
 // ── Work Authorizations ───────────────────────────────────────────────────────
