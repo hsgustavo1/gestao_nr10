@@ -1165,6 +1165,7 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          data_realizacao: string | null
           employee_id: string
           file_name: string | null
           file_url: string
@@ -1180,6 +1181,7 @@ export type Database = {
         Insert: {
           category?: string | null
           created_at?: string
+          data_realizacao?: string | null
           employee_id: string
           file_name?: string | null
           file_url: string
@@ -1195,6 +1197,7 @@ export type Database = {
         Update: {
           category?: string | null
           created_at?: string
+          data_realizacao?: string | null
           employee_id?: string
           file_name?: string | null
           file_url?: string
@@ -1292,6 +1295,7 @@ export type Database = {
           responsavel_tecnico: string | null
           training_date: string | null
           training_type: string
+          turma_id: string | null
           updated_at: string
           valid: boolean
         }
@@ -1310,6 +1314,7 @@ export type Database = {
           responsavel_tecnico?: string | null
           training_date?: string | null
           training_type: string
+          turma_id?: string | null
           updated_at?: string
           valid?: boolean
         }
@@ -1328,6 +1333,7 @@ export type Database = {
           responsavel_tecnico?: string | null
           training_date?: string | null
           training_type?: string
+          turma_id?: string | null
           updated_at?: string
           valid?: boolean
         }
@@ -1341,6 +1347,72 @@ export type Database = {
           },
           {
             foreignKeyName: "nr10_trainings_org_fk"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nr10_trainings_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "nr10_turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nr10_turmas: {
+        Row: {
+          art: string | null
+          art_arquivo_url: string | null
+          carga_horaria: number | null
+          category: string
+          conteudo_programatico: string | null
+          created_at: string
+          data: string | null
+          entidade: string | null
+          id: string
+          instrutor: string | null
+          org_id: string
+          responsavel_tecnico: string | null
+          training_type: string
+          updated_at: string
+        }
+        Insert: {
+          art?: string | null
+          art_arquivo_url?: string | null
+          carga_horaria?: number | null
+          category: string
+          conteudo_programatico?: string | null
+          created_at?: string
+          data?: string | null
+          entidade?: string | null
+          id?: string
+          instrutor?: string | null
+          org_id: string
+          responsavel_tecnico?: string | null
+          training_type: string
+          updated_at?: string
+        }
+        Update: {
+          art?: string | null
+          art_arquivo_url?: string | null
+          carga_horaria?: number | null
+          category?: string
+          conteudo_programatico?: string | null
+          created_at?: string
+          data?: string | null
+          entidade?: string | null
+          id?: string
+          instrutor?: string | null
+          org_id?: string
+          responsavel_tecnico?: string | null
+          training_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nr10_turmas_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"

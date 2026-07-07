@@ -165,7 +165,32 @@ export type NR10Training = {
   entidade?: string | null;
   instrutor?: string | null;
   conteudo_programatico?: string | null;
+  /** Vínculo à turma (evento de treinamento). Null = registro legado não agrupado. */
+  turma_id?: string | null;
   valid: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * Turma de treinamento (evento de 1ª classe): agrupa N participações
+ * (`NR10Training`). É a fonte da verdade de ART/instrutor/carga/data; as
+ * participações espelham esses campos por compatibilidade.
+ */
+export type NR10Turma = {
+  id: string;
+  org_id: string;
+  training_type: TrainingType;
+  category: "formacao" | "reciclagem";
+  /** Data de realização/conclusão do treinamento. */
+  data: string | null;
+  art: string | null;
+  art_arquivo_url: string | null;
+  instrutor: string | null;
+  entidade: string | null;
+  responsavel_tecnico: string | null;
+  carga_horaria: number | null;
+  conteudo_programatico: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -274,7 +299,10 @@ export type TrainingCertificate = {
   category: "formacao" | "reciclagem" | null;
   file_url: string;
   file_name: string | null;
+  /** Data de emissão do certificado (pode divergir da turma; informativa). */
   issue_date: string | null;
+  /** Data de realização/conclusão — confrontada com a data da turma. */
+  data_realizacao?: string | null;
   source_file: string | null;
   pages_in_source: string | null;
   uploaded_at: string;
