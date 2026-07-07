@@ -42,13 +42,13 @@ import {
   useAttachPlhDoc,
   useRemovePlhDoc,
   useCreaAnuidades,
+  useAddCreaAnuidade,
   useUpdateCreaAnuidade,
   useDeleteCreaAnuidade,
   useAttachAnuidadeDoc,
   type EmployeeDocKind,
   type PlhDocKind,
 } from "@/lib/qualificacoes-queries";
-import { AnuidadeDialog } from "@/components/anuidade-dialog";
 import {
   creaAnuidadeEmDia,
   creaAnuidadeValidadeAtual,
@@ -332,43 +332,39 @@ function PlhDocRow({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-input px-2 py-1">
+    <div className="space-y-1.5 rounded-md border border-input p-2">
       <input ref={inputRef} type="file" accept="application/pdf,image/*" onChange={onFileChange} disabled={busy} className="hidden" />
-      <span className="shrink-0 text-muted-foreground">
-        <FileText className="h-3.5 w-3.5" />
-      </span>
-      <span className="flex-1 truncate text-xs" title={fileName ?? undefined}>
-        {busy ? (
-          <span className="text-muted-foreground">Enviando…</span>
-        ) : fileName ? (
-          <span className="text-foreground">{fileName}</span>
-        ) : (
-          <span className="text-muted-foreground">{label}</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+          <FileText className="h-3.5 w-3.5 shrink-0" /> {label}
+        </span>
+        {!path && (
+          <Button type="button" variant="outline" size="sm" className="h-6 text-xs px-2 shrink-0" disabled={busy} onClick={() => inputRef.current?.click()}>
+            {busy ? "Enviando…" : "Anexar"}
+          </Button>
         )}
-      </span>
-      {path && !busy && (
-        <>
+      </div>
+      {path && (
+        <div className="flex items-center gap-2 rounded bg-muted/50 px-2 py-1">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-          <a href={employeeDocUrl(path)} target="_blank" rel="noreferrer" className="text-xs underline underline-offset-2 hover:text-foreground">
+          <span className="min-w-0 flex-1 truncate text-xs" title={fileName ?? undefined}>
+            {busy ? <span className="text-muted-foreground">Enviando…</span> : fileName}
+          </span>
+          <a href={employeeDocUrl(path)} target="_blank" rel="noreferrer" className="shrink-0 text-xs underline underline-offset-2 hover:text-foreground">
             Ver
           </a>
-        </>
-      )}
-      <Button type="button" variant="outline" size="sm" className="h-6 text-xs px-2" disabled={busy} onClick={() => inputRef.current?.click()}>
-        {path ? "Substituir" : "Anexar"}
-      </Button>
-      {path && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-destructive"
-          disabled={busy}
-          onClick={onRemove}
-          title={`Remover ${label.toLowerCase()}`}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+            disabled={busy}
+            onClick={onRemove}
+            title={`Remover ${label.toLowerCase()}`}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -379,14 +375,14 @@ function AnuidadeRow({ employee, anuidade }: { employee: Employee; anuidade: Emp
   const update = useUpdateCreaAnuidade();
   const del = useDeleteCreaAnuidade();
   const attach = useAttachAnuidadeDoc();
-  const [dataPagamento, setDataPagamento] = useState(anuidade.data_pagamento ?? "");
+  const [validadeAte, setValidadeAte] = useState(anuidade.validade_ate ?? "");
   const busy = update.isPending || del.isPending || attach.isPending;
   const fileName = anuidade.comprovante_arquivo_path ? anuidade.comprovante_arquivo_path.split("/").pop() ?? null : null;
 
   async function onBlurSave() {
-    if (dataPagamento === (anuidade.data_pagamento ?? "")) return;
+    if (validadeAte === (anuidade.validade_ate ?? "")) return;
     try {
-      await update.mutateAsync({ id: anuidade.id, employeeId: employee.id, data_pagamento: dataPagamento });
+      await update.mutateAsync({ id: anuidade.id, employeeId: employee.id, validade_ate: validadeAte });
     } catch (err) {
       toast.error(`Não foi possível salvar a anuidade. Detalhe: ${(err as Error).message}`);
     }
@@ -415,34 +411,51 @@ function AnuidadeRow({ employee, anuidade }: { employee: Employee; anuidade: Emp
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-md border p-2">
+    <div className="space-y-1.5 rounded-md border p-2">
       <input ref={inputRef} type="file" accept="application/pdf,image/*" onChange={onFileChange} disabled={busy} className="hidden" />
-      <span className="w-12 shrink-0 text-sm font-medium">{anuidade.ano}</span>
-      <Input
-        type="date"
-        value={dataPagamento}
-        onChange={(e) => setDataPagamento(e.target.value)}
-        onBlur={onBlurSave}
-        className="h-8 w-40"
-        title="Data de pagamento"
-      />
-      <span className="flex-1 truncate text-xs" title={fileName ?? undefined}>
-        {fileName ? <span className="text-foreground">{fileName}</span> : <span className="text-muted-foreground">Comprovante</span>}
-      </span>
-      <Button type="button" variant="outline" size="sm" className="h-6 text-xs px-2" disabled={busy} onClick={() => inputRef.current?.click()}>
-        {fileName ? "Substituir" : "Anexar"}
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
-        onClick={onDelete}
-        disabled={busy}
-        title="Remover anuidade"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      <div className="flex items-center gap-2">
+        <span className="w-12 shrink-0 text-sm font-medium">{anuidade.ano}</span>
+        <Input
+          type="date"
+          value={validadeAte}
+          onChange={(e) => setValidadeAte(e.target.value)}
+          onBlur={onBlurSave}
+          className="h-8 flex-1"
+          title="Validade"
+        />
+        {!fileName && (
+          <Button type="button" variant="outline" size="sm" className="h-8 shrink-0 text-xs px-2" disabled={busy} onClick={() => inputRef.current?.click()}>
+            {busy ? "Enviando…" : "Anexar"}
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+          onClick={onDelete}
+          disabled={busy}
+          title="Remover anuidade"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      {fileName && (
+        <div className="flex items-center gap-2 rounded bg-muted/50 px-2 py-1">
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+          <span className="min-w-0 flex-1 truncate text-xs" title={fileName}>
+            {busy ? <span className="text-muted-foreground">Enviando…</span> : fileName}
+          </span>
+          <a
+            href={employeeDocUrl(anuidade.comprovante_arquivo_path!)}
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 text-xs underline underline-offset-2 hover:text-foreground"
+          >
+            Ver
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -451,9 +464,9 @@ function PlhSection({ employee }: { employee: Employee }) {
   const { data: plh } = useEmployeePlh(employee.id);
   const { data: anuidades = [] } = useCreaAnuidades(employee.id);
   const upsertPlh = useUpsertEmployeePlh();
+  const addAnuidade = useAddCreaAnuidade();
   const [termoNomeacaoData, setTermoNomeacaoData] = useState(plh?.termo_nomeacao_data ?? "");
   const [artCargoFuncao, setArtCargoFuncao] = useState(plh?.art_cargo_funcao ?? "");
-  const [anuidadeDialogOpen, setAnuidadeDialogOpen] = useState(false);
 
   useEffect(() => {
     setTermoNomeacaoData(plh?.termo_nomeacao_data ?? "");
@@ -480,6 +493,15 @@ function PlhSection({ employee }: { employee: Employee }) {
   const emDia = creaAnuidadeEmDia(anuidades);
   const validade = creaAnuidadeValidadeAtual(anuidades);
 
+  async function onAddAnuidade() {
+    const proximoAno = anuidades.length ? Math.max(...anuidades.map((a) => a.ano)) + 1 : new Date().getFullYear();
+    try {
+      await addAnuidade.mutateAsync({ employeeId: employee.id, ano: proximoAno });
+    } catch (err) {
+      toast.error(`Não foi possível adicionar. Detalhe: ${(err as Error).message}`);
+    }
+  }
+
   return (
     <div className="space-y-3 rounded-md border border-amber-200 bg-amber-50/40 p-3 dark:border-amber-900 dark:bg-amber-950/10">
       <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -487,7 +509,7 @@ function PlhSection({ employee }: { employee: Employee }) {
       </p>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <label className="text-xs text-muted-foreground">Termo de nomeação — data</label>
           <Input
             type="date"
@@ -496,8 +518,9 @@ function PlhSection({ employee }: { employee: Employee }) {
             onBlur={onBlurSave}
             className="h-8"
           />
+          <PlhDocRow employee={employee} kind="termo_nomeacao" label="Anexo do termo" path={plh?.termo_nomeacao_arquivo_path ?? null} />
         </div>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <label className="text-xs text-muted-foreground">ART de cargo e função — número</label>
           <Input
             value={artCargoFuncao}
@@ -506,12 +529,8 @@ function PlhSection({ employee }: { employee: Employee }) {
             placeholder="Número da ART"
             className="h-8"
           />
+          <PlhDocRow employee={employee} kind="art_cargo_funcao" label="Anexo da ART" path={plh?.art_cargo_funcao_arquivo_path ?? null} />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-        <PlhDocRow employee={employee} kind="termo_nomeacao" label="Termo de nomeação" path={plh?.termo_nomeacao_arquivo_path ?? null} />
-        <PlhDocRow employee={employee} kind="art_cargo_funcao" label="ART de cargo e função" path={plh?.art_cargo_funcao_arquivo_path ?? null} />
       </div>
 
       <div className="space-y-2">
@@ -527,9 +546,10 @@ function PlhSection({ employee }: { employee: Employee }) {
             variant="outline"
             size="sm"
             className="h-7 text-xs"
-            onClick={() => setAnuidadeDialogOpen(true)}
+            onClick={onAddAnuidade}
+            disabled={addAnuidade.isPending}
           >
-            <Plus className="h-3.5 w-3.5" /> Lançar anuidade atualizada
+            <Plus className="h-3.5 w-3.5" /> Adicionar anuidade
           </Button>
         </div>
         {anuidades.length === 0 ? (
@@ -542,7 +562,6 @@ function PlhSection({ employee }: { employee: Employee }) {
           </div>
         )}
       </div>
-      <AnuidadeDialog open={anuidadeDialogOpen} onOpenChange={setAnuidadeDialogOpen} employee={employee} />
     </div>
   );
 }
@@ -692,18 +711,6 @@ export function EmployeeDialog({ open, onOpenChange, employee }: Props) {
               />
               <FormField
                 control={form.control}
-                name="funcao"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Função</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="status"
                 render={({ field }) => (
                   <FormItem>
@@ -725,9 +732,21 @@ export function EmployeeDialog({ open, onOpenChange, employee }: Props) {
               />
               <FormField
                 control={form.control}
+                name="funcao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Função</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="crea_cft"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem>
                     <FormLabel>CREA / CFT</FormLabel>
                     <FormControl>
                       <Input placeholder="Número do registro" {...field} />

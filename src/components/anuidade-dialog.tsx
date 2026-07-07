@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAddCreaAnuidade, useAttachAnuidadeDoc, useCreaAnuidades } from "@/lib/qualificacoes-queries";
-import { creaAnuidadeValidoAte, type Employee } from "@/lib/qualificacoes";
+import type { Employee } from "@/lib/qualificacoes";
 
 type Props = {
   open: boolean;
@@ -21,7 +21,8 @@ type Props = {
 /**
  * Único ponto de lançamento de anuidade CREA/CFT — usado tanto no cadastro do
  * integrante quanto na tela de Habilitação, para os dois sempre gravarem no
- * mesmo lugar (`employee_crea_anuidades`) com o mesmo fluxo (data + comprovante juntos).
+ * mesmo lugar (`employee_crea_anuidades`) com o mesmo fluxo (validade + comprovante juntos).
+ * A validade é informada pelo consultor (não calculada) — o comprovante é a fonte da verdade.
  */
 export function AnuidadeDialog({ open, onOpenChange, employee }: Props) {
   const { data: anuidades = [] } = useCreaAnuidades(employee.id);
@@ -30,22 +31,22 @@ export function AnuidadeDialog({ open, onOpenChange, employee }: Props) {
   const anoSugerido = anuidades.length ? Math.max(...anuidades.map((a) => a.ano)) + 1 : new Date().getFullYear();
 
   const [ano, setAno] = useState(anoSugerido);
-  const [dataPagamento, setDataPagamento] = useState(() => new Date().toISOString().slice(0, 10));
+  const [validadeAte, setValidadeAte] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const busy = add.isPending || attach.isPending;
 
   useEffect(() => {
     if (open) {
       setAno(anoSugerido);
-      setDataPagamento(new Date().toISOString().slice(0, 10));
+      setValidadeAte("");
       setFile(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, anoSugerido]);
 
   async function onSubmit() {
-    if (!dataPagamento) {
-      toast.error("Informe a data de pagamento.");
+    if (!validadeAte) {
+      toast.error("Informe a validade da anuidade.");
       return;
     }
     if (!file) {
@@ -53,18 +54,13 @@ export function AnuidadeDialog({ open, onOpenChange, employee }: Props) {
       return;
     }
     try {
-      const registro = await add.mutateAsync({ employeeId: employee.id, ano, data_pagamento: dataPagamento });
+      const registro = await add.mutateAsync({ employeeId: employee.id, ano, validade_ate: validadeAte });
       await attach.mutateAsync({ employee, anuidadeId: registro.id, ano, file });
-      toast.success(`Anuidade ${ano} lançada — válida até ${formatValidade(ano)}.`);
+      toast.success(`Anuidade ${ano} lançada.`);
       onOpenChange(false);
     } catch (err) {
       toast.error(`Não foi possível lançar a anuidade. Detalhe: ${(err as Error).message}`);
     }
-  }
-
-  function formatValidade(a: number) {
-    const [y, m, d] = creaAnuidadeValidoAte(a).split("-");
-    return `${d}/${m}/${y}`;
   }
 
   return (
@@ -84,13 +80,16 @@ export function AnuidadeDialog({ open, onOpenChange, employee }: Props) {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Data de pagamento</label>
+            <label className="text-xs text-muted-foreground">Validade</label>
             <Input
               type="date"
-              value={dataPagamento}
-              onChange={(e) => setDataPagamento(e.target.value)}
+              value={validadeAte}
+              onChange={(e) => setValidadeAte(e.target.value)}
               className="h-9"
             />
+            <p className="text-[11px] text-muted-foreground">
+              Data-limite informada no comprovante emitido pelo conselho.
+            </p>
           </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Comprovante</label>
@@ -101,7 +100,6 @@ export function AnuidadeDialog({ open, onOpenChange, employee }: Props) {
               className="h-9"
             />
           </div>
-          <p className="text-[11px] text-muted-foreground">Válida até {formatValidade(ano)}.</p>
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
