@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -24,7 +25,7 @@ import {
 import { suggestTurmaForBatch, type TurmaCandidate } from "@/lib/turmas";
 import { useAuth } from "@/lib/auth-context";
 import { useQueryClient } from "@tanstack/react-query";
-import { TRAINING_TYPES, TRAINING_LABELS, type TrainingType } from "@/lib/qualificacoes";
+import { TRAINING_TYPES, TRAINING_LABELS, formatDatePtBR, type TrainingType } from "@/lib/qualificacoes";
 import {
   groupPagesByFrenteVerso,
   type CertificatePageGroup,
@@ -177,6 +178,34 @@ async function analyzeWithOrientation(imageDataUrl: string): Promise<PageAnalysi
 
 // ── Main component ───────────────────────────────────────────────────────────
 
+/** Valor sentinela do seletor de turma para "criar uma nova turma". */
+const NOVA_TURMA = "__nova__";
+
+/** Campos do formulário de criação de turma no wizard de importação. */
+type NovaTurmaForm = {
+  trainingType: TrainingType;
+  category: "formacao" | "reciclagem";
+  data: string;
+  cargaHoraria: string;
+  art: string;
+  instrutor: string;
+  entidade: string;
+  responsavelTecnico: string;
+  conteudo: string;
+};
+
+const emptyNovaTurma: NovaTurmaForm = {
+  trainingType: "nr10_basico",
+  category: "formacao",
+  data: "",
+  cargaHoraria: "",
+  art: "",
+  instrutor: "",
+  entidade: "",
+  responsavelTecnico: "",
+  conteudo: "",
+};
+
 function CertificadosImportarPage() {
   const { data: employees = [] } = useEmployees();
   const { data: turmas = [] } = useTurmas();
@@ -195,23 +224,35 @@ function CertificadosImportarPage() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
-  // Turma escolhida para o lote: "" = criar nova turma; caso contrário, id da turma existente.
-  const [turmaSel, setTurmaSel] = useState<string>("");
+  // Turma escolhida para o lote. NOVA_TURMA = criar uma nova; senão, id da turma existente.
+  const [turmaSel, setTurmaSel] = useState<string>(NOVA_TURMA);
   const turmaTouched = useRef(false);
+  // Formulário da turma nova (pré-preenchido com o que a IA capturou do lote).
+  const [novaTurma, setNovaTurma] = useState<NovaTurmaForm>(emptyNovaTurma);
+  const novaTurmaTouched = useRef(false);
+  const isNovaTurma = turmaSel === NOVA_TURMA;
 
-  // Chave do lote: combo dominante (tipo/categoria do 1º grupo válido) + data de
-  // realização mais confiável do lote. Alimenta o casamento sugerido de turma.
+  // Certificados atribuídos a um colaborador (tipo/categoria/data vêm da turma).
+  const validGroups = useMemo(() => groups.filter((g) => g.employee), [groups]);
+
+  // Carga horária capturada pela IA em algum certificado do lote (para pré-preencher).
+  const capturedCarga = useMemo(
+    () => validGroups.find((g) => g.workloadHours != null)?.workloadHours ?? null,
+    [validGroups],
+  );
+
+  // Chave do lote: tipo/categoria do 1º certificado (palpite da IA) + data de
+  // realização mais confiável. Alimenta o casamento sugerido e o pré-preenchimento.
   const batchKey = useMemo(() => {
-    const vg = groups.filter((g) => g.employee && g.trainingType && g.category);
-    if (vg.length === 0) return null;
-    const first = vg[0];
-    const dataRealizacao = vg.find((g) => g.dataRealizacao)?.dataRealizacao || null;
+    if (validGroups.length === 0) return null;
+    const first = validGroups[0];
+    const dataRealizacao = validGroups.find((g) => g.dataRealizacao)?.dataRealizacao || null;
     return {
-      trainingType: first.trainingType as TrainingType,
-      category: first.category as "formacao" | "reciclagem",
+      trainingType: (first.trainingType || "nr10_basico") as TrainingType,
+      category: (first.category || "formacao") as "formacao" | "reciclagem",
       dataRealizacao,
     };
-  }, [groups]);
+  }, [validGroups]);
 
   const turmaCandidates: TurmaCandidate[] = useMemo(
     () =>
@@ -230,7 +271,7 @@ function CertificadosImportarPage() {
     [batchKey, turmaCandidates],
   );
 
-  // Turmas do mesmo tipo/categoria do lote — opções de vínculo manual.
+  // Turmas do mesmo tipo/categoria do lote — opções de vínculo manual no seletor.
   const turmasDoCombo = useMemo(
     () =>
       batchKey
@@ -241,23 +282,38 @@ function CertificadosImportarPage() {
     [turmas, batchKey],
   );
 
-  // Enquanto o usuário não escolhe manualmente, adota a sugestão.
+  // Enquanto o usuário não escolhe manualmente, adota a sugestão (ou nova turma).
   useEffect(() => {
-    if (!turmaTouched.current) setTurmaSel(suggestion?.id ?? "");
+    if (!turmaTouched.current) setTurmaSel(suggestion?.id ?? NOVA_TURMA);
   }, [suggestion?.id]);
 
+  // Pré-preenche o formulário da turma nova com o que a IA capturou no lote.
+  useEffect(() => {
+    if (!batchKey || novaTurmaTouched.current) return;
+    setNovaTurma((prev) => ({
+      ...prev,
+      trainingType: batchKey.trainingType,
+      category: batchKey.category,
+      data: batchKey.dataRealizacao ?? "",
+      cargaHoraria: capturedCarga != null ? String(capturedCarga) : "",
+    }));
+  }, [batchKey, capturedCarga]);
+
   const linkedTurma = useMemo(
-    () => turmas.find((t) => t.id === turmaSel) ?? null,
-    [turmas, turmaSel],
+    () => (isNovaTurma ? null : turmas.find((t) => t.id === turmaSel) ?? null),
+    [turmas, turmaSel, isNovaTurma],
   );
 
-  // Grupos cuja data de realização diverge da turma vinculada → alerta forte.
+  // Data de realização autoritativa da turma do lote (nova ou vinculada).
+  const turmaDataAtual = isNovaTurma ? novaTurma.data || null : linkedTurma?.data ?? null;
+
+  // Certificados cuja data de realização diverge da data da turma → alerta forte.
   const gruposComDivergenciaData = useMemo(() => {
-    if (!linkedTurma?.data) return [];
+    if (!turmaDataAtual) return [];
     return groups.filter(
-      (g) => g.employee && g.dataRealizacao && g.dataRealizacao !== linkedTurma.data,
+      (g) => g.employee && g.dataRealizacao && g.dataRealizacao !== turmaDataAtual,
     );
-  }, [groups, linkedTurma]);
+  }, [groups, turmaDataAtual]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -275,7 +331,9 @@ function CertificadosImportarPage() {
     setDone(false);
     setPageImages([]);
     turmaTouched.current = false;
-    setTurmaSel("");
+    setTurmaSel(NOVA_TURMA);
+    novaTurmaTouched.current = false;
+    setNovaTurma(emptyNovaTurma);
     try {
       let images: string[];
       if (asImages) {
@@ -347,60 +405,69 @@ function CertificadosImportarPage() {
       toast.error("Selecione uma organização antes de importar.");
       return;
     }
-    const validGroups = groups.filter((g) => g.employee && g.trainingType && g.category);
-    if (validGroups.length === 0) {
-      toast.error("Nenhum certificado com colaborador e tipo de treinamento definidos.");
+    const toImport = groups.filter((g) => g.employee);
+    if (toImport.length === 0) {
+      toast.error("Nenhum certificado com colaborador definido.");
       return;
     }
+
+    // Uma turma governa todo o lote: tipo, categoria e data vêm dela (não de cada
+    // certificado) — corrige num só lugar erros de leitura da IA e mantém consistência.
+    let turmaId: string;
+    let trainingType: TrainingType;
+    let category: "formacao" | "reciclagem";
+    if (isNovaTurma) {
+      trainingType = novaTurma.trainingType;
+      category = novaTurma.category;
+    } else {
+      const t = turmas.find((x) => x.id === turmaSel);
+      if (!t) {
+        toast.error("Selecione uma turma ou escolha “Criar nova turma”.");
+        return;
+      }
+      trainingType = t.training_type;
+      category = t.category;
+    }
+
     setImporting(true);
     let ok = 0;
     let fail = 0;
 
-    // Resolve a turma de cada combo (tipo+categoria) do lote: usa a turma
-    // escolhida quando o combo bate; senão cria uma turma nova (shell) para ele.
-    // As participações são vinculadas por importCertificateAsTraining.
-    const turmaByCombo = new Map<string, string>();
-    if (turmaSel) {
-      const t = turmas.find((x) => x.id === turmaSel);
-      if (t) turmaByCombo.set(`${t.training_type}::${t.category}`, t.id);
-    }
-    async function resolveTurma(
-      tt: TrainingType,
-      cat: "formacao" | "reciclagem",
-      data: string | null,
-    ): Promise<string | null> {
-      const key = `${tt}::${cat}`;
-      const cached = turmaByCombo.get(key);
-      if (cached) return cached;
-      const id = await upsertTurma({
-        orgId: currentOrgId!,
-        turma: {
-          training_type: tt,
-          category: cat,
-          data,
-          art: null,
-          art_arquivo_url: null,
-          instrutor: null,
-          entidade: null,
-          responsavel_tecnico: null,
-          carga_horaria: null,
-          conteudo_programatico: null,
-        },
-        employeeIds: [],
-      });
-      turmaByCombo.set(key, id);
-      return id;
+    try {
+      if (isNovaTurma) {
+        const carga = novaTurma.cargaHoraria.trim();
+        turmaId = await upsertTurma({
+          orgId: currentOrgId,
+          turma: {
+            training_type: novaTurma.trainingType,
+            category: novaTurma.category,
+            data: novaTurma.data || null,
+            art: novaTurma.art.trim() || null,
+            art_arquivo_url: null,
+            instrutor: novaTurma.instrutor.trim() || null,
+            entidade: novaTurma.entidade.trim() || null,
+            responsavel_tecnico: novaTurma.responsavelTecnico.trim() || null,
+            carga_horaria: carga ? parseInt(carga, 10) : null,
+            conteudo_programatico: novaTurma.conteudo.trim() || null,
+          },
+          employeeIds: [],
+        });
+      } else {
+        turmaId = turmaSel;
+      }
+    } catch (err) {
+      console.error("Falha ao criar a turma", err);
+      toast.error("Não foi possível criar a turma. Nada foi importado.");
+      setImporting(false);
+      return;
     }
 
-    for (const group of validGroups) {
+    for (const group of toImport) {
       if (!group.employee) continue;
       try {
-        const trainingType = group.trainingType as TrainingType;
-        const category = group.category as "formacao" | "reciclagem";
-        const turmaId = await resolveTurma(trainingType, category, group.dataRealizacao || null);
         // Recorta só as páginas deste certificado e salva na pasta {matricula}_{nome}/,
-        // vinculando ao treinamento e à turma correspondentes (cria se não existir).
-        const baseName = `${group.trainingType}_${group.category}_p${group.pages.join("-")}_${Date.now()}`;
+        // vinculando ao treinamento e à turma do lote (cria a participação se não existir).
+        const baseName = `${trainingType}_${category}_p${group.pages.join("-")}_${Date.now()}`;
         const slice = await buildCertificatePdf(group.pages, `${baseName}.pdf`);
         await importCertificateAsTraining({
           employee: group.employee,
@@ -507,9 +574,9 @@ function CertificadosImportarPage() {
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
             <p>
               Os dados abaixo foram <strong>extraídos automaticamente por IA</strong> e podem conter
-              erros. Abra cada arquivo em <strong>“Ver arquivo”</strong> e confira colaborador, tipo,
-              categoria e data <strong>antes de importar</strong>. Campos em branco não foram lidos
-              com segurança — preencha manualmente.
+              erros. Abra cada arquivo em <strong>“Ver arquivo”</strong> e confira o colaborador e a
+              data, além dos dados da turma, <strong>antes de importar</strong>. Campos em branco não
+              foram lidos com segurança — preencha manualmente.
             </p>
           </div>
         )}
@@ -522,47 +589,188 @@ function CertificadosImportarPage() {
                 <GraduationCap className="h-4 w-4 text-primary" />
                 Turma deste lote
               </div>
-              {suggestion ? (
-                <p className="text-xs text-muted-foreground">
-                  Encontramos uma turma que parece corresponder a estes certificados. Vincule a ela
-                  ou crie uma nova.
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Nenhuma turma correspondente encontrada. Uma nova turma será criada a partir dos
-                  certificados (você pode completar ART e instrutor depois).
-                </p>
+              <p className="text-xs text-muted-foreground">
+                {suggestion
+                  ? "Encontramos uma turma que parece corresponder a estes certificados. Vincule a ela ou crie uma nova — tipo, categoria e data valem para todo o lote."
+                  : "Nenhuma turma correspondente. Preencha os dados da nova turma abaixo — eles valem para todos os certificados deste lote."}
+              </p>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Turma</Label>
+                <Select
+                  value={turmaSel}
+                  onValueChange={(v) => {
+                    turmaTouched.current = true;
+                    setTurmaSel(v);
+                  }}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NOVA_TURMA}>➕ Criar nova turma</SelectItem>
+                    {turmasDoCombo.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.data ? formatDatePtBR(t.data) : "sem data"}
+                        {t.art ? ` · ART ${t.art}` : ""}
+                        {t.instrutor ? ` · ${t.instrutor}` : ""}
+                        {suggestion?.id === t.id ? "  (sugerida)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Formulário da nova turma — pré-preenchido com o que a IA capturou */}
+              {isNovaTurma && (
+                <div className="rounded-md border bg-background p-3 space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Dados da nova turma (aplicados a todos os {validGroups.length} certificado
+                    {validGroups.length !== 1 ? "s" : ""})
+                    {capturedCarga != null || batchKey?.dataRealizacao ? (
+                      <span className="ml-1 font-normal">
+                        — IA capturou:{" "}
+                        {batchKey?.dataRealizacao ? formatDatePtBR(batchKey.dataRealizacao) : "—"}
+                        {capturedCarga != null ? `, ${capturedCarga}h` : ""}
+                      </span>
+                    ) : null}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Tipo</Label>
+                      <Select
+                        value={novaTurma.trainingType}
+                        onValueChange={(v) => {
+                          novaTurmaTouched.current = true;
+                          setNovaTurma((p) => ({ ...p, trainingType: v as TrainingType }));
+                        }}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TRAINING_TYPES.map((t) => (
+                            <SelectItem key={t} value={t} className="text-xs">
+                              {TRAINING_LABELS[t]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Categoria</Label>
+                      <Select
+                        value={novaTurma.category}
+                        onValueChange={(v) => {
+                          novaTurmaTouched.current = true;
+                          setNovaTurma((p) => ({ ...p, category: v as "formacao" | "reciclagem" }));
+                        }}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="formacao" className="text-xs">
+                            Formação
+                          </SelectItem>
+                          <SelectItem value="reciclagem" className="text-xs">
+                            Reciclagem
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Data de realização</Label>
+                      <Input
+                        type="date"
+                        value={novaTurma.data}
+                        onChange={(e) => {
+                          novaTurmaTouched.current = true;
+                          setNovaTurma((p) => ({ ...p, data: e.target.value }));
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Carga horária (h)</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="Ex.: 40"
+                        value={novaTurma.cargaHoraria}
+                        onChange={(e) => {
+                          novaTurmaTouched.current = true;
+                          setNovaTurma((p) => ({ ...p, cargaHoraria: e.target.value }));
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nº ART (opcional)</Label>
+                      <Input
+                        value={novaTurma.art}
+                        onChange={(e) => {
+                          novaTurmaTouched.current = true;
+                          setNovaTurma((p) => ({ ...p, art: e.target.value }));
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Instrutor</Label>
+                      <Input
+                        value={novaTurma.instrutor}
+                        onChange={(e) => {
+                          novaTurmaTouched.current = true;
+                          setNovaTurma((p) => ({ ...p, instrutor: e.target.value }));
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Entidade</Label>
+                      <Input
+                        value={novaTurma.entidade}
+                        onChange={(e) => {
+                          novaTurmaTouched.current = true;
+                          setNovaTurma((p) => ({ ...p, entidade: e.target.value }));
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Responsável técnico</Label>
+                      <Input
+                        value={novaTurma.responsavelTecnico}
+                        onChange={(e) => {
+                          novaTurmaTouched.current = true;
+                          setNovaTurma((p) => ({ ...p, responsavelTecnico: e.target.value }));
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1 sm:col-span-3">
+                      <Label className="text-xs">Conteúdo programático (resumo, opcional)</Label>
+                      <Input
+                        value={novaTurma.conteudo}
+                        onChange={(e) => {
+                          novaTurmaTouched.current = true;
+                          setNovaTurma((p) => ({ ...p, conteudo: e.target.value }));
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
               )}
-              <Select
-                value={turmaSel}
-                onValueChange={(v) => {
-                  turmaTouched.current = true;
-                  setTurmaSel(v === "__new__" ? "" : v);
-                }}
-              >
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__new__">Criar nova turma</SelectItem>
-                  {turmasDoCombo.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.data ?? "sem data"}
-                      {t.art ? ` · ART ${t.art}` : ""}
-                      {t.instrutor ? ` · ${t.instrutor}` : ""}
-                      {suggestion?.id === t.id ? "  (sugerida)" : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
               {gruposComDivergenciaData.length > 0 && (
                 <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
                   <p>
                     {gruposComDivergenciaData.length} certificado(s) têm{" "}
-                    <strong>data de realização diferente</strong> da turma selecionada (
-                    {linkedTurma?.data}). Um certificado de conclusão não deveria ter data diferente
-                    da turma — confira antes de vincular.
+                    <strong>data de realização diferente</strong> da turma (
+                    {turmaDataAtual ? formatDatePtBR(turmaDataAtual) : "—"}). Um certificado de
+                    conclusão não deveria ter data diferente da turma — confira antes de importar.
                   </p>
                 </div>
               )}
@@ -613,75 +821,44 @@ function CertificadosImportarPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {/* Employee selector */}
-                    <Select
-                      value={group.employee?.id ?? ""}
-                      onValueChange={(val) => {
-                        const emp = employees.find((e) => e.id === val) ?? null;
-                        updateGroup(idx, { employee: emp });
-                      }}
-                    >
-                      <SelectTrigger className="text-xs h-8">
-                        <SelectValue placeholder="Colaborador..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((emp) => (
-                          <SelectItem key={emp.id} value={emp.id} className="text-xs">
-                            {emp.name} ({emp.matricula})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Colaborador</Label>
+                      <Select
+                        value={group.employee?.id ?? ""}
+                        onValueChange={(val) => {
+                          const emp = employees.find((e) => e.id === val) ?? null;
+                          updateGroup(idx, { employee: emp });
+                        }}
+                      >
+                        <SelectTrigger className="text-xs h-8">
+                          <SelectValue placeholder="Colaborador..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {employees.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id} className="text-xs">
+                              {emp.name} ({emp.matricula})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                    {/* Training type */}
-                    <Select
-                      value={group.trainingType}
-                      onValueChange={(val) =>
-                        updateGroup(idx, { trainingType: val as TrainingType })
-                      }
-                    >
-                      <SelectTrigger className="text-xs h-8">
-                        <SelectValue placeholder="Tipo..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TRAINING_TYPES.map((t) => (
-                          <SelectItem key={t} value={t} className="text-xs">
-                            {TRAINING_LABELS[t]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    {/* Category */}
-                    <Select
-                      value={group.category}
-                      onValueChange={(val) =>
-                        updateGroup(idx, { category: val as "formacao" | "reciclagem" })
-                      }
-                    >
-                      <SelectTrigger className="text-xs h-8">
-                        <SelectValue placeholder="Categoria..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="formacao" className="text-xs">
-                          Formação
-                        </SelectItem>
-                        <SelectItem value="reciclagem" className="text-xs">
-                          Reciclagem
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    {/* Issue date */}
-                    <Input
-                      type="date"
-                      value={group.issueDate}
-                      onChange={(e) => updateGroup(idx, { issueDate: e.target.value })}
-                      className="h-8 text-xs"
-                      title="Data de realização"
-                    />
+                    {/* Data de realização deste certificado (confrontada com a turma) */}
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Data de realização</Label>
+                      <Input
+                        type="date"
+                        value={group.dataRealizacao}
+                        onChange={(e) => updateGroup(idx, { dataRealizacao: e.target.value })}
+                        className="h-8 text-xs"
+                      />
+                    </div>
                   </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tipo e categoria vêm da turma do lote (definidos acima).
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -700,7 +877,7 @@ function CertificadosImportarPage() {
               ? "Importando..."
               : done
                 ? "Importação concluída"
-                : `Importar ${groups.filter((g) => g.employee && g.trainingType && g.category).length} certificado(s)`}
+                : `Importar ${groups.filter((g) => g.employee).length} certificado(s)`}
           </Button>
         )}
       </div>
