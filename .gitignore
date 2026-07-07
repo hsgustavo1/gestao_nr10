@@ -25,6 +25,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Assets wasm do pdf.js copiados de node_modules (ver scripts/copy-pdfjs-assets.mjs)
+public/pdfjs/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

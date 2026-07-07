@@ -4,7 +4,11 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
+    "copy:pdfjs": "node scripts/copy-pdfjs-assets.mjs",
+    "postinstall": "node scripts/copy-pdfjs-assets.mjs",
+    "predev": "node scripts/copy-pdfjs-assets.mjs",
     "dev": "vite dev",
+    "prebuild": "node scripts/copy-pdfjs-assets.mjs",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",

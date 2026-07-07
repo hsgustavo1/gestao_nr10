@@ -81,6 +81,48 @@ Resumo para retomada:
   vigência* do motor (requisito E3, não capturado na análise NR-13). Decidir na
   retomada (D1 da spec).
 
+## 🗄️ Auditoria de estrutura SQL — importação de certificados / PLH (2026-07-07, NÃO executada)
+
+Nesta sessão foram entregues: importação de certificados por IA (Groq/Llama 4
+Vision — `src/routes/admin.certificados.importar.tsx`, `src/lib/certificados-ai*.ts`)
+e o módulo PLH/Habilitação (`employee_plh`, `employee_crea_anuidades`,
+`employee_formacoes`). **Ação pendente:** revisar a estrutura SQL dessa área
+mapeada antes de crescer mais em cima dela. Pontos já identificados que
+merecem virar decisão formal (schema/migration), não só nota:
+
+1. ✅ **RESOLVIDO (2026-07-07).** Duas coisas nesta linha, ambas fechadas:
+   - **A tabela `training_certificates` não existia no banco.** A migration
+     `20260608200000_training_certificates.sql` nunca tinha sido aplicada (e
+     ainda usava o gating legado `is_staff()`/`has_role()`), por isso toda
+     importação falhava com "Nenhum certificado importado" e o `types.ts` não a
+     tinha (origem dos erros `tsc` "pré-existentes"). Migration **reescrita** no
+     padrão multi-tenant (`org_id` + RLS `can_access_org`/`fn_employee_editable`,
+     igual a `employee_plh`) e **aplicada via MCP**. `types.ts` e
+     `TrainingCertificate` atualizados à mão. Projeto agora com **0 erros de tsc**.
+   - **Recorte real por certificado.** A importação passou a recortar só as
+     páginas de cada certificado (`pdf-lib` `copyPages`) e salvar em
+     `{matricula}_{nome}/` no bucket `certificates` (`uploadCertificateForEmployee`).
+     Também suporta origem imagem (JPG/PNG, multi-upload) montando PDF via
+     `embedPng`. Não sobe mais o PDF inteiro por pessoa.
+2. **Padrão de RLS de storage desatualizado, achado em `nr10-docs`.** As
+   policies de INSERT/UPDATE do bucket ainda usavam `is_staff()` (role global
+   legada, pré-multi-tenancy) — bloqueava consultor (ex.: Domingos) de subir
+   ART de turma. Corrigido em
+   [`20260707100000_nr10_docs_bucket_org_rls.sql`](../../../supabase/migrations/20260707100000_nr10_docs_bucket_org_rls.sql)
+   (aceita `org_role_at_least(..., 'member')`). **Verificar se outros buckets
+   têm o mesmo resíduo** (mesma classe de bug que a migração
+   `20260629000000_pessoas_org_rls_created_by.sql` já corrigiu nas tabelas
+   `employees`/`nr10_trainings`/etc., mas não foi replicada nos buckets de
+   Storage correspondentes).
+3. **`nr10_documents` (tabela do Prontuário/PIE) ainda 100% `is_staff()`**,
+   sem `org_id` — não migrada para o modelo multi-tenant. Se o Prontuário
+   também deve ser operável por consultor/cliente (hoje é, via `canViewGestao`
+   no front, mas a tabela em si ignora org), precisa da mesma cirurgia já
+   aplicada em `employees`/`nr10_trainings`.
+4. **`GROQ_API_KEY`** foi adicionada ao `.env` local e ao `.env.example` —
+   falta configurar na Vercel (staging + produção) antes do recurso funcionar
+   fora do ambiente local.
+
 ## 🗄️ Análise Supabase — storage (2026-07-02)
 
 Trilha de análise/saneamento do Supabase Storage. Contexto: o bucket `rti-evidencias`
@@ -110,7 +152,9 @@ RLS); e `fn_enforce_seal`/`entregue_em` sela relatório **entregue** (só platfo
 entregadora apaga, pelo app). Não burlar por fora.
 
 **Pendências pontuais de bucket** (levantadas 2026-07-02):
-- Bucket `certificates` **não existe** → `uploadCertificateFile` (qualificações) sempre falha.
+- ✅ Bucket `certificates` **criado (2026-07-05,
+  `20260705150000_create_certificates_bucket.sql`)** — nota abaixo desatualizada,
+  `uploadCertificateFile` funciona hoje.
 - Outros 6 buckets ainda sem `file_size_limit`/`allowed_mime_types` (só `rti-evidencias` endurecido).
 
 ## 🧩 UX — NC manual no RTI (2026-07-02, DEPOIS da trilha Supabase acima)
