@@ -33,10 +33,11 @@ import { useState } from "react";
 import { ExternalLink, Paperclip, Trash2, Loader2 } from "lucide-react";
 import {
   useUpsertNR10Training,
+  useEmployees,
   useCertificates,
   useInsertCertificate,
   useDeleteCertificate,
-  uploadCertificateFile,
+  uploadCertificateForEmployee,
 } from "@/lib/qualificacoes-queries";
 import {
   TRAINING_TYPES,
@@ -80,6 +81,8 @@ export function NR10TrainingDialog({
   defaultCategory,
 }: Props) {
   const upsert = useUpsertNR10Training();
+  const { data: employees = [] } = useEmployees();
+  const employee = employees.find((e) => e.id === employeeId);
   const { data: certificates = [] } = useCertificates(employeeId, training?.id);
   const insertCert = useInsertCertificate();
   const deleteCert = useDeleteCertificate();
@@ -128,7 +131,14 @@ export function NR10TrainingDialog({
     if (!file || !training?.id) return;
     setUploading(true);
     try {
-      const url = await uploadCertificateFile(employeeId, file);
+      // Mesma pasta {matricula}_{nome}/ da importação em lote — unifica os
+      // certificados do colaborador num único nível hierárquico.
+      const baseName = `${training.training_type}_${training.category}_manual_${Date.now()}`;
+      const { url } = await uploadCertificateForEmployee(
+        { name: employeeName, matricula: employee?.matricula ?? employeeId },
+        file,
+        baseName,
+      );
       await insertCert.mutateAsync({
         employee_id: employeeId,
         nr10_training_id: training.id,
@@ -137,6 +147,7 @@ export function NR10TrainingDialog({
         file_url: url,
         file_name: file.name,
         issue_date: null,
+        data_realizacao: null,
         source_file: null,
         pages_in_source: null,
       });
@@ -154,6 +165,11 @@ export function NR10TrainingDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Treinamento NR-10 — {employeeName}</DialogTitle>
+          {training?.turma_id && (
+            <p className="text-xs text-muted-foreground">
+              Vinculado a uma turma — ART, instrutor e data vêm do registro da turma.
+            </p>
+          )}
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
