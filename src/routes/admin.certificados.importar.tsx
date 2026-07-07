@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef } from "react";
-import { FileText, Upload, CheckCircle2, AlertCircle, Sparkles, Eye, AlertTriangle } from "lucide-react";
+import { useState, useRef, useMemo, useEffect } from "react";
+import { FileText, Upload, CheckCircle2, AlertCircle, Sparkles, Eye, AlertTriangle, GraduationCap } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,9 +16,12 @@ import {
 import { toast } from "sonner";
 import {
   useEmployees,
+  useTurmas,
+  upsertTurma,
   importCertificateAsTraining,
   qualKeys,
 } from "@/lib/qualificacoes-queries";
+import { suggestTurmaForBatch, type TurmaCandidate } from "@/lib/turmas";
 import { useAuth } from "@/lib/auth-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { TRAINING_TYPES, TRAINING_LABELS, type TrainingType } from "@/lib/qualificacoes";
@@ -176,6 +179,7 @@ async function analyzeWithOrientation(imageDataUrl: string): Promise<PageAnalysi
 
 function CertificadosImportarPage() {
   const { data: employees = [] } = useEmployees();
+  const { data: turmas = [] } = useTurmas();
   const { currentOrgId } = useAuth();
   const queryClient = useQueryClient();
 
@@ -191,6 +195,69 @@ function CertificadosImportarPage() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
+  // Turma escolhida para o lote: "" = criar nova turma; caso contrário, id da turma existente.
+  const [turmaSel, setTurmaSel] = useState<string>("");
+  const turmaTouched = useRef(false);
+
+  // Chave do lote: combo dominante (tipo/categoria do 1º grupo válido) + data de
+  // realização mais confiável do lote. Alimenta o casamento sugerido de turma.
+  const batchKey = useMemo(() => {
+    const vg = groups.filter((g) => g.employee && g.trainingType && g.category);
+    if (vg.length === 0) return null;
+    const first = vg[0];
+    const dataRealizacao = vg.find((g) => g.dataRealizacao)?.dataRealizacao || null;
+    return {
+      trainingType: first.trainingType as TrainingType,
+      category: first.category as "formacao" | "reciclagem",
+      dataRealizacao,
+    };
+  }, [groups]);
+
+  const turmaCandidates: TurmaCandidate[] = useMemo(
+    () =>
+      turmas.map((t) => ({
+        id: t.id,
+        training_type: t.training_type,
+        category: t.category,
+        data: t.data,
+        art: t.art,
+      })),
+    [turmas],
+  );
+
+  const suggestion = useMemo(
+    () => (batchKey ? suggestTurmaForBatch(batchKey, turmaCandidates) : null),
+    [batchKey, turmaCandidates],
+  );
+
+  // Turmas do mesmo tipo/categoria do lote — opções de vínculo manual.
+  const turmasDoCombo = useMemo(
+    () =>
+      batchKey
+        ? turmas.filter(
+            (t) => t.training_type === batchKey.trainingType && t.category === batchKey.category,
+          )
+        : [],
+    [turmas, batchKey],
+  );
+
+  // Enquanto o usuário não escolhe manualmente, adota a sugestão.
+  useEffect(() => {
+    if (!turmaTouched.current) setTurmaSel(suggestion?.id ?? "");
+  }, [suggestion?.id]);
+
+  const linkedTurma = useMemo(
+    () => turmas.find((t) => t.id === turmaSel) ?? null,
+    [turmas, turmaSel],
+  );
+
+  // Grupos cuja data de realização diverge da turma vinculada → alerta forte.
+  const gruposComDivergenciaData = useMemo(() => {
+    if (!linkedTurma?.data) return [];
+    return groups.filter(
+      (g) => g.employee && g.dataRealizacao && g.dataRealizacao !== linkedTurma.data,
+    );
+  }, [groups, linkedTurma]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -207,6 +274,8 @@ function CertificadosImportarPage() {
     setGroups([]);
     setDone(false);
     setPageImages([]);
+    turmaTouched.current = false;
+    setTurmaSel("");
     try {
       let images: string[];
       if (asImages) {
@@ -286,20 +355,62 @@ function CertificadosImportarPage() {
     setImporting(true);
     let ok = 0;
     let fail = 0;
+
+    // Resolve a turma de cada combo (tipo+categoria) do lote: usa a turma
+    // escolhida quando o combo bate; senão cria uma turma nova (shell) para ele.
+    // As participações são vinculadas por importCertificateAsTraining.
+    const turmaByCombo = new Map<string, string>();
+    if (turmaSel) {
+      const t = turmas.find((x) => x.id === turmaSel);
+      if (t) turmaByCombo.set(`${t.training_type}::${t.category}`, t.id);
+    }
+    async function resolveTurma(
+      tt: TrainingType,
+      cat: "formacao" | "reciclagem",
+      data: string | null,
+    ): Promise<string | null> {
+      const key = `${tt}::${cat}`;
+      const cached = turmaByCombo.get(key);
+      if (cached) return cached;
+      const id = await upsertTurma({
+        orgId: currentOrgId!,
+        turma: {
+          training_type: tt,
+          category: cat,
+          data,
+          art: null,
+          art_arquivo_url: null,
+          instrutor: null,
+          entidade: null,
+          responsavel_tecnico: null,
+          carga_horaria: null,
+          conteudo_programatico: null,
+        },
+        employeeIds: [],
+      });
+      turmaByCombo.set(key, id);
+      return id;
+    }
+
     for (const group of validGroups) {
       if (!group.employee) continue;
       try {
+        const trainingType = group.trainingType as TrainingType;
+        const category = group.category as "formacao" | "reciclagem";
+        const turmaId = await resolveTurma(trainingType, category, group.dataRealizacao || null);
         // Recorta só as páginas deste certificado e salva na pasta {matricula}_{nome}/,
-        // vinculando ao treinamento correspondente (cria se não existir).
+        // vinculando ao treinamento e à turma correspondentes (cria se não existir).
         const baseName = `${group.trainingType}_${group.category}_p${group.pages.join("-")}_${Date.now()}`;
         const slice = await buildCertificatePdf(group.pages, `${baseName}.pdf`);
         await importCertificateAsTraining({
           employee: group.employee,
           orgId: currentOrgId,
-          trainingType: group.trainingType as TrainingType,
-          category: group.category as "formacao" | "reciclagem",
+          trainingType,
+          category,
           issueDate: group.issueDate || null,
+          dataRealizacao: group.dataRealizacao || null,
           workloadHours: group.workloadHours,
+          turmaId,
           file: slice,
           baseName,
           sourceLabel: sourceLabel ?? "",
@@ -313,6 +424,7 @@ function CertificadosImportarPage() {
     }
     // Reflete os novos treinos/certificados na aba Capacitações e nos pop-ups.
     queryClient.invalidateQueries({ queryKey: qualKeys.nr10() });
+    queryClient.invalidateQueries({ queryKey: ["nr10_turmas"] });
     queryClient.invalidateQueries({ queryKey: ["training_certificates"] });
     setImporting(false);
     if (ok > 0) {
@@ -400,6 +512,62 @@ function CertificadosImportarPage() {
               com segurança — preencha manualmente.
             </p>
           </div>
+        )}
+
+        {/* Casamento de turma para o lote */}
+        {batchKey && !processing && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <GraduationCap className="h-4 w-4 text-primary" />
+                Turma deste lote
+              </div>
+              {suggestion ? (
+                <p className="text-xs text-muted-foreground">
+                  Encontramos uma turma que parece corresponder a estes certificados. Vincule a ela
+                  ou crie uma nova.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Nenhuma turma correspondente encontrada. Uma nova turma será criada a partir dos
+                  certificados (você pode completar ART e instrutor depois).
+                </p>
+              )}
+              <Select
+                value={turmaSel}
+                onValueChange={(v) => {
+                  turmaTouched.current = true;
+                  setTurmaSel(v === "__new__" ? "" : v);
+                }}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__new__">Criar nova turma</SelectItem>
+                  {turmasDoCombo.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.data ?? "sem data"}
+                      {t.art ? ` · ART ${t.art}` : ""}
+                      {t.instrutor ? ` · ${t.instrutor}` : ""}
+                      {suggestion?.id === t.id ? "  (sugerida)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {gruposComDivergenciaData.length > 0 && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                  <p>
+                    {gruposComDivergenciaData.length} certificado(s) têm{" "}
+                    <strong>data de realização diferente</strong> da turma selecionada (
+                    {linkedTurma?.data}). Um certificado de conclusão não deveria ter data diferente
+                    da turma — confira antes de vincular.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Per-group assignment */}

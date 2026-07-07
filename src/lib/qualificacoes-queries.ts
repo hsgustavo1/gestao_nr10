@@ -1034,7 +1034,11 @@ export async function importCertificateAsTraining(params: {
   trainingType: TrainingType;
   category: "formacao" | "reciclagem";
   issueDate: string | null;
+  /** Data de realização lida no certificado (confrontada com a turma). */
+  dataRealizacao: string | null;
   workloadHours: number | null;
+  /** Turma à qual vincular. Quando presente, a turma é autoritativa (não sobrescreve a data). */
+  turmaId: string | null;
   file: File;
   baseName: string;
   sourceLabel: string;
@@ -1045,7 +1049,7 @@ export async function importCertificateAsTraining(params: {
   // 1) Treino correspondente (chave única employee_id+training_type+category).
   const { data: existing, error: selErr } = await supabase
     .from("nr10_trainings")
-    .select("id, carga_horaria")
+    .select("id, carga_horaria, turma_id")
     .eq("employee_id", params.employee.id)
     .eq("training_type", params.trainingType)
     .eq("category", params.category)
@@ -1056,11 +1060,15 @@ export async function importCertificateAsTraining(params: {
   let trainingId: string;
   if (existing) {
     trainingId = existing.id as string;
-    // Atualiza sem sobrescrever dados já preenchidos: data do certificado prevalece;
-    // carga horária só entra se estiver vazia no treino.
     const patch: Record<string, unknown> = {};
-    if (params.issueDate) patch.training_date = params.issueDate;
-    if (existing.carga_horaria == null && params.workloadHours != null) {
+    if (params.turmaId) {
+      // Vinculando à turma: a turma é autoritativa — não sobrescreve a data do treino.
+      patch.turma_id = params.turmaId;
+    } else if (params.dataRealizacao) {
+      // Avulso (sem turma): a data de realização do certificado prevalece.
+      patch.training_date = params.dataRealizacao;
+    }
+    if ((existing as { carga_horaria: number | null }).carga_horaria == null && params.workloadHours != null) {
       patch.carga_horaria = params.workloadHours;
     }
     if (Object.keys(patch).length > 0) {
@@ -1078,8 +1086,9 @@ export async function importCertificateAsTraining(params: {
         org_id: params.orgId,
         training_type: params.trainingType,
         category: params.category,
-        training_date: params.issueDate,
+        training_date: params.dataRealizacao,
         carga_horaria: params.workloadHours,
+        turma_id: params.turmaId,
         valid: true, // certificado anexado é a evidência de que o treino ocorreu
       } as never)
       .select("id")
@@ -1088,7 +1097,7 @@ export async function importCertificateAsTraining(params: {
     trainingId = data.id as string;
   }
 
-  // 2) Certificado vinculado ao treinamento.
+  // 2) Certificado vinculado ao treinamento (com as duas datas separadas).
   const { error: certErr } = await supabase.from("training_certificates").insert({
     employee_id: params.employee.id,
     org_id: params.orgId,
@@ -1098,6 +1107,7 @@ export async function importCertificateAsTraining(params: {
     file_url: url,
     file_name: `${params.baseName}.pdf`,
     issue_date: params.issueDate,
+    data_realizacao: params.dataRealizacao,
     source_file: params.sourceLabel,
     pages_in_source: params.pagesInSource,
   } as never);
