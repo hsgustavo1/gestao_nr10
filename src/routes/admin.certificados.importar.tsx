@@ -614,7 +614,10 @@ function CertificadosImportarPage() {
                     <SelectItem value={NOVA_TURMA}>➕ Criar nova turma</SelectItem>
                     {turmasCompativeis.map((t) => (
                       <SelectItem key={t.id} value={t.id}>
-                        {TRAINING_LABELS[t.training_type]} ·{" "}
+                        {TRAINING_LABELS[t.training_type]}
+                        {" · "}
+                        {t.category === "formacao" ? "Formação" : "Reciclagem"}
+                        {" · "}
                         {t.data ? formatDatePtBR(t.data) : "sem data"}
                         {t.art ? ` · ART ${t.art}` : ""}
                         {t.instrutor ? ` · ${t.instrutor}` : ""}
