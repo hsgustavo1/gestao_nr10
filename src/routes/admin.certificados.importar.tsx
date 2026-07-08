@@ -22,7 +22,7 @@ import {
   importCertificateAsTraining,
   qualKeys,
 } from "@/lib/qualificacoes-queries";
-import { suggestTurmaForBatch, type TurmaCandidate } from "@/lib/turmas";
+import { suggestTurmaForBatch, detectTurmaDiscrepancies, type TurmaCandidate } from "@/lib/turmas";
 import { useAuth } from "@/lib/auth-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { TRAINING_TYPES, TRAINING_LABELS, formatDatePtBR, type TrainingType } from "@/lib/qualificacoes";
@@ -36,6 +36,9 @@ import { analyzeCertificatePage } from "@/lib/certificados-ai-server";
 export const Route = createFileRoute("/admin/certificados/importar")({
   component: CertificadosImportarPage,
   head: () => ({ meta: [{ title: "Importar Certificados — Gestão NR-10" }] }),
+  validateSearch: (search: Record<string, unknown>): { turmaId?: string } => ({
+    turmaId: typeof search.turmaId === "string" ? search.turmaId : undefined,
+  }),
 });
 
 // ── PDF.js lazy loader ───────────────────────────────────────────────────────
@@ -207,6 +210,7 @@ const emptyNovaTurma: NovaTurmaForm = {
 };
 
 function CertificadosImportarPage() {
+  const { turmaId: turmaIdFromUrl } = Route.useSearch();
   const { data: employees = [] } = useEmployees();
   const { data: turmas = [] } = useTurmas();
   const { currentOrgId } = useAuth();
@@ -230,7 +234,18 @@ function CertificadosImportarPage() {
   // Formulário da turma nova (pré-preenchido com o que a IA capturou do lote).
   const [novaTurma, setNovaTurma] = useState<NovaTurmaForm>(emptyNovaTurma);
   const novaTurmaTouched = useRef(false);
+  // Id da turma (ou NOVA_TURMA) para o qual o formulário acima foi carregado por
+  // último — evita recarregar/perder edições do usuário a cada re-render.
+  const turmaFormLoadedFor = useRef<string | null>(null);
   const isNovaTurma = turmaSel === NOVA_TURMA;
+
+  // Turma pré-selecionada via querystring (vinda de "Registrar e importar certificados").
+  useEffect(() => {
+    if (turmaIdFromUrl && !turmaTouched.current) {
+      turmaTouched.current = true;
+      setTurmaSel(turmaIdFromUrl);
+    }
+  }, [turmaIdFromUrl]);
 
   // Certificados atribuídos a um colaborador (tipo/categoria/data vêm da turma).
   const validGroups = useMemo(() => groups.filter((g) => g.employee), [groups]);
@@ -291,33 +306,73 @@ function CertificadosImportarPage() {
     if (!turmaTouched.current) setTurmaSel(suggestion?.id ?? NOVA_TURMA);
   }, [suggestion?.id]);
 
-  // Pré-preenche o formulário da turma nova com o que a IA capturou no lote.
-  useEffect(() => {
-    if (!batchKey || novaTurmaTouched.current) return;
-    setNovaTurma((prev) => ({
-      ...prev,
-      trainingType: batchKey.trainingType,
-      category: batchKey.category,
-      data: batchKey.dataRealizacao ?? "",
-      cargaHoraria: capturedCarga != null ? String(capturedCarga) : "",
-    }));
-  }, [batchKey, capturedCarga]);
-
   const linkedTurma = useMemo(
     () => (isNovaTurma ? null : turmas.find((t) => t.id === turmaSel) ?? null),
     [turmas, turmaSel, isNovaTurma],
   );
 
-  // Data de realização autoritativa da turma do lote (nova ou vinculada).
-  const turmaDataAtual = isNovaTurma ? novaTurma.data || null : linkedTurma?.data ?? null;
+  // Pré-preenche o formulário: turma nova ganha os dados capturados pela IA no
+  // lote; turma existente carrega os PRÓPRIOS dados (a turma é autoritativa — a
+  // IA nunca sobrescreve automaticamente um campo já preenchido na turma).
+  useEffect(() => {
+    if (isNovaTurma) {
+      if (turmaFormLoadedFor.current !== NOVA_TURMA) {
+        turmaFormLoadedFor.current = NOVA_TURMA;
+        novaTurmaTouched.current = false;
+      }
+      if (!batchKey || novaTurmaTouched.current) return;
+      setNovaTurma((prev) => ({
+        ...prev,
+        trainingType: batchKey.trainingType,
+        category: batchKey.category,
+        data: batchKey.dataRealizacao ?? "",
+        cargaHoraria: capturedCarga != null ? String(capturedCarga) : "",
+      }));
+      return;
+    }
+    if (!linkedTurma || turmaFormLoadedFor.current === linkedTurma.id) return;
+    turmaFormLoadedFor.current = linkedTurma.id;
+    novaTurmaTouched.current = true; // bloqueia o pré-preenchimento automático via IA
+    setNovaTurma({
+      trainingType: linkedTurma.training_type,
+      category: linkedTurma.category,
+      data: linkedTurma.data ?? "",
+      cargaHoraria: linkedTurma.carga_horaria != null ? String(linkedTurma.carga_horaria) : "",
+      art: linkedTurma.art ?? "",
+      instrutor: linkedTurma.instrutor ?? "",
+      entidade: linkedTurma.entidade ?? "",
+      responsavelTecnico: linkedTurma.responsavel_tecnico ?? "",
+      conteudo: linkedTurma.conteudo_programatico ?? "",
+    });
+  }, [isNovaTurma, linkedTurma, batchKey, capturedCarga]);
 
-  // Certificados cuja data de realização diverge da data da turma → alerta forte.
-  const gruposComDivergenciaData = useMemo(() => {
-    if (!turmaDataAtual) return [];
-    return groups.filter(
-      (g) => g.employee && g.dataRealizacao && g.dataRealizacao !== turmaDataAtual,
-    );
-  }, [groups, turmaDataAtual]);
+  // Data de realização/carga horária atuais do formulário — valem para o lote
+  // inteiro (turma nova ou existente sendo editada).
+  const turmaDataAtual = novaTurma.data || null;
+  const turmaCargaAtual = useMemo(() => {
+    const c = novaTurma.cargaHoraria.trim();
+    return c ? parseInt(c, 10) : null;
+  }, [novaTurma.cargaHoraria]);
+
+  // Certificados cujo dado diverge do dado da turma → nunca sobrescreve, só alerta.
+  const discrepanciasLote = useMemo(
+    () =>
+      validGroups.flatMap((g) =>
+        detectTurmaDiscrepancies(
+          { data: turmaDataAtual, carga_horaria: turmaCargaAtual },
+          { dataRealizacao: g.dataRealizacao || null, workloadHours: g.workloadHours },
+        ),
+      ),
+    [validGroups, turmaDataAtual, turmaCargaAtual],
+  );
+  const gruposComDivergenciaData = useMemo(
+    () => discrepanciasLote.filter((d) => d.field === "data_realizacao"),
+    [discrepanciasLote],
+  );
+  const gruposComDivergenciaCarga = useMemo(
+    () => discrepanciasLote.filter((d) => d.field === "carga_horaria"),
+    [discrepanciasLote],
+  );
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -417,51 +472,38 @@ function CertificadosImportarPage() {
 
     // Uma turma governa todo o lote: tipo, categoria e data vêm dela (não de cada
     // certificado) — corrige num só lugar erros de leitura da IA e mantém consistência.
-    let turmaId: string;
-    let trainingType: TrainingType;
-    let category: "formacao" | "reciclagem";
-    if (isNovaTurma) {
-      trainingType = novaTurma.trainingType;
-      category = novaTurma.category;
-    } else {
-      const t = turmas.find((x) => x.id === turmaSel);
-      if (!t) {
-        toast.error("Selecione uma turma ou escolha “Criar nova turma”.");
-        return;
-      }
-      trainingType = t.training_type;
-      category = t.category;
-    }
+    // O formulário acima é sempre a fonte da verdade (turma nova OU edição/complemento
+    // de turma existente): os campos editados pelo usuário são gravados na turma.
+    const trainingType = novaTurma.trainingType;
+    const category = novaTurma.category;
 
     setImporting(true);
     let ok = 0;
     let fail = 0;
+    let turmaId: string;
 
     try {
-      if (isNovaTurma) {
-        const carga = novaTurma.cargaHoraria.trim();
-        turmaId = await upsertTurma({
-          orgId: currentOrgId,
-          turma: {
-            training_type: novaTurma.trainingType,
-            category: novaTurma.category,
-            data: novaTurma.data || null,
-            art: novaTurma.art.trim() || null,
-            art_arquivo_url: null,
-            instrutor: novaTurma.instrutor.trim() || null,
-            entidade: novaTurma.entidade.trim() || null,
-            responsavel_tecnico: novaTurma.responsavelTecnico.trim() || null,
-            carga_horaria: carga ? parseInt(carga, 10) : null,
-            conteudo_programatico: novaTurma.conteudo.trim() || null,
-          },
-          employeeIds: [],
-        });
-      } else {
-        turmaId = turmaSel;
-      }
+      const carga = novaTurma.cargaHoraria.trim();
+      turmaId = await upsertTurma({
+        orgId: currentOrgId,
+        turma: {
+          id: isNovaTurma ? undefined : turmaSel,
+          training_type: novaTurma.trainingType,
+          category: novaTurma.category,
+          data: novaTurma.data || null,
+          art: novaTurma.art.trim() || null,
+          art_arquivo_url: linkedTurma?.art_arquivo_url ?? null,
+          instrutor: novaTurma.instrutor.trim() || null,
+          entidade: novaTurma.entidade.trim() || null,
+          responsavel_tecnico: novaTurma.responsavelTecnico.trim() || null,
+          carga_horaria: carga ? parseInt(carga, 10) : null,
+          conteudo_programatico: novaTurma.conteudo.trim() || null,
+        },
+        employeeIds: [],
+      });
     } catch (err) {
-      console.error("Falha ao criar a turma", err);
-      toast.error("Não foi possível criar a turma. Nada foi importado.");
+      console.error("Falha ao criar/atualizar a turma", err);
+      toast.error("Não foi possível salvar a turma. Nada foi importado.");
       setImporting(false);
       return;
     }
@@ -628,13 +670,15 @@ function CertificadosImportarPage() {
                 </Select>
               </div>
 
-              {/* Formulário da nova turma — pré-preenchido com o que a IA capturou */}
-              {isNovaTurma && (
-                <div className="rounded-md border bg-background p-3 space-y-3">
+              {/* Formulário da turma — nova (pré-preenchida com o que a IA capturou) ou
+                  existente (pré-preenchida com os dados já salvos, editável para
+                  completar/corrigir; a IA nunca sobrescreve automaticamente aqui). */}
+              <div className="rounded-md border bg-background p-3 space-y-3">
                   <p className="text-xs font-medium text-muted-foreground">
-                    Dados da nova turma (aplicados a todos os {validGroups.length} certificado
-                    {validGroups.length !== 1 ? "s" : ""})
-                    {capturedCarga != null || batchKey?.dataRealizacao ? (
+                    {isNovaTurma
+                      ? `Dados da nova turma (aplicados a todos os ${validGroups.length} certificado${validGroups.length !== 1 ? "s" : ""})`
+                      : `Dados da turma selecionada (edite para completar ou corrigir — aplicados a todos os ${validGroups.length} certificado${validGroups.length !== 1 ? "s" : ""})`}
+                    {isNovaTurma && (capturedCarga != null || batchKey?.dataRealizacao) ? (
                       <span className="ml-1 font-normal">
                         — IA capturou:{" "}
                         {batchKey?.dataRealizacao ? formatDatePtBR(batchKey.dataRealizacao) : "—"}
@@ -768,8 +812,7 @@ function CertificadosImportarPage() {
                       />
                     </div>
                   </div>
-                </div>
-              )}
+              </div>
 
               {gruposComDivergenciaData.length > 0 && (
                 <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -779,6 +822,18 @@ function CertificadosImportarPage() {
                     <strong>data de realização diferente</strong> da turma (
                     {turmaDataAtual ? formatDatePtBR(turmaDataAtual) : "—"}). Um certificado de
                     conclusão não deveria ter data diferente da turma — confira antes de importar.
+                  </p>
+                </div>
+              )}
+
+              {gruposComDivergenciaCarga.length > 0 && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                  <p>
+                    {gruposComDivergenciaCarga.length} certificado(s) têm{" "}
+                    <strong>carga horária diferente</strong> da turma (
+                    {turmaCargaAtual != null ? `${turmaCargaAtual}h` : "—"}). Confira antes de
+                    importar.
                   </p>
                 </div>
               )}

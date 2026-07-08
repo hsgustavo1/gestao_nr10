@@ -636,6 +636,15 @@ recomendada (a desenhar/brainstormar antes de implementar):
 4. Tratar expiração do refresh token (offline longo) e revogação.
 Esforço médio; mexe em auth + segurança → passar por brainstorming antes.
 
+**Item futuro — Melhorar extração de dados de certificados via IA (Groq):**
+O prompt atual (`src/lib/certificados-ai-server.ts`) já erra o tipo de treinamento
+com alguma frequência (ex.: lê "áreas classificadas" onde é "SEP") — hoje contornado
+tornando a turma autoritativa sobre tipo/categoria (`src/lib/turmas.ts`,
+`suggestTurmaForBatch`), não a leitura da IA. Ainda assim, vale melhorar o
+prompt/estratégia de extração para lidar com maior variabilidade de layouts de
+certificados (entidades treinadoras diferentes, digitalizações de baixa qualidade).
+Não implementar sem brainstorm — mexe em prompt que já foi calibrado com casos reais.
+
 ## Riscos conhecidos / pontos de atenção
 - A migração remove leitura pública (`USING(true)`) das tabelas LOTO. Se houver
   página anônima do app LOTO, validar antes de aplicar.

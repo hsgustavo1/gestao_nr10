@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { normalizePageAnalysis, type PageAnalysis } from "./certificados-ai";
 
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+const FALLBACK_MODEL = "qwen/qwen3.6-27b";
 const MAX_RETRIES = 3;
 
 const PROMPT_SYSTEM =
@@ -47,9 +48,13 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function callGroq(apiKey: string, imageDataUrl: string): Promise<PageAnalysis> {
+async function callGroq(
+  apiKey: string,
+  imageDataUrl: string,
+  model: string = MODEL,
+): Promise<PageAnalysis> {
   const body = {
-    model: MODEL,
+    model,
     messages: [
       { role: "system", content: PROMPT_SYSTEM },
       {
@@ -105,5 +110,10 @@ export const analyzeCertificatePage = createServerFn({ method: "POST" })
     if (!apiKey) {
       throw new Error("GROQ_API_KEY não configurada no servidor.");
     }
-    return callGroq(apiKey, data.imageDataUrl);
+    try {
+      return await callGroq(apiKey, data.imageDataUrl);
+    } catch (err) {
+      console.error(`Falha com o modelo principal (${MODEL}), tentando fallback`, err);
+      return callGroq(apiKey, data.imageDataUrl, FALLBACK_MODEL);
+    }
   });

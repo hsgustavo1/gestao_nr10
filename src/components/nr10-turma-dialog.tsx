@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { GraduationCap, Paperclip, Plus, Search, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +37,7 @@ type Props = {
  * N colaboradores de uma vez, em vez de célula por célula na matriz.
  */
 export function NR10TurmaDialog({ open, onOpenChange }: Props) {
+  const navigate = useNavigate();
   const { data: employees = [] } = useEmployees("ativo");
   const registrar = useRegistrarTurma();
 
@@ -90,11 +92,19 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
     });
   }
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (selected.size === 0) return toast.error("Selecione ao menos um colaborador.");
-    if (!trainingDate) return toast.error("Informe a data do treinamento.");
-    if (!responsavelTecnico.trim()) return toast.error("Informe o responsável técnico.");
+  async function doRegistrar(): Promise<string | null> {
+    if (selected.size === 0) {
+      toast.error("Selecione ao menos um colaborador.");
+      return null;
+    }
+    if (!trainingDate) {
+      toast.error("Informe a data do treinamento.");
+      return null;
+    }
+    if (!responsavelTecnico.trim()) {
+      toast.error("Informe o responsável técnico.");
+      return null;
+    }
 
     setBusy(true);
     try {
@@ -113,7 +123,7 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
         artArquivoUrl = data.publicUrl;
       }
 
-      await registrar.mutateAsync({
+      const { turmaId } = await registrar.mutateAsync({
         employeeIds: Array.from(selected),
         turma: {
           training_type: trainingType as TrainingType,
@@ -132,11 +142,26 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
       setSelected(new Set());
       setInstrutores([""]);
       setArtArquivo(null);
-      onOpenChange(false);
+      return turmaId;
     } catch (err) {
       toast.error("Não foi possível registrar a turma. Detalhe: " + (err as Error).message);
+      return null;
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    const turmaId = await doRegistrar();
+    if (turmaId) onOpenChange(false);
+  }
+
+  async function registrarEImportar() {
+    const turmaId = await doRegistrar();
+    if (turmaId) {
+      onOpenChange(false);
+      navigate({ to: "/admin/certificados/importar", search: { turmaId } });
     }
   }
 
@@ -275,11 +300,11 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Anexar ART (PDF, opcional)</Label>
+            <Label>Anexar ART (PDF ou imagem, opcional)</Label>
             <input
               ref={artInputRef}
               type="file"
-              accept=".pdf,application/pdf"
+              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
               className="hidden"
               onChange={(e) => setArtArquivo(e.target.files?.[0] ?? null)}
             />
@@ -346,7 +371,7 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
                 onClick={toggleAllVisible}
                 className="text-xs text-primary hover:underline whitespace-nowrap"
               >
-                {allVisibleSelected ? "Desmarcar visíveis" : "Marcar visíveis"}
+                {allVisibleSelected ? "Desmarcar todos" : "Selecionar todos"}
               </button>
               <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap">
                 {selected.size} selecionado{selected.size !== 1 ? "s" : ""}
@@ -382,6 +407,14 @@ export function NR10TurmaDialog({ open, onOpenChange }: Props) {
               disabled={busy}
             >
               Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={registrarEImportar}
+            >
+              {busy ? "Registrando..." : "Registrar e importar certificados"}
             </Button>
             <Button
               type="submit"

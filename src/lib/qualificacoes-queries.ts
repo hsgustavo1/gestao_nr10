@@ -630,7 +630,7 @@ export function useRegistrarTurma() {
       turma: Omit<NR10Turma, "id" | "created_at" | "updated_at" | "org_id">;
     }) => {
       if (!currentOrgId) throw new Error("Selecione uma organização antes de registrar a turma.");
-      await upsertTurma({ orgId: currentOrgId, turma, employeeIds });
+      const turmaId = await upsertTurma({ orgId: currentOrgId, turma, employeeIds });
       // Reciclagem em turma também limpa a flag de reciclagem extraordinária
       if (turma.category === "reciclagem" && employeeIds.length > 0) {
         await supabase
@@ -638,7 +638,7 @@ export function useRegistrarTurma() {
           .update({ reciclagem_requerida: false, reciclagem_motivo: null })
           .in("id", employeeIds);
       }
-      return employeeIds.length;
+      return { turmaId, count: employeeIds.length };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["nr10_trainings"] });
