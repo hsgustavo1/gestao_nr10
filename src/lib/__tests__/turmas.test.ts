@@ -55,6 +55,19 @@ describe("suggestTurmaForBatch", () => {
     );
     expect(res).toBeNull();
   });
+
+  it("casa mesmo com tipo diferente (IA erra o tipo; turma é autoritativa)", () => {
+    // IA leu "áreas classificadas"; a turma real é "sep" — mesma categoria e data.
+    const res = suggestTurmaForBatch(
+      {
+        trainingType: "nr10_areas_classificadas",
+        category: "reciclagem",
+        dataRealizacao: "2026-04-17",
+      },
+      [turma({ id: "t1", training_type: "sep", category: "reciclagem", data: "2026-04-17" })],
+    );
+    expect(res?.id).toBe("t1");
+  });
 });
 
 describe("detectTurmaDiscrepancies", () => {

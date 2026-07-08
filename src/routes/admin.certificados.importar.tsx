@@ -271,16 +271,20 @@ function CertificadosImportarPage() {
     [batchKey, turmaCandidates],
   );
 
-  // Turmas do mesmo tipo/categoria do lote — opções de vínculo manual no seletor.
-  const turmasDoCombo = useMemo(
-    () =>
-      batchKey
-        ? turmas.filter(
-            (t) => t.training_type === batchKey.trainingType && t.category === batchKey.category,
-          )
-        : [],
-    [turmas, batchKey],
-  );
+  // Opções de vínculo manual: turmas da mesma CATEGORIA (o tipo lido pela IA é
+  // pouco confiável), ordenadas por proximidade da data de realização do lote.
+  const turmasCompativeis = useMemo(() => {
+    if (!batchKey) return [];
+    const alvo = batchKey.dataRealizacao ? Date.parse(batchKey.dataRealizacao) : null;
+    return turmas
+      .filter((t) => t.category === batchKey.category)
+      .sort((a, b) => {
+        if (alvo == null) return 0;
+        const da = a.data ? Math.abs(Date.parse(a.data) - alvo) : Infinity;
+        const db = b.data ? Math.abs(Date.parse(b.data) - alvo) : Infinity;
+        return da - db;
+      });
+  }, [turmas, batchKey]);
 
   // Enquanto o usuário não escolhe manualmente, adota a sugestão (ou nova turma).
   useEffect(() => {
@@ -608,8 +612,9 @@ function CertificadosImportarPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NOVA_TURMA}>➕ Criar nova turma</SelectItem>
-                    {turmasDoCombo.map((t) => (
+                    {turmasCompativeis.map((t) => (
                       <SelectItem key={t.id} value={t.id}>
+                        {TRAINING_LABELS[t.training_type]} ·{" "}
                         {t.data ? formatDatePtBR(t.data) : "sem data"}
                         {t.art ? ` · ART ${t.art}` : ""}
                         {t.instrutor ? ` · ${t.instrutor}` : ""}

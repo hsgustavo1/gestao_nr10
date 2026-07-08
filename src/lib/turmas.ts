@@ -24,23 +24,26 @@ function daysBetween(a: string, b: string): number {
 
 /**
  * Sugere a turma existente à qual um lote de certificados provavelmente pertence.
- * Match por tipo+categoria é obrigatório; ART igual vence direto; senão, a data de
- * realização precisa estar dentro de ±3 dias. Retorna a mais próxima em data.
+ *
+ * O casamento é feito por **categoria** (derivada da carga horária, confiável) +
+ * **data de realização** (±3 dias) + **ART**. O `training_type` NÃO entra no
+ * critério de propósito: a IA erra o tipo com frequência (ex.: lê "áreas
+ * classificadas" onde é "SEP") e, como a turma é autoritativa sobre o tipo,
+ * exigir tipo igual faria a turma correta ser descartada. ART igual vence direto;
+ * senão, retorna a turma da mesma categoria mais próxima em data.
  */
 export function suggestTurmaForBatch(
   key: BatchKey,
   candidates: TurmaCandidate[],
 ): TurmaCandidate | null {
-  const mesmoTipo = candidates.filter(
-    (c) => c.training_type === key.trainingType && c.category === key.category,
-  );
+  const mesmaCategoria = candidates.filter((c) => c.category === key.category);
   if (key.art?.trim()) {
-    const porArt = mesmoTipo.find((c) => c.art?.trim() === key.art!.trim());
+    const porArt = mesmaCategoria.find((c) => c.art?.trim() === key.art!.trim());
     if (porArt) return porArt;
   }
   if (!key.dataRealizacao) return null;
   let best: { c: TurmaCandidate; d: number } | null = null;
-  for (const c of mesmoTipo) {
+  for (const c of mesmaCategoria) {
     if (!c.data) continue;
     const d = daysBetween(c.data, key.dataRealizacao);
     if (d <= MATCH_WINDOW_DAYS && (!best || d < best.d)) best = { c, d };
