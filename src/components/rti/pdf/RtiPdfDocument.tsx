@@ -1,0 +1,217 @@
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { PdfModel } from "@/lib/rti-relatorio";
+import { PRIORIDADE_LABEL } from "@/lib/rti-relatorio";
+import { registerPdfFonts } from "./fonts";
+
+registerPdfFonts();
+
+// Hex direto é inevitável aqui: o @react-pdf não lê CSS variables do app.
+const PINE = "#0C3326";
+
+const s = StyleSheet.create({
+  page: {
+    fontFamily: "Hanken Grotesk",
+    fontSize: 10,
+    paddingTop: 64,
+    paddingBottom: 56,
+    paddingHorizontal: 48,
+    color: "#1a1a1a",
+  },
+  header: {
+    position: "absolute",
+    top: 24,
+    left: 48,
+    right: 48,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    fontSize: 8,
+    color: "#666",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 24,
+    left: 48,
+    right: 48,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    fontSize: 8,
+    color: "#666",
+  },
+  h1: { fontSize: 22, fontWeight: 800, marginBottom: 8 },
+  h2: { fontSize: 14, fontWeight: 800, marginTop: 16, marginBottom: 8 },
+  capa: { flex: 1, justifyContent: "center" },
+  capaBox: { borderLeftWidth: 4, paddingLeft: 16, marginTop: 24 },
+  label: { fontSize: 8, color: "#666", marginTop: 6 },
+  valor: { fontSize: 11, fontWeight: 600 },
+  p: { marginBottom: 6, lineHeight: 1.5, textAlign: "justify" },
+  ncCard: { marginBottom: 14, paddingBottom: 10, borderBottomWidth: 0.5, borderBottomColor: "#ddd" },
+  ncTitulo: { fontSize: 11, fontWeight: 800, marginBottom: 3 },
+  ncMeta: { fontSize: 8, color: "#666", marginBottom: 4 },
+  fotoRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
+  foto: { width: 160, height: 120, objectFit: "cover", borderRadius: 3 },
+  tabela: { marginTop: 8 },
+  tr: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: "#ccc", paddingVertical: 4 },
+  th: { fontWeight: 800, fontSize: 9 },
+  tdPrio: { width: "40%" },
+  tdQtd: { width: "20%" },
+  tdCusto: { width: "40%" },
+  assinatura: { marginTop: 64, alignItems: "center" },
+  linhaAssin: {
+    width: 260,
+    borderTopWidth: 1,
+    borderTopColor: "#1a1a1a",
+    paddingTop: 6,
+    alignItems: "center",
+  },
+});
+
+const fmtBRL = (v: number) =>
+  `R$ ${v.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+
+const fmtData = (iso: string | null) => {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+};
+
+function HeaderFooter({ model }: { model: PdfModel }) {
+  return (
+    <>
+      <View style={s.header} fixed>
+        <Text>{model.branding.razaoSocial ?? model.identificacao.titulo}</Text>
+        <Text>{model.identificacao.titulo}</Text>
+      </View>
+      <View style={s.footer} fixed>
+        <Text>Emitido em {model.emitidoEm}</Text>
+        <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
+      </View>
+    </>
+  );
+}
+
+export function RtiPdfDocument({ model }: { model: PdfModel }) {
+  const cor = model.branding.corPrimaria || PINE;
+  const ident = model.identificacao;
+  return (
+    <Document title={ident.titulo} author={model.branding.razaoSocial ?? undefined}>
+      {/* Capa */}
+      <Page size="A4" style={s.page}>
+        <View style={s.capa}>
+          {model.branding.logoUrl ? (
+            <Image src={model.branding.logoUrl} style={{ width: 140, marginBottom: 24 }} />
+          ) : null}
+          <Text style={[s.h1, { color: cor }]}>Relatório Técnico de Inspeção</Text>
+          <Text style={{ fontSize: 13, fontWeight: 600 }}>{ident.titulo}</Text>
+          <View style={[s.capaBox, { borderLeftColor: cor }]}>
+            <Text style={s.label}>Cliente</Text>
+            <Text style={s.valor}>{ident.clienteNome || "—"}</Text>
+            {ident.local ? (
+              <>
+                <Text style={s.label}>Local</Text>
+                <Text style={s.valor}>{ident.local}</Text>
+              </>
+            ) : null}
+            <Text style={s.label}>Período da inspeção</Text>
+            <Text style={s.valor}>
+              {fmtData(ident.periodoInicio)} a {fmtData(ident.periodoFim)}
+            </Text>
+            <Text style={s.label}>Responsável técnico</Text>
+            <Text style={s.valor}>{ident.responsavelTecnico || "—"}</Text>
+            {ident.artNumero ? (
+              <>
+                <Text style={s.label}>ART</Text>
+                <Text style={s.valor}>{ident.artNumero}</Text>
+              </>
+            ) : null}
+            <Text style={s.label}>Referencial normativo</Text>
+            <Text style={s.valor}>{ident.normas || "—"}</Text>
+          </View>
+        </View>
+      </Page>
+
+      {/* Introdução, metodologia, resumo executivo e quadro-resumo */}
+      <Page size="A4" style={s.page}>
+        <HeaderFooter model={model} />
+        <Text style={[s.h2, { color: cor }]}>1. Introdução</Text>
+        <Text style={s.p}>{ident.introducao}</Text>
+        <Text style={[s.h2, { color: cor }]}>2. Metodologia</Text>
+        <Text style={s.p}>{ident.metodologia}</Text>
+        {model.resumoExecutivo ? (
+          <>
+            <Text style={[s.h2, { color: cor }]}>3. Resumo executivo</Text>
+            <Text style={s.p}>{model.resumoExecutivo}</Text>
+          </>
+        ) : null}
+        <Text style={[s.h2, { color: cor }]}>Quadro-resumo por prioridade</Text>
+        <View style={s.tabela}>
+          <View style={s.tr}>
+            <Text style={[s.th, s.tdPrio]}>Prioridade</Text>
+            <Text style={[s.th, s.tdQtd]}>NCs</Text>
+            <Text style={[s.th, s.tdCusto]}>Custo planejado</Text>
+          </View>
+          {model.resumo.map((l) => (
+            <View key={l.prioridade} style={s.tr}>
+              <Text style={s.tdPrio}>{l.label}</Text>
+              <Text style={s.tdQtd}>{String(l.quantidade)}</Text>
+              <Text style={s.tdCusto}>{fmtBRL(l.custoPlanejado)}</Text>
+            </View>
+          ))}
+        </View>
+      </Page>
+
+      {/* NCs */}
+      <Page size="A4" style={s.page}>
+        <HeaderFooter model={model} />
+        <Text style={[s.h2, { color: cor }]}>Não conformidades constatadas</Text>
+        {model.ncs.map((nc) => (
+          <View key={nc.id} style={s.ncCard} wrap={false} minPresenceAhead={80}>
+            <Text style={s.ncTitulo}>
+              NC {String(nc.numero).padStart(3, "0")} — {PRIORIDADE_LABEL[nc.prioridade]}
+            </Text>
+            <Text style={s.ncMeta}>
+              Área: {nc.areaNome}
+              {nc.tipoExecucao === "investimento"
+                ? "  ·  Investimento"
+                : nc.osNumero
+                  ? `  ·  O.S. ${nc.osNumero}`
+                  : ""}
+              {nc.custoPlanejado ? `  ·  ${fmtBRL(nc.custoPlanejado)}` : ""}
+            </Text>
+            <Text style={s.p}>{nc.descricao}</Text>
+            {nc.recomendacao ? <Text style={s.p}>Recomendação: {nc.recomendacao}</Text> : null}
+            {nc.fotos.length > 0 ? (
+              <View style={s.fotoRow}>
+                {nc.fotos.map((f) => (
+                  <Image key={f.id} src={f.url} style={s.foto} />
+                ))}
+              </View>
+            ) : null}
+          </View>
+        ))}
+      </Page>
+
+      {/* Parecer e assinatura */}
+      <Page size="A4" style={s.page}>
+        <HeaderFooter model={model} />
+        <Text style={[s.h2, { color: cor }]}>Parecer técnico</Text>
+        {model.parecer
+          .split("\n")
+          .filter(Boolean)
+          .map((par, i) => (
+            <Text key={i} style={s.p}>
+              {par}
+            </Text>
+          ))}
+        <View style={s.assinatura}>
+          <View style={s.linhaAssin}>
+            <Text style={{ fontWeight: 600 }}>{ident.responsavelTecnico || " "}</Text>
+            {model.branding.registroProfissional ? (
+              <Text style={{ fontSize: 8 }}>{model.branding.registroProfissional}</Text>
+            ) : null}
+            {ident.artNumero ? <Text style={{ fontSize: 8 }}>ART {ident.artNumero}</Text> : null}
+          </View>
+        </View>
+      </Page>
+    </Document>
+  );
+}
