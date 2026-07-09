@@ -11,6 +11,17 @@ import { useEffect, useRef, useState } from "react";
 import { generateId } from "@/lib/uuid";
 import { saveResume } from "@/lib/resume";
 import { getGpsCached, warmupGps } from "@/lib/geo";
+import { contarUsoModos, maisUsados } from "@/lib/frequencia";
+
+/** Vincula a foto à NC. Se a foto já sincronizou, enfileira o update; se ainda
+ * está na fila, o uploadPhoto lê o registro atual do Dexie e o vínculo sobe junto. */
+async function linkPhotoToFinding(photoId: string, findingId: string | null): Promise<void> {
+  await db.photos.update(photoId, { finding_id: findingId });
+  const p = await db.photos.get(photoId);
+  if (p?._synced) {
+    await enqueue("photos", "update", { id: photoId, finding_id: findingId }, photoId);
+  }
+}
 
 type Params = { id: string; nodeId: string };
 
@@ -19,13 +30,18 @@ type Params = { id: string; nodeId: string };
 function FindingForm({
   pointId,
   modos,
+  linkPhotoId,
   onClose,
 }: {
   pointId: string;
   modos: RtiModoFalha[];
+  /** Foto recém-tirada que deve nascer vinculada à NC criada (spec §5.2). */
+  linkPhotoId: string | null;
   onClose: () => void;
 }) {
-  const [modoId, setModoId] = useState<string>("");
+  const [selected, setSelected] = useState<RtiModoFalha | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [manual, setManual] = useState(false);
   const [descricao, setDescricao] = useState("");
   const [prioridade, setPrioridade] = useState(3);
   const [tipoExecucao, setTipoExecucao] = useState<RtiTipoExecucao>("os");
@@ -33,12 +49,15 @@ function FindingForm({
   const [observacao, setObservacao] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // "Mais usados no topo" — frequência local (spec §5.1).
+  const allFindings = useLiveQuery(() => db.findings.toArray(), []) ?? [];
+  const uso = contarUsoModos(allFindings);
+  const top = maisUsados(modos, uso, 4);
   const porCategoria = modosPorCategoria(modos);
 
-  function applyModo(id: string) {
-    setModoId(id);
-    const m = modos.find((x) => x.id === id);
-    if (!m) return;
+  function applyModo(m: RtiModoFalha) {
+    setSelected(m);
+    setManual(false);
     setDescricao(m.descricao_padrao);
     setPrioridade(m.prioridade_sugerida);
     setTipoExecucao(m.tipo_execucao_sugerido);
@@ -53,7 +72,7 @@ function FindingForm({
     const finding: LocalFinding = {
       id,
       point_id: pointId,
-      modo_falha_id: modoId || null,
+      modo_falha_id: selected?.id ?? null,
       descricao: descricao.trim(),
       recomendacao: recomendacao.trim() || null,
       prioridade,
@@ -65,126 +84,177 @@ function FindingForm({
     };
     await db.findings.add(finding);
     await enqueue("findings", "insert", finding, id);
+    if (linkPhotoId) await linkPhotoToFinding(linkPhotoId, id);
     onClose();
   }
 
+  const modoBtn = (m: RtiModoFalha) => (
+    <button
+      key={m.id}
+      onClick={() => applyModo(m)}
+      className={`w-full min-h-[56px] rounded-xl px-4 py-3 text-left text-base font-medium border transition-colors ${
+        selected?.id === m.id
+          ? "bg-blue-600 border-blue-400 text-white"
+          : "bg-slate-800 border-slate-700 hover:border-slate-500"
+      }`}
+    >
+      {m.label}
+    </button>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-slate-900 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex flex-col bg-slate-900">
       <header className="flex items-center gap-3 px-4 py-3 border-b border-slate-800 shrink-0">
-        <button onClick={onClose} className="p-2.5 -m-1 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 flex items-center justify-center">
+        <button
+          onClick={onClose}
+          className="p-2.5 -m-1 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 flex items-center justify-center"
+          aria-label="Fechar"
+        >
           <X className="h-5 w-5" />
         </button>
         <h2 className="font-semibold flex-1">Nova não conformidade</h2>
-        <button
-          onClick={handleSave}
-          disabled={saving || !descricao.trim()}
-          className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-semibold"
-        >
-          Salvar
-        </button>
       </header>
 
-      <div className="flex-1 p-4 space-y-4">
-        {porCategoria.size > 0 && (
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-              Modo de falha (opcional)
-            </label>
-            <select
-              value={modoId}
-              onChange={(e) => applyModo(e.target.value)}
-              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">— Selecionar modo de falha —</option>
-              {Array.from(porCategoria.entries()).map(([cat, items]) => (
-                <optgroup key={cat} label={cat}>
-                  {items.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-6">
+        {top.length > 0 && !manual && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              Mais usados
+            </p>
+            {top.map(modoBtn)}
           </div>
         )}
 
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            Descrição *
-          </label>
-          <textarea
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            rows={3}
-            placeholder="Descreva a não conformidade..."
-            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-        </div>
+        {!manual &&
+          Array.from(porCategoria.entries()).map(([cat, items]) => (
+            <div key={cat} className="space-y-2">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{cat}</p>
+              {items.map(modoBtn)}
+            </div>
+          ))}
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-              Prioridade (1–5)
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={5}
-              value={prioridade}
-              onChange={(e) => setPrioridade(Number(e.target.value))}
-              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        {!manual && (
+          <button
+            onClick={() => {
+              setManual(true);
+              setSelected(null);
+              setDescricao("");
+              setRecomendacao("");
+              setShowDetails(true);
+            }}
+            className="w-full min-h-[56px] rounded-xl border border-dashed border-slate-600 text-slate-300 text-base"
+          >
+            Descrever manualmente (sem modo de falha)
+          </button>
+        )}
+
+        {(showDetails || manual) && (
+          <div className="space-y-4 pt-2 border-t border-slate-800">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                Descrição *
+              </label>
+              <textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                rows={3}
+                placeholder="Descreva a não conformidade..."
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                Recomendação
+              </label>
+              <textarea
+                value={recomendacao}
+                onChange={(e) => setRecomendacao(e.target.value)}
+                rows={2}
+                placeholder="Ação recomendada..."
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                Observação
+              </label>
+              <textarea
+                value={observacao}
+                onChange={(e) => setObservacao(e.target.value)}
+                rows={2}
+                placeholder="Observações adicionais de campo..."
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-              Tipo execução
-            </label>
-            <select
-              value={tipoExecucao}
-              onChange={(e) => setTipoExecucao(e.target.value as RtiTipoExecucao)}
-              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="os">O.S.</option>
-              <option value="investimento">Investimento</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            Recomendação
-          </label>
-          <textarea
-            value={recomendacao}
-            onChange={(e) => setRecomendacao(e.target.value)}
-            rows={2}
-            placeholder="Ação recomendada..."
-            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            Observação
-          </label>
-          <textarea
-            value={observacao}
-            onChange={(e) => setObservacao(e.target.value)}
-            rows={2}
-            placeholder="Observações adicionais de campo..."
-            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-        </div>
+        )}
       </div>
+
+      {/* Rodapé fixo: prioridade + tipo + salvar — operável com o polegar/luva */}
+      {(selected || manual) && (
+        <footer className="shrink-0 border-t border-slate-800 bg-slate-900 p-3 space-y-2">
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() => setPrioridade(n)}
+                className={`flex-1 min-h-[48px] rounded-lg text-base font-bold border ${
+                  prioridade === n ? "bg-blue-600 border-blue-400" : "bg-slate-800 border-slate-700"
+                }`}
+              >
+                P{n}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setTipoExecucao("os")}
+              className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold border ${
+                tipoExecucao === "os" ? "bg-blue-600 border-blue-400" : "bg-slate-800 border-slate-700"
+              }`}
+            >
+              O.S.
+            </button>
+            <button
+              onClick={() => setTipoExecucao("investimento")}
+              className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold border ${
+                tipoExecucao === "investimento"
+                  ? "bg-blue-600 border-blue-400"
+                  : "bg-slate-800 border-slate-700"
+              }`}
+            >
+              Investimento
+            </button>
+          </div>
+          <div className="flex gap-2">
+            {selected && !manual && (
+              <button
+                onClick={() => setShowDetails((v) => !v)}
+                className="rounded-xl border border-slate-600 px-4 min-h-[52px] text-sm text-slate-300"
+              >
+                {showDetails ? "Ocultar ▴" : "Ajustar ▾"}
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={saving || !descricao.trim()}
+              className="flex-1 min-h-[52px] rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-base font-bold"
+            >
+              {saving ? "Salvando…" : "Salvar NC"}
+            </button>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
 
 // ── Photo card ────────────────────────────────────────────────────────────────
 
-function PhotoCard({ photo }: { photo: LocalPhoto }) {
+function PhotoCard({ photo, findings }: { photo: LocalPhoto; findings: LocalFinding[] }) {
+  const [linking, setLinking] = useState(false);
   const src = photo.blob ? URL.createObjectURL(photo.blob) : (photo.file_path ?? "");
+  const linkedIdx = findings.findIndex((f) => f.id === photo.finding_id);
 
   async function handleDelete() {
     await db.photos.delete(photo.id);
@@ -201,6 +271,52 @@ function PhotoCard({ photo }: { photo: LocalPhoto }) {
       >
         <Trash2 className="h-4 w-4 text-red-400" />
       </button>
+      {findings.length > 0 && (
+        <button
+          onClick={() => setLinking(true)}
+          className="absolute bottom-1 left-1 right-1 bg-black/70 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-left"
+        >
+          {linkedIdx >= 0 ? `NC ${linkedIdx + 1} ✓` : "Vincular NC…"}
+        </button>
+      )}
+      {linking && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-8">
+          <div className="w-full max-w-sm rounded-2xl bg-slate-800 p-5 space-y-2">
+            <h2 className="font-semibold pb-1">Esta foto evidencia qual NC?</h2>
+            {findings.map((f, i) => (
+              <button
+                key={f.id}
+                onClick={async () => {
+                  await linkPhotoToFinding(photo.id, f.id);
+                  setLinking(false);
+                }}
+                className={`w-full min-h-[52px] rounded-lg border px-3 text-left text-sm ${
+                  photo.finding_id === f.id
+                    ? "bg-blue-600 border-blue-400"
+                    : "bg-slate-700 border-slate-600"
+                }`}
+              >
+                NC {i + 1} — {f.descricao.slice(0, 60)}
+              </button>
+            ))}
+            <button
+              onClick={async () => {
+                await linkPhotoToFinding(photo.id, null);
+                setLinking(false);
+              }}
+              className="w-full min-h-[44px] rounded-lg border border-slate-600 text-sm text-slate-300"
+            >
+              Sem vínculo (foto geral do ponto)
+            </button>
+            <button
+              onClick={() => setLinking(false)}
+              className="w-full py-2.5 text-sm text-slate-400"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -242,7 +358,8 @@ export default function PointCapture() {
   const { id, nodeId } = useParams<Params>();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showFindingForm, setShowFindingForm] = useState(false);
+  // false = fechado; null = aberto sem foto a vincular; string = photoId a vincular
+  const [findingFormPhoto, setFindingFormPhoto] = useState<string | null | false>(false);
   const [legendaInput, setLegendaInput] = useState("");
   const [askOrphan, setAskOrphan] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -308,11 +425,10 @@ export default function PointCapture() {
     // Renova o fix para a próxima foto (o técnico se move entre capturas).
     warmupGps();
 
-    // Primeira foto do ponto: abre o formulário de NC na hora, em vez de só
-    // cobrar isso quando o técnico tenta sair (gate de saída continua como rede
-    // de segurança para quem cancelar o formulário sem salvar).
+    // Primeira foto do ponto: abre o formulário de NC na hora, já apontando o
+    // vínculo foto↔NC (spec §5.2). Se o técnico cancelar, o gate de saída cobra.
     if ((findings ?? []).length === 0) {
-      setShowFindingForm(true);
+      setFindingFormPhoto(photoId);
     }
   }
 
@@ -418,7 +534,7 @@ export default function PointCapture() {
           {photos && photos.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {photos.map((p) => (
-                <PhotoCard key={p.id} photo={p} />
+                <PhotoCard key={p.id} photo={p} findings={findings ?? []} />
               ))}
             </div>
           )}
@@ -456,7 +572,7 @@ export default function PointCapture() {
           ))}
 
           <button
-            onClick={() => setShowFindingForm(true)}
+            onClick={() => setFindingFormPhoto(null)}
             className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-600 hover:border-slate-500 hover:bg-slate-800/60 active:bg-slate-800 active:scale-[0.98] transition-all h-12 text-sm font-semibold text-slate-300"
           >
             <Plus className="h-5 w-5" />
@@ -465,8 +581,13 @@ export default function PointCapture() {
         </section>
       </div>
 
-      {showFindingForm && (
-        <FindingForm pointId={nodeId!} modos={modos} onClose={() => setShowFindingForm(false)} />
+      {findingFormPhoto !== false && (
+        <FindingForm
+          pointId={nodeId!}
+          modos={modos}
+          linkPhotoId={findingFormPhoto}
+          onClose={() => setFindingFormPhoto(false)}
+        />
       )}
 
       {askOrphan && (
@@ -480,7 +601,8 @@ export default function PointCapture() {
               <button
                 onClick={() => {
                   setAskOrphan(false);
-                  setShowFindingForm(true);
+                  // Vincula a 1ª foto ainda sem NC à NC que vai nascer.
+                  setFindingFormPhoto(photos?.find((p) => !p.finding_id)?.id ?? null);
                 }}
                 className="w-full rounded-lg bg-blue-600 hover:bg-blue-500 py-3 text-sm font-semibold"
               >
