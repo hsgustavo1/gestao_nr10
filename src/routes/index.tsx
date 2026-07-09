@@ -40,9 +40,11 @@ function HomePage() {
     ? !auth.user && !auth.isViewer
       ? "/login"
       : auth.user && !auth.isPlatformAdmin
-        ? canViewRti
-          ? "/rti"
-          : "/qualificacoes"
+        ? auth.currentOrg?.tipo === "cliente"
+          ? "/home"
+          : canViewRti
+            ? "/rti"
+            : "/qualificacoes"
         : null
     : null;
 
