@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
+  LayoutTemplate,
   Zap,
   ClipboardList,
   ScanSearch,
@@ -234,6 +235,14 @@ export function AppSidebar() {
         {showSettings && (
           <div className="mt-auto pt-3">
             <div className="h-px bg-white/10 mx-2 mb-2" />
+            {isPlatformAdmin && (
+              <SidebarSingleLink
+                label="Padrões"
+                to="/admin/padroes"
+                icon={LayoutTemplate}
+                prefixes={["/admin/padroes"]}
+              />
+            )}
             <SidebarSingleLink
               label="Configurações"
               to={settingsTo}

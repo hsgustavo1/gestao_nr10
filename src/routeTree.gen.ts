@@ -46,6 +46,7 @@ import { Route as CampoModosRouteImport } from './routes/campo.modos'
 import { Route as CadeadosCodigoRouteImport } from './routes/cadeados.$codigo'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminPadroesRouteImport } from './routes/admin.padroes'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminCargaRouteImport } from './routes/admin.carga'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
@@ -245,6 +246,11 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/admin/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPadroesRoute = AdminPadroesRouteImport.update({
+  id: '/admin/padroes',
+  path: '/admin/padroes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminEmpresasRoute = AdminEmpresasRouteImport.update({
   id: '/admin/empresas',
   path: '/admin/empresas',
@@ -308,6 +314,7 @@ export interface FileRoutesByFullPath {
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/carga': typeof AdminCargaRoute
   '/admin/empresas': typeof AdminEmpresasRoute
+  '/admin/padroes': typeof AdminPadroesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
@@ -357,6 +364,7 @@ export interface FileRoutesByTo {
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/carga': typeof AdminCargaRoute
   '/admin/empresas': typeof AdminEmpresasRoute
+  '/admin/padroes': typeof AdminPadroesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
@@ -407,6 +415,7 @@ export interface FileRoutesById {
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/carga': typeof AdminCargaRoute
   '/admin/empresas': typeof AdminEmpresasRoute
+  '/admin/padroes': typeof AdminPadroesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/cadeados/$codigo': typeof CadeadosCodigoRoute
@@ -458,6 +467,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/carga'
     | '/admin/empresas'
+    | '/admin/padroes'
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
@@ -507,6 +517,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/carga'
     | '/admin/empresas'
+    | '/admin/padroes'
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
@@ -556,6 +567,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/carga'
     | '/admin/empresas'
+    | '/admin/padroes'
     | '/admin/reports'
     | '/admin/usuarios'
     | '/cadeados/$codigo'
@@ -606,6 +618,7 @@ export interface RootRouteChildren {
   AdminAuditoriaRoute: typeof AdminAuditoriaRoute
   AdminCargaRoute: typeof AdminCargaRoute
   AdminEmpresasRoute: typeof AdminEmpresasRoute
+  AdminPadroesRoute: typeof AdminPadroesRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   CadeadosCodigoRoute: typeof CadeadosCodigoRoute
@@ -908,6 +921,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/padroes': {
+      id: '/admin/padroes'
+      path: '/admin/padroes'
+      fullPath: '/admin/padroes'
+      preLoaderRoute: typeof AdminPadroesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/empresas': {
       id: '/admin/empresas'
       path: '/admin/empresas'
@@ -990,6 +1010,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAuditoriaRoute: AdminAuditoriaRoute,
   AdminCargaRoute: AdminCargaRoute,
   AdminEmpresasRoute: AdminEmpresasRoute,
+  AdminPadroesRoute: AdminPadroesRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   CadeadosCodigoRoute: CadeadosCodigoRoute,
