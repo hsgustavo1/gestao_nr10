@@ -55,6 +55,7 @@ import { Route as CampoPontoIdRouteImport } from './routes/campo.ponto.$id'
 import { Route as CampoInspecaoIdRouteImport } from './routes/campo.inspecao.$id'
 import { Route as AdminQualificacoesCargaRouteImport } from './routes/admin.qualificacoes.carga'
 import { Route as AdminCertificadosImportarRouteImport } from './routes/admin.certificados.importar'
+import { Route as RtiRelatorioReportIdWizardRouteImport } from './routes/rti.relatorio.$reportId.wizard'
 
 const ViolacoesRoute = ViolacoesRouteImport.update({
   id: '/violacoes',
@@ -291,6 +292,12 @@ const AdminCertificadosImportarRoute =
     path: '/admin/certificados/importar',
     getParentRoute: () => rootRouteImport,
   } as any)
+const RtiRelatorioReportIdWizardRoute =
+  RtiRelatorioReportIdWizardRouteImport.update({
+    id: '/rti/relatorio/$reportId/wizard',
+    path: '/rti/relatorio/$reportId/wizard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -339,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/campo/ponto/$id': typeof CampoPontoIdRoute
   '/qualificacoes/colaborador/$id': typeof QualificacoesColaboradorIdRoute
   '/rti/nc/$ncId': typeof RtiNcNcIdRoute
+  '/rti/relatorio/$reportId/wizard': typeof RtiRelatorioReportIdWizardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -387,6 +395,7 @@ export interface FileRoutesByTo {
   '/campo/ponto/$id': typeof CampoPontoIdRoute
   '/qualificacoes/colaborador/$id': typeof QualificacoesColaboradorIdRoute
   '/rti/nc/$ncId': typeof RtiNcNcIdRoute
+  '/rti/relatorio/$reportId/wizard': typeof RtiRelatorioReportIdWizardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -436,6 +445,7 @@ export interface FileRoutesById {
   '/campo/ponto/$id': typeof CampoPontoIdRoute
   '/qualificacoes/colaborador/$id': typeof QualificacoesColaboradorIdRoute
   '/rti/nc/$ncId': typeof RtiNcNcIdRoute
+  '/rti/relatorio/$reportId/wizard': typeof RtiRelatorioReportIdWizardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -486,6 +496,7 @@ export interface FileRouteTypes {
     | '/campo/ponto/$id'
     | '/qualificacoes/colaborador/$id'
     | '/rti/nc/$ncId'
+    | '/rti/relatorio/$reportId/wizard'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -534,6 +545,7 @@ export interface FileRouteTypes {
     | '/campo/ponto/$id'
     | '/qualificacoes/colaborador/$id'
     | '/rti/nc/$ncId'
+    | '/rti/relatorio/$reportId/wizard'
   id:
     | '__root__'
     | '/'
@@ -582,6 +594,7 @@ export interface FileRouteTypes {
     | '/campo/ponto/$id'
     | '/qualificacoes/colaborador/$id'
     | '/rti/nc/$ncId'
+    | '/rti/relatorio/$reportId/wizard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -631,6 +644,7 @@ export interface RootRouteChildren {
   CampoPontoIdRoute: typeof CampoPontoIdRoute
   QualificacoesColaboradorIdRoute: typeof QualificacoesColaboradorIdRoute
   RtiNcNcIdRoute: typeof RtiNcNcIdRoute
+  RtiRelatorioReportIdWizardRoute: typeof RtiRelatorioReportIdWizardRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -957,6 +971,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCertificadosImportarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rti/relatorio/$reportId/wizard': {
+      id: '/rti/relatorio/$reportId/wizard'
+      path: '/rti/relatorio/$reportId/wizard'
+      fullPath: '/rti/relatorio/$reportId/wizard'
+      preLoaderRoute: typeof RtiRelatorioReportIdWizardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1007,6 +1028,7 @@ const rootRouteChildren: RootRouteChildren = {
   CampoPontoIdRoute: CampoPontoIdRoute,
   QualificacoesColaboradorIdRoute: QualificacoesColaboradorIdRoute,
   RtiNcNcIdRoute: RtiNcNcIdRoute,
+  RtiRelatorioReportIdWizardRoute: RtiRelatorioReportIdWizardRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
