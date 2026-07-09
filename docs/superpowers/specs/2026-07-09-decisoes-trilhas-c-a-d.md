@@ -1,0 +1,156 @@
+# Decisões tomadas pela IA — Trilhas C, A e D (auditoria do founder)
+
+**Data:** 2026-07-09
+**Como usar:** cada decisão abaixo é uma pergunta que eu (IA) teria feito no brainstorm,
+com as opções que apresentaria e a escolha que fiz em seu nome, com o porquê. **Troque
+qualquer escolha** — indico o impacto da troca em cada uma. As specs afetadas:
+[C](2026-07-09-trilha-c-wizard-relatorio-design.md) ·
+[A](2026-07-09-trilha-a-curadoria-padroes-design.md) ·
+[D](2026-07-09-trilha-d-experiencia-cliente-design.md).
+
+---
+
+## Trilha C — Wizard de relatório
+
+### D-C1 · Qual relatório atacar primeiro?
+- (a) **RTI (laudo de inspeção elétrica)** ← **escolhida**
+- (b) Dossiê de fiscalização multi-seção
+- (c) Motor genérico configurável por tipo de relatório
+**Porquê:** o RTI é o fluxo validado em campo, o entregável que o consultor vende, e o
+gargalo real de horas (dor 2.2). O dossiê já existe (window.print); o genérico é o Motor 3
+completo — construí-lo antes do 2º tipo real violaria a "regra de ouro" da análise
+multi-NR (não generalizar no escuro).
+**Se trocar:** (b) desloca a trilha para evolução do `/relatorio/dossie`; (c) adia valor
+em meses.
+
+### D-C2 · Tecnologia de geração do PDF?
+- (a) Puppeteer/Chromium headless (HTML→PDF) em função serverless
+- (b) **`@react-pdf/renderer` server-side na rota do app (Vercel Node)** ← **escolhida**
+- (c) `pdf-lib` programático puro
+- (d) Continuar com print CSS caprichado (window.print)
+**Porquê:** (b) é declarativo (layout em componentes React, linguagem que o projeto já
+fala), determinístico e leve no Vercel. (a) dá fidelidade HTML mas cold start/peso de
+Chromium em serverless é dor conhecida. (c) é ótimo para *manipular* PDF (já usamos no
+recorte de certificados), péssimo para *compor* documento longo. (d) nunca entrega capa/
+paginação/controle fino — é o status quo que queremos matar.
+**Se trocar para (a):** ganha fidelidade CSS, paga infra (função dedicada, ~50MB+, cold
+start); faria sentido se o template evoluir para HTML muito rico.
+
+### D-C3 · Papel da IA no relatório?
+- (a) Sem IA — só templates e dados
+- (b) **IA sugere parecer/resumo executivo; humano sempre revisa e edita** ← **escolhida**
+- (c) IA redige o relatório inteiro automaticamente
+**Porquê:** (b) usa o Groq já integrado (padrão certificados), custa centavos e ataca a
+parte mais lenta da escrita (texto corrido), mantendo a responsabilidade técnica (ART) no
+humano — inegociável num laudo. (c) é risco jurídico e de qualidade.
+**Se trocar para (a):** wizard continua de pé; só remove a etapa de sugestão.
+
+### D-C4 · White-label: quanto agora?
+- (a) Nada — PDF com marca Conforme
+- (b) **Identidade mínima do consultor no PDF (logo, cores, razão social, registro)** ← **escolhida**
+- (c) White-label completo (app + PDF + domínio)
+**Porquê:** o PDF é a peça que o consultor entrega com o nome DELE — sem (b) o wow não
+acontece. (c) é trilha própria futura (já no ROADMAP como "white-label do consultor").
+**Se trocar para (a):** economiza os campos de branding, enfraquece o pitch de canal.
+
+### D-C5 · Compressão de foto 1024px basta para o laudo? (gap 8 do brainstorm)
+- (a) Aumentar padrão global de compressão
+- (b) **Manter 1024px e decidir com evidência: validar zoom no 1º PDF real; se faltar,
+  criar "foto de detalhe" opcional a 2048px no PWA** ← **escolhida**
+- (c) Guardar original full-res sempre
+**Porquê:** storage é custo real (decisão consciente de 2026-07-02); mudar sem evidência
+é regressão de custo. A opção (b) cria o teste mais barato possível.
+**Se trocar para (c):** rever custos de Storage antes.
+
+## Trilha A — Curadoria de padrões
+
+### D-A1 · O que curar primeiro?
+- (a) **Estruturas (árvores setor→ativo→componente) por segmento industrial** ← **escolhida**
+- (b) Modos de falha
+- (c) Templates completos de inspeção (árvore + checklist + campos)
+**Porquê:** (a) é exatamente o exemplo que você deu (papel e celulose) e não existe hoje;
+(b) já tem mecanismo de publicação por org (2026-06-20); (c) é o Motor 2 (Horizonte 2).
+**Se trocar:** (c) antecipa o Motor 2 — só com a 2ª disciplina de inspeção contratada.
+
+### D-A2 · Como padrões emergem: fila de revisão, automático ou manual?
+- (a) Todo cadastro entra numa fila para o founder aprovar/rejeitar
+- (b) Agregação automática (clustering) propõe candidatos
+- (c) **Painel de curadoria: founder navega estruturas existentes e "promove a modelo"
+  quando quiser, com edição obrigatória** ← **escolhida**
+**Porquê:** (a) é o gargalo apontado no brainstorm (fila de um humano só, e cria a falsa
+expectativa de que tudo será revisto); (b) é overengineering com 1 consultor ativo —
+registrada como fase futura; (c) mantém o founder no controle sem criar fila.
+**Se trocar para (b):** precisa de volume (3+ consultores) para o clustering ter sinal.
+
+### D-A3 · Anonimização na publicação?
+- (a) Publicar como está, confiando no bom senso
+- (b) **Editor de generalização obrigatório na promoção + modelo publicado sem vínculo
+  visível com o cliente de origem** ← **escolhida**
+- (c) Anonimização automática por IA
+**Porquê:** estrutura fabril de um cliente pode ser confidencial (nome de linha/produto);
+(b) força o olhar humano que é o próprio papel de curador, e custa um passo de UI. (c)
+pode entrar depois como assistência dentro do editor.
+**Se trocar para (a):** risco LGPD/contratual — não recomendo.
+
+### D-A4 · Segmento: enum fechado ou texto livre?
+- (a) Enum curado (lista fixa de segmentos)
+- (b) **Texto livre com autocomplete dos valores já usados** ← **escolhida**
+**Porquê:** YAGNI — não sabemos ainda a taxonomia certa de segmentos; o autocomplete
+converge naturalmente e o founder pode normalizar na curadoria.
+**Se trocar para (a):** definir a lista inicial (sugiro CNAE simplificado) e migration.
+
+### D-A5 · Aplicar modelo: cópia ou referência viva?
+- (a) **Cópia (o consultor edita livre, modelo não muda)** ← **escolhida**
+- (b) Referência com atualização propagada
+**Porquê:** campo sempre diverge do padrão (fluxo 3.2: "informações de campo
+surpreendem"); referência viva criaria conflito de versão sem benefício claro.
+
+## Trilha D — Experiência do cliente
+
+### D-D1 · Primeira fatia do "app com vida"?
+- (a) **Home do cliente com KPIs + pendências acionáveis (D1), depois digest de e-mail
+  (D2), depois importadores de legado (D3)** ← **escolhida (ordem)**
+- (b) Começar pelos importadores (onboarding primeiro)
+- (c) Começar por notificações push
+**Porquê:** D1 retoma um item já adiado do ROADMAP e é só composição de queries
+existentes (barato, visível). D2 é o que faz o app "ir até" o cliente — mas precisa da
+D1 pronta (mesma fonte de pendências). D3 é a maior alavanca de venda, porém cada
+importador é um projeto pequeno — melhor depois do wizard C provar o padrão de valor.
+**Se trocar para (b):** faz sentido se houver cliente novo grande entrando (onboarding
+vira urgência).
+
+### D-D2 · Canal de alerta?
+- (a) **E-mail (digest semanal, provedor Resend)** ← **escolhida**
+- (b) WhatsApp (API Business)
+- (c) Push notification (PWA)
+**Porquê:** e-mail é o canal que o gestor SESMT/industrial já vive, sem burocracia de
+template da Meta nem os limites de push em iOS; Resend é trivial no Vercel. WhatsApp é
+candidato forte para a fase 2 (BR ❤ WhatsApp) — decisão consciente de adiar.
+**Se trocar para (b):** somar custo/burocracia da API oficial e templates aprovados.
+
+### D-D3 · Frequência e conteúdo do digest?
+- (a) Diário
+- (b) **Semanal, só se houver pendência, espelhando os cards da home** ← **escolhida**
+- (c) Mensal
+**Porquê:** diário vira spam e treina o cliente a ignorar; mensal deixa vencimento de
+30d passar. Semanal com supressão de e-mail vazio é o equilíbrio.
+
+### D-D4 · Importadores de legado: quais entidades?
+- (a) **Funcionários, ASOs, treinamentos históricos, EPIs — nesta ordem, um shell de UI
+  comum** ← **escolhida**
+- (b) Só certificados (já existe) + funcionários
+**Porquê:** a ordem segue o caminho crítico do prontuário (pessoa → aptidão → EPI). O
+shell comum (dropzone → conferência → confirmar) é o padrão já provado no importador de
+certificados.
+
+## Transversal
+
+### D-T1 · Ordem geral das trilhas?
+- **Mantida a sua: B (feito) → validação em campo → C → A → D.**
+Observação: D1 (home do cliente) é pequena e independente — se surgir janela curta entre
+C e A, ela pode adiantar sem conflito.
+
+### D-T2 · Regra de merge planejamento↔campo (gap 7)?
+- **"Campo vence e edições são aditivas"** — campo nunca deleta o que o PC criou; marca
+  "não encontrado" e acrescenta. Registrada na spec A §4; implementação fica para quando
+  a edição de estrutura no PC (fluxo 3.1) existir de fato.
