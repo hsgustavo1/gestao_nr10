@@ -94,6 +94,27 @@ teste de campo no momento).
    opcional no tipo compartilhado). Fora de escopo registrado: clustering automático
    (3+ consultores), modelos por consultoria, Motor 2.
 
+## 💚 Trilha D — Experiência do Cliente: D1+D2 IMPLEMENTADAS (2026-07-09).
+   Spec [`2026-07-09-trilha-d-experiencia-cliente-design.md`](../specs/2026-07-09-trilha-d-experiencia-cliente-design.md),
+   plano [`2026-07-09-trilha-d-experiencia-cliente.md`](2026-07-09-trilha-d-experiencia-cliente.md).
+   **D1:** home do cliente em `/home` (índice de conformidade, 4 cards de pendência
+   acionáveis via `cardsPendencias()` pura testada, últimas entregas); redirect de `/`
+   para org tipo `cliente` → `/home`. **D2:** edge function `vencimentos-email`
+   reescrita multi-tenant (loop por org cliente ativa, queries escopadas por org_id,
+   destinatários = admins da org via profiles menos opt-outs, idempotência por
+   `digest_log (org, semana)`, BCC de supervisão `ALERT_EMAILS`, cores da marca) —
+   DEPLOYADA via MCP; cron `digest-semanal` agendado (segunda 11:00 UTC, migration
+   `20260709120000_digest_semanal.sql` APLICADA).
+   **Setup pendente (founder):** criar conta Resend + secrets `RESEND_API_KEY` e
+   `ALERT_FROM` (+ `ALERT_EMAILS` opcional) em Dashboard → Edge Functions → Secrets;
+   sem a chave a função roda e loga "RESEND_API_KEY não configurada" sem marcar a
+   semana como enviada.
+   **D3 re-escopada (D-D5):** funcionários/treinamentos por planilha JÁ existem
+   (rota de carga); certificados por IA JÁ existe. Delta registrado como próxima
+   fatia: importador de **ASOs por IA** (clonar `admin.certificados.importar.tsx`
+   trocando o prompt; cuidado LGPD — gravar só datas/resultado apto-inapto) e
+   **EPIs por planilha** (padrão parseWorkbook).
+
 ## 📜 Nova NR-10 (Portaria MTE 737/2026) — SPEC PRONTA, NÃO atacar agora (2026-07-06)
 
 A NR-10 foi **inteiramente reescrita** (DOU 01/06/2026) — **vigência 01/06/2027**.

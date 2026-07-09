@@ -168,6 +168,30 @@ candidato forte para a fase 2 (BR ❤ WhatsApp) — decisão consciente de adiar
 shell comum (dropzone → conferência → confirmar) é o padrão já provado no importador de
 certificados.
 
+### D-D5 · (emenda na fase de implementação, 2026-07-09) Re-escopo do D3
+- (a) Construir os 4 importadores agora
+- (b) **Reconhecer o que JÁ existe (funcionários/treinamentos por planilha na rota de
+  carga; certificados por IA) e registrar o delta — importador de ASOs por IA (~900
+  linhas no padrão certificados) e EPIs por planilha — como próxima fatia** ← **escolhida**
+**Porquê:** a própria spec D posicionava importadores como "depois do wizard C provar o
+padrão"; clonar o fluxo Groq para ASO (dado de saúde, LGPD) no fim de uma sessão-maratona
+troca qualidade por checkbox. O delta está no ROADMAP com o caminho pronto.
+**Se trocar:** clonar `admin.certificados.importar.tsx` trocando o prompt para ASO.
+
+### D-D6 · (implementação) Digest não compartilha código com buildVencimentos
+O digest roda em Deno (edge function) e **espelha as regras** de `buildVencimentos`
+(validade 2 anos, ITs por validity_months, EPIs por intervalo, ASO por validity_date) com
+consultas escopadas por org — paridade de regra, não de código; a pura do app é a testada.
+
+### D-D7 · (implementação) Opt-out do digest
+`profiles.digest_optout` (default false = admins da org cliente recebem). v1 sem UI de
+opt-out — rodapé instrui a pedir ao consultor. Anti-spam real é o "só envia se houver
+pendência" + idempotência semanal (`digest_log`).
+
+### D-D8 · (implementação) Cópia de supervisão
+`ALERT_EMAILS` (founder) entra como BCC de todo digest e como fallback quando a org não
+tem admin com e-mail — visibilidade do dono da plataforma sobre o que os clientes recebem.
+
 ## Transversal
 
 ### D-T1 · Ordem geral das trilhas?
