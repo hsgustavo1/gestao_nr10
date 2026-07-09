@@ -115,6 +115,21 @@ converge naturalmente e o founder pode normalizar na curadoria.
 **Porquê:** campo sempre diverge do padrão (fluxo 3.2: "informações de campo
 surpreendem"); referência viva criaria conflito de versão sem benefício claro.
 
+### D-A6 · (emenda na fase de implementação, 2026-07-09) Formato do editor de generalização
+- (a) Tree-editor completo (drag-and-drop, adicionar/mover nós)
+- (b) **Lista indentada: um campo de texto + botão remover por nó; sem drag e sem
+  adicionar nó** ← **escolhida**
+**Porquê:** o trabalho real da anonimização é RENOMEAR e REMOVER — a lista indentada
+cobre 100% disso com fração do custo. Quem precisar de nó novo cria na inspeção de
+origem antes de promover (ou edita a inspeção aplicada depois — aplicar é cópia).
+**Se trocar para (a):** evoluir `estrutura-modelo-editor.tsx` (as funções puras
+`removerNo`/`renomearNo` já são imutáveis e prontas para operações extras).
+
+### D-A7 · (emenda na fase de implementação) Entrada no menu
+- **Link "Padrões" próprio na sidebar (só platform admin), acima de Configurações** —
+  a sidebar não tem grupo de configurações com sub-itens; criar grupo só para isso
+  seria mexer mais no god node `AppSidebar` do que o necessário.
+
 ## Trilha D — Experiência do cliente
 
 ### D-D1 · Primeira fatia do "app com vida"?

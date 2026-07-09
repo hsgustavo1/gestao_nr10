@@ -79,6 +79,21 @@ teste de campo no momento).
    fonte WOFF no preview, zoom das fotos 1024px — D-C5 — e o design lado a lado
    com o Word atual).
 
+## 🧬 Trilha A — Curadoria de Padrões: IMPLEMENTADA (2026-07-09),
+   aguardando o founder curar o 1º modelo real. Spec
+   [`2026-07-09-trilha-a-curadoria-padroes-design.md`](../specs/2026-07-09-trilha-a-curadoria-padroes-design.md),
+   plano [`2026-07-09-trilha-a-curadoria-padroes.md`](2026-07-09-trilha-a-curadoria-padroes.md)
+   (7 tasks). Entregue: tabela `estrutura_modelos` (árvore jsonb, RLS: publicados p/
+   todos, escrita só platform admin) + `field_inspections.segmento`; painel
+   `/admin/padroes` (link "Padrões" na sidebar) lista modelos e estruturas de
+   inspeções reais com "Promover a modelo" → **editor de generalização obrigatório**
+   (renomear/remover, aviso de anonimização — D-A3/D-A6); criação de inspeção ganhou
+   segmento com autocomplete + "Começar de um modelo" (aplicar = cópia via
+   `bulkCreateNodes`, soma e nunca substitui — D-A5). Migration
+   `20260709110000_estrutura_modelos.sql` APLICADA via MCP. PWA intocado (segmento
+   opcional no tipo compartilhado). Fora de escopo registrado: clustering automático
+   (3+ consultores), modelos por consultoria, Motor 2.
+
 ## 📜 Nova NR-10 (Portaria MTE 737/2026) — SPEC PRONTA, NÃO atacar agora (2026-07-06)
 
 A NR-10 foi **inteiramente reescrita** (DOU 01/06/2026) — **vigência 01/06/2027**.
