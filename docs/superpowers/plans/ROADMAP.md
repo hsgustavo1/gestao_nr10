@@ -60,9 +60,24 @@ teste de campo no momento).
    oportunista por foto (`gps_lat/lng/accuracy`); retomada de contexto
    (banner "Continuar"); modo sol (inversão CSS de alto contraste, v1);
    vitest no PWA (21 testes). **Próximo passo:** protocolo de validação da
-   spec §9 (bancada + visita real). Nota: `comporRti` ainda anexa evidência
-   por ponto — passar a usar `finding_id` pertence à trilha C (wizard de
-   relatório).
+   spec §9 (bancada + visita real).
+
+## 📄 Trilha C — Wizard de Relatório RTI: IMPLEMENTADA (2026-07-09),
+   aguardando validação com relatório real. Spec
+   [`2026-07-09-trilha-c-wizard-relatorio-design.md`](../specs/2026-07-09-trilha-c-wizard-relatorio-design.md),
+   plano [`2026-07-09-trilha-c-wizard-relatorio.md`](2026-07-09-trilha-c-wizard-relatorio.md)
+   (12 tasks). Entregue: rota `/rti/relatorio/$reportId/wizard` (5 etapas, rascunho
+   autosave em `rti_report_wizard`); PDF de alto padrão via `@react-pdf/renderer`
+   **client-side** (emenda D-C2b) com capa/identidade do consultor, NCs com fotos,
+   quadro-resumo e parecer; versões imutáveis em `rti_report_pdfs` (Storage
+   `…/relatorios/relatorio-vNN.pdf`); IA Groq sugere parecer (sempre revisável);
+   branding por org (`fn_set_org_branding`, bucket `org-assets`, dialog em
+   `/admin/empresas`); `comporRti` agora anexa evidência **por achado** via
+   `finding_id` (fallback fotos soltas do ponto) — dívida da trilha B paga.
+   Migration `20260709100000_rti_report_wizard.sql` APLICADA via MCP.
+   **Próximo passo:** emitir o 1º PDF com um relatório real do consultor (valida
+   fonte WOFF no preview, zoom das fotos 1024px — D-C5 — e o design lado a lado
+   com o Word atual).
 
 ## 📜 Nova NR-10 (Portaria MTE 737/2026) — SPEC PRONTA, NÃO atacar agora (2026-07-06)
 

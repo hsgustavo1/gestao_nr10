@@ -36,6 +36,16 @@ paginação/controle fino — é o status quo que queremos matar.
 **Se trocar para (a):** ganha fidelidade CSS, paga infra (função dedicada, ~50MB+, cold
 start); faria sentido se o template evoluir para HTML muito rico.
 
+### D-C2b · (emenda na fase de implementação, 2026-07-09) Renderização client-side
+- (a) Server function devolvendo o PDF (como a spec dizia)
+- (b) **Mesma lib (@react-pdf/renderer), renderizada no NAVEGADOR: preview via
+  PDFViewer e emissão via pdf().toBlob(), upload com a sessão do usuário** ← **escolhida**
+**Porquê:** preview e PDF final ficam idênticos por construção; evita transportar PDF
+grande (30 NCs × fotos) por server function, timeout serverless e service key — o upload
+usa o RLS do próprio usuário. A biblioteca decidida em D-C2 não muda.
+**Se trocar para (a):** mover `gerarPdfBlob` para uma rota server e devolver base64;
+custo: payload grande + credencial de service no server.
+
 ### D-C3 · Papel da IA no relatório?
 - (a) Sem IA — só templates e dados
 - (b) **IA sugere parecer/resumo executivo; humano sempre revisa e edita** ← **escolhida**
