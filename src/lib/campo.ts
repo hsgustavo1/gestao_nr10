@@ -52,6 +52,8 @@ export type FieldInspection = {
   status: FieldInspectionStatus;
   report_id: string | null;
   notes: string | null;
+  /** Segmento industrial (trilha A) — dispara sugestão de modelo de estrutura. */
+  segmento?: string | null;
   created_by_name: string | null;
   arquivada_campo: boolean; // arquivada no campo (oculta da lista do PWA, sem apagar no servidor)
   // Visibilidade por entrega (migração 20260620100000): procedência + estado de

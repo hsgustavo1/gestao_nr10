@@ -47,6 +47,8 @@ export type FieldInspection = {
   status: FieldInspectionStatus;
   report_id: string | null;
   notes: string | null;
+  /** Segmento industrial (trilha A) — opcional; PWA só transporta no sync. */
+  segmento?: string | null;
   created_by_name: string | null;
   arquivada_campo: boolean;
   created_at: string;

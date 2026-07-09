@@ -455,6 +455,50 @@ export type Database = {
           },
         ]
       }
+      estrutura_modelos: {
+        Row: {
+          arvore: Json
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          origem_inspecao_id: string | null
+          publicado: boolean
+          segmento: string
+          updated_at: string
+        }
+        Insert: {
+          arvore: Json
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          origem_inspecao_id?: string | null
+          publicado?: boolean
+          segmento: string
+          updated_at?: string
+        }
+        Update: {
+          arvore?: Json
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          origem_inspecao_id?: string | null
+          publicado?: boolean
+          segmento?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estrutura_modelos_origem_inspecao_id_fkey"
+            columns: ["origem_inspecao_id"]
+            isOneToOne: false
+            referencedRelation: "field_inspections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       field_findings: {
         Row: {
           created_at: string
@@ -535,6 +579,7 @@ export type Database = {
           notes: string | null
           org_id: string
           report_id: string | null
+          segmento: string | null
           status: string
           titulo: string
           updated_at: string
@@ -554,6 +599,7 @@ export type Database = {
           notes?: string | null
           org_id: string
           report_id?: string | null
+          segmento?: string | null
           status?: string
           titulo: string
           updated_at?: string
@@ -573,6 +619,7 @@ export type Database = {
           notes?: string | null
           org_id?: string
           report_id?: string | null
+          segmento?: string | null
           status?: string
           titulo?: string
           updated_at?: string
