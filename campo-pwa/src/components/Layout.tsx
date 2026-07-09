@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { SyncStatus } from "./SyncStatus";
 import { startConnectivityWatcher } from "@/sync/engine";
 import { cacheActor } from "@/lib/actor";
+import { ensurePersistentStorage } from "@/lib/storage-health";
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -21,6 +22,9 @@ export default function Layout() {
 
   useEffect(() => {
     if (!checked) return;
+    // Anti-eviction: pede ao SO para não apagar o IndexedDB sob pressão de storage
+    // (spec cofre e portão §3.1). Resultado exibido no SyncStatus.
+    void ensurePersistentStorage();
     return startConnectivityWatcher();
   }, [checked]);
 
