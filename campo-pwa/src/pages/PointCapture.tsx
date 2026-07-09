@@ -10,6 +10,7 @@ import { ArrowLeft, Camera, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { generateId } from "@/lib/uuid";
 import { saveResume } from "@/lib/resume";
+import { getGpsCached, warmupGps } from "@/lib/geo";
 
 type Params = { id: string; nodeId: string };
 
@@ -257,6 +258,11 @@ export default function PointCapture() {
   );
   const modos = useLiveQuery(() => db.modos_falha.toArray(), []) ?? [];
 
+  // GPS: aquece o fix ao abrir o ponto; a foto lê o cache sem esperar (spec §6.1).
+  useEffect(() => {
+    warmupGps();
+  }, []);
+
   // Retomada de contexto: registra onde o técnico está trabalhando (spec §6.2).
   useEffect(() => {
     if (!point || !id || !nodeId) return;
@@ -287,9 +293,9 @@ export default function PointCapture() {
       legenda: legendaInput.trim() || null,
       ordem: existingCount,
       finding_id: null,
-      gps_lat: null,
-      gps_lng: null,
-      gps_accuracy: null,
+      gps_lat: getGpsCached()?.lat ?? null,
+      gps_lng: getGpsCached()?.lng ?? null,
+      gps_accuracy: getGpsCached()?.accuracy ?? null,
       blob,
       created_at: now,
       _synced: false,
@@ -299,6 +305,8 @@ export default function PointCapture() {
     setLegendaInput("");
     // reset input so the same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = "";
+    // Renova o fix para a próxima foto (o técnico se move entre capturas).
+    warmupGps();
 
     // Primeira foto do ponto: abre o formulário de NC na hora, em vez de só
     // cobrar isso quando o técnico tenta sair (gate de saída continua como rede
