@@ -57,6 +57,18 @@ class CampoDatabase extends Dexie {
       modos_falha: "id, categoria",
       sync_queue: "++id, created_at, attempts, table",
     });
+    // v3: índice finding_id em photos (vínculo foto↔achado, spec 2026-07-08 §5.2).
+    // Campos não indexados (gps_*) não precisam constar — Dexie é schemaless fora
+    // dos índices. Registros v2 ficam com finding_id === undefined (= sem vínculo).
+    this.version(3).stores({
+      inspections: "id, _synced, status, responsavel_id, created_at",
+      nodes: "id, inspection_id, parent_id, _synced",
+      points: "id, inspection_id, node_id, _synced",
+      findings: "id, point_id, _synced",
+      photos: "id, point_id, finding_id, _synced",
+      modos_falha: "id, categoria",
+      sync_queue: "++id, created_at, attempts, table",
+    });
   }
 }
 

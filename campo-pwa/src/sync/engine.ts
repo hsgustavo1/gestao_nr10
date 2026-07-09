@@ -95,7 +95,9 @@ async function downloadInspectionsData(inspectionIds: string[]): Promise<void> {
     pointIds.length > 0
       ? supabase
           .from("field_photos")
-          .select("id, point_id, file_path, file_name, legenda, ordem, created_at")
+          .select(
+            "id, point_id, finding_id, gps_lat, gps_lng, gps_accuracy, file_path, file_name, legenda, ordem, created_at",
+          )
           .in("point_id", pointIds)
       : Promise.resolve({ data: [] as unknown[], error: null }),
   ]);
@@ -305,6 +307,13 @@ async function uploadPhoto(localId: string): Promise<void> {
     file_name: photo.file_name,
     legenda: photo.legenda,
     ordem: photo.ordem,
+    // ?? null: registros criados antes do Dexie v3 têm os campos undefined.
+    // uploadPhoto lê o registro ATUAL do Dexie — vínculo feito após o enqueue
+    // e antes do upload sobe correto de graça.
+    finding_id: photo.finding_id ?? null,
+    gps_lat: photo.gps_lat ?? null,
+    gps_lng: photo.gps_lng ?? null,
+    gps_accuracy: photo.gps_accuracy ?? null,
     created_at: photo.created_at,
   });
   if (dbError) throw dbError;
