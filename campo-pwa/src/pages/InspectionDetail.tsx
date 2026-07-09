@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   Camera,
   ChevronRight,
+  ClipboardCheck,
   Download,
   FolderTree,
   Home,
@@ -421,6 +422,14 @@ export default function InspectionDetail() {
             <Pencil className="h-5 w-5 text-slate-400" />
           </button>
         )}
+        <Link
+          to={`/inspecoes/${inspection.id}/revisao`}
+          className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 shrink-0 flex items-center justify-center"
+          aria-label="Revisão da visita"
+          title="Revisão da visita"
+        >
+          <ClipboardCheck className="h-5 w-5 text-green-400" />
+        </Link>
         <button
           type="button"
           onClick={() => setShowArchiveConfirm(true)}

@@ -6,6 +6,7 @@ import Login from "@/pages/Login";
 import InspectionList from "@/pages/InspectionList";
 import InspectionDetail from "@/pages/InspectionDetail";
 import PointCapture from "@/pages/PointCapture";
+import RevisaoVisita from "@/pages/RevisaoVisita";
 import Layout from "@/components/Layout";
 import "./index.css";
 
@@ -24,6 +25,7 @@ function App() {
           <Route index element={<Navigate to="/inspecoes" replace />} />
           <Route path="inspecoes" element={<InspectionList />} />
           <Route path="inspecoes/:id" element={<InspectionDetail />} />
+          <Route path="inspecoes/:id/revisao" element={<RevisaoVisita />} />
           <Route path="inspecoes/:id/ponto/:nodeId" element={<PointCapture />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

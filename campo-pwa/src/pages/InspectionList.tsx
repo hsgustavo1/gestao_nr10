@@ -2,13 +2,14 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { Link, useNavigate } from "react-router-dom";
 import { db } from "@/db/dexie";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, RefreshCw, Cloud, CloudOff, RotateCcw } from "lucide-react";
-import { useState } from "react";
+import { Plus, LogOut, RefreshCw, Cloud, CloudOff, RotateCcw, FolderUp } from "lucide-react";
+import { useRef, useState } from "react";
 import { CreateInspectionModal } from "@/components/CreateInspectionModal";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { clearOrgContext } from "@/lib/org";
 import { clearActor } from "@/lib/actor";
 import { getResume } from "@/lib/resume";
+import { importBackup } from "@/lib/backup";
 
 const STATUS_LABEL: Record<string, string> = {
   em_andamento: "Em andamento",
@@ -44,6 +45,27 @@ export default function InspectionList() {
   // Retomada de contexto (spec §6.2): lido uma vez por render da lista, suficiente.
   const resume = getResume();
 
+  // Restauração de backup (spec §3.3): aparelho quebrou → abrir aqui → importar ZIP.
+  const importRef = useRef<HTMLInputElement>(null);
+  const [importando, setImportando] = useState(false);
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportando(true);
+    try {
+      const r = await importBackup(file);
+      alert(
+        r.ok
+          ? `Backup "${r.titulo}" restaurado (${r.fotos} foto(s) reanexada(s)).`
+          : `Não restaurado: ${r.motivo}`,
+      );
+    } finally {
+      setImportando(false);
+      if (importRef.current) importRef.current.value = "";
+    }
+  }
+
   async function handleLogout() {
     // "Sair" apaga a sessão salva → o próximo login exige internet. Avisar antes,
     // de forma extra-clara quando o usuário já está offline (logout vira cilada).
@@ -63,6 +85,23 @@ export default function InspectionList() {
         <div className="flex items-center justify-between">
           <h1 className="font-semibold text-lg">Inspeções</h1>
           <div className="flex gap-2">
+            <input
+              ref={importRef}
+              type="file"
+              accept=".zip,application/zip"
+              className="sr-only"
+              onChange={handleImport}
+            />
+            <button
+              type="button"
+              onClick={() => importRef.current?.click()}
+              disabled={importando}
+              className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 flex items-center justify-center disabled:opacity-40"
+              aria-label="Restaurar backup"
+              title="Restaurar backup"
+            >
+              <FolderUp className="h-5 w-5" />
+            </button>
             <button
               type="button"
               onClick={sync}
