@@ -1526,32 +1526,44 @@ export type Database = {
       organizations: {
         Row: {
           ativa: boolean
+          cor_primaria: string | null
           created_at: string
           id: string
           is_root: boolean
+          logo_path: string | null
           managed_by_org_id: string | null
           nome: string
           parent_org_id: string | null
+          razao_social_relatorio: string | null
+          registro_profissional: string | null
           tipo: Database["public"]["Enums"]["org_tipo"]
         }
         Insert: {
           ativa?: boolean
+          cor_primaria?: string | null
           created_at?: string
           id?: string
           is_root?: boolean
+          logo_path?: string | null
           managed_by_org_id?: string | null
           nome: string
           parent_org_id?: string | null
+          razao_social_relatorio?: string | null
+          registro_profissional?: string | null
           tipo?: Database["public"]["Enums"]["org_tipo"]
         }
         Update: {
           ativa?: boolean
+          cor_primaria?: string | null
           created_at?: string
           id?: string
           is_root?: boolean
+          logo_path?: string | null
           managed_by_org_id?: string | null
           nome?: string
           parent_org_id?: string | null
+          razao_social_relatorio?: string | null
+          registro_profissional?: string | null
           tipo?: Database["public"]["Enums"]["org_tipo"]
         }
         Relationships: [
@@ -2237,6 +2249,82 @@ export type Database = {
           },
         ]
       }
+      rti_report_pdfs: {
+        Row: {
+          emitido_em: string
+          emitido_por: string | null
+          emitido_por_nome: string | null
+          file_path: string
+          id: string
+          report_id: string
+          versao: number
+        }
+        Insert: {
+          emitido_em?: string
+          emitido_por?: string | null
+          emitido_por_nome?: string | null
+          file_path: string
+          id?: string
+          report_id: string
+          versao: number
+        }
+        Update: {
+          emitido_em?: string
+          emitido_por?: string | null
+          emitido_por_nome?: string | null
+          file_path?: string
+          id?: string
+          report_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rti_report_pdfs_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rti_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rti_report_wizard: {
+        Row: {
+          etapa_atual: number
+          identificacao: Json
+          ncs_overrides: Json
+          parecer: string | null
+          report_id: string
+          resumo_executivo: string | null
+          updated_at: string
+        }
+        Insert: {
+          etapa_atual?: number
+          identificacao?: Json
+          ncs_overrides?: Json
+          parecer?: string | null
+          report_id: string
+          resumo_executivo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          etapa_atual?: number
+          identificacao?: Json
+          ncs_overrides?: Json
+          parecer?: string | null
+          report_id?: string
+          resumo_executivo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rti_report_wizard_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: true
+            referencedRelation: "rti_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rti_reports: {
         Row: {
           art_arquivo_path: string | null
@@ -2593,6 +2681,16 @@ export type Database = {
       }
       fn_set_org_active: {
         Args: { p_ativa: boolean; p_org: string }
+        Returns: undefined
+      }
+      fn_set_org_branding: {
+        Args: {
+          _org_id: string
+          _logo_path: string | null
+          _cor_primaria: string | null
+          _razao_social_relatorio: string | null
+          _registro_profissional: string | null
+        }
         Returns: undefined
       }
       fn_set_org_entitlements: {
