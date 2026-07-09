@@ -27,3 +27,14 @@ input[type="button"],
 label {
   touch-action: manipulation;
 }
+
+/* Modo sol (spec cofre e portão §5.3): inverte o tema escuro para claro de alto
+   contraste. Fotos/vídeos são contra-invertidos para manterem cores reais. */
+html.sun {
+  filter: invert(1) hue-rotate(180deg);
+  background: #fff;
+}
+html.sun img,
+html.sun video {
+  filter: invert(1) hue-rotate(180deg);
+}

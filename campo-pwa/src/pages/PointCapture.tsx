@@ -6,12 +6,13 @@ import type { RtiModoFalha, RtiTipoExecucao } from "@/lib/types";
 import { enqueue } from "@/sync/engine";
 import { modosPorCategoria } from "@/lib/campo";
 import { compressPhoto } from "@/lib/image";
-import { ArrowLeft, Camera, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, Camera, Moon, Plus, Sun, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { generateId } from "@/lib/uuid";
 import { saveResume } from "@/lib/resume";
 import { getGpsCached, warmupGps } from "@/lib/geo";
 import { contarUsoModos, maisUsados } from "@/lib/frequencia";
+import { useTheme } from "@/hooks/useTheme";
 
 /** Vincula a foto à NC. Se a foto já sincronizou, enfileira o update; se ainda
  * está na fila, o uploadPhoto lê o registro atual do Dexie e o vínculo sobe junto. */
@@ -363,6 +364,7 @@ export default function PointCapture() {
   const [legendaInput, setLegendaInput] = useState("");
   const [askOrphan, setAskOrphan] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const point = useLiveQuery(() => (nodeId ? db.points.get(nodeId) : undefined), [nodeId]);
   const photos = useLiveQuery(
@@ -515,6 +517,14 @@ export default function PointCapture() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="font-semibold flex-1 truncate">{point.titulo ?? "Ponto de coleta"}</h1>
+        <button
+          onClick={toggleTheme}
+          className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 flex items-center justify-center shrink-0"
+          aria-label={theme === "sun" ? "Modo escuro" : "Modo sol"}
+          title={theme === "sun" ? "Modo escuro" : "Modo sol"}
+        >
+          {theme === "sun" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+        </button>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">

@@ -2,7 +2,17 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { Link, useNavigate } from "react-router-dom";
 import { db } from "@/db/dexie";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, RefreshCw, Cloud, CloudOff, RotateCcw, FolderUp } from "lucide-react";
+import {
+  Plus,
+  LogOut,
+  RefreshCw,
+  Cloud,
+  CloudOff,
+  RotateCcw,
+  FolderUp,
+  Sun,
+  Moon,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { CreateInspectionModal } from "@/components/CreateInspectionModal";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
@@ -10,6 +20,7 @@ import { clearOrgContext } from "@/lib/org";
 import { clearActor } from "@/lib/actor";
 import { getResume } from "@/lib/resume";
 import { importBackup } from "@/lib/backup";
+import { useTheme } from "@/hooks/useTheme";
 
 const STATUS_LABEL: Record<string, string> = {
   em_andamento: "Em andamento",
@@ -44,6 +55,7 @@ export default function InspectionList() {
   const { syncState, lastSyncAt, pendingCount, sync, formatTimeAgo, isOnline } = useSyncStatus();
   // Retomada de contexto (spec §6.2): lido uma vez por render da lista, suficiente.
   const resume = getResume();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   // Restauração de backup (spec §3.3): aparelho quebrou → abrir aqui → importar ZIP.
   const importRef = useRef<HTMLInputElement>(null);
@@ -92,6 +104,15 @@ export default function InspectionList() {
               className="sr-only"
               onChange={handleImport}
             />
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-slate-800 flex items-center justify-center"
+              aria-label={theme === "sun" ? "Modo escuro" : "Modo sol"}
+              title={theme === "sun" ? "Modo escuro" : "Modo sol"}
+            >
+              {theme === "sun" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </button>
             <button
               type="button"
               onClick={() => importRef.current?.click()}

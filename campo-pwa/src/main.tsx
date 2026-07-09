@@ -8,7 +8,10 @@ import InspectionDetail from "@/pages/InspectionDetail";
 import PointCapture from "@/pages/PointCapture";
 import RevisaoVisita from "@/pages/RevisaoVisita";
 import Layout from "@/components/Layout";
+import { initTheme } from "@/hooks/useTheme";
 import "./index.css";
+
+initTheme();
 
 // Deriva o basename da base do Vite (VITE_PWA_BASE). No Vercel (base '/') vira '/';
 // localmente em sub-path ('/campo-pwa/') vira '/campo-pwa'.
