@@ -180,6 +180,38 @@ export type Database = {
         }
         Relationships: []
       }
+      digest_log: {
+        Row: {
+          destinatarios: string[]
+          enviado_em: string
+          id: string
+          org_id: string
+          semana: string
+        }
+        Insert: {
+          destinatarios?: string[]
+          enviado_em?: string
+          id?: string
+          org_id: string
+          semana: string
+        }
+        Update: {
+          destinatarios?: string[]
+          enviado_em?: string
+          id?: string
+          org_id?: string
+          semana?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digest_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       electrical_incidents: {
         Row: {
           acoes_tomadas: string | null
@@ -1953,6 +1985,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          digest_optout: boolean
           display_name: string | null
           email: string | null
           id: string
@@ -1960,6 +1993,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          digest_optout?: boolean
           display_name?: string | null
           email?: string | null
           id: string
@@ -1967,6 +2001,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          digest_optout?: boolean
           display_name?: string | null
           email?: string | null
           id?: string
