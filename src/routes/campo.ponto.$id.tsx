@@ -117,6 +117,10 @@ function CampoPontoPage() {
           file_name: name,
           legenda: null,
           ordem: ordem++,
+          finding_id: null,
+          gps_lat: null,
+          gps_lng: null,
+          gps_accuracy: null,
         });
       }
       toast.success(`${list.length} foto(s) anexada(s).`);

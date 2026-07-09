@@ -671,6 +671,10 @@ export type Database = {
           created_at: string
           file_name: string
           file_path: string
+          finding_id: string | null
+          gps_accuracy: number | null
+          gps_lat: number | null
+          gps_lng: number | null
           id: string
           legenda: string | null
           ordem: number
@@ -681,6 +685,10 @@ export type Database = {
           created_at?: string
           file_name: string
           file_path: string
+          finding_id?: string | null
+          gps_accuracy?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
           id?: string
           legenda?: string | null
           ordem?: number
@@ -691,6 +699,10 @@ export type Database = {
           created_at?: string
           file_name?: string
           file_path?: string
+          finding_id?: string | null
+          gps_accuracy?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
           id?: string
           legenda?: string | null
           ordem?: number
@@ -698,6 +710,13 @@ export type Database = {
           point_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "field_photos_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: false
+            referencedRelation: "field_findings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "field_photos_org_fk"
             columns: ["org_id"]

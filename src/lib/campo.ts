@@ -146,6 +146,12 @@ export type FieldPhoto = {
   file_name: string;
   legenda: string | null;
   ordem: number;
+  /** NC evidenciada por esta foto (null = foto geral do ponto ou pré-migração). */
+  finding_id: string | null;
+  /** Posição no momento da captura (null = GPS indisponível/negado). */
+  gps_lat: number | null;
+  gps_lng: number | null;
+  gps_accuracy: number | null;
   created_at: string;
 };
 
