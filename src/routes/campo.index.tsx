@@ -31,6 +31,12 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
 import { removerArquivosOrfaos } from "@/lib/upload";
+import { contarNos } from "@/lib/estrutura-modelos";
+import {
+  aplicarModelo,
+  useModelosDoSegmento,
+  useSegmentosExistentes,
+} from "@/lib/estrutura-modelos-queries";
 import { getRtiCampoAccess } from "@/lib/tenancy-gates";
 import { formatDatePtBR } from "@/lib/qualificacoes";
 import {
@@ -540,7 +546,13 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
   const [local, setLocal] = useState("");
   const [engenheiro, setEngenheiro] = useState(actorName ?? "");
   const [data, setData] = useState(new Date().toISOString().slice(0, 10));
+  const [segmento, setSegmento] = useState("");
+  const [modeloId, setModeloId] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const segmentos = useSegmentosExistentes();
+  const modelos = useModelosDoSegmento(segmento);
+  const modeloEscolhido = (modelos.data ?? []).find((m) => m.id === modeloId) ?? null;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -554,8 +566,20 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
         engenheiro: engenheiro.trim() || null,
         data_inspecao: data,
         status: "em_andamento",
+        segmento: segmento.trim() || null,
         created_by_name: actorName,
       });
+      // Aplicar modelo é cópia (D-A5); falha aqui não pode perder a inspeção criada.
+      if (modeloEscolhido) {
+        try {
+          const n = await aplicarModelo(insp.id, modeloEscolhido.arvore);
+          toast.success(`Estrutura do modelo aplicada (${n} itens).`);
+        } catch (err) {
+          toast.error(
+            "Inspeção criada, mas o modelo não foi aplicado: " + (err as Error).message,
+          );
+        }
+      }
       toast.success("Inspeção criada. Adicione os pontos de coleta.");
       navigate({ to: "/campo/inspecao/$id", params: { id: insp.id } });
     } catch (err) {
@@ -627,6 +651,46 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
               />
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="fi-segmento">Segmento industrial (opcional)</Label>
+            <Input
+              id="fi-segmento"
+              value={segmento}
+              onChange={(e) => {
+                setSegmento(e.target.value);
+                setModeloId("");
+              }}
+              maxLength={80}
+              list="fi-segmentos"
+              placeholder="Ex.: Papel e celulose"
+            />
+            <datalist id="fi-segmentos">
+              {(segmentos.data ?? []).map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </div>
+          {(modelos.data?.length ?? 0) > 0 && (
+            <div className="space-y-1.5 rounded-md border border-primary/30 bg-primary/5 p-2.5">
+              <Label htmlFor="fi-modelo">Começar de um modelo (opcional)</Label>
+              <select
+                id="fi-modelo"
+                value={modeloId}
+                onChange={(e) => setModeloId(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">Sem modelo — estrutura em branco</option>
+                {modelos.data!.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome} — {contarNos(m.arvore)} itens
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                O modelo é copiado: você edita livremente depois, em campo ou no PC.
+              </p>
+            </div>
+          )}
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button
               type="button"
