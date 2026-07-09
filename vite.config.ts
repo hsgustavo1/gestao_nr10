@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, loadEnv } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
@@ -14,6 +15,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     define,
+    test: {
+      // campo-pwa tem vitest próprio (campo-pwa/vitest.config.ts) com alias e
+      // fake-indexeddb; o runner da raiz não deve varrer aquele pacote.
+      exclude: ["**/node_modules/**", "**/dist/**", "campo-pwa/**"],
+    },
     server: {
       host: "::",
       port: 57010,

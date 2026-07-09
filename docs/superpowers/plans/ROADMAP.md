@@ -46,16 +46,23 @@ teste de campo no momento).
      (nunca mostra não-conformidade). Adiado deliberadamente (2026-06-30) pra
      não inflar o escopo da v1; revisitar depois que a v1 (status real) estiver
      validada em uso.
-2. ⏳ **Captura de achado em campo — reordenar UX (PWA) — DEPOIS do item 1,
-   só quando houver janela pra testar em campo real.** Hoje
-   (`campo-pwa/src/pages/PointCapture.tsx`) o achado nasce desacoplado da
-   foto: o app só pergunta "qual o problema?" quando o técnico tenta *sair*
-   do ponto com foto solta, não no momento de tirar a foto. Selecionar um
-   `modo_falha` já pré-preenche descrição/prioridade/recomendação (bom,
-   manter), mas isso devia acontecer logo após o disparo da câmera, não como
-   gate de saída. Mudança de UI/interação, não de arquitetura (pipeline
-   achado→RTI já pronto). **Bloqueado por:** precisa de teste em campo real
-   (PWA/offline/câmera) antes de validar — não testar só via preview web.
+2. ✅ **Trilha "Cofre e Portão" (PWA em campo) — IMPLEMENTADA (2026-07-09),
+   aguardando validação em campo real.** Supera e engloba o item antigo de
+   "reordenar UX de captura". Entregue (spec
+   [`2026-07-08-campo-pwa-cofre-e-portao-design.md`](../specs/2026-07-08-campo-pwa-cofre-e-portao-design.md),
+   plano [`2026-07-08-campo-pwa-cofre-e-portao.md`](2026-07-08-campo-pwa-cofre-e-portao.md),
+   13 tasks): `storage.persist()` + saúde do armazenamento no banner; backup
+   ZIP export/import com manifest (round-trip testado); tela "Revisão da
+   visita" (portão de saída consultivo + Encerrar visita); form de NC "modo
+   luva" (botões grandes, mais-usados no topo, ≤3 toques); vínculo
+   foto↔achado (`field_photos.finding_id`, migration
+   `20260708100000_field_photos_finding_gps.sql` APLICADA via MCP); GPS
+   oportunista por foto (`gps_lat/lng/accuracy`); retomada de contexto
+   (banner "Continuar"); modo sol (inversão CSS de alto contraste, v1);
+   vitest no PWA (21 testes). **Próximo passo:** protocolo de validação da
+   spec §9 (bancada + visita real). Nota: `comporRti` ainda anexa evidência
+   por ponto — passar a usar `finding_id` pertence à trilha C (wizard de
+   relatório).
 
 ## 📜 Nova NR-10 (Portaria MTE 737/2026) — SPEC PRONTA, NÃO atacar agora (2026-07-06)
 
