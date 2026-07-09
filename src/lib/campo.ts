@@ -283,3 +283,18 @@ export async function resizeImage(file: File, maxDim = 1024, quality = 0.85): Pr
     return file;
   }
 }
+
+/**
+ * Fotos que evidenciam um achado específico (trilha C, usa o finding_id da trilha B):
+ * se o achado tem fotos vinculadas, só elas entram; senão, as fotos soltas do ponto
+ * (finding_id null) servem de evidência compartilhada. Foto vinculada a OUTRO achado
+ * nunca entra.
+ */
+export function fotosParaAchado<T extends { finding_id: string | null }>(
+  fotosDoPonto: T[],
+  findingId: string,
+): T[] {
+  const vinculadas = fotosDoPonto.filter((f) => f.finding_id === findingId);
+  if (vinculadas.length > 0) return vinculadas;
+  return fotosDoPonto.filter((f) => !f.finding_id);
+}

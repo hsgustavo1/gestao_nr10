@@ -7,6 +7,7 @@ import type { RtiArea, RtiNc, RtiReport } from "./rti";
 import {
   caminhoAbaixoDoSetor,
   coletoresCampoDe,
+  fotosParaAchado,
   normalizarEstrutura,
   resizeImage,
   setorDoNo,
@@ -1017,8 +1018,9 @@ export async function comporRti({
         done += 1;
         onProgress?.("Criando NCs", done, totalEtapas);
 
-        // Fotos do ponto → evidência de constatação em cada NC (referência, não cópia)
-        for (const ph of fotosDoPonto) {
+        // Fotos do achado (finding_id) → evidência de constatação; fallback:
+        // fotos soltas do ponto (trilha C). Referência, não cópia.
+        for (const ph of fotosParaAchado(fotosDoPonto, finding.id)) {
           // Decisão C (2026-07-02): referencia a foto de campo (JÁ comprimida via
           // PWA + resizeImage 1024) em vez de copiar — 1× storage. A exclusão é
           // reference-aware (removerArquivosOrfaos), então o arquivo só some quando
