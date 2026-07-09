@@ -2,12 +2,13 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { Link, useNavigate } from "react-router-dom";
 import { db } from "@/db/dexie";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, RefreshCw, Cloud, CloudOff } from "lucide-react";
+import { Plus, LogOut, RefreshCw, Cloud, CloudOff, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { CreateInspectionModal } from "@/components/CreateInspectionModal";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { clearOrgContext } from "@/lib/org";
 import { clearActor } from "@/lib/actor";
+import { getResume } from "@/lib/resume";
 
 const STATUS_LABEL: Record<string, string> = {
   em_andamento: "Em andamento",
@@ -40,6 +41,8 @@ export default function InspectionList() {
   const list = Array.isArray(inspections) ? inspections : undefined;
   const [showModal, setShowModal] = useState(false);
   const { syncState, lastSyncAt, pendingCount, sync, formatTimeAgo, isOnline } = useSyncStatus();
+  // Retomada de contexto (spec §6.2): lido uma vez por render da lista, suficiente.
+  const resume = getResume();
 
   async function handleLogout() {
     // "Sair" apaga a sessão salva → o próximo login exige internet. Avisar antes,
@@ -96,6 +99,19 @@ export default function InspectionList() {
           )}
         </div>
       </header>
+
+      {resume && (
+        <Link
+          to={resume.path}
+          className="mx-4 mt-3 flex items-center gap-3 rounded-xl bg-blue-900/40 border border-blue-700/50 px-4 py-3"
+        >
+          <RotateCcw className="h-5 w-5 text-blue-300 shrink-0" />
+          <span className="text-sm text-blue-100 flex-1 min-w-0 truncate">
+            Continuar: {resume.label}
+            <span className="text-blue-300/80"> · {formatTimeAgo(new Date(resume.at))}</span>
+          </span>
+        </Link>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {queryError && (

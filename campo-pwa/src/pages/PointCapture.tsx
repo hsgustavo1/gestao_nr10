@@ -7,8 +7,9 @@ import { enqueue } from "@/sync/engine";
 import { modosPorCategoria } from "@/lib/campo";
 import { compressPhoto } from "@/lib/image";
 import { ArrowLeft, Camera, Plus, Trash2, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { generateId } from "@/lib/uuid";
+import { saveResume } from "@/lib/resume";
 
 type Params = { id: string; nodeId: string };
 
@@ -255,6 +256,17 @@ export default function PointCapture() {
     [nodeId],
   );
   const modos = useLiveQuery(() => db.modos_falha.toArray(), []) ?? [];
+
+  // Retomada de contexto: registra onde o técnico está trabalhando (spec §6.2).
+  useEffect(() => {
+    if (!point || !id || !nodeId) return;
+    saveResume({
+      inspectionId: id,
+      label: point.titulo ?? "Ponto de coleta",
+      path: `/inspecoes/${id}/ponto/${nodeId}`,
+      at: new Date().toISOString(),
+    });
+  }, [point, id, nodeId]);
 
   async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
