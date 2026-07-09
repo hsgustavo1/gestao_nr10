@@ -58,6 +58,7 @@ import {
   createOrg,
 } from "@/lib/empresas-queries";
 import { TIPO_LABEL, MODULE_LABEL, MODULES } from "@/lib/empresas-labels";
+import { OrgBrandingDialog } from "@/components/org-branding-dialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/empresas")({
@@ -643,6 +644,7 @@ function EditarEmpresaPanel({
   const [saving, setSaving] = useState(false);
   const [confirmToggle, setConfirmToggle] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [brandingOpen, setBrandingOpen] = useState(false);
 
   useEffect(() => {
     if (row) {
@@ -805,6 +807,18 @@ function EditarEmpresaPanel({
                 ))}
               </div>
             )}
+
+            <div className="space-y-1.5">
+              <Label>Identidade nos relatórios (logo, cor, registro profissional)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setBrandingOpen(true)}
+              >
+                Identidade do relatório
+              </Button>
+            </div>
           </div>
 
           <DialogFooter className="flex items-center justify-between gap-2 flex-row">
@@ -920,6 +934,7 @@ function EditarEmpresaPanel({
           </AlertDialog>
         </DialogContent>
       </Dialog>
+      <OrgBrandingDialog orgId={row.id} open={brandingOpen} onOpenChange={setBrandingOpen} />
     </>
   );
 }

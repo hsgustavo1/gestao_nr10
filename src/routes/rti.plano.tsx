@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Download,
   ExternalLink,
+  FileText,
   MessageSquare,
   Paperclip,
   Plus,
@@ -379,6 +380,16 @@ function RtiPlanoPage() {
                 >
                   Consultar ART
                 </a>
+              )}
+              {repAcc?.canEntregar && (
+                <Button asChild variant="outline" size="sm">
+                  <Link
+                    to="/rti/relatorio/$reportId/wizard"
+                    params={{ reportId: activeReport.id }}
+                  >
+                    <FileText className="mr-1.5 h-4 w-4" /> Gerar relatório
+                  </Link>
+                </Button>
               )}
               {repAcc?.canEntregar && auth.currentOrgId && (
                 <Button
