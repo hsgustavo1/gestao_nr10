@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   defaultIdentificacao,
+  formatNormasRef,
   mergeNcOverrides,
   proximaVersao,
   relatorioPdfPath,
@@ -118,5 +119,21 @@ describe("NcParaPdf carrega titulo/normas/situacaoAtual", () => {
     expect(saida.titulo).toBe("Painel sem identificação de circuitos");
     expect(saida.normas).toEqual([{ tipo: "nr10", ref: "10.2.4.g" }]);
     expect(saida.situacaoAtual).toBe("Aguardando peça");
+  });
+});
+
+describe("formatNormasRef", () => {
+  test("prefixa itens NR-10 com 'NR-10 ' e mantém nbr/outra como estão", () => {
+    const s = formatNormasRef([
+      { tipo: "nr10", ref: "10.2.4.g" },
+      { tipo: "nbr", ref: "NBR 5410 6.1.8.1" },
+      { tipo: "outra", ref: "IEC 60364" },
+    ]);
+    expect(s).toBe("NR-10 10.2.4.g; NBR 5410 6.1.8.1; IEC 60364");
+  });
+
+  test("ignora refs vazias e devolve string vazia para lista vazia", () => {
+    expect(formatNormasRef([{ tipo: "nr10", ref: "  " }])).toBe("");
+    expect(formatNormasRef([])).toBe("");
   });
 });
