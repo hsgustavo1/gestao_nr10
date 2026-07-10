@@ -114,6 +114,40 @@ export function formatNormasRef(normas: NormaRef[]): string {
     .join("; ");
 }
 
+/** Rótulo curto da NC para índice/bookmark: título, ou descrição aparada a ~80 chars. */
+export function rotuloNc(nc: Pick<NcParaPdf, "titulo" | "descricao">): string {
+  if (nc.titulo && nc.titulo.trim()) return nc.titulo.trim();
+  const d = (nc.descricao ?? "").trim();
+  if (d.length <= 80) return d;
+  const corte = d.slice(0, 80);
+  const ultimoEspaco = corte.lastIndexOf(" ");
+  const base = ultimoEspaco > 40 ? corte.slice(0, ultimoEspaco) : corte;
+  return base.trimEnd() + "…";
+}
+
+export interface SumarioSetor {
+  setor: string;
+  ncs: { numero: number; rotulo: string }[];
+}
+
+/** Agrupa NCs por setor (ordem de aparição), NCs ordenadas por número. */
+export function sumarioPorSetor(ncs: NcParaPdf[]): SumarioSetor[] {
+  const ordem: string[] = [];
+  const mapa = new Map<string, { numero: number; rotulo: string }[]>();
+  for (const nc of ncs) {
+    const setor = nc.areaNome || "—";
+    if (!mapa.has(setor)) {
+      mapa.set(setor, []);
+      ordem.push(setor);
+    }
+    mapa.get(setor)!.push({ numero: nc.numero, rotulo: rotuloNc(nc) });
+  }
+  return ordem.map((setor) => ({
+    setor,
+    ncs: mapa.get(setor)!.slice().sort((a, b) => a.numero - b.numero),
+  }));
+}
+
 // ── Quadro-resumo (P4 → P1, sempre 4 linhas) ────────────────────────────────
 export const PRIORIDADE_LABEL: Record<number, string> = {
   4: "P4 — Crítica",

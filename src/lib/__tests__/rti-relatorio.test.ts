@@ -6,6 +6,8 @@ import {
   proximaVersao,
   relatorioPdfPath,
   resumoPorPrioridade,
+  rotuloNc,
+  sumarioPorSetor,
   type NcParaPdf,
   type NcsOverrides,
 } from "../rti-relatorio";
@@ -135,5 +137,40 @@ describe("formatNormasRef", () => {
   test("ignora refs vazias e devolve string vazia para lista vazia", () => {
     expect(formatNormasRef([{ tipo: "nr10", ref: "  " }])).toBe("");
     expect(formatNormasRef([])).toBe("");
+  });
+});
+
+describe("rotuloNc", () => {
+  test("usa titulo quando houver", () => {
+    expect(rotuloNc({ titulo: "Painel sem identificação", descricao: "x".repeat(200) })).toBe(
+      "Painel sem identificação",
+    );
+  });
+  test("sem titulo, corta a descrição em ~80 chars sem partir palavra", () => {
+    const desc =
+      "Cabo exposto na canaleta do setor de moagem apresentando risco de contato acidental durante manutenção";
+    const r = rotuloNc({ titulo: null, descricao: desc });
+    expect(r.length).toBeLessThanOrEqual(81); // 80 + reticências
+    expect(r.endsWith("…")).toBe(true);
+    expect(r).not.toContain("  ");
+  });
+  test("descrição curta não recebe reticências", () => {
+    expect(rotuloNc({ titulo: null, descricao: "Cabo exposto" })).toBe("Cabo exposto");
+  });
+});
+
+describe("sumarioPorSetor", () => {
+  test("agrupa por setor na ordem de aparição, NCs ordenadas por número", () => {
+    const setores = sumarioPorSetor([
+      nc({ id: "a", numero: 3, areaNome: "Moagem", titulo: "T3" }),
+      nc({ id: "b", numero: 1, areaNome: "Subestação", titulo: "T1" }),
+      nc({ id: "c", numero: 2, areaNome: "Moagem", titulo: "T2" }),
+    ]);
+    expect(setores.map((s) => s.setor)).toEqual(["Moagem", "Subestação"]);
+    expect(setores[0].ncs).toEqual([
+      { numero: 2, rotulo: "T2" },
+      { numero: 3, rotulo: "T3" },
+    ]);
+    expect(setores[1].ncs).toEqual([{ numero: 1, rotulo: "T1" }]);
   });
 });
