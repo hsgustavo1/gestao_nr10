@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { CLAUSULAS_NR10_2019 } from "../nr10-clausulas-2019";
 import { CLAUSULAS_NR10_2026 } from "../nr10-clausulas-2026";
+import { NR28_GRAVIDADE } from "../nr28-gravidade";
 
 describe("CLAUSULAS_NR10_2019", () => {
   test("contém os itens que a NR-28 classifica", () => {
@@ -33,6 +34,26 @@ describe("CLAUSULAS_NR10_2026", () => {
     for (const c of CLAUSULAS_NR10_2026) {
       expect(c.item.startsWith(c.capitulo)).toBe(true);
       expect(c.titulo.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("NR28_GRAVIDADE", () => {
+  test("classifica os itens verificados nesta sessão", () => {
+    const porItem = (base: string) =>
+      NR28_GRAVIDADE.find((l) => l.itens.includes(base));
+    expect(porItem("10.2.1")?.gravidade).toBe(4);
+    expect(porItem("10.2.4")?.gravidade).toBe(2);
+    expect(porItem("10.4.1")?.gravidade).toBe(4);
+    expect(porItem("10.8.5")?.gravidade).toBe(2);
+  });
+
+  test("gravidade sempre entre 1 e 4 e área S ou M", () => {
+    for (const l of NR28_GRAVIDADE) {
+      expect(l.gravidade).toBeGreaterThanOrEqual(1);
+      expect(l.gravidade).toBeLessThanOrEqual(4);
+      expect(["S", "M"]).toContain(l.area);
+      expect(l.itens.length).toBeGreaterThan(0);
     }
   });
 });
