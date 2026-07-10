@@ -20,6 +20,9 @@ const nc = (over: Partial<NcParaPdf>): NcParaPdf => ({
   osNumero: null,
   custoPlanejado: 0,
   fotos: [],
+  titulo: null,
+  normas: [],
+  situacaoAtual: null,
   ...over,
 });
 
@@ -101,5 +104,19 @@ describe("defaultIdentificacao", () => {
     expect(ident.responsavelTecnico).toBe("Eng. Fulano");
     expect(ident.artNumero).toBe("ART-123");
     expect(ident.normas).toContain("NR-10");
+  });
+});
+
+describe("NcParaPdf carrega titulo/normas/situacaoAtual", () => {
+  test("mergeNcOverrides preserva os campos novos", () => {
+    const entrada = nc({
+      titulo: "Painel sem identificação de circuitos",
+      normas: [{ tipo: "nr10", ref: "10.2.4.g" }],
+      situacaoAtual: "Aguardando peça",
+    });
+    const [saida] = mergeNcOverrides([entrada], {});
+    expect(saida.titulo).toBe("Painel sem identificação de circuitos");
+    expect(saida.normas).toEqual([{ tipo: "nr10", ref: "10.2.4.g" }]);
+    expect(saida.situacaoAtual).toBe("Aguardando peça");
   });
 });

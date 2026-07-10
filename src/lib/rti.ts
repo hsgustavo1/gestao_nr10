@@ -2,6 +2,8 @@
 // Plano de ação das não conformidades (NCs) apontadas na inspeção das
 // instalações elétricas (NR-10). Prioridades P1→P4, onde P4 é a mais grave.
 
+import type { NormaRef } from "./normas/types";
+
 export const RTI_NC_STATUSES = ["pendente", "em_andamento", "concluida"] as const;
 export type RtiNcStatus = (typeof RTI_NC_STATUSES)[number];
 
@@ -84,6 +86,7 @@ export type RtiReport = {
   art_arquivo_path?: string | null;
   periodo_inicio: string | null;
   periodo_fim: string | null;
+  norma_versao: string;
   report_path: string | null;
   notes: string | null;
   created_by: string | null;
@@ -122,6 +125,9 @@ export type RtiNc = {
   custo_planejado: number | null;
   custo_realizado: number | null;
   situacao_atual: string | null;
+  titulo: string | null;
+  normas: NormaRef[];
+  gravidade_nr28_override: number | null;
   concluida_em: string | null;
   finding_id: string | null;
   created_at: string;

@@ -178,6 +178,9 @@ export const gerarRelatorioPdf = createServerFn({ method: "POST" })
       tipoExecucao: (nc.tipo_execucao as "os" | "investimento") ?? "os",
       osNumero: (nc.os_numero as string) ?? null,
       custoPlanejado: Number(nc.custo_planejado ?? 0),
+      titulo: (nc.titulo as string) ?? null,
+      normas: Array.isArray(nc.normas) ? (nc.normas as import("./normas/types").NormaRef[]) : [],
+      situacaoAtual: (nc.situacao_atual as string) ?? null,
       fotos: (fotosPorNc.get(nc.id as string) ?? [])
         .map((f) => ({ ...f, url: uriPorFoto.get(f.id) ?? "" }))
         .filter((f) => f.url), // descarta fotos que falharam no download

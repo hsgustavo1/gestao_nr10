@@ -935,7 +935,7 @@ export async function comporRti({
       .select("*")
       .eq("report_id", reportId)
       .not("finding_id", "is", null);
-    for (const nc of (existingNcs ?? []) as RtiNc[]) {
+    for (const nc of (existingNcs ?? []) as unknown as RtiNc[]) {
       if (nc.finding_id) existingNcByFindingId.set(nc.finding_id, nc);
     }
   }
@@ -1013,7 +1013,7 @@ export async function comporRti({
           .select()
           .single();
         if (ncErr) throw ncErr;
-        const nc = ncData as RtiNc;
+        const nc = ncData as unknown as RtiNc;
         ncsCriadas += 1;
         done += 1;
         onProgress?.("Criando NCs", done, totalEtapas);

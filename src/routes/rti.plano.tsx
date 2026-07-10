@@ -1319,6 +1319,9 @@ function NovaNcDialog({
         custo_planejado: custoPlanejado.trim() ? Number(custoPlanejado) : null,
         custo_realizado: null,
         situacao_atual: null,
+        titulo: null,
+        normas: [],
+        gravidade_nr28_override: null,
         concluida_em: null,
         finding_id: null,
       });

@@ -261,7 +261,7 @@ export function useRtiNc(id?: string) {
     queryFn: async () => {
       const { data, error } = await supabase.from("rti_ncs").select("*").eq("id", id!).single();
       if (error) throw error;
-      return data as RtiNc;
+      return data as unknown as RtiNc;
     },
   });
 }
@@ -283,7 +283,7 @@ export function useCreateRtiNc() {
         .select()
         .single();
       if (error) throw error;
-      return data as RtiNc;
+      return data as unknown as RtiNc;
     },
     onSuccess: () => invalidateNcs(qc),
   });
@@ -295,12 +295,12 @@ export function useUpdateRtiNc() {
     mutationFn: async ({ id, ...patch }: Partial<RtiNc> & { id: string }) => {
       const { data, error } = await supabase
         .from("rti_ncs")
-        .update(patch)
+        .update(patch as never)
         .eq("id", id)
         .select()
         .single();
       if (error) throw error;
-      return data as RtiNc;
+      return data as unknown as RtiNc;
     },
     onSuccess: () => invalidateNcs(qc),
   });
@@ -313,7 +313,7 @@ export function useBulkUpdateRtiNcs() {
       for (let i = 0; i < ids.length; i += 200) {
         const { error } = await supabase
           .from("rti_ncs")
-          .update(patch)
+          .update(patch as never)
           .in("id", ids.slice(i, i + 200));
         if (error) throw error;
       }

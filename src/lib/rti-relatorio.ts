@@ -1,5 +1,6 @@
 // Trilha C — modelo de dados do PDF do RTI. Puro (sem Supabase/React) — testável isolado.
 import { evidenciaFolder } from "./storage-paths";
+import type { NormaRef } from "./normas/types";
 
 // ── Identificação (etapa 1) ──────────────────────────────────────────────────
 export interface WizardIdentificacao {
@@ -70,6 +71,9 @@ export interface NcParaPdf {
   osNumero: string | null;
   custoPlanejado: number;
   fotos: PdfFoto[];
+  titulo: string | null; // título curto do achado (DIAGNERG Campo 3); null = legado
+  normas: NormaRef[]; // referências normativas da NC
+  situacaoAtual: string | null; // andamento textual (hoje no banco, agora exposto)
 }
 
 export interface NcOverride {
