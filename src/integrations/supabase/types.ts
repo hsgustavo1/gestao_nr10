@@ -2235,7 +2235,9 @@ export type Database = {
           entregue_em: string | null
           entregue_por_org: string | null
           finding_id: string | null
+          gravidade_nr28_override: number | null
           id: string
+          normas: Json
           numero: number
           org_id: string
           os_numero: string | null
@@ -2248,6 +2250,7 @@ export type Database = {
           situacao_atual: string | null
           status: string
           tipo_execucao: string
+          titulo: string | null
           updated_at: string
         }
         Insert: {
@@ -2260,7 +2263,9 @@ export type Database = {
           entregue_em?: string | null
           entregue_por_org?: string | null
           finding_id?: string | null
+          gravidade_nr28_override?: number | null
           id?: string
+          normas?: Json
           numero: number
           org_id: string
           os_numero?: string | null
@@ -2273,6 +2278,7 @@ export type Database = {
           situacao_atual?: string | null
           status?: string
           tipo_execucao?: string
+          titulo?: string | null
           updated_at?: string
         }
         Update: {
@@ -2285,7 +2291,9 @@ export type Database = {
           entregue_em?: string | null
           entregue_por_org?: string | null
           finding_id?: string | null
+          gravidade_nr28_override?: number | null
           id?: string
+          normas?: Json
           numero?: number
           org_id?: string
           os_numero?: string | null
@@ -2298,6 +2306,7 @@ export type Database = {
           situacao_atual?: string | null
           status?: string
           tipo_execucao?: string
+          titulo?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2420,6 +2429,7 @@ export type Database = {
           entregue_em: string | null
           entregue_por_org: string | null
           id: string
+          norma_versao: string
           notes: string | null
           org_id: string
           periodo_fim: string | null
@@ -2444,6 +2454,7 @@ export type Database = {
           entregue_em?: string | null
           entregue_por_org?: string | null
           id?: string
+          norma_versao?: string
           notes?: string | null
           org_id: string
           periodo_fim?: string | null
@@ -2468,6 +2479,7 @@ export type Database = {
           entregue_em?: string | null
           entregue_por_org?: string | null
           id?: string
+          norma_versao?: string
           notes?: string | null
           org_id?: string
           periodo_fim?: string | null
