@@ -65,6 +65,14 @@ const s = StyleSheet.create({
   },
 });
 
+// Fatiar as NCs em páginas explícitas mantém cada passo de layout do @react-pdf pequeno.
+const NC_POR_PAGINA = 14;
+function chunk<T>(arr: T[], n: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+  return out;
+}
+
 const fmtBRL = (v: number) =>
   `R$ ${v.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 
@@ -159,36 +167,41 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
         </View>
       </Page>
 
-      {/* NCs */}
-      <Page size="A4" style={s.page}>
-        <HeaderFooter model={model} />
-        <Text style={[s.h2, { color: cor }]}>Não conformidades constatadas</Text>
-        {model.ncs.map((nc) => (
-          <View key={nc.id} style={s.ncCard} wrap={false} minPresenceAhead={80}>
-            <Text style={s.ncTitulo}>
-              NC {String(nc.numero).padStart(3, "0")} — {PRIORIDADE_LABEL[nc.prioridade]}
-            </Text>
-            <Text style={s.ncMeta}>
-              Área: {nc.areaNome}
-              {nc.tipoExecucao === "investimento"
-                ? "  ·  Investimento"
-                : nc.osNumero
-                  ? `  ·  O.S. ${nc.osNumero}`
-                  : ""}
-              {nc.custoPlanejado ? `  ·  ${fmtBRL(nc.custoPlanejado)}` : ""}
-            </Text>
-            <Text style={s.p}>{nc.descricao}</Text>
-            {nc.recomendacao ? <Text style={s.p}>Recomendação: {nc.recomendacao}</Text> : null}
-            {nc.fotos.length > 0 ? (
-              <View style={s.fotoRow}>
-                {nc.fotos.map((f) => (
-                  <Image key={f.id} src={f.url} style={s.foto} />
-                ))}
-              </View>
-            ) : null}
-          </View>
-        ))}
-      </Page>
+      {/* NCs — fatiadas em páginas explícitas (evita o flow único gigante, que é
+          superlinear no @react-pdf). Cada página ainda auto-pagina o overflow. */}
+      {chunk(model.ncs, NC_POR_PAGINA).map((grupo, gi) => (
+        <Page key={gi} size="A4" style={s.page}>
+          <HeaderFooter model={model} />
+          {gi === 0 ? (
+            <Text style={[s.h2, { color: cor }]}>Não conformidades constatadas</Text>
+          ) : null}
+          {grupo.map((nc) => (
+            <View key={nc.id} style={s.ncCard} wrap={false} minPresenceAhead={80}>
+              <Text style={s.ncTitulo}>
+                NC {String(nc.numero).padStart(3, "0")} — {PRIORIDADE_LABEL[nc.prioridade]}
+              </Text>
+              <Text style={s.ncMeta}>
+                Área: {nc.areaNome}
+                {nc.tipoExecucao === "investimento"
+                  ? "  ·  Investimento"
+                  : nc.osNumero
+                    ? `  ·  O.S. ${nc.osNumero}`
+                    : ""}
+                {nc.custoPlanejado ? `  ·  ${fmtBRL(nc.custoPlanejado)}` : ""}
+              </Text>
+              <Text style={s.p}>{nc.descricao}</Text>
+              {nc.recomendacao ? <Text style={s.p}>Recomendação: {nc.recomendacao}</Text> : null}
+              {nc.fotos.length > 0 ? (
+                <View style={s.fotoRow}>
+                  {nc.fotos.map((f) => (
+                    <Image key={f.id} src={f.url} style={s.foto} />
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          ))}
+        </Page>
+      ))}
 
       {/* Parecer e assinatura */}
       <Page size="A4" style={s.page}>

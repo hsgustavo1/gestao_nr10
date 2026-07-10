@@ -170,6 +170,17 @@ export function buildPdfModel(args: {
   };
 }
 
+// ── Redução de foto para o PDF (transform CDN do Storage) ────────────────────
+// As fotos aparecem no laudo a ~2 cm; a resolução cheia (~290 KB) é desperdício.
+// Reescreve a URL pública para o endpoint de transformação de imagem do Supabase,
+// que devolve um JPEG reduzido (~29 KB a 600px q55). Confirmado no projeto (D-C7).
+export function urlFotoReduzida(publicUrl: string, width = 600, quality = 55): string {
+  if (!publicUrl.includes("/object/public/")) return publicUrl;
+  const base = publicUrl.replace("/object/public/", "/render/image/public/");
+  const sep = base.includes("?") ? "&" : "?";
+  return `${base}${sep}width=${width}&quality=${quality}`;
+}
+
 // ── Versões e path no Storage ────────────────────────────────────────────────
 export function proximaVersao(pdfs: { versao: number }[]): number {
   return pdfs.reduce((m, p) => Math.max(m, p.versao), 0) + 1;
@@ -187,4 +198,13 @@ export function relatorioPdfPath(
   orgNome?: string | null,
 ): string {
   return `${evidenciaFolder(orgId, report, orgNome)}/relatorios/${relatorioPdfFileName(versao)}`;
+}
+
+/** Prévia (sobrescrita a cada geração; não é versão arquivada). */
+export function relatorioPreviewPath(
+  orgId: string,
+  report: { id: string; titulo?: string | null },
+  orgNome?: string | null,
+): string {
+  return `${evidenciaFolder(orgId, report, orgNome)}/relatorios/_preview.pdf`;
 }

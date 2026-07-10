@@ -5,7 +5,8 @@
   "installCommand": "npm ci",
   "functions": {
     "api/server.ts": {
-      "includeFiles": "dist/server/**"
+      "includeFiles": "dist/server/**",
+      "maxDuration": 60
     }
   },
   "rewrites": [

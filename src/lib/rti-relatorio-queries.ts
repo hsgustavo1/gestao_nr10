@@ -1,11 +1,8 @@
 // Trilha C — React Query + Supabase do wizard de relatório.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
 import type { RtiReport } from "@/lib/rti";
 import {
-  proximaVersao,
-  relatorioPdfPath,
   type NcsOverrides,
   type OrgBranding,
   type PdfFoto,
@@ -125,44 +122,9 @@ export function useReportPdfs(reportId?: string) {
   });
 }
 
-/** Emite: sobe o Blob no Storage (nunca sobrescreve) + registra a versão. */
-export function useEmitirPdf() {
-  const qc = useQueryClient();
-  const auth = useAuth();
-  return useMutation({
-    mutationFn: async (args: {
-      report: RtiReportComOrg;
-      blob: Blob;
-      pdfs: { versao: number }[];
-    }) => {
-      const orgId = args.report.org_id;
-      if (!orgId) throw new Error("Relatório sem organização.");
-      const versao = proximaVersao(args.pdfs);
-      const path = relatorioPdfPath(orgId, args.report, versao, auth.currentOrg?.nome);
-      const { error: upErr } = await supabase.storage
-        .from("rti-evidencias")
-        .upload(path, args.blob, { contentType: "application/pdf", upsert: false });
-      if (upErr) throw upErr;
-      const { error: insErr } = await supabase.from("rti_report_pdfs").insert({
-        report_id: args.report.id,
-        versao,
-        file_path: path,
-        emitido_por: auth.user?.id ?? null,
-        emitido_por_nome: auth.displayName || null,
-      } as never);
-      if (insErr) throw insErr;
-      // Aponta o report_path pro PDF mais novo (só antes da entrega — depois o selo congela).
-      if (!args.report.entregue_em) {
-        await supabase.from("rti_reports").update({ report_path: path }).eq("id", args.report.id);
-      }
-      return { versao, path, url: publicUrl(path) };
-    },
-    onSuccess: (_r, args) => {
-      qc.invalidateQueries({ queryKey: ["rti_report_pdfs", args.report.id] });
-      qc.invalidateQueries({ queryKey: ["rti_report", args.report.id] });
-    },
-  });
-}
+// A emissão e a prévia do PDF são SERVER-SIDE (D-C7) — ver `gerarRelatorioPdf` em
+// rti-relatorio-server.tsx. O upload client-side foi removido: no porte real o render
+// no navegador trava, e o servidor faz o versionamento sob a RLS do usuário.
 
 export function useSetOrgBranding() {
   const qc = useQueryClient();

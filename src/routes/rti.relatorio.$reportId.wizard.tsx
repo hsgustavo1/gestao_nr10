@@ -1,34 +1,32 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Download, FileText, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check, Download, Eye, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import { useRtiAreas, useRtiNcs } from "@/lib/rti-queries";
 import {
-  useEmitirPdf,
   useFotosPorNc,
-  useOrgBranding,
   useReportPdfs,
   useRtiReport,
   useSaveWizardDraft,
   useWizardDraft,
 } from "@/lib/rti-relatorio-queries";
 import {
-  buildPdfModel,
   defaultIdentificacao,
   mergeNcOverrides,
   type NcParaPdf,
   type NcsOverrides,
   type WizardIdentificacao,
 } from "@/lib/rti-relatorio";
+import { gerarRelatorioPdf } from "@/lib/rti-relatorio-server";
 import { StepIdentificacao } from "@/components/rti/wizard/StepIdentificacao";
 import { StepNcs } from "@/components/rti/wizard/StepNcs";
 import { StepParecer } from "@/components/rti/wizard/StepParecer";
-
-const PdfPreview = lazy(() => import("@/components/rti/pdf/PdfPreview"));
 
 export const Route = createFileRoute("/rti/relatorio/$reportId/wizard")({
   component: WizardRelatorioPage,
@@ -45,16 +43,13 @@ function WizardRelatorioPage() {
   const draft = useWizardDraft(reportId);
   const saveDraft = useSaveWizardDraft(reportId);
   const pdfs = useReportPdfs(reportId);
-  // Branding da org entregadora = org atual do consultor (quem emite assina).
-  const branding = useOrgBranding(auth.currentOrgId);
+  const qc = useQueryClient();
 
   const [etapa, setEtapa] = useState(1);
   const [ident, setIdent] = useState<WizardIdentificacao | null>(null);
   const [overrides, setOverrides] = useState<NcsOverrides>({});
   const [parecer, setParecer] = useState("");
   const [resumoExecutivo, setResumoExecutivo] = useState("");
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   // Hidrata o estado uma única vez quando report + rascunho chegam.
   const hidratado = useRef(false);
@@ -110,33 +105,70 @@ function WizardRelatorioPage() {
     [ncsQ.data, areaNome, fotos.data],
   );
 
-  const model = useMemo(() => {
-    if (!ident) return null;
-    return buildPdfModel({
-      identificacao: ident,
-      branding: branding.data ?? null,
-      ncs: ncsPdf,
-      overrides,
-      parecer,
-      resumoExecutivo,
-    });
-  }, [ident, branding.data, ncsPdf, overrides, parecer, resumoExecutivo]);
-
-  const emitir = useEmitirPdf();
+  // Geração do PDF é SERVER-SIDE (D-C7): no porte real (centenas de NCs + fotos) o
+  // render no navegador trava. O servidor lê tudo sob a RLS do usuário (token abaixo),
+  // reduz as fotos, renderiza e sobe no Storage.
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [gerandoPreview, setGerandoPreview] = useState(false);
   const [emitidoUrl, setEmitidoUrl] = useState<string | null>(null);
+  const [emitindo, setEmitindo] = useState(false);
+
+  async function gerarNoServidor(modo: "preview" | "emissao") {
+    if (!ident) return null;
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) {
+      toast.error("Sessão expirada — entre novamente para gerar o PDF.");
+      return null;
+    }
+    // Descarrega o rascunho para o servidor ler o estado mais recente do wizard.
+    await saveDraft.mutateAsync({
+      etapa_atual: etapa,
+      identificacao: ident,
+      ncs_overrides: overrides,
+      parecer: parecer || null,
+      resumo_executivo: resumoExecutivo || null,
+    });
+    return gerarRelatorioPdf({
+      data: {
+        reportId,
+        accessToken: token,
+        orgIdBranding: auth.currentOrgId ?? null,
+        emitidoPorId: auth.user?.id ?? null,
+        emitidoPorNome: auth.displayName || null,
+        modo,
+      },
+    });
+  }
+
+  const msgErro = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
+  async function onGerarPreview() {
+    setGerandoPreview(true);
+    try {
+      const r = await gerarNoServidor("preview");
+      if (r) setPreviewUrl(r.url);
+    } catch (err) {
+      toast.error(`Falha ao gerar a prévia: ${msgErro(err)}`);
+    } finally {
+      setGerandoPreview(false);
+    }
+  }
 
   async function onEmitir() {
-    if (!model || !report.data) return;
+    setEmitindo(true);
     try {
-      const { gerarPdfBlob } = await import("@/components/rti/pdf/gerarPdfBlob");
-      const blob = await gerarPdfBlob(model);
-      const r = await emitir.mutateAsync({ report: report.data, blob, pdfs: pdfs.data ?? [] });
-      setEmitidoUrl(r.url);
-      toast.success(`Relatório v${r.versao} emitido.`);
+      const r = await gerarNoServidor("emissao");
+      if (r && r.modo === "emissao") {
+        setEmitidoUrl(r.url);
+        toast.success(`Relatório v${r.versao} emitido.`);
+        qc.invalidateQueries({ queryKey: ["rti_report_pdfs", reportId] });
+        qc.invalidateQueries({ queryKey: ["rti_report", reportId] });
+      }
     } catch (err) {
-      toast.error(
-        `Falha na emissão (o rascunho está salvo): ${err instanceof Error ? err.message : String(err)}`,
-      );
+      toast.error(`Falha na emissão (o rascunho está salvo): ${msgErro(err)}`);
+    } finally {
+      setEmitindo(false);
     }
   }
 
@@ -205,14 +237,37 @@ function WizardRelatorioPage() {
                 }}
               />
             )}
-            {etapa === 4 && mounted && model && (
-              <Suspense
-                fallback={
-                  <div className="p-8 text-center text-muted-foreground">Montando preview…</div>
-                }
-              >
-                <PdfPreview model={model} />
-              </Suspense>
+            {etapa === 4 && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button onClick={onGerarPreview} disabled={gerandoPreview || !ident}>
+                    {gerandoPreview ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Gerando prévia…
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="mr-1.5 h-4 w-4" /> {previewUrl ? "Atualizar prévia" : "Gerar prévia"}
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    O PDF é gerado no servidor com os dados atuais. Relatórios grandes podem levar
+                    alguns segundos.
+                  </p>
+                </div>
+                {previewUrl ? (
+                  <iframe
+                    title="Prévia do relatório"
+                    src={previewUrl}
+                    className="h-[75vh] w-full rounded-md border"
+                  />
+                ) : (
+                  <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    Clique em <strong>Gerar prévia</strong> para ver o PDF real do relatório.
+                  </div>
+                )}
+              </div>
             )}
             {etapa === 5 && (
               <div className="space-y-4">
@@ -221,8 +276,8 @@ function WizardRelatorioPage() {
                   versão nova, nunca sobrescreve. Depois de emitir, a entrega ao cliente (selo)
                   continua sendo feita pelo plano de ação.
                 </p>
-                <Button onClick={onEmitir} disabled={emitir.isPending || !model}>
-                  {emitir.isPending ? (
+                <Button onClick={onEmitir} disabled={emitindo || !ident}>
+                  {emitindo ? (
                     <>
                       <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Emitindo…
                     </>

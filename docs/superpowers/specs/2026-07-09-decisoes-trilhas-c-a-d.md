@@ -72,6 +72,45 @@ acontece. (c) é trilha própria futura (já no ROADMAP como "white-label do con
 é regressão de custo. A opção (b) cria o teste mais barato possível.
 **Se trocar para (c):** rever custos de Storage antes.
 
+### D-C7 · (emenda na fase de validação real, 2026-07-09) Escala real quebra o render client-side
+**Contexto:** o 1º relatório real (RTI 2025) tem **730 NCs e 1021 fotos (289 MB)** —
+não é exceção, é o porte típico. O render client-side de D-C2b (PDFViewer ao vivo +
+`pdf().toBlob()`) trava o navegador nesse volume, e embutir as fotos em resolução cheia
+geraria um PDF de ~300 MB (inviável de gerar e de enviar). **D-C2b fica superada para o
+RTI** (valia para dezenas de NCs; não escala para centenas).
+
+Decisões (escolha do founder ao vivo):
+- **Onde renderiza:** server function (`createServerFn`, runtime Node/Vercel) com
+  `@react-pdf/renderer` `renderToBuffer` — volta à intenção original da spec (D-C2) que
+  D-C2b havia invertido. Sobe o PDF no Storage com o **token do próprio usuário**
+  (RLS preservada, sem service key — a garantia de D-C2b se mantém, só muda o runtime).
+- **Prévia:** sob demanda — botão "Gerar prévia" chama o servidor, que renderiza o PDF
+  real (reduzido) e devolve a URL; o navegador exibe num `<iframe>`. Não é mais reativa a
+  cada tecla (impossível nesse porte).
+- **Fotos:** reduzidas para ~600px antes de embutir (aparecem a ~2 cm no laudo — a
+  resolução cheia é desperdício). PDF-alvo ~35-45 MB com as 1021 fotos. Redução via
+  endpoint de transformação de imagem do Supabase Storage (`render/image`), sem dep nativa.
+- **Fonte no servidor:** Hanken Grotesk registrada a partir dos bytes embarcados
+  (o `?url` do Vite não resolve no runtime do servidor) — preserva o design de marca.
+
+**Gate obrigatório (EXECUTADO):** teste em escala real (730 NCs + 1021 fotos reais
+reduzidas + fonte real) medindo tempo/tamanho/memória. Achado crítico: o documento tinha
+**todas as NCs numa única `<Page>`**, cujo layout no @react-pdf é **superlinear** — render
+de ~102 s (RSS 813 MB). **Fatiando as NCs em páginas explícitas (`NC_POR_PAGINA=14`)** o
+render caiu para **7,6 s** (RSS 355 MB). Com prefetch **paralelo** das fotos reduzidas
+(→ data URIs, o render fica CPU-only) o total ficou em **~27 s no pior caso (frio)** —
+cabe no serverless síncrono. Portanto: **síncrono é viável, não precisa de job assíncrono
+nem de Chromium.** Transform endpoint confirmado habilitado (179 KB → 29 KB a 600px q55).
+- **Detalhe de implementação obrigatório:** a server function faz **prefetch paralelo**
+  das fotos reduzidas e passa **data URIs** ao Document (deixar o @react-pdf buscar as URLs
+  em série custava ~4× mais). E o Document renderiza as NCs **fatiadas em páginas**.
+- **Vercel `maxDuration`:** o default (10 s Hobby / 15 s Pro) é menor que os ~27 s — é
+  **obrigatório** configurar `maxDuration` (60 s) para a função no deploy. Local (dev +
+  teste de escala) não tem timeout, então valida em localhost; confirmar no preview staging.
+**Se um relatório crescer muito (ex.: 1500+ NCs):** subir `maxDuration` (300 s no Pro) ou,
+aí sim, migrar para job assíncrono. Tamanho do PDF em produção (1021 fotos distintas):
+~20-30 MB (o 0,7 MB do teste é artefato de imagem idêntica deduplicada).
+
 ## Trilha A — Curadoria de padrões
 
 ### D-A1 · O que curar primeiro?
