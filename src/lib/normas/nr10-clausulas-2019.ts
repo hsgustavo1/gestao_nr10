@@ -1,0 +1,31 @@
+import type { ClausulaNR10 } from "./types";
+
+// NR-10 numeração 2019 (Portaria 508/2016). Itens-base de compliance.
+export const CLAUSULAS_NR10_2019: ClausulaNR10[] = [
+  { item: "10.1", titulo: "Objetivo e campo de aplicação", capitulo: "10.1" },
+  { item: "10.2", titulo: "Medidas de controle do risco elétrico", capitulo: "10.2", grupo: "Medidas de controle" },
+  { item: "10.2.1", titulo: "Medidas de proteção coletiva", capitulo: "10.2", grupo: "Medidas de controle" },
+  { item: "10.2.3", titulo: "Medidas de proteção individual", capitulo: "10.2", grupo: "Medidas de controle" },
+  { item: "10.2.4", titulo: "Prontuário de Instalações Elétricas", capitulo: "10.2", grupo: "Prontuário" },
+  { item: "10.2.5", titulo: "Documentação das instalações elétricas", capitulo: "10.2", grupo: "Prontuário" },
+  { item: "10.2.8", titulo: "Aterramento das instalações elétricas", capitulo: "10.2", grupo: "Medidas de controle" },
+  { item: "10.3", titulo: "Segurança em projetos", capitulo: "10.3" },
+  { item: "10.4", titulo: "Segurança na construção, montagem, operação e manutenção", capitulo: "10.4" },
+  { item: "10.4.1", titulo: "Prontuário e memorial descritivo das instalações", capitulo: "10.4" },
+  { item: "10.5", titulo: "Segurança em instalações elétricas desenergizadas", capitulo: "10.5" },
+  { item: "10.6", titulo: "Segurança em instalações elétricas energizadas", capitulo: "10.6" },
+  { item: "10.7", titulo: "Trabalho envolvendo alta tensão (AT)", capitulo: "10.7" },
+  { item: "10.8", titulo: "Habilitação, qualificação, capacitação e autorização", capitulo: "10.8", grupo: "Pessoas" },
+  { item: "10.8.1", titulo: "Trabalhador qualificado", capitulo: "10.8", grupo: "Pessoas" },
+  { item: "10.8.2", titulo: "Profissional legalmente habilitado", capitulo: "10.8", grupo: "Pessoas" },
+  { item: "10.8.3", titulo: "Trabalhador capacitado", capitulo: "10.8", grupo: "Pessoas" },
+  { item: "10.8.4", titulo: "Trabalhador autorizado", capitulo: "10.8", grupo: "Pessoas" },
+  { item: "10.8.5", titulo: "Treinamento — curso básico/complementar", capitulo: "10.8", grupo: "Pessoas" },
+  { item: "10.8.6", titulo: "Reciclagem do treinamento", capitulo: "10.8", grupo: "Pessoas" },
+  { item: "10.9", titulo: "Proteção contra incêndio e explosão", capitulo: "10.9" },
+  { item: "10.10", titulo: "Sinalização de segurança", capitulo: "10.10" },
+  { item: "10.11", titulo: "Procedimentos de trabalho", capitulo: "10.11" },
+  { item: "10.12", titulo: "Situação de emergência", capitulo: "10.12" },
+  { item: "10.13", titulo: "Responsabilidades", capitulo: "10.13" },
+  { item: "10.14", titulo: "Disposições finais", capitulo: "10.14" },
+];
