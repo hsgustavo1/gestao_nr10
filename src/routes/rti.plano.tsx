@@ -359,7 +359,7 @@ function RtiPlanoPage() {
               )}
             </div>
           )}
-          {activeReport && (activeReport.entregue_em || repAcc?.canEntregar) && (
+          {activeReport && (activeReport.entregue_em || repAcc?.canEditTecnico) && (
             <div className="mt-1.5 flex items-center gap-2 flex-wrap">
               {activeReport.entregue_em && (
                 <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
@@ -381,7 +381,7 @@ function RtiPlanoPage() {
                   Consultar ART
                 </a>
               )}
-              {repAcc?.canEntregar && (
+              {repAcc?.canEditTecnico && (
                 <Button asChild variant="outline" size="sm">
                   <Link
                     to="/rti/relatorio/$reportId/wizard"
