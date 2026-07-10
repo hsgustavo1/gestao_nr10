@@ -1,6 +1,11 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { PdfModel } from "@/lib/rti-relatorio";
-import { PRIORIDADE_LABEL } from "@/lib/rti-relatorio";
+import {
+  PRIORIDADE_LABEL,
+  LIMITACOES_PADRAO,
+  formatNormasRef,
+  sumarioPorSetor,
+} from "@/lib/rti-relatorio";
 import { registerPdfFonts } from "./fonts";
 
 registerPdfFonts();
@@ -186,10 +191,11 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
           {grupo.map((nc) => (
             <View key={nc.id} style={s.ncCard} wrap={false} minPresenceAhead={80}>
               <Text style={s.ncTitulo}>
-                NC {String(nc.numero).padStart(3, "0")} — {PRIORIDADE_LABEL[nc.prioridade]}
+                NC {String(nc.numero).padStart(3, "0")}
+                {nc.titulo ? ` — ${nc.titulo}` : ` — ${PRIORIDADE_LABEL[nc.prioridade]}`}
               </Text>
               <Text style={s.ncMeta}>
-                Área: {nc.areaNome}
+                {PRIORIDADE_LABEL[nc.prioridade]}  ·  Área: {nc.areaNome}
                 {nc.tipoExecucao === "investimento"
                   ? "  ·  Investimento"
                   : nc.osNumero
@@ -199,6 +205,12 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
               </Text>
               <Text style={s.p}>{nc.descricao}</Text>
               {nc.recomendacao ? <Text style={s.p}>Recomendação: {nc.recomendacao}</Text> : null}
+              {nc.normas.length > 0 ? (
+                <Text style={s.p}>Referência normativa: {formatNormasRef(nc.normas)}</Text>
+              ) : null}
+              {nc.situacaoAtual ? (
+                <Text style={s.p}>Situação atual: {nc.situacaoAtual}</Text>
+              ) : null}
               {nc.fotos.length > 0 ? (
                 <View style={s.fotoRow}>
                   {nc.fotos.map((f) => (
