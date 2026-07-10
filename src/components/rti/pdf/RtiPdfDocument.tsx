@@ -68,6 +68,8 @@ const s = StyleSheet.create({
   tdPrio: { width: "40%" },
   tdQtd: { width: "20%" },
   tdCusto: { width: "40%" },
+  sumarioSetor: { fontSize: 11, fontWeight: 800, marginTop: 8, marginBottom: 3 },
+  sumarioItem: { fontSize: 9, marginBottom: 2, marginLeft: 8 },
   assinatura: { marginTop: 64, alignItems: "center" },
   linhaAssin: {
     width: 260,
@@ -184,6 +186,24 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
         </View>
       </Page>
 
+      {/* Sumário — NCs agrupadas por setor (navegação também por bookmarks) */}
+      {model.ncs.length > 0 ? (
+        <Page size="A4" style={s.page}>
+          <HeaderFooter model={model} />
+          <Text style={[s.h2, { color: cor }]}>Sumário — não conformidades por setor</Text>
+          {sumarioPorSetor(model.ncs).map((grupo) => (
+            <View key={grupo.setor} wrap={false} style={{ marginBottom: 10 }}>
+              <Text style={s.sumarioSetor}>{grupo.setor}</Text>
+              {grupo.ncs.map((n) => (
+                <Text key={n.numero} style={s.sumarioItem}>
+                  NC {String(n.numero).padStart(3, "0")} — {n.rotulo}
+                </Text>
+              ))}
+            </View>
+          ))}
+        </Page>
+      ) : null}
+
       {/* NCs — fatiadas em páginas explícitas (evita o flow único gigante, que é
           superlinear no @react-pdf). Cada página ainda auto-pagina o overflow. */}
       {chunk(model.ncs, NC_POR_PAGINA).map((grupo, gi) => (
@@ -193,7 +213,18 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
             <Text style={[s.h2, { color: cor }]}>Não conformidades constatadas</Text>
           ) : null}
           {grupo.map((nc) => (
-            <View key={nc.id} style={s.ncCard} wrap={false} minPresenceAhead={80}>
+            <View
+              key={nc.id}
+              style={s.ncCard}
+              wrap={false}
+              minPresenceAhead={80}
+              // `bookmark` é processado em runtime em qualquer primitivo (o render lê
+              // node.props.bookmark genericamente), mas o type binding 4.5.1 só o
+              // declara em PageProps — daí o cast pontual.
+              {...({
+                bookmark: `NC ${String(nc.numero).padStart(3, "0")}${nc.titulo ? ` — ${nc.titulo}` : ""}`,
+              } as { bookmark?: string })}
+            >
               <Text style={s.ncTitulo}>
                 NC {String(nc.numero).padStart(3, "0")}
                 {nc.titulo ? ` — ${nc.titulo}` : ` — ${PRIORIDADE_LABEL[nc.prioridade]}`}
