@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { CLAUSULAS_NR10_2019 } from "../nr10-clausulas-2019";
 import { CLAUSULAS_NR10_2026 } from "../nr10-clausulas-2026";
 import { NR28_GRAVIDADE } from "../nr28-gravidade";
+import { NBR_REFS } from "../nbr-refs";
 
 describe("CLAUSULAS_NR10_2019", () => {
   test("contém os itens que a NR-28 classifica", () => {
@@ -54,6 +55,16 @@ describe("NR28_GRAVIDADE", () => {
       expect(l.gravidade).toBeLessThanOrEqual(4);
       expect(["S", "M"]).toContain(l.area);
       expect(l.itens.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("NBR_REFS", () => {
+  test("lista NBRs citáveis sem reproduzir texto da norma", () => {
+    expect(NBR_REFS.length).toBeGreaterThan(0);
+    for (const r of NBR_REFS) {
+      expect(r.norma.startsWith("NBR")).toBe(true);
+      expect(r.descricao.length).toBeGreaterThan(0);
     }
   });
 });
