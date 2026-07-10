@@ -48,7 +48,15 @@ const s = StyleSheet.create({
   ncTitulo: { fontSize: 11, fontWeight: 800, marginBottom: 3 },
   ncMeta: { fontSize: 8, color: "#666", marginBottom: 4 },
   fotoRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
-  foto: { width: 160, height: 120, objectFit: "cover", borderRadius: 3 },
+  fotoBox: {
+    width: 160,
+    height: 120,
+    borderRadius: 3,
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  foto: { maxWidth: 160, maxHeight: 120, objectFit: "contain" },
   tabela: { marginTop: 8 },
   tr: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: "#ccc", paddingVertical: 4 },
   th: { fontWeight: 800, fontSize: 9 },
@@ -194,7 +202,9 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
               {nc.fotos.length > 0 ? (
                 <View style={s.fotoRow}>
                   {nc.fotos.map((f) => (
-                    <Image key={f.id} src={f.url} style={s.foto} />
+                    <View key={f.id} style={s.fotoBox}>
+                      <Image src={f.url} style={s.foto} />
+                    </View>
                   ))}
                 </View>
               ) : null}
