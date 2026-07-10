@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   defaultIdentificacao,
   formatNormasRef,
+  LIMITACOES_PADRAO,
   mergeNcOverrides,
   proximaVersao,
   relatorioPdfPath,
@@ -172,5 +173,19 @@ describe("sumarioPorSetor", () => {
       { numero: 3, rotulo: "T3" },
     ]);
     expect(setores[1].ncs).toEqual([{ numero: 1, rotulo: "T1" }]);
+  });
+});
+
+describe("LIMITACOES_PADRAO", () => {
+  test("menciona ART e reavaliação, sem prometer projeto", () => {
+    expect(LIMITACOES_PADRAO).toMatch(/ART/);
+    expect(LIMITACOES_PADRAO.length).toBeGreaterThan(80);
+  });
+});
+
+describe("guard: gravidade NR-28 nunca no modelo do PDF", () => {
+  test("NcParaPdf não expõe nenhum campo de gravidade NR-28", () => {
+    const chaves = Object.keys(nc({})).join(" ").toLowerCase();
+    expect(chaves).not.toMatch(/gravidade|nr-?28/);
   });
 });

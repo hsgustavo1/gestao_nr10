@@ -28,6 +28,13 @@ export const METODOLOGIA_PADRAO =
   "por prioridade (P1 a P4, sendo P4 a mais grave) considerando o risco elétrico e o " +
   "impacto na conformidade legal.";
 
+export const LIMITACOES_PADRAO =
+  "Este laudo reflete as condições observadas nas instalações elétricas durante o " +
+  "período da inspeção, com base em inspeção visual e verificação documental, e não " +
+  "constitui projeto elétrico nem substitui a Anotação de Responsabilidade Técnica (ART) " +
+  "de projeto ou de execução. As recomendações devem ser implementadas por profissional " +
+  "legalmente habilitado, com reavaliação periódica das instalações.";
+
 export function defaultIdentificacao(
   report: {
     titulo?: string | null;
