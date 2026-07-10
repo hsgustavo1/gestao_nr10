@@ -149,6 +149,7 @@ function WizardRelatorioPage() {
       const r = await gerarNoServidor("preview");
       if (r) setPreviewUrl(r.url);
     } catch (err) {
+      console.error("[wizard] gerar prévia:", err);
       toast.error(`Falha ao gerar a prévia: ${msgErro(err)}`);
     } finally {
       setGerandoPreview(false);
@@ -166,6 +167,7 @@ function WizardRelatorioPage() {
         qc.invalidateQueries({ queryKey: ["rti_report", reportId] });
       }
     } catch (err) {
+      console.error("[wizard] emitir:", err);
       toast.error(`Falha na emissão (o rascunho está salvo): ${msgErro(err)}`);
     } finally {
       setEmitindo(false);

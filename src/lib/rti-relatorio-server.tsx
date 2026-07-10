@@ -37,8 +37,11 @@ interface GerarArgs {
 }
 
 function clienteComToken(accessToken: string): SupabaseClient {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  // Em dev (Vite) só os VITE_* entram em import.meta.env; process.env não recebe o .env.
+  // Na Vercel as não-prefixadas ficam em process.env. Cobrimos os dois — igual client.ts.
+  const url = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error("Variáveis do Supabase ausentes no servidor.");
   return createClient(url, key, {
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
