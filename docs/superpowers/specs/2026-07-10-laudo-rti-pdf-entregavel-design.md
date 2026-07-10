@@ -122,10 +122,15 @@ export function sumarioPorSetor(ncs: NcParaPdf[]): SumarioSetor[];
 Ordena setores pela primeira aparição; dentro do setor, por `numero`. `rotulo` = `titulo`
 quando houver, senão os primeiros ~80 chars de `descricao` (sem cortar no meio de palavra).
 
-**Bookmarks (navegação real)** — no render, cada página/grupo de NCs recebe `bookmark`:
-o setor como bookmark de 1º nível, cada NC como filho. Usa a prop `bookmark` do
-`@react-pdf` (`bookmark={{ title, parent }}` ou string). Isso gera o outline navegável do
-PDF sem depender de número de página.
+**Bookmarks (navegação real)** — no render, cada NC (`ncCard`) recebe
+`bookmark={`NC ${numero} — ${rotulo}`}` (a prop `bookmark` do `@react-pdf` 4.5.1 aceita
+`string`). Gera um outline plano navegável no leitor de PDF (pular para qualquer NC pelo
+número/título), sem depender de número de página. **Não** se aninha por setor: o
+`Bookmark` do `@react-pdf` só aninha pela hierarquia de Views, e a paginação atual é
+"achatada" em blocos (`NC_POR_PAGINA`) de propósito, para manter os passos de layout
+pequenos em laudos grandes (comentário existente no componente). O agrupamento por setor
+fica no **índice impresso** (§ acima). Aninhar o outline por setor exigiria reestruturar a
+paginação — fora do escopo desta passada.
 
 ### 4. Front matter técnico
 
