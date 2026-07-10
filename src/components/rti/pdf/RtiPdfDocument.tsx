@@ -153,13 +153,17 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
       {/* Introdução, metodologia, resumo executivo e quadro-resumo */}
       <Page size="A4" style={s.page}>
         <HeaderFooter model={model} />
-        <Text style={[s.h2, { color: cor }]}>1. Introdução</Text>
+        <Text style={[s.h2, { color: cor }]}>1. Objeto e escopo</Text>
         <Text style={s.p}>{ident.introducao}</Text>
-        <Text style={[s.h2, { color: cor }]}>2. Metodologia</Text>
+        <Text style={[s.h2, { color: cor }]}>2. Referencial normativo</Text>
+        <Text style={s.p}>{ident.normas || "—"}</Text>
+        <Text style={[s.h2, { color: cor }]}>3. Metodologia</Text>
         <Text style={s.p}>{ident.metodologia}</Text>
+        <Text style={[s.h2, { color: cor }]}>4. Limitações e ressalvas</Text>
+        <Text style={s.p}>{LIMITACOES_PADRAO}</Text>
         {model.resumoExecutivo ? (
           <>
-            <Text style={[s.h2, { color: cor }]}>3. Resumo executivo</Text>
+            <Text style={[s.h2, { color: cor }]}>5. Resumo executivo</Text>
             <Text style={s.p}>{model.resumoExecutivo}</Text>
           </>
         ) : null}
