@@ -105,8 +105,12 @@ export function mergeNcOverrides(ncs: NcParaPdf[], overrides: NcsOverrides): NcP
 /** Referências normativas para exibição: "NR-10 10.2.4.g; NBR 5410 6.1.8.1". */
 export function formatNormasRef(normas: NormaRef[]): string {
   return normas
-    .map((n) => (n.tipo === "nr10" ? `NR-10 ${n.ref.trim()}` : n.ref.trim()))
-    .filter((s) => s.length > 0 && s !== "NR-10")
+    .map((n) => {
+      const ref = n.ref.trim();
+      if (!ref) return "";
+      return n.tipo === "nr10" ? `NR-10 ${ref}` : ref;
+    })
+    .filter((s) => s.length > 0)
     .join("; ");
 }
 
