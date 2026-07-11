@@ -10,6 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { RtiPdfDocument } from "@/components/rti/pdf/RtiPdfDocument";
+import { dimensoesImagem } from "./image-dims";
 import {
   buildPdfModel,
   defaultIdentificacao,
@@ -48,9 +49,21 @@ function clienteComToken(accessToken: string): SupabaseClient {
   });
 }
 
-/** Baixa URLs em paralelo (pool) e devolve data URIs — o render fica CPU-only. */
-async function prefetchDataUris(urls: string[], concorrencia = 32): Promise<(string | null)[]> {
-  const out = new Array<string | null>(urls.length).fill(null);
+interface ImagemBaixada {
+  uri: string;
+  larguraPx: number | null;
+  alturaPx: number | null;
+}
+
+/**
+ * Baixa URLs em paralelo (pool) e devolve data URI + dimensões reais (para o PDF
+ * dimensionar cada foto na proporção certa) — o render fica CPU-only.
+ */
+async function prefetchImagens(
+  urls: string[],
+  concorrencia = 32,
+): Promise<(ImagemBaixada | null)[]> {
+  const out = new Array<ImagemBaixada | null>(urls.length).fill(null);
   let idx = 0;
   async function worker() {
     while (idx < urls.length) {
@@ -60,7 +73,12 @@ async function prefetchDataUris(urls: string[], concorrencia = 32): Promise<(str
         if (!res.ok) continue;
         const buf = Buffer.from(await res.arrayBuffer());
         const mime = res.headers.get("content-type") || "image/jpeg";
-        out[i] = `data:${mime};base64,${buf.toString("base64")}`;
+        const dim = dimensoesImagem(buf);
+        out[i] = {
+          uri: `data:${mime};base64,${buf.toString("base64")}`,
+          larguraPx: dim?.larguraPx ?? null,
+          alturaPx: dim?.alturaPx ?? null,
+        };
       } catch {
         // foto inacessível não derruba o relatório inteiro
       }
@@ -161,15 +179,15 @@ export const gerarRelatorioPdf = createServerFn({ method: "POST" })
     // 3. Prefetch paralelo das fotos REDUZIDAS → data URIs (render CPU-only)
     const todas: PdfFoto[] = [];
     for (const nc of ncsRaw) for (const f of fotosPorNc.get(nc.id as string) ?? []) todas.push(f);
-    const dataUris = await prefetchDataUris(todas.map((f) => urlFotoReduzida(f.url)));
-    const uriPorFoto = new Map<string, string | null>();
-    todas.forEach((f, i) => uriPorFoto.set(f.id, dataUris[i]));
+    const imagens = await prefetchImagens(todas.map((f) => urlFotoReduzida(f.url)));
+    const imgPorFoto = new Map<string, ImagemBaixada | null>();
+    todas.forEach((f, i) => imgPorFoto.set(f.id, imagens[i]));
 
     // 4. Monta o modelo
     const branding = await carregarBranding(sb, data.orgIdBranding);
     if (branding && branding.logoUrl) {
-      const [logoUri] = await prefetchDataUris([branding.logoUrl]);
-      branding.logoUrl = logoUri; // data URI (ou null se falhar)
+      const [logo] = await prefetchImagens([branding.logoUrl]);
+      branding.logoUrl = logo?.uri ?? null; // data URI (ou null se falhar)
     }
 
     const ncsPdf: NcParaPdf[] = ncsRaw.map((nc) => ({
@@ -186,7 +204,15 @@ export const gerarRelatorioPdf = createServerFn({ method: "POST" })
       normas: Array.isArray(nc.normas) ? (nc.normas as import("./normas/types").NormaRef[]) : [],
       situacaoAtual: (nc.situacao_atual as string) ?? null,
       fotos: (fotosPorNc.get(nc.id as string) ?? [])
-        .map((f) => ({ ...f, url: uriPorFoto.get(f.id) ?? "" }))
+        .map((f) => {
+          const img = imgPorFoto.get(f.id);
+          return {
+            ...f,
+            url: img?.uri ?? "",
+            larguraPx: img?.larguraPx ?? null,
+            alturaPx: img?.alturaPx ?? null,
+          };
+        })
         .filter((f) => f.url), // descarta fotos que falharam no download
     }));
 

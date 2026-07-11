@@ -28,12 +28,23 @@ export function dimensoesImagem(buf: Uint8Array): DimensoesImagem | null {
       }
       const marker = buf[i + 1];
       // Marcadores sem payload (SOI/EOI/RSTn/TEM): avança 2 bytes
-      if (marker === 0xd8 || marker === 0xd9 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+      if (
+        marker === 0xd8 ||
+        marker === 0xd9 ||
+        marker === 0x01 ||
+        (marker >= 0xd0 && marker <= 0xd7)
+      ) {
         i += 2;
         continue;
       }
       // SOF0..SOF15 (exceto DHT=C4, JPG=C8, DAC=CC): dimensões após precisão
-      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      if (
+        marker >= 0xc0 &&
+        marker <= 0xcf &&
+        marker !== 0xc4 &&
+        marker !== 0xc8 &&
+        marker !== 0xcc
+      ) {
         const alturaPx = (buf[i + 5] << 8) | buf[i + 6];
         const larguraPx = (buf[i + 7] << 8) | buf[i + 8];
         return larguraPx > 0 && alturaPx > 0 ? { larguraPx, alturaPx } : null;
