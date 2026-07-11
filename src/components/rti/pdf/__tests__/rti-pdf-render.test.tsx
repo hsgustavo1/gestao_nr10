@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { RtiPdfDocument } from "../RtiPdfDocument";
-import { buildPdfModel, type NcParaPdf } from "@/lib/rti-relatorio";
+import { buildPdfModel, type NcParaPdf, type PdfPageIndex } from "@/lib/rti-relatorio";
 
 const nc = (over: Partial<NcParaPdf>): NcParaPdf => ({
   id: "nc-1",
@@ -55,5 +55,36 @@ describe("RtiPdfDocument", () => {
     const buffer = await renderToBuffer(<RtiPdfDocument model={model} />);
     expect(buffer.length).toBeGreaterThan(1000);
     expect(buffer.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+  });
+
+  test("2 passagens preenchem a página inicial de cada setor no PdfPageIndex", async () => {
+    const model = buildPdfModel({
+      identificacao: {
+        titulo: "RTI Usina",
+        clienteNome: "Cliente X",
+        local: "",
+        periodoInicio: "2026-07-01",
+        periodoFim: "2026-07-03",
+        responsavelTecnico: "Eng. Fulano",
+        artNumero: "ART-123",
+        normas: "NR-10; NBR 5410",
+        introducao: "Introdução.",
+        metodologia: "Metodologia.",
+      },
+      branding: null,
+      ncs: [
+        nc({ id: "a", numero: 1, areaNome: "Moagem" }),
+        nc({ id: "b", numero: 2, areaNome: "Subestação" }),
+      ],
+      overrides: {},
+      parecer: "Parecer.",
+      resumoExecutivo: "Resumo.",
+    });
+    const pageIndex: PdfPageIndex = { setores: new Map() };
+    await renderToBuffer(<RtiPdfDocument model={model} pageIndex={pageIndex} />);
+    const pMoagem = pageIndex.setores.get("Moagem");
+    const pSub = pageIndex.setores.get("Subestação");
+    expect(pMoagem).toBeGreaterThanOrEqual(1);
+    expect(pSub).toBeGreaterThan(pMoagem!); // Subestação (nº 2) vem depois de Moagem (nº 1)
   });
 });

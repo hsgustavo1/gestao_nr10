@@ -200,8 +200,12 @@ export const gerarRelatorioPdf = createServerFn({ method: "POST" })
       resumoExecutivo: draft?.resumo_executivo ?? "",
     });
 
-    // 5. Render
-    const buffer = await renderToBuffer(<RtiPdfDocument model={model} />);
+    // 5. Render em 2 passagens: a 1ª coleta o nº da página inicial de cada setor
+    // (via callback render dos marcadores); a 2ª renderiza o sumário já paginado.
+    // Custo ~2x — aceitável na emissão/preview server-side (D-C7).
+    const pageIndex = { setores: new Map<string, number>() };
+    await renderToBuffer(<RtiPdfDocument model={model} pageIndex={pageIndex} />);
+    const buffer = await renderToBuffer(<RtiPdfDocument model={model} pageIndex={pageIndex} />);
 
     // 6. Upload + (emissão) versionamento imutável
     if (!orgIdReport) throw new Error("Relatório sem organização.");

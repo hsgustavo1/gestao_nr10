@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import type { PdfModel, NcParaPdf } from "@/lib/rti-relatorio";
+import type { PdfModel, NcParaPdf, PdfPageIndex } from "@/lib/rti-relatorio";
 import {
   PRIORIDADE_LABEL,
   LIMITACOES_PADRAO,
   formatNormasRef,
   sumarioPorSetor,
+  primeirasNcsPorSetor,
 } from "@/lib/rti-relatorio";
 import { registerPdfFonts } from "./fonts";
 
@@ -105,8 +106,17 @@ const s = StyleSheet.create({
   th: { fontWeight: 800, fontSize: 9 },
   tdPrio: { width: "70%" },
   tdQtd: { width: "30%" },
-  sumarioSetor: { fontSize: 11, fontWeight: 800, marginTop: 8, marginBottom: 3 },
-  sumarioItem: { fontSize: 9, marginBottom: 2, marginLeft: 8 },
+  sumarioLinha: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+    paddingBottom: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#e5e7eb",
+  },
+  sumarioSetor: { fontSize: 11, fontWeight: 600 },
+  sumarioPag: { fontSize: 10, color: "#6b7280" },
+  marcadorSetor: { height: 0, fontSize: 1, color: "#ffffff" },
   assinatura: { marginTop: 64, alignItems: "center" },
   linhaAssin: {
     width: 260,
@@ -147,9 +157,30 @@ function Bloco({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function NcConteudo({ nc, cor }: { nc: NcParaPdf; cor: string }) {
+function NcConteudo({
+  nc,
+  cor,
+  ehPrimeiraDoSetor,
+  pageIndex,
+}: {
+  nc: NcParaPdf;
+  cor: string;
+  ehPrimeiraDoSetor: boolean;
+  pageIndex?: PdfPageIndex;
+}) {
   return (
     <View style={s.ncCard}>
+      {ehPrimeiraDoSetor && pageIndex ? (
+        // Marcador invisível: o callback render recebe o pageNumber desta página
+        // e o grava no índice. Efeito colateral idempotente (pode rodar >1x).
+        <Text
+          style={s.marcadorSetor}
+          render={({ pageNumber }) => {
+            pageIndex.setores.set(nc.areaNome || "—", pageNumber);
+            return "";
+          }}
+        />
+      ) : null}
       <Text style={[s.ncTitulo, { color: cor }]}>
         NC {String(nc.numero).padStart(3, "0")}
         {nc.titulo ? ` — ${nc.titulo}` : ` — ${PRIORIDADE_LABEL[nc.prioridade]}`}
@@ -205,9 +236,16 @@ function NcConteudo({ nc, cor }: { nc: NcParaPdf; cor: string }) {
   );
 }
 
-export function RtiPdfDocument({ model }: { model: PdfModel }) {
+export function RtiPdfDocument({
+  model,
+  pageIndex,
+}: {
+  model: PdfModel;
+  pageIndex?: PdfPageIndex;
+}) {
   const cor = model.branding.corPrimaria || PINE;
   const ident = model.identificacao;
+  const primeiras = primeirasNcsPorSetor(model.ncs);
   return (
     <Document title={ident.titulo} author={model.branding.razaoSocial ?? undefined}>
       {/* Capa */}
@@ -289,19 +327,20 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
         </View>
       </Page>
 
-      {/* Sumário — NCs agrupadas por setor (navegação também por bookmarks) */}
+      {/* Sumário — uma linha por setor com a página inicial (navegação também por
+          bookmarks). As páginas vêm do PdfPageIndex preenchido na 1ª passagem. */}
       {model.ncs.length > 0 ? (
-        <Page size="A4" style={s.page}>
+        <Page size="A4" style={s.page} bookmark="Sumário">
           <HeaderFooter model={model} />
           <Text style={[s.h2, { color: cor }]}>Sumário — não conformidades por setor</Text>
           {sumarioPorSetor(model.ncs).map((grupo) => (
-            <View key={grupo.setor} wrap={false} style={{ marginBottom: 10 }}>
+            <View key={grupo.setor} style={s.sumarioLinha}>
               <Text style={s.sumarioSetor}>{grupo.setor}</Text>
-              {grupo.ncs.map((n) => (
-                <Text key={n.numero} style={s.sumarioItem}>
-                  NC {String(n.numero).padStart(3, "0")} — {n.rotulo}
-                </Text>
-              ))}
+              <Text style={s.sumarioPag}>
+                {pageIndex?.setores.get(grupo.setor)
+                  ? `pág. ${pageIndex.setores.get(grupo.setor)}`
+                  : "—"}
+              </Text>
             </View>
           ))}
         </Page>
@@ -318,7 +357,12 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
           bookmark={`NC ${String(nc.numero).padStart(3, "0")}${nc.titulo ? ` — ${nc.titulo}` : ""}`}
         >
           <HeaderFooter model={model} />
-          <NcConteudo nc={nc} cor={cor} />
+          <NcConteudo
+            nc={nc}
+            cor={cor}
+            ehPrimeiraDoSetor={primeiras.has(nc.id)}
+            pageIndex={pageIndex}
+          />
         </Page>
       ))}
 
