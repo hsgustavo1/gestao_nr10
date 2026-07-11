@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { PdfModel, NcParaPdf } from "@/lib/rti-relatorio";
 import {
@@ -48,7 +49,33 @@ const s = StyleSheet.create({
   capaBox: { borderLeftWidth: 4, paddingLeft: 16, marginTop: 24 },
   label: { fontSize: 8, color: "#666", marginTop: 6 },
   valor: { fontSize: 11, fontWeight: 600 },
-  p: { marginBottom: 6, lineHeight: 1.5, textAlign: "justify" },
+  p: { marginBottom: 6, lineHeight: 1.4 },
+  corpoNc: { fontSize: 10, lineHeight: 1.4, marginBottom: 2 },
+  blocoLabel: {
+    fontSize: 8,
+    fontWeight: 800,
+    letterSpacing: 0.4,
+    color: "#6b7280",
+    marginTop: 10,
+    marginBottom: 2,
+  },
+  recomendacaoBox: {
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: "#059669",
+    backgroundColor: "#ecfdf5",
+  },
+  recomendacaoLabel: {
+    fontSize: 8,
+    fontWeight: 800,
+    letterSpacing: 0.4,
+    color: "#047857",
+    marginBottom: 2,
+  },
+  evidenciaCard: { width: 235 },
+  fotoLegenda: { fontSize: 8, color: "#6b7280", marginTop: 3 },
   ncCard: {
     marginBottom: 14,
     paddingBottom: 10,
@@ -110,14 +137,69 @@ function HeaderFooter({ model }: { model: PdfModel }) {
   );
 }
 
+function Bloco({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <View wrap={false}>
+      <Text style={s.blocoLabel}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+
 function NcConteudo({ nc, cor }: { nc: NcParaPdf; cor: string }) {
   return (
     <View style={s.ncCard}>
-      <Text style={s.ncTitulo}>
+      <Text style={[s.ncTitulo, { color: cor }]}>
         NC {String(nc.numero).padStart(3, "0")}
         {nc.titulo ? ` — ${nc.titulo}` : ` — ${PRIORIDADE_LABEL[nc.prioridade]}`}
       </Text>
-      <Text style={s.p}>{nc.descricao}</Text>
+      <Text style={s.ncMeta}>
+        {PRIORIDADE_LABEL[nc.prioridade]} · Área: {nc.areaNome}
+        {nc.tipoExecucao === "investimento"
+          ? "  ·  Investimento"
+          : nc.osNumero
+            ? `  ·  O.S. ${nc.osNumero}`
+            : ""}
+      </Text>
+
+      <Bloco label="CONSTATAÇÃO">
+        <Text style={s.corpoNc}>{nc.descricao}</Text>
+      </Bloco>
+
+      {nc.recomendacao ? (
+        <View style={s.recomendacaoBox} wrap={false}>
+          <Text style={s.recomendacaoLabel}>RECOMENDAÇÃO</Text>
+          <Text style={s.corpoNc}>{nc.recomendacao}</Text>
+        </View>
+      ) : null}
+
+      {nc.normas.length > 0 ? (
+        <Bloco label="REFERÊNCIA NORMATIVA">
+          <Text style={s.corpoNc}>{formatNormasRef(nc.normas)}</Text>
+        </Bloco>
+      ) : null}
+
+      {nc.situacaoAtual ? (
+        <Bloco label="SITUAÇÃO ATUAL">
+          <Text style={s.corpoNc}>{nc.situacaoAtual}</Text>
+        </Bloco>
+      ) : null}
+
+      {nc.fotos.length > 0 ? (
+        <View>
+          <Text style={s.blocoLabel}>EVIDÊNCIAS</Text>
+          <View style={s.fotoRow}>
+            {nc.fotos.map((f) => (
+              <View key={f.id} style={s.evidenciaCard} wrap={false}>
+                <View style={s.fotoBox}>
+                  <Image src={f.url} style={s.foto} />
+                </View>
+                {f.legenda ? <Text style={s.fotoLegenda}>{f.legenda}</Text> : null}
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
