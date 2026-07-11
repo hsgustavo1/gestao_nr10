@@ -49,7 +49,12 @@ const s = StyleSheet.create({
   label: { fontSize: 8, color: "#666", marginTop: 6 },
   valor: { fontSize: 11, fontWeight: 600 },
   p: { marginBottom: 6, lineHeight: 1.5, textAlign: "justify" },
-  ncCard: { marginBottom: 14, paddingBottom: 10, borderBottomWidth: 0.5, borderBottomColor: "#ddd" },
+  ncCard: {
+    marginBottom: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#ddd",
+  },
   ncTitulo: { fontSize: 11, fontWeight: 800, marginBottom: 3 },
   ncMeta: { fontSize: 8, color: "#666", marginBottom: 4 },
   fotoRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
@@ -63,11 +68,15 @@ const s = StyleSheet.create({
   },
   foto: { maxWidth: 160, maxHeight: 120, objectFit: "contain" },
   tabela: { marginTop: 8 },
-  tr: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: "#ccc", paddingVertical: 4 },
+  tr: {
+    flexDirection: "row",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#ccc",
+    paddingVertical: 4,
+  },
   th: { fontWeight: 800, fontSize: 9 },
-  tdPrio: { width: "40%" },
-  tdQtd: { width: "20%" },
-  tdCusto: { width: "40%" },
+  tdPrio: { width: "70%" },
+  tdQtd: { width: "30%" },
   sumarioSetor: { fontSize: 11, fontWeight: 800, marginTop: 8, marginBottom: 3 },
   sumarioItem: { fontSize: 9, marginBottom: 2, marginLeft: 8 },
   assinatura: { marginTop: 64, alignItems: "center" },
@@ -87,9 +96,6 @@ function chunk<T>(arr: T[], n: number): T[][] {
   for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
   return out;
 }
-
-const fmtBRL = (v: number) =>
-  `R$ ${v.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 
 const fmtData = (iso: string | null) => {
   if (!iso) return "—";
@@ -174,13 +180,11 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
           <View style={s.tr}>
             <Text style={[s.th, s.tdPrio]}>Prioridade</Text>
             <Text style={[s.th, s.tdQtd]}>NCs</Text>
-            <Text style={[s.th, s.tdCusto]}>Custo planejado</Text>
           </View>
           {model.resumo.map((l) => (
             <View key={l.prioridade} style={s.tr}>
               <Text style={s.tdPrio}>{l.label}</Text>
               <Text style={s.tdQtd}>{String(l.quantidade)}</Text>
-              <Text style={s.tdCusto}>{fmtBRL(l.custoPlanejado)}</Text>
             </View>
           ))}
         </View>
@@ -230,13 +234,12 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
                 {nc.titulo ? ` — ${nc.titulo}` : ` — ${PRIORIDADE_LABEL[nc.prioridade]}`}
               </Text>
               <Text style={s.ncMeta}>
-                {PRIORIDADE_LABEL[nc.prioridade]}  ·  Área: {nc.areaNome}
+                {PRIORIDADE_LABEL[nc.prioridade]} · Área: {nc.areaNome}
                 {nc.tipoExecucao === "investimento"
                   ? "  ·  Investimento"
                   : nc.osNumero
                     ? `  ·  O.S. ${nc.osNumero}`
                     : ""}
-                {nc.custoPlanejado ? `  ·  ${fmtBRL(nc.custoPlanejado)}` : ""}
               </Text>
               <Text style={s.p}>{nc.descricao}</Text>
               {nc.recomendacao ? <Text style={s.p}>Recomendação: {nc.recomendacao}</Text> : null}
