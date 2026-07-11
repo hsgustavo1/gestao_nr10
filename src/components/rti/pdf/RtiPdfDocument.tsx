@@ -225,7 +225,13 @@ function NcConteudo({
             {nc.fotos.map((f) => (
               <View key={f.id} style={s.evidenciaCard} wrap={false}>
                 <View style={s.fotoBox}>
-                  <Image src={f.url} style={dimensoesFoto(f, 227, 280)} />
+                  {/* Com dimensões: encaixa exato na moldura (proporção real). Sem
+                      dimensões: só largura — o @react-pdf deriva a altura da imagem
+                      embutida (inteira, sem distorcer nem recortar). */}
+                  <Image
+                    src={f.url}
+                    style={f.larguraPx && f.alturaPx ? dimensoesFoto(f, 227, 280) : { width: 227 }}
+                  />
                 </View>
                 {f.legenda ? <Text style={s.fotoLegenda}>{f.legenda}</Text> : null}
               </View>
