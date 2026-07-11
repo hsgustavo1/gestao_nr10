@@ -40,8 +40,7 @@ function clienteComToken(accessToken: string): SupabaseClient {
   // Em dev (Vite) só os VITE_* entram em import.meta.env; process.env não recebe o .env.
   // Na Vercel as não-prefixadas ficam em process.env. Cobrimos os dois — igual client.ts.
   const url = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error("Variáveis do Supabase ausentes no servidor.");
   return createClient(url, key, {
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -147,9 +146,14 @@ export const gerarRelatorioPdf = createServerFn({ method: "POST" })
         .eq("tipo", "constatacao")
         .order("created_at");
       for (const ev of evs ?? []) {
-        const publicUrl = sb.storage.from(BUCKET).getPublicUrl(ev.file_path as string).data.publicUrl;
+        const publicUrl = sb.storage.from(BUCKET).getPublicUrl(ev.file_path as string)
+          .data.publicUrl;
         const lista = fotosPorNc.get(ev.nc_id as string) ?? [];
-        lista.push({ id: ev.id as string, url: publicUrl, legenda: (ev.descricao as string) ?? null });
+        lista.push({
+          id: ev.id as string,
+          url: publicUrl,
+          legenda: (ev.descricao as string) ?? null,
+        });
         fotosPorNc.set(ev.nc_id as string, lista);
       }
     }
