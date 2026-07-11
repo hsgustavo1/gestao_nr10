@@ -1,5 +1,5 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import type { PdfModel } from "@/lib/rti-relatorio";
+import type { PdfModel, NcParaPdf } from "@/lib/rti-relatorio";
 import {
   PRIORIDADE_LABEL,
   LIMITACOES_PADRAO,
@@ -89,14 +89,6 @@ const s = StyleSheet.create({
   },
 });
 
-// Fatiar as NCs em páginas explícitas mantém cada passo de layout do @react-pdf pequeno.
-const NC_POR_PAGINA = 14;
-function chunk<T>(arr: T[], n: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
-  return out;
-}
-
 const fmtData = (iso: string | null) => {
   if (!iso) return "—";
   const [y, m, d] = iso.split("-");
@@ -115,6 +107,18 @@ function HeaderFooter({ model }: { model: PdfModel }) {
         <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
       </View>
     </>
+  );
+}
+
+function NcConteudo({ nc, cor }: { nc: NcParaPdf; cor: string }) {
+  return (
+    <View style={s.ncCard}>
+      <Text style={s.ncTitulo}>
+        NC {String(nc.numero).padStart(3, "0")}
+        {nc.titulo ? ` — ${nc.titulo}` : ` — ${PRIORIDADE_LABEL[nc.prioridade]}`}
+      </Text>
+      <Text style={s.p}>{nc.descricao}</Text>
+    </View>
   );
 }
 
@@ -161,32 +165,44 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
       {/* Introdução, metodologia, resumo executivo e quadro-resumo */}
       <Page size="A4" style={s.page}>
         <HeaderFooter model={model} />
-        <Text style={[s.h2, { color: cor }]}>1. Objeto e escopo</Text>
+        <Text style={[s.h2, { color: cor }]} minPresenceAhead={48}>
+          1. Objeto e escopo
+        </Text>
         <Text style={s.p}>{ident.introducao}</Text>
-        <Text style={[s.h2, { color: cor }]}>2. Referencial normativo</Text>
+        <Text style={[s.h2, { color: cor }]} minPresenceAhead={48}>
+          2. Referencial normativo
+        </Text>
         <Text style={s.p}>{ident.normas || "—"}</Text>
-        <Text style={[s.h2, { color: cor }]}>3. Metodologia</Text>
+        <Text style={[s.h2, { color: cor }]} minPresenceAhead={48}>
+          3. Metodologia
+        </Text>
         <Text style={s.p}>{ident.metodologia}</Text>
-        <Text style={[s.h2, { color: cor }]}>4. Limitações e ressalvas</Text>
+        <Text style={[s.h2, { color: cor }]} minPresenceAhead={48}>
+          4. Limitações e ressalvas
+        </Text>
         <Text style={s.p}>{LIMITACOES_PADRAO}</Text>
         {model.resumoExecutivo ? (
           <>
-            <Text style={[s.h2, { color: cor }]}>5. Resumo executivo</Text>
+            <Text style={[s.h2, { color: cor }]} minPresenceAhead={48}>
+              5. Resumo executivo
+            </Text>
             <Text style={s.p}>{model.resumoExecutivo}</Text>
           </>
         ) : null}
-        <Text style={[s.h2, { color: cor }]}>Quadro-resumo por prioridade</Text>
-        <View style={s.tabela}>
-          <View style={s.tr}>
-            <Text style={[s.th, s.tdPrio]}>Prioridade</Text>
-            <Text style={[s.th, s.tdQtd]}>NCs</Text>
-          </View>
-          {model.resumo.map((l) => (
-            <View key={l.prioridade} style={s.tr}>
-              <Text style={s.tdPrio}>{l.label}</Text>
-              <Text style={s.tdQtd}>{String(l.quantidade)}</Text>
+        <View wrap={false}>
+          <Text style={[s.h2, { color: cor }]}>Quadro-resumo por prioridade</Text>
+          <View style={s.tabela}>
+            <View style={s.tr}>
+              <Text style={[s.th, s.tdPrio]}>Prioridade</Text>
+              <Text style={[s.th, s.tdQtd]}>NCs</Text>
             </View>
-          ))}
+            {model.resumo.map((l) => (
+              <View key={l.prioridade} style={s.tr}>
+                <Text style={s.tdPrio}>{l.label}</Text>
+                <Text style={s.tdQtd}>{String(l.quantidade)}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </Page>
 
@@ -208,58 +224,18 @@ export function RtiPdfDocument({ model }: { model: PdfModel }) {
         </Page>
       ) : null}
 
-      {/* NCs — fatiadas em páginas explícitas (evita o flow único gigante, que é
-          superlinear no @react-pdf). Cada página ainda auto-pagina o overflow. */}
-      {chunk(model.ncs, NC_POR_PAGINA).map((grupo, gi) => (
-        <Page key={gi} size="A4" style={s.page}>
+      {/* Uma NC por página: cada página é pequena e independente (bom p/ o motor de
+          layout) e vira uma entrada de bookmark navegável. Conteúdo longo (muitas
+          fotos) ainda auto-pagina para uma 2ª página. */}
+      {model.ncs.map((nc) => (
+        <Page
+          key={nc.id}
+          size="A4"
+          style={s.page}
+          bookmark={`NC ${String(nc.numero).padStart(3, "0")}${nc.titulo ? ` — ${nc.titulo}` : ""}`}
+        >
           <HeaderFooter model={model} />
-          {gi === 0 ? (
-            <Text style={[s.h2, { color: cor }]}>Não conformidades constatadas</Text>
-          ) : null}
-          {grupo.map((nc) => (
-            <View
-              key={nc.id}
-              style={s.ncCard}
-              wrap={false}
-              minPresenceAhead={80}
-              // `bookmark` é processado em runtime em qualquer primitivo (o render lê
-              // node.props.bookmark genericamente), mas o type binding 4.5.1 só o
-              // declara em PageProps — daí o cast pontual.
-              {...({
-                bookmark: `NC ${String(nc.numero).padStart(3, "0")}${nc.titulo ? ` — ${nc.titulo}` : ""}`,
-              } as { bookmark?: string })}
-            >
-              <Text style={s.ncTitulo}>
-                NC {String(nc.numero).padStart(3, "0")}
-                {nc.titulo ? ` — ${nc.titulo}` : ` — ${PRIORIDADE_LABEL[nc.prioridade]}`}
-              </Text>
-              <Text style={s.ncMeta}>
-                {PRIORIDADE_LABEL[nc.prioridade]} · Área: {nc.areaNome}
-                {nc.tipoExecucao === "investimento"
-                  ? "  ·  Investimento"
-                  : nc.osNumero
-                    ? `  ·  O.S. ${nc.osNumero}`
-                    : ""}
-              </Text>
-              <Text style={s.p}>{nc.descricao}</Text>
-              {nc.recomendacao ? <Text style={s.p}>Recomendação: {nc.recomendacao}</Text> : null}
-              {nc.normas.length > 0 ? (
-                <Text style={s.p}>Referência normativa: {formatNormasRef(nc.normas)}</Text>
-              ) : null}
-              {nc.situacaoAtual ? (
-                <Text style={s.p}>Situação atual: {nc.situacaoAtual}</Text>
-              ) : null}
-              {nc.fotos.length > 0 ? (
-                <View style={s.fotoRow}>
-                  {nc.fotos.map((f) => (
-                    <View key={f.id} style={s.fotoBox}>
-                      <Image src={f.url} style={s.foto} />
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          ))}
+          <NcConteudo nc={nc} cor={cor} />
         </Page>
       ))}
 
