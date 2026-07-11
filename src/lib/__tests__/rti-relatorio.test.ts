@@ -4,6 +4,7 @@ import {
   formatNormasRef,
   LIMITACOES_PADRAO,
   mergeNcOverrides,
+  primeirasNcsPorSetor,
   proximaVersao,
   relatorioPdfPath,
   resumoPorPrioridade,
@@ -175,6 +176,25 @@ describe("sumarioPorSetor", () => {
       { numero: 3, rotulo: "T3" },
     ]);
     expect(setores[1].ncs).toEqual([{ numero: 1, rotulo: "T1" }]);
+  });
+});
+
+describe("primeirasNcsPorSetor", () => {
+  test("marca o id da primeira NC de cada setor na ordem de aparição", () => {
+    const ids = primeirasNcsPorSetor([
+      nc({ id: "a", numero: 1, areaNome: "Moagem" }),
+      nc({ id: "b", numero: 2, areaNome: "Moagem" }),
+      nc({ id: "c", numero: 3, areaNome: "Subestação" }),
+    ]);
+    expect(ids.has("a")).toBe(true); // 1ª de Moagem
+    expect(ids.has("b")).toBe(false); // 2ª de Moagem
+    expect(ids.has("c")).toBe(true); // 1ª de Subestação
+    expect(ids.size).toBe(2);
+  });
+
+  test("setor vazio cai em '—' e conta como um grupo", () => {
+    const ids = primeirasNcsPorSetor([nc({ id: "x", areaNome: "" })]);
+    expect(ids.has("x")).toBe(true);
   });
 });
 

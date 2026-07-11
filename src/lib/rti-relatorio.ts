@@ -160,6 +160,28 @@ export function sumarioPorSetor(ncs: NcParaPdf[]): SumarioSetor[] {
   }));
 }
 
+/** Objeto mutável injetado no render: setor → nº da página onde sua 1ª NC começa. */
+export interface PdfPageIndex {
+  setores: Map<string, number>;
+}
+
+/**
+ * Ids das NCs que são a PRIMEIRA de cada setor, na ordem de aparição da lista.
+ * Usado no render para marcar, em cada página de NC, o início do setor (sumário).
+ */
+export function primeirasNcsPorSetor(ncs: NcParaPdf[]): Set<string> {
+  const vistos = new Set<string>();
+  const primeiras = new Set<string>();
+  for (const nc of ncs) {
+    const setor = nc.areaNome || "—";
+    if (!vistos.has(setor)) {
+      vistos.add(setor);
+      primeiras.add(nc.id);
+    }
+  }
+  return primeiras;
+}
+
 // ── Quadro-resumo (P4 → P1, sempre 4 linhas) ────────────────────────────────
 export const PRIORIDADE_LABEL: Record<number, string> = {
   4: "P4 — Crítica",
