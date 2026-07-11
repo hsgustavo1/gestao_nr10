@@ -279,12 +279,17 @@ export function buildPdfModel(args: {
 // ── Redução de foto para o PDF (transform CDN do Storage) ────────────────────
 // As fotos aparecem no laudo a ~2 cm; a resolução cheia (~290 KB) é desperdício.
 // Reescreve a URL pública para o endpoint de transformação de imagem do Supabase,
-// que devolve um JPEG reduzido (~29 KB a 600px q55). Confirmado no projeto (D-C7).
+// que devolve um JPEG reduzido (~10 KB a 600px q55). Confirmado no projeto (D-C7).
+//
+// `resize=contain` é OBRIGATÓRIO: o default do Supabase é `cover`, que — só com
+// `width` — mantém a altura original e RECORTA a largura (ex.: 2048x922 → 600x922,
+// uma tira central). `contain` reduz proporcionalmente (2048x922 → 600x270), foto
+// inteira. Sem isso, a imagem já chega recortada ao PDF, antes de qualquer layout.
 export function urlFotoReduzida(publicUrl: string, width = 600, quality = 55): string {
   if (!publicUrl.includes("/object/public/")) return publicUrl;
   const base = publicUrl.replace("/object/public/", "/render/image/public/");
   const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}width=${width}&quality=${quality}`;
+  return `${base}${sep}width=${width}&quality=${quality}&resize=contain`;
 }
 
 // ── Versões e path no Storage ────────────────────────────────────────────────

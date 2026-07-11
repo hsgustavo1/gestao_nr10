@@ -7,6 +7,7 @@ import {
   mergeNcOverrides,
   primeirasNcsPorSetor,
   proximaVersao,
+  urlFotoReduzida,
   relatorioPdfPath,
   resumoPorPrioridade,
   rotuloNc,
@@ -177,6 +178,22 @@ describe("sumarioPorSetor", () => {
       { numero: 3, rotulo: "T3" },
     ]);
     expect(setores[1].ncs).toEqual([{ numero: 1, rotulo: "T1" }]);
+  });
+});
+
+describe("urlFotoReduzida", () => {
+  const publica =
+    "https://x.supabase.co/storage/v1/object/public/rti-evidencias/org/rel/nc-0003-02.jpg";
+
+  test("usa o endpoint de transform com resize=contain (evita o crop do cover)", () => {
+    const u = urlFotoReduzida(publica);
+    expect(u).toContain("/render/image/public/");
+    expect(u).toContain("width=600");
+    expect(u).toContain("resize=contain"); // sem isso o Supabase recorta a largura
+  });
+
+  test("não mexe em URLs que não são do storage público", () => {
+    expect(urlFotoReduzida("data:image/png;base64,AAAA")).toBe("data:image/png;base64,AAAA");
   });
 });
 
