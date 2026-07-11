@@ -54,7 +54,9 @@ export function defaultIdentificacao(
     periodoFim: report.periodo_fim ?? null,
     responsavelTecnico: report.responsavel_tecnico_rti ?? "",
     artNumero: report.art_numero ?? "",
-    normas: "NR-10 — Segurança em Instalações e Serviços em Eletricidade; NBR 5410",
+    normas:
+      "NR-10 — Segurança em Instalações e Serviços em Eletricidade; " +
+      "NBR 5410 (baixa tensão); NBR 14039 (média tensão)",
     introducao: INTRODUCAO_PADRAO,
     metodologia: METODOLOGIA_PADRAO,
   };
@@ -151,7 +153,10 @@ export function sumarioPorSetor(ncs: NcParaPdf[]): SumarioSetor[] {
   }
   return ordem.map((setor) => ({
     setor,
-    ncs: mapa.get(setor)!.slice().sort((a, b) => a.numero - b.numero),
+    ncs: mapa
+      .get(setor)!
+      .slice()
+      .sort((a, b) => a.numero - b.numero),
   }));
 }
 

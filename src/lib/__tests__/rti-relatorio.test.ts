@@ -108,6 +108,8 @@ describe("defaultIdentificacao", () => {
     expect(ident.responsavelTecnico).toBe("Eng. Fulano");
     expect(ident.artNumero).toBe("ART-123");
     expect(ident.normas).toContain("NR-10");
+    expect(ident.normas).toContain("NBR 5410");
+    expect(ident.normas).toContain("NBR 14039");
   });
 });
 
