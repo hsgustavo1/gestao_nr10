@@ -67,6 +67,28 @@ export interface PdfFoto {
   id: string;
   url: string;
   legenda: string | null;
+  larguraPx?: number | null; // proporção real (medida no servidor); null = desconhecida
+  alturaPx?: number | null;
+}
+
+/**
+ * Tamanho de exibição da foto: encaixa na moldura maxW×maxH preservando a proporção
+ * real, sem ampliar (escala ≤ 1). Sem dimensões conhecidas, assume paisagem 4:3.
+ * Passar width+height já corretos evita depender do objectFit do @react-pdf (que
+ * recortava quando a moldura tinha altura fixa).
+ */
+export function dimensoesFoto(
+  foto: { larguraPx?: number | null; alturaPx?: number | null },
+  maxW: number,
+  maxH: number,
+): { width: number; height: number } {
+  const w = foto.larguraPx ?? 0;
+  const h = foto.alturaPx ?? 0;
+  if (w <= 0 || h <= 0) {
+    return { width: maxW, height: Math.min(maxH, Math.round((maxW * 3) / 4)) };
+  }
+  const escala = Math.min(maxW / w, maxH / h, 1);
+  return { width: Math.round(w * escala), height: Math.round(h * escala) };
 }
 
 export interface NcParaPdf {

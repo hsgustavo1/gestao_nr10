@@ -3,6 +3,7 @@ import {
   defaultIdentificacao,
   formatNormasRef,
   LIMITACOES_PADRAO,
+  dimensoesFoto,
   mergeNcOverrides,
   primeirasNcsPorSetor,
   proximaVersao,
@@ -176,6 +177,36 @@ describe("sumarioPorSetor", () => {
       { numero: 3, rotulo: "T3" },
     ]);
     expect(setores[1].ncs).toEqual([{ numero: 1, rotulo: "T1" }]);
+  });
+});
+
+describe("dimensoesFoto", () => {
+  test("paisagem cabe pela largura, mantendo a proporção", () => {
+    expect(dimensoesFoto({ larguraPx: 4000, alturaPx: 3000 }, 235, 280)).toEqual({
+      width: 235,
+      height: 176,
+    });
+  });
+
+  test("retrato cabe pela altura, mantendo a proporção", () => {
+    expect(dimensoesFoto({ larguraPx: 3000, alturaPx: 4000 }, 235, 280)).toEqual({
+      width: 210,
+      height: 280,
+    });
+  });
+
+  test("nunca amplia além do tamanho original", () => {
+    expect(dimensoesFoto({ larguraPx: 100, alturaPx: 80 }, 235, 280)).toEqual({
+      width: 100,
+      height: 80,
+    });
+  });
+
+  test("dimensões desconhecidas caem num padrão paisagem dentro da moldura", () => {
+    expect(dimensoesFoto({ larguraPx: null, alturaPx: null }, 235, 280)).toEqual({
+      width: 235,
+      height: 176,
+    });
   });
 });
 
