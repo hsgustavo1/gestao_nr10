@@ -7,6 +7,7 @@ import {
   formatNormasRef,
   sumarioPorSetor,
   primeirasNcsPorSetor,
+  dimensoesFoto,
 } from "@/lib/rti-relatorio";
 import { registerPdfFonts } from "./fonts";
 
@@ -86,16 +87,16 @@ const s = StyleSheet.create({
   ncTitulo: { fontSize: 11, fontWeight: 800, marginBottom: 3 },
   ncMeta: { fontSize: 8, color: "#666", marginBottom: 4 },
   fotoRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 6 },
+  // Moldura SEM altura fixa e SEM overflow:hidden — a imagem já vem no tamanho
+  // exato (dimensoesFoto), então nada é recortado. Centraliza o que sobra na coluna.
   fotoBox: {
     width: 235,
-    height: 180,
     borderRadius: 4,
     backgroundColor: "#f3f4f6",
-    overflow: "hidden",
+    padding: 4,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  // Dimensões FIXAS + objectFit contain garantem a imagem inteira (letterbox)
-  // em qualquer orientação — retrato ou paisagem. objectPosition centraliza.
-  foto: { width: 235, height: 180, objectFit: "contain", objectPosition: "center" },
   tabela: { marginTop: 8 },
   tr: {
     flexDirection: "row",
@@ -224,7 +225,7 @@ function NcConteudo({
             {nc.fotos.map((f) => (
               <View key={f.id} style={s.evidenciaCard} wrap={false}>
                 <View style={s.fotoBox}>
-                  <Image src={f.url} style={s.foto} />
+                  <Image src={f.url} style={dimensoesFoto(f, 227, 280)} />
                 </View>
                 {f.legenda ? <Text style={s.fotoLegenda}>{f.legenda}</Text> : null}
               </View>
