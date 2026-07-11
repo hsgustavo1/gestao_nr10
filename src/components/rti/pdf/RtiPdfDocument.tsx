@@ -84,16 +84,17 @@ const s = StyleSheet.create({
   },
   ncTitulo: { fontSize: 11, fontWeight: 800, marginBottom: 3 },
   ncMeta: { fontSize: 8, color: "#666", marginBottom: 4 },
-  fotoRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
+  fotoRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 6 },
   fotoBox: {
-    width: 160,
-    height: 120,
-    borderRadius: 3,
+    width: 235,
+    height: 180,
+    borderRadius: 4,
     backgroundColor: "#f3f4f6",
-    alignItems: "center",
-    justifyContent: "center",
+    overflow: "hidden",
   },
-  foto: { maxWidth: 160, maxHeight: 120, objectFit: "contain" },
+  // Dimensões FIXAS + objectFit contain garantem a imagem inteira (letterbox)
+  // em qualquer orientação — retrato ou paisagem. objectPosition centraliza.
+  foto: { width: 235, height: 180, objectFit: "contain", objectPosition: "center" },
   tabela: { marginTop: 8 },
   tr: {
     flexDirection: "row",
