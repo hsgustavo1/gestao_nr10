@@ -535,7 +535,7 @@ function ExcluirInspecaoDialog({
 
 function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => void }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, orgs, currentOrg } = useAuth();
   const upsert = useUpsertFieldInspection();
 
   const actorName =
@@ -550,6 +550,16 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
   const [modeloId, setModeloId] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Empresa (tenant) da inspeção: define o org_id — a foto de campo e o RTI
+  // dependem disso. Só clientes/unidades são operáveis (consultoria só gerencia).
+  const orgsOperaveis = (orgs ?? []).filter((o) => o.tipo !== "consultoria");
+  const [orgSel, setOrgSel] = useState("");
+  const orgId =
+    orgSel ||
+    (currentOrg && orgsOperaveis.some((o) => o.id === currentOrg.id)
+      ? currentOrg.id
+      : (orgsOperaveis[0]?.id ?? ""));
+
   const segmentos = useSegmentosExistentes();
   const modelos = useModelosDoSegmento(segmento);
   const modeloEscolhido = (modelos.data ?? []).find((m) => m.id === modeloId) ?? null;
@@ -557,11 +567,15 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!titulo.trim()) return toast.error("Informe um título para a inspeção.");
+    // Multi-org: exige escolher a empresa (senão a inspeção subiria na org errada).
+    if (orgsOperaveis.length > 1 && !orgId) return toast.error("Selecione a empresa.");
     setBusy(true);
     try {
+      const orgNome = orgsOperaveis.find((o) => o.id === orgId)?.nome ?? null;
       const insp = await upsert.mutateAsync({
         titulo: titulo.trim(),
-        cliente: cliente.trim() || null,
+        ...(orgId ? { org_id: orgId } : {}),
+        cliente: cliente.trim() || orgNome,
         local: local.trim() || null,
         engenheiro: engenheiro.trim() || null,
         data_inspecao: data,
@@ -575,9 +589,7 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
           const n = await aplicarModelo(insp.id, modeloEscolhido.arvore);
           toast.success(`Estrutura do modelo aplicada (${n} itens).`);
         } catch (err) {
-          toast.error(
-            "Inspeção criada, mas o modelo não foi aplicado: " + (err as Error).message,
-          );
+          toast.error("Inspeção criada, mas o modelo não foi aplicado: " + (err as Error).message);
         }
       }
       toast.success("Inspeção criada. Adicione os pontos de coleta.");
@@ -611,6 +623,36 @@ function NovaInspecaoDialog({ onOpenChange }: { onOpenChange: (o: boolean) => vo
               required
             />
           </div>
+          {orgsOperaveis.length > 1 ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="fi-org">Empresa *</Label>
+              <select
+                id="fi-org"
+                value={orgId}
+                onChange={(e) => setOrgSel(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                {orgsOperaveis.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.nome}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Define a empresa (tenant) onde a inspeção e as fotos serão gravadas.
+              </p>
+            </div>
+          ) : orgsOperaveis.length === 1 ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="fi-org">Empresa</Label>
+              <Input
+                id="fi-org"
+                value={orgsOperaveis[0].nome}
+                readOnly
+                className="bg-muted/50 text-muted-foreground"
+              />
+            </div>
+          ) : null}
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="fi-cliente">Cliente / unidade</Label>
