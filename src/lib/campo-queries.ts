@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { mensagemUploadAmigavel, removerArquivosOrfaos } from "@/lib/upload";
+import { campoEvidenciaPath, inspecaoStagingPath } from "@/lib/storage-paths";
 import type { RtiArea, RtiNc, RtiReport } from "./rti";
 import {
   caminhoAbaixoDoSetor,
@@ -153,10 +154,11 @@ export function useUpsertFieldInspection() {
   const { currentOrgId } = useAuth();
   return useMutation({
     mutationFn: async (payload: Partial<FieldInspection> & { titulo: string; id?: string }) => {
-      // Ao criar (sem id), carimba a org ativa — fn_default_org_id só cobre usuário
-      // de 1 org; consultor/platform admin precisam do org_id explícito.
-      const body =
-        !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      // Ao criar (sem id), carimba a org ESCOLHIDA (payload.org_id) ou, na falta, a
+      // ativa — fn_default_org_id só cobre usuário de 1 org; consultor/platform admin
+      // precisam do org_id explícito. O seletor da UI define payload.org_id.
+      const resolvedOrg = payload.org_id ?? currentOrgId;
+      const body = !payload.id && resolvedOrg ? { ...payload, org_id: resolvedOrg } : payload;
       const { data, error } = await supabase
         .from("field_inspections")
         .upsert(body as never, { onConflict: "id" })
@@ -265,8 +267,7 @@ export function useUpsertFieldNode() {
         id?: string;
       },
     ) => {
-      const body =
-        !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("field_nodes")
         .upsert(body as never, { onConflict: "id" })
@@ -502,8 +503,7 @@ export function useUpsertFieldPoint() {
     mutationFn: async (
       payload: Partial<FieldPoint> & { inspection_id: string; node_id: string; id?: string },
     ) => {
-      const body =
-        !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("field_points")
         .upsert(body as never, { onConflict: "id" })
@@ -585,8 +585,7 @@ export function useUpsertFieldFinding() {
     mutationFn: async (
       payload: Partial<FieldFinding> & { point_id: string; descricao: string; id?: string },
     ) => {
-      const body =
-        !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
+      const body = !payload.id && currentOrgId ? { ...payload, org_id: currentOrgId } : payload;
       const { data, error } = await supabase
         .from("field_findings")
         .upsert(body as never, { onConflict: "id" })
@@ -640,18 +639,27 @@ export function usePointPhotos(pointId?: string) {
   });
 }
 
-/** Redimensiona (~1600px) e sobe a foto para o bucket rti-evidencias.
- * Path escopado por org ({org_id}/campo/…) quando orgId é informado; senão usa o
- * legado `campo/…` (sem regressão). Prepara isolamento + storage frio futuro. */
+/** Redimensiona (1024px) e sobe a foto para o bucket rti-evidencias.
+ * Staging por inspeção ({empresa}/inspecoes/{slug}/…): organiza a foto de campo
+ * antes de existir RTI; na composição ela é MOVIDA para {rti}/campo/ (Cenário A).
+ * Fallbacks sem regressão: sem inspeção → {orgId}/campo/…; sem org → campo/… (legado). */
 export async function uploadFieldPhoto(
   file: File,
-  orgId?: string,
+  ctx?: {
+    orgId?: string | null;
+    orgNome?: string | null;
+    inspection?: { id: string; titulo?: string | null } | null;
+  },
 ): Promise<{ path: string; name: string }> {
   const resized = await resizeImage(file, 1024);
   const ext = resized.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const path = orgId
-    ? `${orgId}/campo/${crypto.randomUUID()}.${ext}`
-    : `campo/${crypto.randomUUID()}.${ext}`;
+  const fileId = crypto.randomUUID();
+  const path =
+    ctx?.orgId && ctx?.inspection
+      ? inspecaoStagingPath(ctx.orgId, ctx.inspection, fileId, ext, ctx.orgNome)
+      : ctx?.orgId
+        ? `${ctx.orgId}/campo/${fileId}.${ext}`
+        : `campo/${fileId}.${ext}`;
   const { error } = await supabase.storage.from("rti-evidencias").upload(path, resized, {
     cacheControl: "3600",
     upsert: false,
@@ -811,6 +819,18 @@ export async function comporRti({
   // repassam o mesmo org_id (fn_default_org_id só cobre usuário de 1 org).
   const orgId = inspection.org_id;
 
+  // Nome da empresa para o path {slug(org.nome)}-{orgId}/… (cosmético; orgId é
+  // autoritativo). Buscado uma vez para o move-on-compose das fotos de campo.
+  let orgNome: string | null = null;
+  if (orgId) {
+    const { data: orgRow } = await supabase
+      .from("organizations")
+      .select("nome")
+      .eq("id", orgId)
+      .single();
+    orgNome = (orgRow as { nome?: string | null } | null)?.nome ?? null;
+  }
+
   // 1) Carrega árvore, pontos, achados e fotos
   const { data: nodesData, error: nErr } = await supabase
     .from("field_nodes")
@@ -862,8 +882,15 @@ export async function comporRti({
 
   // 2) Relatório de destino
   let reportId: string;
+  let reportTitulo: string | null;
   if (destino.mode === "existente") {
     reportId = destino.reportId;
+    const { data: repRow } = await supabase
+      .from("rti_reports")
+      .select("titulo")
+      .eq("id", reportId)
+      .single();
+    reportTitulo = (repRow as { titulo?: string | null } | null)?.titulo ?? null;
   } else {
     // coletores_campo só é gravado na criação — mesmo comportamento que os
     // demais campos deste insert (empresa_auditora):
@@ -889,6 +916,7 @@ export async function comporRti({
       .single();
     if (rErr) throw rErr;
     reportId = (rep as RtiReport).id;
+    reportTitulo = (rep as RtiReport).titulo ?? inspection.titulo;
   }
 
   // 3) Áreas (= Setores). Cria as que faltam.
@@ -908,9 +936,12 @@ export async function comporRti({
     maxOrdem += 1;
     const { data: area, error } = await supabase
       .from("rti_areas")
-      .insert(
-        { ...(orgId ? { org_id: orgId } : {}), report_id: reportId, nome, ordem: maxOrdem } as never,
-      )
+      .insert({
+        ...(orgId ? { org_id: orgId } : {}),
+        report_id: reportId,
+        nome,
+        ordem: maxOrdem,
+      } as never)
       .select()
       .single();
     if (error) throw error;
@@ -949,6 +980,9 @@ export async function comporRti({
   let fotosCopiadas = 0;
   const totalEtapas = findings.length + photos.length;
   let done = 0;
+  // Foto solta pode ser reaproveitada por 2+ achados (fotosParaAchado): move só
+  // uma vez e reusa o path final. photoId → path já movido nesta composição.
+  const movidas = new Map<string, string>();
 
   for (const point of ordered) {
     const setorNome = setorNomeDoPonto(point);
@@ -1019,17 +1053,59 @@ export async function comporRti({
         onProgress?.("Criando NCs", done, totalEtapas);
 
         // Fotos do achado (finding_id) → evidência de constatação; fallback:
-        // fotos soltas do ponto (trilha C). Referência, não cópia.
+        // fotos soltas do ponto (trilha C).
+        let idxNc = 0;
         for (const ph of fotosParaAchado(fotosDoPonto, finding.id)) {
-          // Decisão C (2026-07-02): referencia a foto de campo (JÁ comprimida via
-          // PWA + resizeImage 1024) em vez de copiar — 1× storage. A exclusão é
-          // reference-aware (removerArquivosOrfaos), então o arquivo só some quando
-          // NENHUMA linha (campo ou RTI) o referenciar mais.
+          idxNc += 1;
+          // Move-on-compose (2026-07-12, revisa a Decisão C): a foto de campo é
+          // MOVIDA do staging para dentro do RTI ({rti}/campo/nc-XXXX-XX) — 1× storage,
+          // o laudo passa a possuir a própria evidência. Salvaguarda: se o move falhar
+          // (RLS de storage, corrida, offline), degrada para REFERÊNCIA do path atual —
+          // a composição nunca quebra. Idempotente para foto reaproveitada por 2+ achados.
+          const ext = (
+            ph.file_name?.split(".").pop() ||
+            ph.file_path.split(".").pop() ||
+            "jpg"
+          ).toLowerCase();
+          let finalPath = ph.file_path;
+          const jaMovida = movidas.get(ph.id);
+          if (jaMovida) {
+            finalPath = jaMovida;
+          } else if (/\/campo\/nc-\d/.test(ph.file_path)) {
+            // Já está sob {rti}/campo/ (recomposição / retry) — não move de novo.
+            finalPath = ph.file_path;
+            movidas.set(ph.id, finalPath);
+          } else if (orgId) {
+            const alvo = campoEvidenciaPath(
+              orgId,
+              { id: reportId, titulo: reportTitulo },
+              numero,
+              idxNc,
+              ext,
+              orgNome,
+            );
+            try {
+              const { error: mvErr } = await supabase.storage
+                .from("rti-evidencias")
+                .move(ph.file_path, alvo);
+              if (mvErr) throw mvErr;
+              // A foto de campo passa a apontar para o novo lar (exclusão reference-aware segue ok).
+              await supabase.from("field_photos").update({ file_path: alvo }).eq("id", ph.id);
+              finalPath = alvo;
+              movidas.set(ph.id, alvo);
+            } catch (mvErr) {
+              console.warn(
+                "comporRti: move da foto de campo falhou; referenciando o path atual.",
+                mvErr,
+              );
+            }
+          }
+
           const { error: evErr } = await supabase.from("rti_nc_evidencias").insert({
             ...(orgId ? { org_id: orgId } : {}),
             nc_id: nc.id,
             tipo: "constatacao",
-            file_path: ph.file_path,
+            file_path: finalPath,
             file_name: ph.file_name,
             mime_type: "image/jpeg",
             descricao: ph.legenda,

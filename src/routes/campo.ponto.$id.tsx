@@ -110,7 +110,11 @@ function CampoPontoPage() {
     try {
       let ordem = photos.length;
       for (const f of list) {
-        const { path: fp, name } = await uploadFieldPhoto(f, inspection?.org_id);
+        const { path: fp, name } = await uploadFieldPhoto(f, {
+          orgId: inspection?.org_id,
+          orgNome: auth.orgs?.find((o) => o.id === inspection?.org_id)?.nome ?? null,
+          inspection: inspection ? { id: inspection.id, titulo: inspection.titulo } : null,
+        });
         await addPhoto.mutateAsync({
           point_id: point.id,
           file_path: fp,

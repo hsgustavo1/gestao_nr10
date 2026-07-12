@@ -3,8 +3,13 @@ import {
   slugify,
   reportSlug,
   evidenciaFolder,
+  evidenciasImportadasFolder,
   evidenciaFileName,
   evidenciaPath,
+  campoEvidenciaPath,
+  inspecaoSlug,
+  inspecaoStagingFolder,
+  inspecaoStagingPath,
   maiorIndiceEvidencia,
 } from "./storage-paths";
 
@@ -50,9 +55,50 @@ describe("evidenciaFolder / evidenciaFileName / evidenciaPath", () => {
     expect(evidenciaFileName(2, 3, "jpg")).toBe("nc-0002-03.jpg");
     expect(evidenciaFileName(10, 1, "jpg")).toBe("nc-0010-01.jpg");
   });
-  it("caminho completo", () => {
+  it("caminho completo aninha a evidência manual em evidencias-importadas/", () => {
     expect(evidenciaPath(org, report, 2, 3, "jpg")).toBe(
-      `${org}/rti-1-6d9ec4c6/nc-0002-03.jpg`,
+      `${org}/rti-1-6d9ec4c6/evidencias-importadas/nc-0002-03.jpg`,
+    );
+  });
+  it("evidenciasImportadasFolder = folder do relatório + evidencias-importadas", () => {
+    expect(evidenciasImportadasFolder(org, report)).toBe(
+      `${org}/rti-1-6d9ec4c6/evidencias-importadas`,
+    );
+  });
+});
+
+describe("campoEvidenciaPath", () => {
+  const org = "c221b14e-72c9-4c63-99a6-2fbaf8b26763";
+  const report = { id: "6d9ec4c6-902d-4fad-9297-e99646a47d4f", titulo: "RTI 1" };
+  it("foto de campo movida aninha em campo/ com nome nc-XXXX-XX", () => {
+    expect(campoEvidenciaPath(org, report, 5, 1, "jpg")).toBe(
+      `${org}/rti-1-6d9ec4c6/campo/nc-0005-01.jpg`,
+    );
+  });
+  it("com nome da empresa prefixa o slug antes do id", () => {
+    expect(campoEvidenciaPath(org, report, 5, 1, "jpg", "Cliente X")).toBe(
+      `cliente-x-${org}/rti-1-6d9ec4c6/campo/nc-0005-01.jpg`,
+    );
+  });
+});
+
+describe("inspecaoSlug / inspecaoStagingFolder / inspecaoStagingPath", () => {
+  const org = "c221b14e-72c9-4c63-99a6-2fbaf8b26763";
+  const insp = { id: "8f3a1b2c-0000-0000-0000-000000000000", titulo: "SE 02 — Extração" };
+  it("slug da inspeção combina título (máx 40) com id8, fallback insp-<id8>", () => {
+    expect(inspecaoSlug(insp)).toBe("se-02-extracao-8f3a1b2c");
+    expect(inspecaoSlug({ id: insp.id, titulo: null })).toBe("insp-8f3a1b2c");
+    expect(inspecaoSlug({ id: insp.id, titulo: "!!!" })).toBe("insp-8f3a1b2c");
+  });
+  it("staging fica em inspecoes/{slug} sob a pasta da empresa", () => {
+    expect(inspecaoStagingFolder(org, insp)).toBe(`${org}/inspecoes/se-02-extracao-8f3a1b2c`);
+    expect(inspecaoStagingFolder(org, insp, "Cliente X")).toBe(
+      `cliente-x-${org}/inspecoes/se-02-extracao-8f3a1b2c`,
+    );
+  });
+  it("path do arquivo no staging usa o id do arquivo + extensão", () => {
+    expect(inspecaoStagingPath(org, insp, "abc123", "jpg")).toBe(
+      `${org}/inspecoes/se-02-extracao-8f3a1b2c/abc123.jpg`,
     );
   });
 });

@@ -3,7 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { resizeImage } from "@/lib/campo";
 import { mensagemUploadAmigavel, removerArquivosOrfaos } from "@/lib/upload";
-import { artPath, evidenciaFolder, evidenciaPath, maiorIndiceEvidencia } from "@/lib/storage-paths";
+import {
+  artPath,
+  evidenciasImportadasFolder,
+  evidenciaPath,
+  maiorIndiceEvidencia,
+} from "@/lib/storage-paths";
 import type { RtiArea, RtiNc, RtiNcEvidencia, RtiNcHistorico, RtiReport } from "./rti";
 import type { RtiSnapshotRow } from "./rti-snapshots";
 
@@ -104,7 +109,7 @@ export type EntregarRtiPayload = {
   responsavelTecnicoRti: string | null;
   responsavelPlano: string | null;
   periodoInicio: string | null; // ISO date (yyyy-mm-dd)
-  periodoFim: string | null;    // ISO date (yyyy-mm-dd)
+  periodoFim: string | null; // ISO date (yyyy-mm-dd)
   artNumero: string | null;
   artArquivoPath: string | null;
   entregueEm: string | null; // ISO date (yyyy-mm-dd); null = usa o momento do envio
@@ -541,11 +546,15 @@ export async function uploadRtiEvidencia(
   const ext = resized.name.split(".").pop()?.toLowerCase() ?? "jpg";
   const report = { id: opts.reportId, titulo: opts.reportTitulo };
 
-  // Descobre o próximo índice olhando o que já existe no prefixo do relatório.
+  // Descobre o próximo índice olhando o que já existe na subpasta de evidências manuais.
   const { data: listagem } = await supabase.storage
     .from("rti-evidencias")
-    .list(evidenciaFolder(opts.orgId, report, opts.orgNome), { limit: 1000 });
-  let idx = maiorIndiceEvidencia((listagem ?? []).map((o) => o.name), opts.ncNum) + 1;
+    .list(evidenciasImportadasFolder(opts.orgId, report, opts.orgNome), { limit: 1000 });
+  let idx =
+    maiorIndiceEvidencia(
+      (listagem ?? []).map((o) => o.name),
+      opts.ncNum,
+    ) + 1;
 
   // Envia; se o nome colidir (outra sessão pegou o mesmo índice), incrementa e repete.
   for (let tentativa = 0; tentativa < 10; tentativa++) {
@@ -638,14 +647,20 @@ export async function bulkAttachRtiEvidencias({
   );
 
   const orgIds = [...new Set((ncsData ?? []).map((n) => n.org_id as string).filter(Boolean))];
-  const { data: orgsData } = await supabase.from("organizations").select("id, nome").in("id", orgIds);
-  const orgNomeById = new Map((orgsData ?? []).map((o) => [o.id as string, o.nome as string | null]));
+  const { data: orgsData } = await supabase
+    .from("organizations")
+    .select("id, nome")
+    .in("id", orgIds);
+  const orgNomeById = new Map(
+    (orgsData ?? []).map((o) => [o.id as string, o.nome as string | null]),
+  );
 
   const total = ncIds.length * files.length;
   let done = 0;
   for (const ncId of ncIds) {
     const info = ncInfoById.get(ncId);
-    if (!info?.orgId) throw new Error("NC sem organização definida; não é possível anexar evidência.");
+    if (!info?.orgId)
+      throw new Error("NC sem organização definida; não é possível anexar evidência.");
     const rows: (Omit<RtiNcEvidencia, "id" | "created_at"> & { org_id?: string })[] = [];
     for (const file of files) {
       const path = await uploadRtiEvidencia(file, {
@@ -715,7 +730,13 @@ export async function batchImportRti({ report, areas, ncs, orgId, onProgress }: 
   // 2) Áreas
   const { data: areaRows, error: areaErr } = await supabase
     .from("rti_areas")
-    .insert(areas.map((a) => ({ ...a, report_id: reportId, ...(orgId ? { org_id: orgId } : {}) })) as never)
+    .insert(
+      areas.map((a) => ({
+        ...a,
+        report_id: reportId,
+        ...(orgId ? { org_id: orgId } : {}),
+      })) as never,
+    )
     .select();
   if (areaErr) throw areaErr;
   const areaIdByNome = new Map((areaRows as RtiArea[]).map((a) => [a.nome, a.id]));

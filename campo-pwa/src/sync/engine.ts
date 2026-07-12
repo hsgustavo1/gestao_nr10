@@ -1,6 +1,7 @@
 import { generateId } from "@/lib/uuid";
 import { supabase } from "@/lib/supabase";
-import { refreshOrgContext } from "@/lib/org";
+import { refreshOrgContext, getOrgNome } from "@/lib/org";
+import { inspecaoStagingPath } from "@/lib/storage-paths";
 import { db } from "@/db/dexie";
 import type { SyncOperation, SyncQueueItem } from "@/db/dexie";
 
@@ -269,13 +270,21 @@ async function uploadRecord(item: {
   }
 }
 
-/** org_id de uma foto, derivado da inspeção do ponto (foto→ponto→inspeção). */
-async function resolvePhotoOrgId(pointId: string): Promise<string | undefined> {
+/** Contexto de staging de uma foto (foto→ponto→inspeção): org + inspeção para o path. */
+async function resolvePhotoStaging(pointId: string): Promise<{
+  orgId?: string;
+  orgNome?: string | null;
+  inspection?: { id: string; titulo?: string | null };
+}> {
   const point = await db.points.get(pointId);
-  if (point?.org_id) return point.org_id;
-  if (!point?.inspection_id) return undefined;
-  const insp = await db.inspections.get(point.inspection_id);
-  return insp?.org_id;
+  if (!point) return {};
+  const insp = point.inspection_id ? await db.inspections.get(point.inspection_id) : undefined;
+  const orgId = point.org_id ?? insp?.org_id;
+  return {
+    orgId,
+    orgNome: orgId ? getOrgNome(orgId) : null,
+    inspection: insp ? { id: insp.id, titulo: insp.titulo } : undefined,
+  };
 }
 
 async function uploadPhoto(localId: string): Promise<void> {
@@ -287,12 +296,17 @@ async function uploadPhoto(localId: string): Promise<void> {
   }
 
   const ext = photo.blob.type.split("/")[1] ?? "jpg";
-  // Path escopado por org ({org_id}/campo/…): prepara isolamento e migração futura
-  // p/ storage frio sem retrabalho. Resolve a org pela inspeção do ponto; se não
-  // achar (registro antigo/offline incompleto), cai no path legado `campo/…` —
-  // sem regressão. Fotos antigas continuam no path original gravado em file_path.
-  const orgId = await resolvePhotoOrgId(photo.point_id);
-  const remotePath = orgId ? `${orgId}/campo/${localId}.${ext}` : `campo/${localId}.${ext}`;
+  // Staging por inspeção ({empresa}/inspecoes/{slug}/…): organiza a foto antes de
+  // existir RTI; na composição ela é MOVIDA para {rti}/campo/ (Cenário A). Fallbacks
+  // em cascata sem regressão: sem inspeção → {orgId}/campo/…; sem org → campo/… (legado).
+  // Fotos antigas seguem no path original gravado em file_path.
+  const { orgId, orgNome, inspection } = await resolvePhotoStaging(photo.point_id);
+  const remotePath =
+    orgId && inspection
+      ? inspecaoStagingPath(orgId, inspection, localId, ext, orgNome)
+      : orgId
+        ? `${orgId}/campo/${localId}.${ext}`
+        : `campo/${localId}.${ext}`;
 
   const { error: storageError } = await supabase.storage
     .from("rti-evidencias")

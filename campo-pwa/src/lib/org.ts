@@ -90,6 +90,18 @@ export function getActiveOrgId(): string | undefined {
   return fallback;
 }
 
+/** Nome de uma org pelo id, lido do cache (para compor o path de staging). */
+export function getOrgNome(orgId: string): string | null {
+  try {
+    const raw = localStorage.getItem(ORGS_KEY);
+    if (!raw) return null;
+    const orgs = JSON.parse(raw) as OrgLite[];
+    return orgs.find((o) => o.id === orgId)?.nome ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Limpa o cache de org (chamar no logout). */
 export function clearOrgContext(): void {
   localStorage.removeItem(ORGS_KEY);

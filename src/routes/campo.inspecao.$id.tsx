@@ -499,7 +499,9 @@ function CampoInspecaoPage() {
       {canEdit && capturaOpen && currentNodeId && (
         <CapturaPontoSheet
           inspectionId={id}
+          inspectionTitulo={inspection.titulo}
           orgId={inspection.org_id}
+          orgNome={auth.orgs?.find((o) => o.id === inspection.org_id)?.nome ?? null}
           nodeId={currentNodeId}
           contextoLabel={
             currentNode ? `${NIVEL_LABEL[currentNode.nivel]}: ${currentNode.nome}` : ""
@@ -540,7 +542,10 @@ function CampoInspecaoPage() {
         />
       )}
 
-      <Dialog open={entregarOpen} onOpenChange={(o) => !entregarInspecao.isPending && setEntregarOpen(o)}>
+      <Dialog
+        open={entregarOpen}
+        onOpenChange={(o) => !entregarInspecao.isPending && setEntregarOpen(o)}
+      >
         <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 leading-tight">
@@ -605,14 +610,18 @@ function DeleteNodeButton({ node }: { node: FieldNode }) {
 
 function CapturaPontoSheet({
   inspectionId,
+  inspectionTitulo,
   orgId,
+  orgNome,
   nodeId,
   contextoLabel,
   proximaOrdem,
   onOpenChange,
 }: {
   inspectionId: string;
+  inspectionTitulo?: string | null;
   orgId?: string;
+  orgNome?: string | null;
   nodeId: string;
   contextoLabel: string;
   proximaOrdem: number;
@@ -686,7 +695,13 @@ function CapturaPontoSheet({
     try {
       const enviadas: { path: string; name: string }[] = [];
       for (let i = 0; i < fotos.length; i++) {
-        enviadas.push(await uploadFieldPhoto(fotos[i], orgId));
+        enviadas.push(
+          await uploadFieldPhoto(fotos[i], {
+            orgId,
+            orgNome,
+            inspection: orgId ? { id: inspectionId, titulo: inspectionTitulo ?? null } : null,
+          }),
+        );
         setProgresso({ done: i + 1, total: fotos.length });
       }
       const achados: AchadoNovo[] = [
