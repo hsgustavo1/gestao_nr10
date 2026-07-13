@@ -70,7 +70,6 @@ const COLORS = {
   "Sem auth.": "#d1d5db",
 } as const;
 
-
 function QualificacoesHub() {
   const { data: employees } = useEmployees("ativo");
   const { data: trainings } = useNR10Trainings();
@@ -192,7 +191,8 @@ function QualificacoesHub() {
         none = 0;
       for (const emp of filteredEmployees) {
         // GER não tem requisito de Áreas Classificadas — excluir da coluna
-        if (!requiredTrainings(emp.setor).includes(col.type as typeof TRAINING_TYPES[number])) continue;
+        if (!requiredTrainings(emp.setor).includes(col.type as (typeof TRAINING_TYPES)[number]))
+          continue;
         let s: "ok" | "expiring" | "expired" | "none";
         if (col.cat === "formacao") {
           // formação é perene — só OK ou Sem registro
@@ -302,15 +302,57 @@ function QualificacoesHub() {
     () => (authorizations ?? []).filter((a: any) => filteredIds.has(a.employee_id)),
     [authorizations, filteredIds],
   );
-  const validAuthsCount = authsInFilter.filter((a: any) => !a.suspended).length;
+
+  // Aptidão por colaborador com autorização — uma autorização só é "válida" se,
+  // além de não suspensa, não houver bloqueante (treinamento/ASO vencido etc.)
+  const authAptidaoMap = useMemo(() => {
+    const authMap = new Map((authorizations ?? []).map((a: any) => [a.employee_id, a]));
+    const latestASOs = latestASOByEmployee(asos ?? []);
+    const trainingsByEmp = new Map<string, NR10Training[]>();
+    for (const t of trainings ?? []) {
+      const arr = trainingsByEmp.get(t.employee_id);
+      if (arr) arr.push(t);
+      else trainingsByEmp.set(t.employee_id, [t]);
+    }
+    const map = new Map<string, ReturnType<typeof computeAptidao>>();
+    for (const emp of filteredEmployees) {
+      const auth = authMap.get(emp.id) as any;
+      if (!auth) continue;
+      map.set(
+        emp.id,
+        computeAptidao({
+          employee: emp,
+          trainings: trainingsByEmp.get(emp.id) ?? [],
+          authorization: auth,
+          aso: latestASOs.get(emp.id) ?? null,
+        }),
+      );
+    }
+    return map;
+  }, [filteredEmployees, authorizations, trainings, asos]);
+
+  const isAuthValid = useCallback(
+    (a: any) => !a.suspended && (authAptidaoMap.get(a.employee_id)?.apto ?? true),
+    [authAptidaoMap],
+  );
+
+  const isAuthBlocked = useCallback(
+    (a: any) => !a.suspended && !(authAptidaoMap.get(a.employee_id)?.apto ?? true),
+    [authAptidaoMap],
+  );
+
+  const validAuthsCount = authsInFilter.filter(isAuthValid).length;
   const noAuthCount = filteredEmployees.length - authsInFilter.length;
+  const blockedAuthsCount = authsInFilter.filter(isAuthBlocked).length;
 
   // Conformidade de treinamentos card — filtered by nr10CardType
   const nr10CardCompliance = useMemo(() => {
     if (filteredEmployees.length === 0) return 0;
     const compliant = filteredEmployees.filter((emp) => {
       const typesToCheck =
-        nr10CardType === "all" ? requiredTrainings(emp.setor) : [nr10CardType as typeof TRAINING_TYPES[number]];
+        nr10CardType === "all"
+          ? requiredTrainings(emp.setor)
+          : [nr10CardType as (typeof TRAINING_TYPES)[number]];
       return typesToCheck.every((type) => isEmployeeCompliantForType(emp.id, type));
     }).length;
     return Math.round((compliant / filteredEmployees.length) * 100);
@@ -319,14 +361,29 @@ function QualificacoesHub() {
   // Autorizações card — filtered by authCardLevel
   const authCardCount = useMemo(() => {
     if (authCardLevel === "all")
-      return { valid: validAuthsCount, total: authsInFilter.length, noAuth: noAuthCount };
+      return {
+        valid: validAuthsCount,
+        total: filteredEmployees.length,
+        noAuth: noAuthCount,
+        blocked: blockedAuthsCount,
+      };
     const levelFiltered = authsInFilter.filter((a: any) => a.level === authCardLevel);
     return {
-      valid: levelFiltered.filter((a: any) => !a.suspended).length,
+      valid: levelFiltered.filter(isAuthValid).length,
       total: levelFiltered.length,
       noAuth: 0,
+      blocked: levelFiltered.filter(isAuthBlocked).length,
     };
-  }, [authsInFilter, authCardLevel, validAuthsCount, noAuthCount]);
+  }, [
+    authsInFilter,
+    authCardLevel,
+    validAuthsCount,
+    noAuthCount,
+    blockedAuthsCount,
+    filteredEmployees,
+    isAuthValid,
+    isAuthBlocked,
+  ]);
 
   // ITs card display count
   const itCardDisplayCount =
@@ -340,28 +397,14 @@ function QualificacoesHub() {
 
   // ── Bloqueantes: autorizados com pendência que invalida a aptidão ─────────
   const bloqueantesList = useMemo(() => {
-    const authMap = new Map((authorizations ?? []).map((a: any) => [a.employee_id, a]));
-    const latestASOs = latestASOByEmployee(asos ?? []);
-    const trainingsByEmp = new Map<string, NR10Training[]>();
-    for (const t of trainings ?? []) {
-      const arr = trainingsByEmp.get(t.employee_id);
-      if (arr) arr.push(t);
-      else trainingsByEmp.set(t.employee_id, [t]);
-    }
     const out: { emp: (typeof filteredEmployees)[number]; bloqueantes: Bloqueante[] }[] = [];
     for (const emp of filteredEmployees) {
-      const auth = authMap.get(emp.id) as any;
-      if (!auth) continue; // só quem tem autorização ativa: é onde mora o risco legal
-      const { apto, bloqueantes } = computeAptidao({
-        employee: emp,
-        trainings: trainingsByEmp.get(emp.id) ?? [],
-        authorization: auth,
-        aso: latestASOs.get(emp.id) ?? null,
-      });
-      if (!apto) out.push({ emp, bloqueantes });
+      const aptidao = authAptidaoMap.get(emp.id);
+      if (!aptidao) continue; // só quem tem autorização ativa: é onde mora o risco legal
+      if (!aptidao.apto) out.push({ emp, bloqueantes: aptidao.bloqueantes });
     }
     return out.sort((a, b) => b.bloqueantes.length - a.bloqueantes.length);
-  }, [filteredEmployees, authorizations, trainings, asos]);
+  }, [filteredEmployees, authAptidaoMap]);
 
   // ── Qualificados sem escolaridade/formação com data de conclusão (alerta informativo) ──
   const semEscolaridadeList = useMemo(
@@ -371,7 +414,6 @@ function QualificacoesHub() {
       ),
     [filteredEmployees, formacoesByEmployee],
   );
-
 
   return (
     <PageShell>
@@ -391,13 +433,17 @@ function QualificacoesHub() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todas</SelectItem>
-              {([
-                ["ELE", "ELE — Elétrica"],
-                ["INS", "INS — Instrumentação"],
-                ["GER", "GER — Geração de energia"],
-                ["ADM", "ADM — Administrativo"],
-              ] as [string, string][]).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
+              {(
+                [
+                  ["ELE", "ELE — Elétrica"],
+                  ["INS", "INS — Instrumentação"],
+                  ["GER", "GER — Geração de energia"],
+                  ["ADM", "ADM — Administrativo"],
+                ] as [string, string][]
+              ).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -468,7 +514,9 @@ function QualificacoesHub() {
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 {TRAINING_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{TRAINING_LABELS[t]}</SelectItem>
+                  <SelectItem key={t} value={t}>
+                    {TRAINING_LABELS[t]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -512,8 +560,8 @@ function QualificacoesHub() {
             </Select>
             <p className="mt-1 text-[10px] text-muted-foreground">
               {authCardLevel === "all"
-                ? `${authCardCount.noAuth} sem autorização`
-                : `nível ${authCardLevel}`}
+                ? `${authCardCount.noAuth} sem autorização · ${authCardCount.blocked} bloqueado${authCardCount.blocked === 1 ? "" : "s"}`
+                : `nível ${authCardLevel} · ${authCardCount.blocked} bloqueado${authCardCount.blocked === 1 ? "" : "s"}`}
             </p>
           </CardContent>
         </Card>
@@ -650,13 +698,15 @@ function QualificacoesHub() {
           {semEscolaridadeList.length === 0 ? (
             <div className="flex items-center gap-2 text-xs text-emerald-600 py-2">
               <CheckCircle2 className="h-4 w-4" />
-              Todos os colaboradores "Qualificado"/"Habilitado" têm formação com data de conclusão registrada.
+              Todos os colaboradores "Qualificado"/"Habilitado" têm formação com data de conclusão
+              registrada.
             </div>
           ) : (
             <div className="space-y-2">
               <p className="text-[11px] text-muted-foreground">
-                Marcados como "Qualificado" ou "Habilitado" sem nenhuma formação com data de conclusão preenchida.
-                Não afeta a autorização de trabalho — é uma pendência cadastral.
+                Marcados como "Qualificado" ou "Habilitado" sem nenhuma formação com data de
+                conclusão preenchida. Não afeta a autorização de trabalho — é uma pendência
+                cadastral.
               </p>
               {semEscolaridadeList.map((emp) => (
                 <div
@@ -691,20 +741,43 @@ function QualificacoesHub() {
           {/* Legenda clicável */}
           <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 justify-center">
             {(["ok", "expiring", "expired", "none"] as const).map((s) => {
-              const labels: Record<string, string> = { ok: "OK", expiring: "Vencendo em 90 dias", expired: "Vencido", none: "Sem registro" };
+              const labels: Record<string, string> = {
+                ok: "OK",
+                expiring: "Vencendo em 90 dias",
+                expired: "Vencido",
+                none: "Sem registro",
+              };
               const isHov = hoveredCell?.barKey === s && hoveredCell.colIndex === -1;
               return (
                 <button
                   key={s}
                   type="button"
                   className="flex items-center gap-1.5 text-[10px] rounded px-1.5 py-0.5 transition-all hover:bg-muted/50 cursor-pointer"
-                  style={{ fontWeight: hoveredCell?.colIndex === -1 && hoveredCell?.barKey === s ? 700 : undefined }}
+                  style={{
+                    fontWeight:
+                      hoveredCell?.colIndex === -1 && hoveredCell?.barKey === s ? 700 : undefined,
+                  }}
                   onMouseEnter={() => setHoveredCell({ colIndex: -1, barKey: s })}
                   onMouseLeave={() => setHoveredCell(null)}
-                  onClick={() => navigate({ to: "/qualificacoes/nr10", search: { tipo: "all", status: s, setor: setorFilter === "todos" ? "all" : setorFilter } })}
+                  onClick={() =>
+                    navigate({
+                      to: "/qualificacoes/nr10",
+                      search: {
+                        tipo: "all",
+                        status: s,
+                        setor: setorFilter === "todos" ? "all" : setorFilter,
+                      },
+                    })
+                  }
                   title={`Ver colaboradores com status "${labels[s]}" em capacitações NR-10`}
                 >
-                  <span className="h-2.5 w-2.5 rounded-sm inline-block" style={{ background: COLORS[s], boxShadow: isHov ? `0 0 0 2px ${COLORS[s]}55` : undefined }} />
+                  <span
+                    className="h-2.5 w-2.5 rounded-sm inline-block"
+                    style={{
+                      background: COLORS[s],
+                      boxShadow: isHov ? `0 0 0 2px ${COLORS[s]}55` : undefined,
+                    }}
+                  />
                   {labels[s]}
                 </button>
               );
@@ -728,10 +801,28 @@ function QualificacoesHub() {
                     <g
                       transform={`translate(${x},${y})`}
                       style={{ cursor: "pointer" }}
-                      onClick={() => entry && navigate({ to: "/qualificacoes/nr10", search: { tipo: entry.type, status: "all", setor: setorFilter === "todos" ? "all" : setorFilter } })}
+                      onClick={() =>
+                        entry &&
+                        navigate({
+                          to: "/qualificacoes/nr10",
+                          search: {
+                            tipo: entry.type,
+                            status: "all",
+                            setor: setorFilter === "todos" ? "all" : setorFilter,
+                          },
+                        })
+                      }
                     >
                       {lines.map((line: string, i: number) => (
-                        <text key={i} x={0} y={0} dy={i * 11 + 10} textAnchor="middle" fill="#6b7280" fontSize={10}>
+                        <text
+                          key={i}
+                          x={0}
+                          y={0}
+                          dy={i * 11 + 10}
+                          textAnchor="middle"
+                          fill="#6b7280"
+                          fontSize={10}
+                        >
                           {line}
                         </text>
                       ))}
@@ -741,7 +832,16 @@ function QualificacoesHub() {
               />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
               <Tooltip
-                formatter={(value, name) => [value, name === "ok" ? "OK" : name === "expiring" ? "Vencendo" : name === "expired" ? "Vencido" : "Sem registro"]}
+                formatter={(value, name) => [
+                  value,
+                  name === "ok"
+                    ? "OK"
+                    : name === "expiring"
+                      ? "Vencendo"
+                      : name === "expired"
+                        ? "Vencido"
+                        : "Sem registro",
+                ]}
               />
               {(["ok", "expiring", "expired", "none"] as const).map((barKey, barIdx) => (
                 <Bar
@@ -754,18 +854,31 @@ function QualificacoesHub() {
                   style={{ cursor: "pointer" }}
                   onMouseEnter={(_: any, colIndex: number) => setHoveredCell({ colIndex, barKey })}
                   onClick={(data: any, colIndex: number) =>
-                    navigate({ to: "/qualificacoes/nr10", search: { tipo: data.type, status: barKey, setor: setorFilter === "todos" ? "all" : setorFilter } })
+                    navigate({
+                      to: "/qualificacoes/nr10",
+                      search: {
+                        tipo: data.type,
+                        status: barKey,
+                        setor: setorFilter === "todos" ? "all" : setorFilter,
+                      },
+                    })
                   }
                 >
                   {trainingComplianceData.map((_, colIndex) => {
-                    const isHovered = hoveredCell?.colIndex === colIndex && hoveredCell?.barKey === barKey;
+                    const isHovered =
+                      hoveredCell?.colIndex === colIndex && hoveredCell?.barKey === barKey;
                     return (
                       <Cell
                         key={colIndex}
                         fill={COLORS[barKey]}
-                        style={isHovered
-                          ? { filter: "brightness(1.18) drop-shadow(0 -3px 6px rgba(0,0,0,0.22))", outline: "none" }
-                          : undefined}
+                        style={
+                          isHovered
+                            ? {
+                                filter: "brightness(1.18) drop-shadow(0 -3px 6px rgba(0,0,0,0.22))",
+                                outline: "none",
+                              }
+                            : undefined
+                        }
                       />
                     );
                   })}
@@ -774,7 +887,8 @@ function QualificacoesHub() {
             </BarChart>
           </ResponsiveContainer>
           <p className="text-[10px] text-muted-foreground text-center mt-1">
-            Clique em um segmento para filtrar por status · Clique no nome do curso para ver todos · Clique na legenda para filtrar por status em todos os cursos
+            Clique em um segmento para filtrar por status · Clique no nome do curso para ver todos ·
+            Clique na legenda para filtrar por status em todos os cursos
           </p>
         </CardContent>
       </Card>
@@ -801,7 +915,10 @@ function QualificacoesHub() {
                   labelLine={false}
                   cursor="pointer"
                   onClick={(data: any) =>
-                    navigate({ to: "/qualificacoes/autorizacoes", search: { level: data.name, setor: "todos", valida: "all", semAuth: "all" } })
+                    navigate({
+                      to: "/qualificacoes/autorizacoes",
+                      search: { level: data.name, setor: "todos", valida: "all", semAuth: "all" },
+                    })
                   }
                 >
                   {authLevelData.map((entry) => (
@@ -835,7 +952,9 @@ function QualificacoesHub() {
         {/* Horizontal bar — Conformidade por equipe */}
         <Card className="md:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Conformidade de treinamentos por equipe</CardTitle>
+            <CardTitle className="text-sm font-semibold">
+              Conformidade de treinamentos por equipe
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {setorComplianceData.length === 0 ? (
@@ -849,7 +968,12 @@ function QualificacoesHub() {
                     key={d.setor}
                     className="flex items-center gap-3 text-xs cursor-pointer rounded px-1 hover:bg-muted/40 transition-colors"
                     title={`Ver capacitações da equipe ${d.setor}`}
-                    onClick={() => navigate({ to: "/qualificacoes/nr10", search: { tipo: "all", status: "all", setor: d.setor } })}
+                    onClick={() =>
+                      navigate({
+                        to: "/qualificacoes/nr10",
+                        search: { tipo: "all", status: "all", setor: d.setor },
+                      })
+                    }
                   >
                     <span className="w-8 font-medium text-muted-foreground">{d.setor}</span>
                     <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
@@ -876,7 +1000,6 @@ function QualificacoesHub() {
         </Card>
       </div>
 
-
       {/* Row 4: IT status + Alerts */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         {/* IT status */}
@@ -889,9 +1012,24 @@ function QualificacoesHub() {
           <CardContent>
             <div className="space-y-3">
               {[
-                { label: "Concluídas (OK)", count: itStatusCounts.ok, color: "bg-emerald-500", status: "ok" },
-                { label: "Pendentes", count: itStatusCounts.pendente, color: "bg-amber-500", status: "pendente" },
-                { label: "Vencidas", count: itStatusCounts.vencido, color: "bg-destructive", status: "vencido" },
+                {
+                  label: "Concluídas (OK)",
+                  count: itStatusCounts.ok,
+                  color: "bg-emerald-500",
+                  status: "ok",
+                },
+                {
+                  label: "Pendentes",
+                  count: itStatusCounts.pendente,
+                  color: "bg-amber-500",
+                  status: "pendente",
+                },
+                {
+                  label: "Vencidas",
+                  count: itStatusCounts.vencido,
+                  color: "bg-destructive",
+                  status: "vencido",
+                },
               ].map((item) => {
                 const total = itStatusCounts.ok + itStatusCounts.pendente + itStatusCounts.vencido;
                 const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
@@ -900,11 +1038,19 @@ function QualificacoesHub() {
                     key={item.label}
                     className="flex items-center gap-3 text-xs cursor-pointer rounded px-1 py-0.5 hover:bg-muted/40 transition-colors"
                     title={`Ver ITs com status "${item.label}"`}
-                    onClick={() => navigate({ to: "/qualificacoes/instrucoes", search: { status: item.status, setor: "all", it: "all", view: "matrix" } })}
+                    onClick={() =>
+                      navigate({
+                        to: "/qualificacoes/instrucoes",
+                        search: { status: item.status, setor: "all", it: "all", view: "matrix" },
+                      })
+                    }
                   >
                     <span className="w-32 text-muted-foreground">{item.label}</span>
                     <div className="flex-1 bg-muted rounded-full h-2.5 overflow-hidden">
-                      <div className={`h-full rounded-full ${item.color}`} style={{ width: `${pct}%` }} />
+                      <div
+                        className={`h-full rounded-full ${item.color}`}
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                     <span className="w-8 text-right font-semibold">{item.count}</span>
                   </div>

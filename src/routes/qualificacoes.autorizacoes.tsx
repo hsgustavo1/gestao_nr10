@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { z } from "zod";
 import { Pencil, Printer, History, ChevronUp, IdCard } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
@@ -136,18 +136,28 @@ function AutorizacoesPage() {
     return map;
   }, [employees, trainings, asos, authByEmployee]);
 
+  // Autorização válida = não suspensa E sem bloqueante (treinamento/ASO vencido etc.)
+  const isAuthValid = useCallback(
+    (employeeId: string) => {
+      const auth = authByEmployee.get(employeeId);
+      if (!auth || auth.suspended) return false;
+      return aptidaoByEmployee.get(employeeId)?.apto ?? false;
+    },
+    [authByEmployee, aptidaoByEmployee],
+  );
+
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
       if (nameSearch && !emp.name.toLowerCase().includes(nameSearch.toLowerCase())) return false;
       if (setorFilter !== "todos" && emp.setor !== setorFilter) return false;
       const auth = authByEmployee.get(emp.id);
       if (levelFilter !== "all" && auth?.level !== levelFilter) return false;
-      if (validFilter === "sim" && auth?.suspended) return false;
-      if (validFilter === "nao" && !auth?.suspended) return false;
+      if (validFilter === "sim" && !isAuthValid(emp.id)) return false;
+      if (validFilter === "nao" && (!auth || isAuthValid(emp.id))) return false;
       if (validFilter === "sem_auth" && auth) return false;
       return true;
     });
-  }, [employees, nameSearch, setorFilter, levelFilter, validFilter, authByEmployee]);
+  }, [employees, nameSearch, setorFilter, levelFilter, validFilter, authByEmployee, isAuthValid]);
 
   const colSpan = canEdit ? 8 : 7;
 
@@ -175,7 +185,7 @@ function AutorizacoesPage() {
           <span>
             Válidas:{" "}
             <strong className="text-emerald-600">
-              {authorizations.filter((a: any) => !a.suspended).length}
+              {employees.filter((emp) => isAuthValid(emp.id)).length}
             </strong>
           </span>
           <span>
@@ -278,7 +288,14 @@ function AutorizacoesPage() {
                           </td>
                           <td className="py-3 pr-4 text-muted-foreground">{emp.matricula}</td>
                           <td className="py-3 pr-4">
-                            {emp.setor && <Badge variant="outline" title={SETOR_FULL_NAMES[emp.setor] ?? emp.setor}>{emp.setor}</Badge>}
+                            {emp.setor && (
+                              <Badge
+                                variant="outline"
+                                title={SETOR_FULL_NAMES[emp.setor] ?? emp.setor}
+                              >
+                                {emp.setor}
+                              </Badge>
+                            )}
                           </td>
                           <td className="py-3 pr-4">
                             {auth?.level ? (
@@ -296,8 +313,8 @@ function AutorizacoesPage() {
                           </td>
                           <td className="py-3 pr-4">
                             {auth ? (
-                              <Badge variant={auth.suspended ? "destructive" : "default"}>
-                                {auth.suspended ? "Não" : "Sim"}
+                              <Badge variant={isAuthValid(emp.id) ? "default" : "destructive"}>
+                                {isAuthValid(emp.id) ? "Sim" : "Não"}
                               </Badge>
                             ) : null}
                           </td>
