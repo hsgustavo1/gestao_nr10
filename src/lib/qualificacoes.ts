@@ -1,4 +1,4 @@
-import { format, differenceInDays, addYears } from "date-fns";
+import { format, differenceInDays, addYears, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // ── Constantes ──────────────────────────────────────────────────────────────
@@ -262,6 +262,19 @@ export function trainingExpiryStatus(
 ): "ok" | "expiring" | "expired" | "none" {
   if (!trainingDate) return "none";
   const expiry = addYears(new Date(trainingDate + "T12:00:00"), 2);
+  const daysLeft = differenceInDays(expiry, new Date());
+  if (daysLeft < 0) return "expired";
+  if (daysLeft <= 90) return "expiring";
+  return "ok";
+}
+
+/** Retorna o status de expiração de uma IT concluída, dada a validade (em meses) da instrução. */
+export function itExpiryStatus(
+  conclusaoDate: string | null,
+  validityMonths: number,
+): "ok" | "expiring" | "expired" | "none" {
+  if (!conclusaoDate) return "none";
+  const expiry = addMonths(new Date(conclusaoDate + "T12:00:00"), validityMonths);
   const daysLeft = differenceInDays(expiry, new Date());
   if (daysLeft < 0) return "expired";
   if (daysLeft <= 90) return "expiring";

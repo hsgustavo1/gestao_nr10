@@ -35,10 +35,12 @@ import {
   useNR10Trainings,
   useWorkAuthorizations,
   useITTrainings,
+  useWorkInstructions,
   useFormacoesByOrg,
 } from "@/lib/qualificacoes-queries";
 import {
   trainingExpiryStatus,
+  itExpiryStatus,
   reciclagemStatus,
   formatDatePtBR,
   TRAINING_TYPES,
@@ -49,8 +51,15 @@ import {
 } from "@/lib/qualificacoes";
 import type { NR10Training } from "@/lib/qualificacoes";
 import { useASOs } from "@/lib/asos-queries";
-import { latestASOByEmployee } from "@/lib/asos";
+import { latestASOByEmployee, asoStatus, ASO_TIPO_LABELS } from "@/lib/asos";
 import { computeAptidao, type Bloqueante } from "@/lib/aptidao";
+
+type AlertKind = "treinamento" | "it" | "aso";
+const ALERT_TYPE_OPTIONS: { key: AlertKind; label: string }[] = [
+  { key: "treinamento", label: "Treinamentos" },
+  { key: "it", label: "ITs" },
+  { key: "aso", label: "ASOs" },
+];
 
 export const Route = createFileRoute("/qualificacoes/")({
   component: QualificacoesHub,
@@ -67,7 +76,7 @@ const COLORS = {
   A2: "#8b5cf6",
   A3: "#059669",
   A4: "#0C3326",
-  "Sem auth.": "#d1d5db",
+  "Sem autorização": "#d1d5db",
 } as const;
 
 function QualificacoesHub() {
@@ -75,10 +84,24 @@ function QualificacoesHub() {
   const { data: trainings } = useNR10Trainings();
   const { data: authorizations } = useWorkAuthorizations();
   const { data: itTrainings } = useITTrainings();
+  const { data: workInstructions } = useWorkInstructions();
   const { data: asos } = useASOs();
   const { data: formacoesByEmployee } = useFormacoesByOrg();
 
   const [setorFilter, setSetorFilter] = useState<string>("todos");
+
+  // Filtro de tipo dos cards de alertas (Treinamentos / ITs / ASOs) — multi-seleção
+  const [visibleAlertTypes, setVisibleAlertTypes] = useState<Set<AlertKind>>(
+    new Set(["treinamento", "it", "aso"]),
+  );
+  const toggleAlertType = useCallback((kind: AlertKind) => {
+    setVisibleAlertTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return next;
+    });
+  }, []);
 
   // Card-level filters
   const [nr10CardType, setNr10CardType] = useState<
@@ -221,7 +244,7 @@ function QualificacoesHub() {
       A2: 0,
       A3: 0,
       A4: 0,
-      "Sem auth.": 0,
+      "Sem autorização": 0,
     };
     const authMap = new Map((authorizations ?? []).map((a: any) => [a.employee_id, a]));
     for (const emp of filteredEmployees) {
@@ -229,7 +252,7 @@ function QualificacoesHub() {
       if (auth?.level && counts[auth.level] !== undefined) {
         counts[auth.level]++;
       } else {
-        counts["Sem auth."]++;
+        counts["Sem autorização"]++;
       }
     }
     return Object.entries(counts)
@@ -267,7 +290,7 @@ function QualificacoesHub() {
     return counts;
   }, [itTrainings, filteredIds]);
 
-  // Alert list — expiring/expired trainings
+  // Alert list — expiring/expired trainings, ITs and ASOs
   const expiringAlerts = useMemo(() => {
     const alerts: {
       empName: string;
@@ -275,7 +298,10 @@ function QualificacoesHub() {
       cat: string;
       date: string;
       status: string;
+      kind: AlertKind;
     }[] = [];
+
+    // Treinamentos NR-10 (reciclagem)
     for (const t of trainings ?? []) {
       if (!filteredIds.has(t.employee_id) || !t.training_date) continue;
       if (t.category === "formacao") continue; // formação é perene, nunca vence
@@ -290,12 +316,135 @@ function QualificacoesHub() {
             cat: "Reciclagem",
             date: t.training_date,
             status: s,
+            kind: "treinamento",
           });
         }
       }
     }
-    return alerts.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
-  }, [trainings, filteredEmployees, filteredIds]);
+
+    // Instruções de Trabalho (ITs): "vencido" é o status autoritativo do backend
+    // (cobre inclusive ITs nunca concluídas cujo prazo passou, sem conclusao_date).
+    // "vencendo em breve" é calculado a partir da validade quando já concluída.
+    const instructionById = new Map((workInstructions ?? []).map((wi: any) => [wi.id, wi]));
+    for (const t of itTrainings ?? []) {
+      const it = t as any;
+      if (!filteredIds.has(it.employee_id)) continue;
+      const instruction = instructionById.get(it.instruction_id) as any;
+      if (!instruction) continue;
+      const emp = filteredEmployees.find((e) => e.id === it.employee_id);
+      if (!emp) continue;
+
+      if (it.status === "vencido") {
+        alerts.push({
+          empName: emp.name,
+          type: instruction.title ?? instruction.code,
+          cat: "IT",
+          date: it.conclusao_date ?? "",
+          status: "expired",
+          kind: "it",
+        });
+      } else if (it.conclusao_date) {
+        const s = itExpiryStatus(it.conclusao_date, instruction.validity_months);
+        if (s === "expiring") {
+          alerts.push({
+            empName: emp.name,
+            type: instruction.title ?? instruction.code,
+            cat: "IT",
+            date: it.conclusao_date,
+            status: "expiring",
+            kind: "it",
+          });
+        }
+      }
+    }
+
+    // ASOs — mais recente por colaborador
+    const latestASOs = latestASOByEmployee(asos ?? []);
+    for (const emp of filteredEmployees) {
+      const aso = latestASOs.get(emp.id);
+      if (!aso) continue;
+      const s = asoStatus(aso);
+      if (s === "expiring" || s === "expired") {
+        alerts.push({
+          empName: emp.name,
+          type: ASO_TIPO_LABELS[aso.tipo],
+          cat: "ASO",
+          date: aso.validity_date,
+          status: s,
+          kind: "aso",
+        });
+      }
+    }
+
+    return alerts.sort((a, b) => a.date.localeCompare(b.date));
+  }, [trainings, itTrainings, workInstructions, asos, filteredEmployees, filteredIds]);
+
+  // Alert list — nunca registrado (sem nenhuma capacitação/IT/ASO lançada)
+  const unregisteredAlerts = useMemo(() => {
+    const alerts: { empName: string; type: string; cat: string; kind: AlertKind }[] = [];
+
+    // Treinamentos NR-10 exigidos que nunca foram feitos (nem formação, nem reciclagem)
+    for (const emp of filteredEmployees) {
+      for (const type of requiredTrainings(emp.setor)) {
+        const formacao = trainingMap.get(`${emp.id}:${type}:formacao`);
+        const reciclagem = trainingMap.get(`${emp.id}:${type}:reciclagem`);
+        if (!formacao && !reciclagem) {
+          alerts.push({
+            empName: emp.name,
+            type: TRAINING_LABELS[type],
+            cat: "Nunca realizado",
+            kind: "treinamento",
+          });
+        }
+      }
+    }
+
+    // ITs sem registro ou pendentes (nunca concluídas)
+    const itByEmpInstruction = new Map(
+      (itTrainings ?? []).map((t: any) => [`${t.employee_id}:${t.instruction_id}`, t]),
+    );
+    for (const emp of filteredEmployees) {
+      for (const instruction of (workInstructions ?? []) as any[]) {
+        const rec = itByEmpInstruction.get(`${emp.id}:${instruction.id}`) as any;
+        if (!rec || rec.status === "pendente") {
+          alerts.push({
+            empName: emp.name,
+            type: instruction.title ?? instruction.code,
+            cat: "Não concluída",
+            kind: "it",
+          });
+        }
+      }
+    }
+
+    // ASOs — colaboradores sem nenhum registro
+    const latestASOsForUnreg = latestASOByEmployee(asos ?? []);
+    for (const emp of filteredEmployees) {
+      if (!latestASOsForUnreg.has(emp.id)) {
+        alerts.push({ empName: emp.name, type: "ASO", cat: "Sem registro", kind: "aso" });
+      }
+    }
+
+    return alerts.sort((a, b) => a.empName.localeCompare(b.empName));
+  }, [filteredEmployees, trainingMap, itTrainings, workInstructions, asos]);
+
+  const filteredAlerts = useMemo(
+    () => expiringAlerts.filter((a) => visibleAlertTypes.has(a.kind)),
+    [expiringAlerts, visibleAlertTypes],
+  );
+
+  const expiringSoonAlerts = useMemo(
+    () => filteredAlerts.filter((a) => a.status === "expiring"),
+    [filteredAlerts],
+  );
+  const expiredAlerts = useMemo(
+    () => filteredAlerts.filter((a) => a.status === "expired"),
+    [filteredAlerts],
+  );
+  const unregisteredFilteredAlerts = useMemo(
+    () => unregisteredAlerts.filter((a) => visibleAlertTypes.has(a.kind)),
+    [unregisteredAlerts, visibleAlertTypes],
+  );
 
   // Derived authorization counts for KPI card
   const authsInFilter = useMemo(
@@ -453,7 +602,15 @@ function QualificacoesHub() {
       {/* Row 1: KPI cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
         {/* Total colaboradores */}
-        <Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          className="cursor-pointer transition-shadow hover:shadow-md"
+          onClick={() => navigate({ to: "/qualificacoes/integrantes" })}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") navigate({ to: "/qualificacoes/integrantes" });
+          }}
+        >
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
               <div>
@@ -473,7 +630,32 @@ function QualificacoesHub() {
         </Card>
 
         {/* Conformidade geral */}
-        <Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          className="cursor-pointer transition-shadow hover:shadow-md"
+          onClick={() =>
+            navigate({
+              to: "/qualificacoes/nr10",
+              search: {
+                tipo: nr10CardType,
+                status: "all",
+                setor: setorFilter === "todos" ? "all" : setorFilter,
+              },
+            })
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ")
+              navigate({
+                to: "/qualificacoes/nr10",
+                search: {
+                  tipo: nr10CardType,
+                  status: "all",
+                  setor: setorFilter === "todos" ? "all" : setorFilter,
+                },
+              });
+          }}
+        >
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
@@ -504,27 +686,56 @@ function QualificacoesHub() {
                 <GraduationCap className="h-5 w-5 text-white" />
               </div>
             </div>
-            <Select
-              value={nr10CardType}
-              onValueChange={(v) => setNr10CardType(v as typeof nr10CardType)}
-            >
-              <SelectTrigger className="h-6 text-[10px] mt-2 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                {TRAINING_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {TRAINING_LABELS[t]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Select
+                value={nr10CardType}
+                onValueChange={(v) => setNr10CardType(v as typeof nr10CardType)}
+              >
+                <SelectTrigger className="h-6 text-[10px] mt-2 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  {TRAINING_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {TRAINING_LABELS[t]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 
         {/* Autorizações válidas */}
-        <Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          className="cursor-pointer transition-shadow hover:shadow-md"
+          onClick={() =>
+            navigate({
+              to: "/qualificacoes/autorizacoes",
+              search: {
+                setor: setorFilter,
+                level: authCardLevel,
+                valida: "all",
+                semAuth: "all",
+              },
+            })
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ")
+              navigate({
+                to: "/qualificacoes/autorizacoes",
+                search: {
+                  setor: setorFilter,
+                  level: authCardLevel,
+                  valida: "all",
+                  semAuth: "all",
+                },
+              });
+          }}
+        >
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
@@ -542,22 +753,24 @@ function QualificacoesHub() {
                 <ShieldCheck className="h-5 w-5 text-white" />
               </div>
             </div>
-            <Select
-              value={authCardLevel}
-              onValueChange={(v) => setAuthCardLevel(v as typeof authCardLevel)}
-            >
-              <SelectTrigger className="h-6 text-[10px] mt-2 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os níveis</SelectItem>
-                {["A0", "A1", "A2", "A3", "A4"].map((l) => (
-                  <SelectItem key={l} value={l}>
-                    {l}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Select
+                value={authCardLevel}
+                onValueChange={(v) => setAuthCardLevel(v as typeof authCardLevel)}
+              >
+                <SelectTrigger className="h-6 text-[10px] mt-2 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os níveis</SelectItem>
+                  {["A0", "A1", "A2", "A3", "A4"].map((l) => (
+                    <SelectItem key={l} value={l}>
+                      {l}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
               {authCardLevel === "all"
                 ? `${authCardCount.noAuth} sem autorização · ${authCardCount.blocked} bloqueado${authCardCount.blocked === 1 ? "" : "s"}`
@@ -567,7 +780,34 @@ function QualificacoesHub() {
         </Card>
 
         {/* ITs OK */}
-        <Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          className="cursor-pointer transition-shadow hover:shadow-md"
+          onClick={() =>
+            navigate({
+              to: "/qualificacoes/instrucoes",
+              search: {
+                view: "table",
+                setor: setorFilter === "todos" ? "all" : setorFilter,
+                it: "all",
+                status: itCardStatus,
+              },
+            })
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ")
+              navigate({
+                to: "/qualificacoes/instrucoes",
+                search: {
+                  view: "table",
+                  setor: setorFilter === "todos" ? "all" : setorFilter,
+                  it: "all",
+                  status: itCardStatus,
+                },
+              });
+          }}
+        >
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
@@ -593,20 +833,22 @@ function QualificacoesHub() {
                 <BookOpen className="h-5 w-5 text-white" />
               </div>
             </div>
-            <Select
-              value={itCardStatus}
-              onValueChange={(v) => setItCardStatus(v as typeof itCardStatus)}
-            >
-              <SelectTrigger className="h-6 text-[10px] mt-2 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="ok">OK</SelectItem>
-                <SelectItem value="pendente">Pendentes</SelectItem>
-                <SelectItem value="vencido">Vencidas</SelectItem>
-              </SelectContent>
-            </Select>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Select
+                value={itCardStatus}
+                onValueChange={(v) => setItCardStatus(v as typeof itCardStatus)}
+              >
+                <SelectTrigger className="h-6 text-[10px] mt-2 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="ok">OK</SelectItem>
+                  <SelectItem value="pendente">Pendentes</SelectItem>
+                  <SelectItem value="vencido">Vencidas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
               {itStatusCounts.pendente} pendentes · {itStatusCounts.vencido} vencidas
             </p>
@@ -893,10 +1135,10 @@ function QualificacoesHub() {
         </CardContent>
       </Card>
 
-      {/* Row 3: Donut + Setor bar */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-5 mb-6">
+      {/* Row 3: Donut + Setor bar + IT status */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3 mb-6">
         {/* Donut — Autorização por nível */}
-        <Card className="md:col-span-2">
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Nível de autorização</CardTitle>
           </CardHeader>
@@ -950,7 +1192,7 @@ function QualificacoesHub() {
         </Card>
 
         {/* Horizontal bar — Conformidade por equipe */}
-        <Card className="md:col-span-3">
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">
               Conformidade de treinamentos por equipe
@@ -998,10 +1240,7 @@ function QualificacoesHub() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Row 4: IT status + Alerts */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         {/* IT status */}
         <Card>
           <CardHeader className="pb-2">
@@ -1045,7 +1284,7 @@ function QualificacoesHub() {
                       })
                     }
                   >
-                    <span className="w-32 text-muted-foreground">{item.label}</span>
+                    <span className="w-24 text-muted-foreground">{item.label}</span>
                     <div className="flex-1 bg-muted rounded-full h-2.5 overflow-hidden">
                       <div
                         className={`h-full rounded-full ${item.color}`}
@@ -1059,24 +1298,45 @@ function QualificacoesHub() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Alerts */}
+      {/* Row 4: Alerts — vencendo em breve + já vencidos + não registrados */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+        {/* Alerts — vencendo em breve */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
-              Alertas — Vencimentos próximos
-            </CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                Alertas — Vencimentos próximos
+              </CardTitle>
+              <div className="flex items-center gap-1">
+                {ALERT_TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => toggleAlertType(opt.key)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      visibleAlertTypes.has(opt.key)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-transparent text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {expiringAlerts.length === 0 ? (
+            {expiringSoonAlerts.length === 0 ? (
               <div className="flex items-center gap-2 text-xs text-emerald-600 py-4">
                 <CheckCircle2 className="h-4 w-4" />
-                Nenhum treinamento vencendo nos próximos 90 dias.
+                Nenhum vencimento próximo para os tipos selecionados.
               </div>
             ) : (
-              <div className="space-y-2">
-                {expiringAlerts.map((alert, i) => (
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {expiringSoonAlerts.map((alert, i) => (
                   <div
                     key={i}
                     className="flex items-center justify-between text-xs py-1 border-b last:border-0"
@@ -1089,13 +1349,123 @@ function QualificacoesHub() {
                     </div>
                     <div className="text-right">
                       <p className="text-muted-foreground">{formatDatePtBR(alert.date)}</p>
-                      <Badge
-                        variant={alert.status === "expired" ? "destructive" : "secondary"}
-                        className="text-[10px]"
-                      >
-                        {alert.status === "expired" ? "Vencido" : "Vence em breve"}
+                      <Badge variant="secondary" className="text-[10px]">
+                        Vence em breve
                       </Badge>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Alerts — já vencidos */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                Alertas — Já vencidos
+              </CardTitle>
+              <div className="flex items-center gap-1">
+                {ALERT_TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => toggleAlertType(opt.key)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      visibleAlertTypes.has(opt.key)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-transparent text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {expiredAlerts.length === 0 ? (
+              <div className="flex items-center gap-2 text-xs text-emerald-600 py-4">
+                <CheckCircle2 className="h-4 w-4" />
+                Nenhum vencimento para os tipos selecionados.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {expiredAlerts.map((alert, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-xs py-1 border-b last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">{alert.empName}</p>
+                      <p className="text-muted-foreground">
+                        {alert.type} — {alert.cat}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-muted-foreground">{formatDatePtBR(alert.date)}</p>
+                      <Badge variant="destructive" className="text-[10px]">
+                        Vencido
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Alerts — não registrados */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                Alertas — Não registrados
+              </CardTitle>
+              <div className="flex items-center gap-1">
+                {ALERT_TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => toggleAlertType(opt.key)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      visibleAlertTypes.has(opt.key)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-transparent text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {unregisteredFilteredAlerts.length === 0 ? (
+              <div className="flex items-center gap-2 text-xs text-emerald-600 py-4">
+                <CheckCircle2 className="h-4 w-4" />
+                Nenhuma pendência para os tipos selecionados.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {unregisteredFilteredAlerts.map((alert, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-xs py-1 border-b last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">{alert.empName}</p>
+                      <p className="text-muted-foreground">
+                        {alert.type} — {alert.cat}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px]">
+                      Sem registro
+                    </Badge>
                   </div>
                 ))}
               </div>
